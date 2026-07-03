@@ -1,0 +1,10 @@
+# Dados financeiros reais — nunca versionar
+*.xlsx
+*.json.backup
+
+# Configuração local
+.claude/settings.local.json
+
+# Node
+node_modules/
+dist/
