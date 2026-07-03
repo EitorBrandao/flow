@@ -1,18 +1,29 @@
 import { useState } from 'react';
 import * as repo from '../../db/repo';
+import type { Dados } from '../../domain/types';
 import { formatarBRL } from '../../domain/money';
 import { conferir, type Divergencia } from '../../importer/reconcile';
 import { lerPlanilha, type ResultadoImport } from '../../importer/xlsx';
 import { useApp } from '../../state/store';
+
+/** Verdadeiro quando já existem lançamentos ou recorrências de origem 'import' —
+ *  ou seja, uma reimportação substituiria dados de import anteriores. */
+export function precisaConfirmarReimport(dados: Dados | null): boolean {
+  if (!dados) return false;
+  return dados.lancamentos.some((l) => l.origem === 'import')
+    || dados.recorrencias.some((r) => r.origem === 'import');
+}
 
 export default function Importar() {
   const { dados, hoje, recarregar } = useApp();
   const [resultado, setResultado] = useState<ResultadoImport | null>(null);
   const [erro, setErro] = useState('');
   const [concluido, setConcluido] = useState(false);
+  const [confirmarSubstituicao, setConfirmarSubstituicao] = useState(false);
 
   async function selecionar(file: File) {
     setConcluido(false);
+    setConfirmarSubstituicao(false);
     try {
       setResultado(lerPlanilha(new Uint8Array(await file.arrayBuffer()), hoje));
       setErro('');
@@ -31,11 +42,16 @@ export default function Importar() {
 
   async function aceitar() {
     if (!resultado || !dados) return;
+    if (precisaConfirmarReimport(dados) && !confirmarSubstituicao) {
+      setConfirmarSubstituicao(true);
+      return;
+    }
     await repo.aplicarImport(resultado);
     await repo.materializarTodas(dados.config.horizonteProjecao);
     await recarregar();
     setResultado(null);
     setConcluido(true);
+    setConfirmarSubstituicao(false);
   }
 
   return (
@@ -100,9 +116,17 @@ export default function Importar() {
             <p className="sub">A box casa não é conferida: na planilha ela é consolidação com datas defasadas; no app ela é calculada ao vivo.</p>
           </div>
 
-          <button className="botao botao-primario" disabled={!podeAceitar} onClick={aceitar} style={{ padding: 14 }}>
-            Aceitar e importar
-          </button>
+          {confirmarSubstituicao ? (
+            <div className="card" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <p className="aviso" style={{ margin: 0 }}>Confirmar substituição dos dados importados?</p>
+              <button className="botao botao-primario" onClick={aceitar}>Confirmar</button>
+              <button className="botao" onClick={() => setConfirmarSubstituicao(false)}>Cancelar</button>
+            </div>
+          ) : (
+            <button className="botao botao-primario" disabled={!podeAceitar} onClick={aceitar} style={{ padding: 14 }}>
+              Aceitar e importar
+            </button>
+          )}
         </>
       )}
     </div>
