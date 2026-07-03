@@ -1,0 +1,75 @@
+import type { DiaSaldo } from '../domain/projection';
+import type { ISODate } from '../domain/types';
+import { formatarBRL } from '../domain/money';
+
+interface Props {
+  serie: DiaSaldo[];
+  hoje: ISODate;
+  altura?: number;
+  mostrarCenarios?: boolean;
+}
+
+export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenarios = false }: Props) {
+  if (serie.length < 2) return null;
+  const valores = serie.flatMap((s) =>
+    mostrarCenarios ? [s.saldoProjetado, s.saldoComCenarios] : [s.saldoProjetado],
+  );
+  const min = Math.min(...valores, 0);
+  const max = Math.max(...valores, 0);
+  const amp = max - min || 1;
+  const x = (i: number) => (i / (serie.length - 1)) * 100;
+  const y = (v: number) => 38 - ((v - min) / amp) * 36;
+  const pontos = (sel: { i: number; v: number }[]) =>
+    sel.map((p) => `${x(p.i).toFixed(2)},${y(p.v).toFixed(2)}`).join(' ');
+  const passado = serie.map((s, i) => ({ i, v: s.saldoEfetivo, data: s.data })).filter((p) => p.data <= hoje);
+  const futuro = serie.map((s, i) => ({ i, v: s.saldoProjetado, data: s.data })).filter((p) => p.data >= hoje);
+  const cenarios = serie.map((s, i) => ({ i, v: s.saldoComCenarios, data: s.data })).filter((p) => p.data >= hoje);
+  const iHoje = serie.findIndex((s) => s.data >= hoje);
+  return (
+    <div>
+      <svg
+        viewBox="0 0 100 40" preserveAspectRatio="none"
+        style={{ width: '100%', height: altura, display: 'block' }}
+        role="img" aria-label="Linha do saldo no tempo"
+      >
+        {/* linha do zero: hairline recessiva, sempre sólida (referência, não dado) */}
+        <line
+          x1="0" x2="100" y1={y(0)} y2={y(0)}
+          stroke="var(--border)" strokeWidth="1" vectorEffect="non-scaling-stroke"
+        />
+        {/* marcador do hoje: guia recessiva, tracejada para se distinguir da linha do zero */}
+        {iHoje >= 0 && (
+          <line
+            x1={x(iHoje)} x2={x(iHoje)} y1="0" y2="40"
+            stroke="var(--muted)" strokeWidth="1" strokeDasharray="2 2" vectorEffect="non-scaling-stroke"
+          />
+        )}
+        {/* saldo: uma única série (um hue), estado codificado por padrão de traço:
+            sólido = passado/efetivo, tracejado = futuro/projetado, pontilhado = cenário hipotético */}
+        {passado.length > 1 && (
+          <polyline
+            points={pontos(passado)} fill="none" stroke="var(--accent)" strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
+          />
+        )}
+        {futuro.length > 1 && (
+          <polyline
+            points={pontos(futuro)} fill="none" stroke="var(--accent)" strokeWidth="2" strokeDasharray="5 4"
+            strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
+          />
+        )}
+        {mostrarCenarios && cenarios.length > 1 && (
+          <polyline
+            points={pontos(cenarios)} fill="none" stroke="var(--muted)" strokeWidth="2" strokeDasharray="1 3"
+            strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
+          />
+        )}
+      </svg>
+      <div className="linha" style={{ justifyContent: 'space-between', fontSize: 12, color: 'var(--muted)' }}>
+        <span>{serie[0].data.slice(8, 10)}/{serie[0].data.slice(5, 7)}</span>
+        <span>mín {formatarBRL(min)} · máx {formatarBRL(max)}</span>
+        <span>{serie.at(-1)!.data.slice(8, 10)}/{serie.at(-1)!.data.slice(5, 7)}</span>
+      </div>
+    </div>
+  );
+}

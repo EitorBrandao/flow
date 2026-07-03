@@ -46,3 +46,8 @@ export function boxIdsSelecionadas(dados: Dados, boxSel: BoxSelecionada): ID[] {
   if (boxSel !== 'casa') return [boxSel];
   return dados.boxes.map((b) => b.id);
 }
+
+/** Ids dos cenários ligados (mostrados na projeção). */
+export function cenariosLigados(dados: Dados): Set<ID> {
+  return new Set(dados.cenarios.filter((c) => c.ligado).map((c) => c.id));
+}
