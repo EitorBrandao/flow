@@ -1,5 +1,6 @@
+import * as XLSX from 'xlsx';
 import { boxSheetFixture, simulacoesFixture } from './fixtures';
-import { lerBoxSheet, lerSimulacoes, montarResultado } from './xlsx';
+import { lerBoxSheet, lerPlanilha, lerSimulacoes, montarResultado } from './xlsx';
 
 describe('lerBoxSheet', () => {
   it('lê datas, saldo inicial, categorias e células', () => {
@@ -40,6 +41,22 @@ describe('lerSimulacoes', () => {
     expect(lerSimulacoes(simulacoesFixture())).toEqual([{
       nome: 'Emprestimo Teste', dataInicio: '2025-07-03', diaDoMes: 3, parcelas: 8, valorMensalCent: 12684,
     }]);
+  });
+
+  it('sem rótulo de nome acima do bloco usa o nome padrão "Emprestimo 1"', () => {
+    const ws = simulacoesFixture();
+    delete ws['A2']; // remove o rótulo 'Emprestimo Teste'; só sobra 'valor total' acima
+    expect(lerSimulacoes(ws)).toEqual([{
+      nome: 'Emprestimo 1', dataInicio: '2025-07-03', diaDoMes: 3, parcelas: 8, valorMensalCent: 12684,
+    }]);
+  });
+
+  it('bloco de empréstimo com dados incompletos lança erro apontando aba e linha', () => {
+    const ws = simulacoesFixture();
+    delete ws['B7']; // 'parcelas' deixa de ser número
+    expect(() => lerSimulacoes(ws)).toThrow(
+      'Aba "Simulacoes_Eitor": bloco de empréstimo com dados incompletos perto da linha 6.',
+    );
   });
 });
 
@@ -87,5 +104,39 @@ describe('montarResultado', () => {
     expect(cat).toBeDefined();
     expect(cat!.tipo).toBe('gasto');
     expect(res.recorrencias[0].categoriaId).toBe(cat!.id);
+  });
+});
+
+/** Monta um workbook real (bytes) a partir de fixtures, para exercitar lerPlanilha de ponta a ponta. */
+function montarWorkbookBytes(sheets: Record<string, XLSX.WorkSheet>): ArrayBuffer {
+  const wb: XLSX.WorkBook = { SheetNames: Object.keys(sheets), Sheets: sheets };
+  return XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer;
+}
+
+describe('lerPlanilha', () => {
+  it('monta o resultado completo a partir das quatro abas obrigatórias', () => {
+    const bytes = montarWorkbookBytes({
+      'box (eitor)': boxSheetFixture(),
+      'box (Ju)': boxSheetFixture(),
+      'box (casa)': boxSheetFixture(),
+      Simulacoes_Eitor: simulacoesFixture(),
+    });
+    const res = lerPlanilha(bytes, '2026-01-02');
+    expect(res.boxes).toHaveLength(3);
+    const casa = res.boxes.find((b) => b.nome === 'casa');
+    expect(casa?.saldoInicial).toBeNull();
+    expect(casa?.dataSaldoInicial).toBeNull();
+    expect(res.recorrencias.length).toBeGreaterThan(0);
+    expect(res.lancamentos.length).toBeGreaterThan(0);
+  });
+
+  it('lança erro em pt-BR quando falta uma das abas obrigatórias', () => {
+    const bytes = montarWorkbookBytes({
+      'box (eitor)': boxSheetFixture(),
+      'box (Ju)': boxSheetFixture(),
+      Simulacoes_Eitor: simulacoesFixture(),
+      // 'box (casa)' ausente de propósito
+    });
+    expect(() => lerPlanilha(bytes, '2026-01-02')).toThrow('Aba "box (casa)" não encontrada');
   });
 });

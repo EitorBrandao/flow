@@ -99,6 +99,7 @@ export interface EmprestimoImportado {
 }
 
 export function lerSimulacoes(ws: XLSX.WorkSheet): EmprestimoImportado[] {
+  const nome = 'Simulacoes_Eitor';
   const out: EmprestimoImportado[] = [];
   const ref = ws['!ref'];
   if (!ref) return out;
@@ -106,19 +107,21 @@ export function lerSimulacoes(ws: XLSX.WorkSheet): EmprestimoImportado[] {
   for (let r = 1; r <= ultimaLinha; r++) {
     const rotulo = String(ws[`A${r}`]?.v ?? '').trim().toLowerCase();
     if (rotulo !== 'data inicio') continue;
-    let nome = `Emprestimo ${out.length + 1}`;
+    let nomeEmprestimo = `Emprestimo ${out.length + 1}`;
     for (let k = r - 1; k >= 1; k--) {
       const acima = String(ws[`A${k}`]?.v ?? '').trim();
-      if (acima && acima.toLowerCase() !== 'valor total') { nome = acima; break; }
+      if (acima && acima.toLowerCase() !== 'valor total') { nomeEmprestimo = acima; break; }
     }
     const inicio = ws[`B${r}`]?.v;
     const dia = ws[`B${r + 1}`]?.v;
     const parcelas = ws[`B${r + 2}`]?.v;
     const valor = ws[`B${r + 3}`]?.v;
     if (typeof inicio !== 'number' || typeof dia !== 'number'
-      || typeof parcelas !== 'number' || typeof valor !== 'number') continue;
+      || typeof parcelas !== 'number' || typeof valor !== 'number') {
+      throw new Error(`Aba "${nome}": bloco de empréstimo com dados incompletos perto da linha ${r + 1}.`);
+    }
     out.push({
-      nome,
+      nome: nomeEmprestimo,
       dataInicio: serialExcelParaISO(inicio),
       diaDoMes: dia,
       parcelas,
