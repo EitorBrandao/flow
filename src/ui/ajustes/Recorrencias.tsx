@@ -10,22 +10,53 @@ export default function Recorrencias() {
   const [dataInicio, setDataInicio] = useState(hoje);
   const [diaDoMes, setDiaDoMes] = useState('1');
   const [parcelas, setParcelas] = useState('');
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   if (!dados) return null;
   const recs = dados.recorrencias.filter((r) => !r.cenarioId);
   const nomeCat = (id: string) => dados.categorias.find((c) => c.id === id)?.nome ?? '?';
   const boxDe = (catId: string) => dados.categorias.find((c) => c.id === catId)?.boxId;
 
-  async function criar() {
+  function limparForm() {
+    setValor(''); setCategoriaId(''); setDataInicio(hoje); setDiaDoMes('1'); setParcelas('');
+  }
+
+  function editar(id: string) {
+    const rec = recs.find((r) => r.id === id)!;
+    setEditandoId(id);
+    setValor((rec.valor / 100).toFixed(2).replace('.', ','));
+    setCategoriaId(rec.categoriaId);
+    setDataInicio(rec.dataInicio);
+    setDiaDoMes(String(rec.diaDoMes));
+    setParcelas(rec.parcelas != null ? String(rec.parcelas) : '');
+  }
+
+  function cancelarEdicao() {
+    setEditandoId(null);
+    limparForm();
+  }
+
+  async function salvar() {
     const cents = parseValorDigitado(valor);
     const boxId = boxDe(categoriaId);
     if (cents == null || !boxId) return;
-    await repo.salvarRecorrencia({
-      boxId, categoriaId, valor: cents, dataInicio,
-      diaDoMes: Math.min(31, Math.max(1, Number(diaDoMes) || 1)),
-      parcelas: parcelas ? Number(parcelas) : null,
-    }, dados!.config.horizonteProjecao);
+    const diaDoMesNum = Math.min(31, Math.max(1, Number(diaDoMes) || 1));
+    const parcelasNum = parcelas ? Number(parcelas) : null;
+    if (editandoId) {
+      const original = recs.find((r) => r.id === editandoId)!;
+      await repo.salvarRecorrencia({
+        ...original, boxId, categoriaId, valor: cents, dataInicio,
+        diaDoMes: diaDoMesNum, parcelas: parcelasNum,
+      }, dados!.config.horizonteProjecao);
+      setEditandoId(null);
+      limparForm();
+    } else {
+      await repo.salvarRecorrencia({
+        boxId, categoriaId, valor: cents, dataInicio,
+        diaDoMes: diaDoMesNum, parcelas: parcelasNum,
+      }, dados!.config.horizonteProjecao);
+      setValor(''); setParcelas('');
+    }
     await recarregar();
-    setValor(''); setParcelas('');
   }
 
   async function alternarAtiva(id: string) {
@@ -54,13 +85,14 @@ export default function Recorrencias() {
               </div>
             </div>
             <span>{formatarBRL(r.valor)}</span>
+            <button className="botao" onClick={() => editar(r.id)}>Editar</button>
             <button className="botao" onClick={() => alternarAtiva(r.id)}>{r.ativa ? 'Pausar' : 'Ativar'}</button>
             <button className="botao botao-perigo" onClick={() => excluir(r.id)}>Excluir</button>
           </div>
         ))}
         {recs.length === 0 && <p className="sub">Nenhuma recorrência.</p>}
       </div>
-      <h2>Nova recorrência</h2>
+      <h2>{editandoId ? 'Editar recorrência' : 'Nova recorrência'}</h2>
       <div className="linha">
         <input aria-label="Valor" placeholder="valor" inputMode="decimal" value={valor}
           onChange={(e) => setValor(e.target.value)} style={{ width: 100 }} />
@@ -75,7 +107,8 @@ export default function Recorrencias() {
           onChange={(e) => setDiaDoMes(e.target.value)} style={{ width: 64 }} />
         <input aria-label="Parcelas" type="number" min={1} placeholder="∞" value={parcelas}
           onChange={(e) => setParcelas(e.target.value)} style={{ width: 64 }} />
-        <button className="botao botao-primario" onClick={criar}>Criar</button>
+        <button className="botao botao-primario" onClick={salvar}>{editandoId ? 'Salvar' : 'Criar'}</button>
+        {editandoId && <button className="botao" onClick={cancelarEdicao}>Cancelar</button>}
       </div>
     </div>
   );

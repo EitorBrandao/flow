@@ -8,6 +8,8 @@ export default function Categorias() {
   const [boxId, setBoxId] = useState<string>(dados?.boxes[0]?.id ?? '');
   const [nome, setNome] = useState('');
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [nomeEdit, setNomeEdit] = useState('');
   if (!dados) return null;
   const cats = dados.categorias
     .filter((c) => c.boxId === boxId)
@@ -37,6 +39,24 @@ export default function Categorias() {
     await recarregar();
   }
 
+  function iniciarEdicao(id: string, nomeAtual: string) {
+    setEditandoId(id);
+    setNomeEdit(nomeAtual);
+  }
+
+  function cancelarEdicao() {
+    setEditandoId(null);
+    setNomeEdit('');
+  }
+
+  async function salvarEdicao() {
+    if (!editandoId || !nomeEdit.trim()) return;
+    await repo.atualizarCategoria(editandoId, { nome: nomeEdit.trim() });
+    setEditandoId(null);
+    setNomeEdit('');
+    await recarregar();
+  }
+
   return (
     <div className="tela">
       <h2>Categorias</h2>
@@ -46,20 +66,34 @@ export default function Categorias() {
       <div className="lista">
         {cats.map((c) => (
           <div className="item" key={c.id} style={{ opacity: c.arquivada ? 0.5 : 1 }}>
-            <span className="cresce">
-              {c.nome} <span className="badge">{c.tipo}</span>
-              {c.arquivada && <span className="badge">arquivada</span>}
-            </span>
-            <button className="botao" aria-label="Subir" onClick={() => mover(c.id, -1)}>↑</button>
-            <button className="botao" aria-label="Descer" onClick={() => mover(c.id, 1)}>↓</button>
-            <button className="botao" onClick={() => alternarArquivada(c.id, c.arquivada)}>
-              {c.arquivada ? 'Restaurar' : 'Arquivar'}
-            </button>
+            {editandoId === c.id ? (
+              <>
+                <input
+                  aria-label="Editar nome" className="cresce" value={nomeEdit}
+                  onChange={(e) => setNomeEdit(e.target.value)}
+                />
+                <button className="botao botao-primario" onClick={salvarEdicao}>Salvar</button>
+                <button className="botao" onClick={cancelarEdicao}>Cancelar</button>
+              </>
+            ) : (
+              <>
+                <span className="cresce">
+                  {c.nome} <span className="badge">{c.tipo}</span>
+                  {c.arquivada && <span className="badge">arquivada</span>}
+                </span>
+                <button className="botao" aria-label="Subir" onClick={() => mover(c.id, -1)}>↑</button>
+                <button className="botao" aria-label="Descer" onClick={() => mover(c.id, 1)}>↓</button>
+                <button className="botao" aria-label="Editar" onClick={() => iniciarEdicao(c.id, c.nome)}>✏️</button>
+                <button className="botao" onClick={() => alternarArquivada(c.id, c.arquivada)}>
+                  {c.arquivada ? 'Restaurar' : 'Arquivar'}
+                </button>
+              </>
+            )}
           </div>
         ))}
       </div>
       <div className="linha">
-        <input placeholder="nova categoria" value={nome} onChange={(e) => setNome(e.target.value)} style={{ flex: 1 }} />
+        <input aria-label="Nova categoria" placeholder="nova categoria" value={nome} onChange={(e) => setNome(e.target.value)} style={{ flex: 1 }} />
         <select aria-label="Tipo" value={tipo} onChange={(e) => setTipo(e.target.value as TipoCategoria)}>
           <option value="gasto">gasto</option>
           <option value="ganho">ganho</option>
