@@ -48,21 +48,28 @@ describe('ocorrencias', () => {
 describe('materializar', () => {
   it('cria as datas que faltam e preserva as existentes', () => {
     const existentes = [lanc('2025-07-03', 'efetivo'), lanc('2025-08-03', 'previsto')];
-    const diff = materializar(rec(), existentes, '2025-10-31');
+    const diff = materializar(rec(), existentes, '2025-08-15', '2025-10-31');
     expect(diff.criarDatas).toEqual(['2025-09-03', '2025-10-03']);
     expect(diff.excluirIds).toEqual([]);
   });
 
   it('exclui previstos fora das datas esperadas, mas nunca efetivos', () => {
     const existentes = [lanc('2025-06-03', 'previsto', 'orfao'), lanc('2025-05-03', 'efetivo', 'conf')];
-    const diff = materializar(rec(), existentes, '2025-07-31');
+    const diff = materializar(rec(), existentes, '2025-06-15', '2025-07-31');
     expect(diff.excluirIds).toEqual(['orfao']);
     expect(diff.criarDatas).toEqual(['2025-07-03']);
   });
 
   it('recorrência inativa remove todos os previstos e não cria nada', () => {
     const existentes = [lanc('2025-07-03', 'efetivo'), lanc('2025-08-03', 'previsto', 'p1')];
-    const diff = materializar(rec({ ativa: false }), existentes, '2026-12-31');
+    const diff = materializar(rec({ ativa: false }), existentes, '2025-09-01', '2026-12-31');
     expect(diff).toEqual({ criarDatas: [], excluirIds: ['p1'] });
+  });
+
+  it('não recria uma data esperada passada que está ausente dos existentes (descarte definitivo)', () => {
+    // 4 ocorrências esperadas até '2025-10-31': 07-03, 08-03, 09-03, 10-03. Nenhuma existe ainda.
+    // hoje = '2025-09-15': as 3 primeiras já são passado (não voltam); só a futura (10-03) é criada.
+    const diff = materializar(rec(), [], '2025-09-15', '2025-10-31');
+    expect(diff.criarDatas).toEqual(['2025-10-03']);
   });
 });

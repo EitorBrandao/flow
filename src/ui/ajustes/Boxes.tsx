@@ -65,9 +65,11 @@ export default function Boxes() {
                 ? `${formatarBRL(b.saldoInicial)} em ${b.dataSaldoInicial}`
                 : 'sem saldo próprio (compartilhada)'}
             </span>
-            {dados.config.boxPadraoId === b.id
-              ? <span className="badge">padrão</span>
-              : <button className="botao" onClick={() => definirPadrao(b.id)}>Tornar padrão</button>}
+            {dados.config.boxPadraoId === b.id ? (
+              <span className="badge">padrão</span>
+            ) : b.saldoInicial != null ? (
+              <button className="botao" onClick={() => definirPadrao(b.id)}>Tornar padrão</button>
+            ) : null}
           </div>
           <EditorBox box={b} />
         </div>

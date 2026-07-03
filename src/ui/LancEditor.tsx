@@ -40,6 +40,8 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
     onFechar();
   }
 
+  const previstoDeRecorrencia = lanc.recorrenciaId != null && lanc.status === 'previsto';
+
   return (
     <div
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'grid', placeItems: 'center', zIndex: 50, padding: 16 }}
@@ -71,11 +73,18 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
           <input id="ed-nota" value={nota} onChange={(e) => setNota(e.target.value)} />
         </div>
         {erro && <p className="aviso">{erro}</p>}
+        {previstoDeRecorrencia && (
+          <p className="sub">
+            Previsto de uma recorrência: para mudar valor ou data, edite a regra em Ajustes — ou confirme já com o valor ajustado.
+          </p>
+        )}
         <div className="linha" style={{ marginTop: 12 }}>
           {lanc.status === 'previsto' && (
             <button className="botao botao-primario" onClick={() => aplicar(true)}>✓ Confirmar</button>
           )}
-          <button className="botao" onClick={() => aplicar(false)}>Salvar</button>
+          {!previstoDeRecorrencia && (
+            <button className="botao" onClick={() => aplicar(false)}>Salvar</button>
+          )}
           <button className="botao botao-perigo" onClick={excluir}>Excluir</button>
           <button className="botao" style={{ marginLeft: 'auto' }} onClick={onFechar}>Fechar</button>
         </div>

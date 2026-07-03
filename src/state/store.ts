@@ -28,8 +28,13 @@ export const useApp = create<AppState>((set) => ({
     const inicial = await repo.carregarTudo();
     await repo.materializarTodas(inicial.config.horizonteProjecao);
     const dados = await repo.carregarTudo();
+    // boxPadraoId só é válido se apontar para uma box com saldo próprio: é a única lista
+    // que o seletor do Shell exibe (+ o sentinela 'casa'). Um valor órfão (ex.: box da
+    // casa, saldoInicial null) cai no mesmo fallback de quando não há padrão definido.
+    const boxPadraoValido = dados.config.boxPadraoId != null
+      && dados.boxes.some((b) => b.id === dados.config.boxPadraoId && b.saldoInicial != null);
     const boxSel: BoxSelecionada =
-      dados.config.boxPadraoId
+      (boxPadraoValido ? dados.config.boxPadraoId : null)
       ?? dados.boxes.find((b) => b.saldoInicial != null)?.id
       ?? 'casa';
     set({ dados, carregado: true, hoje: hojeISO(), boxSel });
