@@ -6,15 +6,19 @@ import {
 } from '../domain/types';
 import { db } from './database';
 
+function configPadrao(): Config {
+  return {
+    id: 'config', boxPadraoId: null, ultimoBackupEm: null,
+    mudancasDesdeBackup: false,
+    horizonteProjecao: `${new Date().getFullYear() + 1}-12-31`,
+  };
+}
+
 async function marcarMudanca(): Promise<void> {
   const alterado = await db.config.update('config', { mudancasDesdeBackup: true });
   if (!alterado) {
     // primeira escrita antes de qualquer carregarTudo(): garante que a config exista
-    await db.config.put({
-      id: 'config', boxPadraoId: null, ultimoBackupEm: null,
-      mudancasDesdeBackup: true,
-      horizonteProjecao: `${new Date().getFullYear() + 1}-12-31`,
-    });
+    await db.config.put({ ...configPadrao(), mudancasDesdeBackup: true });
   }
 }
 
@@ -22,11 +26,7 @@ export async function carregarTudo(): Promise<Dados> {
   const horizonteMinimo = `${new Date().getFullYear() + 1}-12-31`;
   let config = await db.config.get('config');
   if (!config) {
-    config = {
-      id: 'config', boxPadraoId: null, ultimoBackupEm: null,
-      mudancasDesdeBackup: false,
-      horizonteProjecao: horizonteMinimo,
-    };
+    config = configPadrao();
     await db.config.put(config);
   } else if (config.horizonteProjecao < horizonteMinimo) {
     // virada de ano automática: o horizonte acompanha o calendário para sempre
@@ -200,7 +200,11 @@ export async function converterCenarioEmReal(id: ID): Promise<void> {
 }
 
 export async function salvarConfig(patch: Partial<Config>): Promise<void> {
-  await db.config.update('config', patch);
+  const alterado = await db.config.update('config', patch);
+  if (!alterado) {
+    // primeira escrita antes de qualquer carregarTudo(): garante que a config exista
+    await db.config.put({ ...configPadrao(), ...patch });
+  }
 }
 
 export interface DadosImportados {
