@@ -24,6 +24,7 @@
     "@types/node": "^26.1.0",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@vite-pwa/assets-generator": "^0.2.6",
     "@vitejs/plugin-react": "^4.3.4",
     "fake-indexeddb": "^6.0.0",
     "jsdom": "^25.0.1",
@@ -31,5 +32,9 @@
     "vite": "^6.0.11",
     "vite-plugin-pwa": "^0.21.1",
     "vitest": "^3.0.5"
+  },
+  "allowScripts": {
+    "sharp@0.32.6": true,
+    "esbuild@0.25.12": true
   }
 }
