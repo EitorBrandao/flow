@@ -11,9 +11,13 @@ interface Props {
 
 export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenarios = false }: Props) {
   if (serie.length < 2) return null;
-  const valores = serie.flatMap((s) =>
-    mostrarCenarios ? [s.saldoProjetado, s.saldoComCenarios] : [s.saldoProjetado],
-  );
+  const valores = serie.flatMap((s) => {
+    const v = mostrarCenarios ? [s.saldoProjetado, s.saldoComCenarios] : [s.saldoProjetado];
+    // a linha "passado" plota saldoEfetivo para os dias já ocorridos; o domínio
+    // precisa cobri-lo também, senão ela pode extrapolar o viewBox (ex.: um
+    // recebimento confirmado maior que qualquer saldo projetado no horizonte).
+    return s.data <= hoje ? [...v, s.saldoEfetivo] : v;
+  });
   const min = Math.min(...valores, 0);
   const max = Math.max(...valores, 0);
   const amp = max - min || 1;
