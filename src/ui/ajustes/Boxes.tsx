@@ -73,7 +73,7 @@ export default function Boxes() {
         </div>
       ))}
       <div className="linha">
-        <input placeholder="nova box" value={nomeNova} onChange={(e) => setNomeNova(e.target.value)} style={{ flex: 1 }} />
+        <input aria-label="Nova box" placeholder="nova box" value={nomeNova} onChange={(e) => setNomeNova(e.target.value)} style={{ flex: 1 }} />
         <button className="botao botao-primario" onClick={criar}>Criar</button>
       </div>
     </div>
