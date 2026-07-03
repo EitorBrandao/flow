@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { db } from './database';
 import * as repo from './repo';
-import type { Box, Categoria } from '../domain/types';
+import type { Box, Categoria, Dados } from '../domain/types';
 import { agoraISO, novoId } from '../domain/types';
 
 beforeEach(async () => {
@@ -90,6 +90,99 @@ it('converterCenarioEmReal desvincula lançamentos e apaga o cenário', async ()
   expect(dados.cenarios).toHaveLength(0);
   expect(dados.lancamentos[0].cenarioId).toBeUndefined();
   expect(dados.lancamentos[0].status).toBe('previsto'); // vai aparecer em pendentes p/ confirmação
+});
+
+it('excluirLancamento remove o lançamento', async () => {
+  const { box, gasto } = await boxECategoria();
+  const l = await repo.salvarLancamento({ boxId: box.id, categoriaId: gasto.id, data: '2026-07-02', valor: 5000, status: 'efetivo' });
+  await repo.excluirLancamento(l.id);
+  const dados = await repo.carregarTudo();
+  expect(dados.lancamentos).toHaveLength(0);
+});
+
+it('atualizarCategoria altera nome, ordem e arquivada', async () => {
+  const { gasto } = await boxECategoria();
+  await repo.atualizarCategoria(gasto.id, { nome: 'mercado', ordem: 2, arquivada: true });
+  const dados = await repo.carregarTudo();
+  const atualizada = dados.categorias.find((c) => c.id === gasto.id)!;
+  expect(atualizada.nome).toBe('mercado');
+  expect(atualizada.ordem).toBe(2);
+  expect(atualizada.arquivada).toBe(true);
+});
+
+it('materializarTodas atualiza previstos de todas as recorrências até um novo horizonte', async () => {
+  const { box, gasto } = await boxECategoria();
+  await repo.salvarRecorrencia(
+    { boxId: box.id, categoriaId: gasto.id, valor: 5000, dataInicio: '2026-01-10', diaDoMes: 10, parcelas: null },
+    '2026-03-31',
+  );
+  expect((await repo.carregarTudo()).lancamentos).toHaveLength(3);
+  await repo.materializarTodas('2026-06-30');
+  const dados = await repo.carregarTudo();
+  expect(dados.lancamentos).toHaveLength(6);
+});
+
+it('excluirCenario apaga o cenário e os lançamentos/recorrências vinculados a ele', async () => {
+  const { box, gasto } = await boxECategoria();
+  const agora = agoraISO();
+  await repo.salvarCenario({ id: 'cen2', nome: 'moto', ligado: true, criadoEm: agora, alteradoEm: agora });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: gasto.id, data: '2026-08-01', valor: 30000, status: 'previsto', cenarioId: 'cen2',
+  });
+  await repo.salvarRecorrencia(
+    { boxId: box.id, categoriaId: gasto.id, valor: 8000, dataInicio: '2026-01-05', diaDoMes: 5, parcelas: 3, cenarioId: 'cen2' },
+    '2026-12-31',
+  );
+  const antes = await repo.carregarTudo();
+  expect(antes.recorrencias).toHaveLength(1);
+  expect(antes.lancamentos.filter((l) => l.cenarioId === 'cen2')).toHaveLength(4); // 1 manual + 3 materializados
+
+  await repo.excluirCenario('cen2');
+  const dados = await repo.carregarTudo();
+  expect(dados.cenarios).toHaveLength(0);
+  expect(dados.recorrencias).toHaveLength(0);
+  expect(dados.lancamentos).toHaveLength(0);
+});
+
+it('salvarConfig persiste o patch mesmo antes de qualquer carregarTudo (regressão)', async () => {
+  await repo.salvarConfig({ boxPadraoId: 'box1' });
+  const dados = await repo.carregarTudo();
+  expect(dados.config.boxPadraoId).toBe('box1');
+});
+
+it('substituirTudo troca completamente os dados e reseta mudancasDesdeBackup', async () => {
+  const { box, gasto } = await boxECategoria();
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: gasto.id, data: '2026-07-02', valor: 5000, status: 'efetivo' });
+  expect((await repo.carregarTudo()).config.mudancasDesdeBackup).toBe(true);
+
+  const agora = agoraISO();
+  const novoBox: Box = {
+    id: 'nb1', nome: 'novo', saldoInicial: 500, dataSaldoInicial: '2026-02-01', criadoEm: agora, alteradoEm: agora,
+  };
+  const novaCategoria: Categoria = {
+    id: 'nc1', boxId: 'nb1', nome: 'nova cat', tipo: 'gasto', ordem: 0, arquivada: false, criadoEm: agora, alteradoEm: agora,
+  };
+  const dadosNovos: Dados = {
+    boxes: [novoBox],
+    categorias: [novaCategoria],
+    lancamentos: [{
+      id: 'nl1', boxId: 'nb1', categoriaId: 'nc1', data: '2026-09-01', valor: 999,
+      status: 'previsto', origem: 'manual', criadoEm: agora, alteradoEm: agora,
+    }],
+    recorrencias: [],
+    cenarios: [],
+    config: {
+      id: 'config', boxPadraoId: 'nb1', ultimoBackupEm: agora,
+      mudancasDesdeBackup: true, horizonteProjecao: `${new Date().getFullYear() + 1}-12-31`,
+    },
+  };
+  await repo.substituirTudo(dadosNovos);
+  const dados = await repo.carregarTudo();
+  expect(dados.boxes.map((b) => b.id)).toEqual(['nb1']);
+  expect(dados.categorias.map((c) => c.id)).toEqual(['nc1']);
+  expect(dados.lancamentos.map((l) => l.id)).toEqual(['nl1']);
+  expect(dados.config.boxPadraoId).toBe('nb1');
+  expect(dados.config.mudancasDesdeBackup).toBe(false);
 });
 
 it('aplicarImport é idempotente (reimportar não duplica)', async () => {
