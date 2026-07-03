@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { serialExcelParaISO } from '../domain/dates';
-import type { ISODate, TipoCategoria } from '../domain/types';
+import { agoraISO, novoId } from '../domain/types';
+import type { ISODate, TipoCategoria, Box, Categoria, Lancamento, Recorrencia } from '../domain/types';
 
 export interface CategoriaSheet {
   nome: string;
@@ -87,4 +88,135 @@ export function lerBoxSheet(
     categorias,
     celulas,
   };
+}
+
+export interface EmprestimoImportado {
+  nome: string;
+  dataInicio: ISODate;
+  diaDoMes: number;
+  parcelas: number;
+  valorMensalCent: number;
+}
+
+export function lerSimulacoes(ws: XLSX.WorkSheet): EmprestimoImportado[] {
+  const out: EmprestimoImportado[] = [];
+  const ref = ws['!ref'];
+  if (!ref) return out;
+  const ultimaLinha = XLSX.utils.decode_range(ref).e.r + 1;
+  for (let r = 1; r <= ultimaLinha; r++) {
+    const rotulo = String(ws[`A${r}`]?.v ?? '').trim().toLowerCase();
+    if (rotulo !== 'data inicio') continue;
+    let nome = `Emprestimo ${out.length + 1}`;
+    for (let k = r - 1; k >= 1; k--) {
+      const acima = String(ws[`A${k}`]?.v ?? '').trim();
+      if (acima && acima.toLowerCase() !== 'valor total') { nome = acima; break; }
+    }
+    const inicio = ws[`B${r}`]?.v;
+    const dia = ws[`B${r + 1}`]?.v;
+    const parcelas = ws[`B${r + 2}`]?.v;
+    const valor = ws[`B${r + 3}`]?.v;
+    if (typeof inicio !== 'number' || typeof dia !== 'number'
+      || typeof parcelas !== 'number' || typeof valor !== 'number') continue;
+    out.push({
+      nome,
+      dataInicio: serialExcelParaISO(inicio),
+      diaDoMes: dia,
+      parcelas,
+      valorMensalCent: Math.round(valor * 100),
+    });
+  }
+  return out;
+}
+
+export interface ResultadoImport {
+  boxes: Box[];
+  categorias: Categoria[];
+  lancamentos: Lancamento[];
+  recorrencias: Recorrencia[];
+  boxesImportadas: BoxImportada[];
+}
+
+export function montarResultado(
+  imps: BoxImportada[],
+  emprestimos: EmprestimoImportado[],
+  hoje: ISODate,
+): ResultadoImport {
+  const agora = agoraISO();
+  const boxes: Box[] = [];
+  const categorias: Categoria[] = [];
+  const lancamentos: Lancamento[] = [];
+  const recorrencias: Recorrencia[] = [];
+  const catPorChave = new Map<string, Categoria>();
+
+  for (const imp of imps) {
+    const semSaldoProprio = imp.nome === 'casa';
+    const box: Box = {
+      id: novoId(), nome: imp.nome,
+      saldoInicial: semSaldoProprio ? null : imp.saldoInicialCent,
+      dataSaldoInicial: semSaldoProprio ? null : imp.dataSaldoInicial,
+      criadoEm: agora, alteradoEm: agora,
+    };
+    boxes.push(box);
+    imp.categorias.forEach((cs, i) => {
+      const cat: Categoria = {
+        id: novoId(), boxId: box.id, nome: cs.nome, tipo: cs.tipo, ordem: i,
+        arquivada: false, criadoEm: agora, alteradoEm: agora,
+      };
+      categorias.push(cat);
+      catPorChave.set(`${box.id}|${cs.nome}|${cs.tipo}`, cat);
+    });
+    for (const cel of imp.celulas) {
+      const cat = catPorChave.get(`${box.id}|${cel.categoria.nome}|${cel.categoria.tipo}`)!;
+      lancamentos.push({
+        id: novoId(), boxId: box.id, categoriaId: cat.id, data: cel.data, valor: cel.valorCent,
+        status: cel.data <= hoje ? 'efetivo' : 'previsto', origem: 'import',
+        criadoEm: agora, alteradoEm: agora,
+      });
+    }
+  }
+
+  const eitor = boxes.find((b) => b.nome === 'eitor');
+  if (eitor) {
+    for (const emp of emprestimos) {
+      let cat = catPorChave.get(`${eitor.id}|${emp.nome}|gasto`);
+      if (!cat) {
+        cat = {
+          id: novoId(), boxId: eitor.id, nome: emp.nome, tipo: 'gasto',
+          ordem: categorias.filter((c) => c.boxId === eitor.id).length,
+          arquivada: false, criadoEm: agora, alteradoEm: agora,
+        };
+        categorias.push(cat);
+        catPorChave.set(`${eitor.id}|${emp.nome}|gasto`, cat);
+      }
+      const rec: Recorrencia = {
+        id: novoId(), boxId: eitor.id, categoriaId: cat.id, valor: emp.valorMensalCent,
+        dataInicio: emp.dataInicio, diaDoMes: emp.diaDoMes, parcelas: emp.parcelas,
+        nota: emp.nome, ativa: true, origem: 'import', criadoEm: agora, alteradoEm: agora,
+      };
+      recorrencias.push(rec);
+      for (const l of lancamentos) {
+        if (l.categoriaId === cat.id) l.recorrenciaId = rec.id;
+      }
+    }
+  }
+
+  return { boxes, categorias, lancamentos, recorrencias, boxesImportadas: imps };
+}
+
+const ABAS_OBRIGATORIAS = ['box (eitor)', 'box (Ju)', 'box (casa)', 'Simulacoes_Eitor'] as const;
+
+export function lerPlanilha(dados: ArrayBuffer | Uint8Array, hoje: ISODate): ResultadoImport {
+  const u8 = dados instanceof Uint8Array ? dados : new Uint8Array(dados);
+  const wb = XLSX.read(u8, { type: 'array', cellFormula: true });
+  for (const aba of ABAS_OBRIGATORIAS) {
+    if (!wb.Sheets[aba]) {
+      throw new Error(`Aba "${aba}" não encontrada — este arquivo é o "flow of the box" 2026?`);
+    }
+  }
+  const imps = [
+    lerBoxSheet(wb.Sheets['box (eitor)'], 'eitor'),
+    lerBoxSheet(wb.Sheets['box (Ju)'], 'ju'),
+    lerBoxSheet(wb.Sheets['box (casa)'], 'casa', ['Eitor', 'Ju']),
+  ];
+  return montarResultado(imps, lerSimulacoes(wb.Sheets['Simulacoes_Eitor']), hoje);
 }
