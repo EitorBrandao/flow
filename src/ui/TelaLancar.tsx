@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as repo from '../db/repo';
 import { parseValorDigitado } from '../domain/money';
 import type { TipoCategoria } from '../domain/types';
@@ -11,10 +11,16 @@ export default function TelaLancar() {
   const [categoriaId, setCategoriaId] = useState<string | null>(null);
   const [data, setData] = useState(hoje);
   const [nota, setNota] = useState('');
+  const [previsto, setPrevisto] = useState(false);
   const [salvo, setSalvo] = useState(false);
+  const salvoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
+  }, []);
 
   const boxId = boxSel === 'casa'
-    ? dados?.boxes.find((b) => b.nome === 'casa')?.id ?? dados?.boxes[0]?.id
+    ? dados?.boxes.find((b) => b.nome === 'casa')?.id
     : boxSel;
 
   const categorias = useMemo(
@@ -25,18 +31,19 @@ export default function TelaLancar() {
   );
 
   const cents = parseValorDigitado(valor);
-  const valido = boxId != null && cents != null && categoriaId != null;
+  const valido = boxId != null && cents != null && categoriaId != null && data !== '';
 
   async function lancar() {
     if (!valido) return;
     await repo.salvarLancamento({
       boxId: boxId!, categoriaId: categoriaId!, data, valor: cents!,
       ...(nota ? { nota } : {}),
-      status: data > hoje ? 'previsto' : 'efetivo',
+      status: previsto ? 'previsto' : (data > hoje ? 'previsto' : 'efetivo'),
     });
     await recarregar();
-    setValor(''); setCategoriaId(null); setNota(''); setData(hoje); setSalvo(true);
-    setTimeout(() => setSalvo(false), 2500);
+    setValor(''); setCategoriaId(null); setNota(''); setData(hoje); setPrevisto(false); setSalvo(true);
+    if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
+    salvoTimeoutRef.current = setTimeout(() => setSalvo(false), 2500);
   }
 
   return (
@@ -79,6 +86,15 @@ export default function TelaLancar() {
           <label htmlFor="nota">Nota (opcional)</label>
           <input id="nota" value={nota} onChange={(e) => setNota(e.target.value)} />
         </div>
+      </div>
+      <div className="campo">
+        <label htmlFor="previsto">
+          <input
+            id="previsto" type="checkbox"
+            checked={previsto} onChange={(e) => setPrevisto(e.target.checked)}
+          />
+          {' '}Marcar como previsto
+        </label>
       </div>
       <button className="botao botao-primario" disabled={!valido} onClick={lancar} style={{ padding: 14 }}>
         Lançar
