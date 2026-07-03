@@ -1,3 +1,93 @@
+import { useState } from 'react';
+import { compararMeses, mediaMovel3, resumoMensal, serieMensal } from '../domain/aggregations';
+import { addMeses, mesDe } from '../domain/dates';
+import { formatarBRL } from '../domain/money';
+import { boxIdsSelecionadas, useApp } from '../state/store';
+
+function nomeMes(mes: string): string {
+  return new Date(`${mes}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+}
+
+function pct(x: number | null): string {
+  return x == null ? '—' : `${(x * 100).toFixed(1)}%`;
+}
+
 export default function TelaAnalises() {
-  return <div className="tela"><h2>Análises</h2><p>Em construção.</p></div>;
+  const { dados, boxSel, hoje } = useApp();
+  const [mes, setMes] = useState(() => mesDe(hoje));
+  const [incluirPrevistos, setIncluirPrevistos] = useState(true);
+  if (!dados) return null;
+  const ids = boxIdsSelecionadas(dados, boxSel);
+  const resumo = resumoMensal(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
+  const comparativo = compararMeses(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
+  // tendência: média móvel de 3 meses terminando no mês selecionado
+  const meses = [-5, -4, -3, -2, -1, 0].map((n) => addMeses(mes, n));
+  const media3m = (categoriaId: string) =>
+    mediaMovel3(serieMensal(categoriaId, meses, ids, dados.lancamentos, incluirPrevistos)).at(-1);
+
+  return (
+    <div className="tela">
+      <h2>Análises</h2>
+      <div className="linha" style={{ justifyContent: 'space-between' }}>
+        <button className="botao" onClick={() => setMes(addMeses(mes, -1))} aria-label="Mês anterior">◀</button>
+        <strong>{nomeMes(mes)}</strong>
+        <button className="botao" onClick={() => setMes(addMeses(mes, 1))} aria-label="Próximo mês">▶</button>
+      </div>
+      <label className="linha">
+        <input type="checkbox" checked={incluirPrevistos} onChange={(e) => setIncluirPrevistos(e.target.checked)} />
+        incluir previstos
+      </label>
+
+      <div className="card">
+        <div className="linha" style={{ justifyContent: 'space-between' }}>
+          <span>Ganhos <strong className="valor-ganho">{formatarBRL(resumo.totalGanhos)}</strong></span>
+          <span>Gastos <strong className="valor-gasto">{formatarBRL(resumo.totalGastos)}</strong></span>
+          <span>Sobra <strong className={resumo.sobra >= 0 ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(resumo.sobra)}</strong></span>
+        </div>
+      </div>
+
+      <div className="card rolavel">
+        <h2>Por categoria</h2>
+        <table className="tabela">
+          <thead>
+            <tr><th>Categoria</th><th>Total</th><th>% da renda</th></tr>
+          </thead>
+          <tbody>
+            {resumo.linhas.map((l) => (
+              <tr key={l.categoriaId}>
+                <td>{l.nome}</td>
+                <td className={l.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(l.total)}</td>
+                <td>{pct(l.pctDaRenda)}</td>
+              </tr>
+            ))}
+            {resumo.linhas.length === 0 && <tr><td colSpan={3}>Sem movimentos no mês.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="card rolavel">
+        <h2>Comparativo</h2>
+        <table className="tabela">
+          <thead>
+            <tr><th>Categoria</th><th>{mes}</th><th>mês anterior</th><th>ano passado</th><th>média 3m</th></tr>
+          </thead>
+          <tbody>
+            {comparativo.map((c) => {
+              const media = media3m(c.categoriaId);
+              return (
+                <tr key={c.categoriaId}>
+                  <td>{c.nome}</td>
+                  <td>{formatarBRL(c.atual)}</td>
+                  <td>{formatarBRL(c.mesAnterior)}</td>
+                  <td>{formatarBRL(c.anoAnterior)}</td>
+                  <td>{media == null ? '—' : formatarBRL(media)}</td>
+                </tr>
+              );
+            })}
+            {comparativo.length === 0 && <tr><td colSpan={5}>Sem dados para comparar.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
