@@ -39,8 +39,8 @@ it('salvarLancamento persiste e marca mudança desde backup', async () => {
 it('salvarRecorrencia materializa previstos até o horizonte', async () => {
   const { box, gasto } = await boxECategoria();
   await repo.salvarRecorrencia(
-    { boxId: box.id, categoriaId: gasto.id, valor: 12684, dataInicio: '2026-01-03', diaDoMes: 3, parcelas: 8 },
-    '2026-12-31',
+    { boxId: box.id, categoriaId: gasto.id, valor: 12684, dataInicio: '2026-08-03', diaDoMes: 3, parcelas: 8 },
+    '2027-12-31',
   );
   const dados = await repo.carregarTudo();
   expect(dados.lancamentos).toHaveLength(8);
@@ -50,10 +50,10 @@ it('salvarRecorrencia materializa previstos até o horizonte', async () => {
 it('editar recorrência atualiza valor dos previstos e preserva efetivos', async () => {
   const { box, gasto } = await boxECategoria();
   const rec = await repo.salvarRecorrencia(
-    { boxId: box.id, categoriaId: gasto.id, valor: 10000, dataInicio: '2026-01-05', diaDoMes: 5, parcelas: 3 },
+    { boxId: box.id, categoriaId: gasto.id, valor: 10000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 3 },
     '2026-12-31',
   );
-  const primeiro = (await repo.carregarTudo()).lancamentos.find((l) => l.data === '2026-01-05')!;
+  const primeiro = (await repo.carregarTudo()).lancamentos.find((l) => l.data === '2026-08-05')!;
   await repo.confirmarPendente(primeiro.id, 9990);
   await repo.salvarRecorrencia({ ...rec, valor: 11000 }, '2026-12-31');
   const dados = await repo.carregarTudo();
@@ -68,10 +68,10 @@ it('editar recorrência atualiza valor dos previstos e preserva efetivos', async
 it('excluirRecorrencia remove previstos e mantém efetivos', async () => {
   const { box, gasto } = await boxECategoria();
   const rec = await repo.salvarRecorrencia(
-    { boxId: box.id, categoriaId: gasto.id, valor: 10000, dataInicio: '2026-01-05', diaDoMes: 5, parcelas: 3 },
+    { boxId: box.id, categoriaId: gasto.id, valor: 10000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 3 },
     '2026-12-31',
   );
-  const primeiro = (await repo.carregarTudo()).lancamentos.find((l) => l.data === '2026-01-05')!;
+  const primeiro = (await repo.carregarTudo()).lancamentos.find((l) => l.data === '2026-08-05')!;
   await repo.confirmarPendente(primeiro.id);
   await repo.excluirRecorrencia(rec.id);
   const dados = await repo.carregarTudo();
@@ -113,13 +113,40 @@ it('atualizarCategoria altera nome, ordem e arquivada', async () => {
 it('materializarTodas atualiza previstos de todas as recorrências até um novo horizonte', async () => {
   const { box, gasto } = await boxECategoria();
   await repo.salvarRecorrencia(
-    { boxId: box.id, categoriaId: gasto.id, valor: 5000, dataInicio: '2026-01-10', diaDoMes: 10, parcelas: null },
-    '2026-03-31',
+    { boxId: box.id, categoriaId: gasto.id, valor: 5000, dataInicio: '2026-08-10', diaDoMes: 10, parcelas: null },
+    '2026-10-31',
   );
   expect((await repo.carregarTudo()).lancamentos).toHaveLength(3);
-  await repo.materializarTodas('2026-06-30');
+  await repo.materializarTodas('2027-01-31');
   const dados = await repo.carregarTudo();
   expect(dados.lancamentos).toHaveLength(6);
+});
+
+it('descartar (excluir) um previsto de recorrência que já venceu não faz ele reaparecer no próximo boot', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-01-01T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 5000, dataInicio: '2026-01-10', diaDoMes: 10, parcelas: 2 },
+      '2026-12-31',
+    );
+    // em 2026-01-01, as duas ocorrências (01-10 e 02-10) ainda são futuras: ambas materializam.
+    let dados = await repo.carregarTudo();
+    expect(dados.lancamentos).toHaveLength(2);
+    const vencido = dados.lancamentos.find((l) => l.data === '2026-01-10')!;
+
+    // o tempo passa: a ocorrência de 01-10 já venceu (virou pendente) e o usuário descarta.
+    vi.setSystemTime(new Date('2026-01-15T12:00:00'));
+    await repo.excluirLancamento(vencido.id);
+    await repo.materializarTodas('2026-12-31'); // próximo "boot"
+
+    dados = await repo.carregarTudo();
+    expect(dados.lancamentos.find((l) => l.data === '2026-01-10')).toBeUndefined();
+    expect(dados.lancamentos).toHaveLength(1); // só resta a ocorrência de 02-10
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it('excluirCenario apaga o cenário e os lançamentos/recorrências vinculados a ele', async () => {
@@ -130,7 +157,7 @@ it('excluirCenario apaga o cenário e os lançamentos/recorrências vinculados a
     boxId: box.id, categoriaId: gasto.id, data: '2026-08-01', valor: 30000, status: 'previsto', cenarioId: 'cen2',
   });
   await repo.salvarRecorrencia(
-    { boxId: box.id, categoriaId: gasto.id, valor: 8000, dataInicio: '2026-01-05', diaDoMes: 5, parcelas: 3, cenarioId: 'cen2' },
+    { boxId: box.id, categoriaId: gasto.id, valor: 8000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 3, cenarioId: 'cen2' },
     '2026-12-31',
   );
   const antes = await repo.carregarTudo();

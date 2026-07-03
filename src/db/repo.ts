@@ -1,3 +1,4 @@
+import { hojeISO } from '../domain/dates';
 import { materializar } from '../domain/recurrence';
 import {
   agoraISO, novoId,
@@ -107,7 +108,7 @@ export async function atualizarCategoria(
 
 async function materializarRecorrencia(rec: Recorrencia, horizonte: ISODate): Promise<void> {
   const existentes = await db.lancamentos.where('recorrenciaId').equals(rec.id).toArray();
-  const diff = materializar(rec, existentes, horizonte);
+  const diff = materializar(rec, existentes, hojeISO(), horizonte);
   const agora = agoraISO();
   await db.lancamentos.bulkDelete(diff.excluirIds);
   await db.lancamentos.bulkAdd(diff.criarDatas.map((data): Lancamento => ({

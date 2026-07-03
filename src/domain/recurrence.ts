@@ -22,10 +22,14 @@ export interface DiffMaterializacao {
 }
 
 /** Diff entre as ocorrências esperadas e os lançamentos já vinculados à recorrência.
- *  Efetivos (confirmados) nunca são excluídos. */
+ *  Efetivos (confirmados) nunca são excluídos. Datas esperadas passadas (<= hoje) que
+ *  ainda não existem NÃO são (re)criadas: um previsto descartado pelo usuário não deve
+ *  ressuscitar na próxima materialização. Isso é um trade-off aceito: uma recorrência
+ *  criada com dataInicio no passado não materializa as ocorrências já passadas. */
 export function materializar(
   rec: Recorrencia,
   existentes: Lancamento[],
+  hoje: ISODate,
   ate: ISODate,
 ): DiffMaterializacao {
   if (!rec.ativa) {
@@ -38,7 +42,7 @@ export function materializar(
   const setEsperadas = new Set(esperadas);
   const datasExistentes = new Set(existentes.map((l) => l.data));
   return {
-    criarDatas: esperadas.filter((d) => !datasExistentes.has(d)),
+    criarDatas: esperadas.filter((d) => !datasExistentes.has(d) && d > hoje),
     excluirIds: existentes
       .filter((l) => l.status === 'previsto' && !setEsperadas.has(l.data))
       .map((l) => l.id),
