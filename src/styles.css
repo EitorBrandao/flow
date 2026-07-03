@@ -1,1 +1,100 @@
-body { margin: 0; font-family: system-ui, sans-serif; }
+:root {
+  --bg: #f6f7f8; --fg: #17202a; --muted: #6b7684; --card: #ffffff;
+  --border: #dde2e8; --accent: #0f766e; --accent-fg: #ffffff;
+  --ganho: #15803d; --gasto: #b91c1c; --aviso-bg: #fef3c7; --aviso-fg: #92400e;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101418; --fg: #e8ebee; --muted: #98a2ad; --card: #1a2027;
+    --border: #2a323c; --accent: #14b8a6; --accent-fg: #06211e;
+    --ganho: #4ade80; --gasto: #f87171; --aviso-bg: #423306; --aviso-fg: #fcd34d;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+}
+button, input, select { font: inherit; color: inherit; }
+
+.shell { display: flex; flex-direction: column; min-height: 100dvh; }
+.topo {
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+  background: var(--card); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+}
+.topo .titulo { font-weight: 700; flex: 1; text-align: center; }
+.topo select {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px;
+}
+.icone { background: none; border: none; font-size: 20px; cursor: pointer; }
+
+.conteudo { flex: 1; padding: 16px; padding-bottom: 76px; max-width: 720px; width: 100%; margin: 0 auto; }
+.tela { display: flex; flex-direction: column; gap: 16px; }
+.tela h2 { margin: 0; font-size: 18px; }
+
+.navegacao {
+  position: fixed; bottom: 0; left: 0; right: 0; display: flex;
+  background: var(--card); border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.navegacao button {
+  flex: 1; padding: 12px 4px; background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 13px;
+}
+.navegacao button.ativo { color: var(--accent); font-weight: 700; }
+.navegacao button.central {
+  font-size: 24px; color: var(--accent-fg); background: var(--accent);
+  border-radius: 50%; flex: 0 0 52px; height: 52px; margin: -14px 8px 8px; align-self: center;
+}
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.lista { display: flex; flex-direction: column; gap: 2px; }
+.item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: var(--card); border-bottom: 1px solid var(--border);
+}
+.item .cresce { flex: 1; min-width: 0; }
+.item .sub { color: var(--muted); font-size: 13px; }
+
+.botao {
+  padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--card); cursor: pointer;
+}
+.botao-primario { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.botao-perigo { color: var(--gasto); }
+
+.grade-categorias { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.grade-categorias .botao { min-height: 56px; }
+.grade-categorias .selecionada { outline: 3px solid var(--accent); }
+
+.valor-ganho { color: var(--ganho); font-variant-numeric: tabular-nums; }
+.valor-gasto { color: var(--gasto); font-variant-numeric: tabular-nums; }
+.badge {
+  font-size: 11px; padding: 2px 8px; border-radius: 999px;
+  background: var(--bg); border: 1px solid var(--border); color: var(--muted);
+}
+.aviso { background: var(--aviso-bg); color: var(--aviso-fg); padding: 10px 14px; border-radius: 10px; }
+.saldo-grande { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.campo { display: flex; flex-direction: column; gap: 4px; }
+.campo input, .campo select {
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg);
+}
+.linha { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+table.tabela { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+table.tabela th, table.tabela td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+table.tabela th:first-child, table.tabela td:first-child { text-align: left; }
+.rolavel { overflow-x: auto; }
+
+@media (min-width: 900px) {
+  .shell { flex-direction: row; }
+  .navegacao {
+    position: sticky; top: 0; bottom: auto; flex-direction: column; width: 180px;
+    height: 100dvh; border-top: none; border-right: 1px solid var(--border);
+  }
+  .navegacao button { flex: 0 0 auto; text-align: left; padding: 14px 20px; font-size: 15px; }
+  .navegacao button.central { border-radius: 10px; margin: 8px 12px; height: auto; padding: 12px; }
+  .conteudo { padding-bottom: 16px; max-width: 900px; }
+  .shell-corpo { flex: 1; display: flex; flex-direction: column; }
+}
