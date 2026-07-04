@@ -37,47 +37,65 @@ it('salvarLancamento persiste e marca mudança desde backup', async () => {
 });
 
 it('salvarRecorrencia materializa previstos até o horizonte', async () => {
-  const { box, gasto } = await boxECategoria();
-  await repo.salvarRecorrencia(
-    { boxId: box.id, categoriaId: gasto.id, valor: 12684, dataInicio: '2026-08-03', diaDoMes: 3, parcelas: 8 },
-    '2027-12-31',
-  );
-  const dados = await repo.carregarTudo();
-  expect(dados.lancamentos).toHaveLength(8);
-  expect(dados.lancamentos.every((l) => l.status === 'previsto' && l.origem === 'recorrencia')).toBe(true);
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 12684, dataInicio: '2026-08-03', diaDoMes: 3, parcelas: 8 },
+      '2027-12-31',
+    );
+    const dados = await repo.carregarTudo();
+    expect(dados.lancamentos).toHaveLength(8);
+    expect(dados.lancamentos.every((l) => l.status === 'previsto' && l.origem === 'recorrencia')).toBe(true);
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it('editar recorrência atualiza valor dos previstos e preserva efetivos', async () => {
-  const { box, gasto } = await boxECategoria();
-  const rec = await repo.salvarRecorrencia(
-    { boxId: box.id, categoriaId: gasto.id, valor: 10000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 3 },
-    '2026-12-31',
-  );
-  const primeiro = (await repo.carregarTudo()).lancamentos.find((l) => l.data === '2026-08-05')!;
-  await repo.confirmarPendente(primeiro.id, 9990);
-  await repo.salvarRecorrencia({ ...rec, valor: 11000 }, '2026-12-31');
-  const dados = await repo.carregarTudo();
-  const confirmado = dados.lancamentos.find((l) => l.id === primeiro.id)!;
-  expect(confirmado.status).toBe('efetivo');
-  expect(confirmado.valor).toBe(9990); // efetivo intocado
-  const previstos = dados.lancamentos.filter((l) => l.status === 'previsto');
-  expect(previstos).toHaveLength(2);
-  expect(previstos.every((l) => l.valor === 11000)).toBe(true);
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    const rec = await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 10000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 3 },
+      '2026-12-31',
+    );
+    const primeiro = (await repo.carregarTudo()).lancamentos.find((l) => l.data === '2026-08-05')!;
+    await repo.confirmarPendente(primeiro.id, 9990);
+    await repo.salvarRecorrencia({ ...rec, valor: 11000 }, '2026-12-31');
+    const dados = await repo.carregarTudo();
+    const confirmado = dados.lancamentos.find((l) => l.id === primeiro.id)!;
+    expect(confirmado.status).toBe('efetivo');
+    expect(confirmado.valor).toBe(9990); // efetivo intocado
+    const previstos = dados.lancamentos.filter((l) => l.status === 'previsto');
+    expect(previstos).toHaveLength(2);
+    expect(previstos.every((l) => l.valor === 11000)).toBe(true);
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it('excluirRecorrencia remove previstos e mantém efetivos', async () => {
-  const { box, gasto } = await boxECategoria();
-  const rec = await repo.salvarRecorrencia(
-    { boxId: box.id, categoriaId: gasto.id, valor: 10000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 3 },
-    '2026-12-31',
-  );
-  const primeiro = (await repo.carregarTudo()).lancamentos.find((l) => l.data === '2026-08-05')!;
-  await repo.confirmarPendente(primeiro.id);
-  await repo.excluirRecorrencia(rec.id);
-  const dados = await repo.carregarTudo();
-  expect(dados.recorrencias).toHaveLength(0);
-  expect(dados.lancamentos).toHaveLength(1);
-  expect(dados.lancamentos[0].status).toBe('efetivo');
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    const rec = await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 10000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 3 },
+      '2026-12-31',
+    );
+    const primeiro = (await repo.carregarTudo()).lancamentos.find((l) => l.data === '2026-08-05')!;
+    await repo.confirmarPendente(primeiro.id);
+    await repo.excluirRecorrencia(rec.id);
+    const dados = await repo.carregarTudo();
+    expect(dados.recorrencias).toHaveLength(0);
+    expect(dados.lancamentos).toHaveLength(1);
+    expect(dados.lancamentos[0].status).toBe('efetivo');
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it('converterCenarioEmReal desvincula lançamentos e apaga o cenário', async () => {
@@ -111,15 +129,21 @@ it('atualizarCategoria altera nome, ordem e arquivada', async () => {
 });
 
 it('materializarTodas atualiza previstos de todas as recorrências até um novo horizonte', async () => {
-  const { box, gasto } = await boxECategoria();
-  await repo.salvarRecorrencia(
-    { boxId: box.id, categoriaId: gasto.id, valor: 5000, dataInicio: '2026-08-10', diaDoMes: 10, parcelas: null },
-    '2026-10-31',
-  );
-  expect((await repo.carregarTudo()).lancamentos).toHaveLength(3);
-  await repo.materializarTodas('2027-01-31');
-  const dados = await repo.carregarTudo();
-  expect(dados.lancamentos).toHaveLength(6);
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 5000, dataInicio: '2026-08-10', diaDoMes: 10, parcelas: null },
+      '2026-10-31',
+    );
+    expect((await repo.carregarTudo()).lancamentos).toHaveLength(3);
+    await repo.materializarTodas('2027-01-31');
+    const dados = await repo.carregarTudo();
+    expect(dados.lancamentos).toHaveLength(6);
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it('descartar (excluir) um previsto de recorrência que já venceu não faz ele reaparecer no próximo boot', async () => {
@@ -150,25 +174,31 @@ it('descartar (excluir) um previsto de recorrência que já venceu não faz ele 
 });
 
 it('excluirCenario apaga o cenário e os lançamentos/recorrências vinculados a ele', async () => {
-  const { box, gasto } = await boxECategoria();
-  const agora = agoraISO();
-  await repo.salvarCenario({ id: 'cen2', nome: 'moto', ligado: true, criadoEm: agora, alteradoEm: agora });
-  await repo.salvarLancamento({
-    boxId: box.id, categoriaId: gasto.id, data: '2026-08-01', valor: 30000, status: 'previsto', cenarioId: 'cen2',
-  });
-  await repo.salvarRecorrencia(
-    { boxId: box.id, categoriaId: gasto.id, valor: 8000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 3, cenarioId: 'cen2' },
-    '2026-12-31',
-  );
-  const antes = await repo.carregarTudo();
-  expect(antes.recorrencias).toHaveLength(1);
-  expect(antes.lancamentos.filter((l) => l.cenarioId === 'cen2')).toHaveLength(4); // 1 manual + 3 materializados
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    const agora = agoraISO();
+    await repo.salvarCenario({ id: 'cen2', nome: 'moto', ligado: true, criadoEm: agora, alteradoEm: agora });
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2026-08-01', valor: 30000, status: 'previsto', cenarioId: 'cen2',
+    });
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 8000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 3, cenarioId: 'cen2' },
+      '2026-12-31',
+    );
+    const antes = await repo.carregarTudo();
+    expect(antes.recorrencias).toHaveLength(1);
+    expect(antes.lancamentos.filter((l) => l.cenarioId === 'cen2')).toHaveLength(4); // 1 manual + 3 materializados
 
-  await repo.excluirCenario('cen2');
-  const dados = await repo.carregarTudo();
-  expect(dados.cenarios).toHaveLength(0);
-  expect(dados.recorrencias).toHaveLength(0);
-  expect(dados.lancamentos).toHaveLength(0);
+    await repo.excluirCenario('cen2');
+    const dados = await repo.carregarTudo();
+    expect(dados.cenarios).toHaveLength(0);
+    expect(dados.recorrencias).toHaveLength(0);
+    expect(dados.lancamentos).toHaveLength(0);
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it('salvarConfig persiste o patch mesmo antes de qualquer carregarTudo (regressão)', async () => {
