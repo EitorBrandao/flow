@@ -99,7 +99,8 @@ Função pura `calcularFaturas(cartao, compras, ate)` → lista de faturas:
 { mes: 'AAAA-MM',            // mês do vencimento (chave da fatura)
   dataFechamento: ISODate,
   dataVencimento: ISODate,
-  itens: [{ compraId, parcela, totalParcelas, valorCent, ... }],
+  itens: [{ compraId, parcela, totalParcelas, valorCent,
+            data, categoriaCartaoId, descricao? }],
   totalCent: number }
 ```
 
@@ -118,7 +119,10 @@ reorganiza.
 Regras de proteção (mesma disciplina de `materializar`):
 
 - Lançamento `efetivo` (fatura confirmada) nunca é tocado nem recriado.
-- Previsto descartado pelo usuário não ressuscita.
+- Previsto descartado pelo usuário não ressuscita. Pela mesma razão, previsto **novo** só
+  é criado com vencimento `> hoje` (não dá para distinguir "nunca criado" de "descartado"
+  para datas passadas — mesmo trade-off aceito em `materializar`). Previsto já existente
+  continua sendo atualizado mesmo com vencimento `<= hoje` (na fila de pendentes).
 - Previsto existente tem valor e data atualizados ao vivo conforme compras mudam.
 - Fatura que fica com total zero (ou cartão desativado/excluído) tem o previsto removido;
   efetivos ficam intactos.
@@ -174,6 +178,8 @@ Tipo `Aba` ganha `'cartao'`.
 
 - Valor da compra: `parseValorDigitado` existente (positivo, obrigatório).
 - Parcelas: inteiro de 1 a 48.
+- Um cartão **ativo** por box: os Ajustes impedem cadastrar um segundo cartão ativo na
+  mesma box (cadastrar um novo exige desativar o anterior).
 - Categoria do cartão com compras não pode ser excluída — arquivar (regra igual às
   categorias do Flow).
 - Desativar/excluir cartão: remove previstos futuros da fatura no Flow, mantém efetivos e
