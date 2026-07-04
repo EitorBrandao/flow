@@ -156,4 +156,17 @@ describe('diffSincronizacao', () => {
     expect(d.criar).toEqual([]);
     expect(d.excluirIds).toEqual(['l-2026-08']);
   });
+
+  it('ignora lançamentos e conferências de outro cartão', () => {
+    const deOutro = { ...lancFatura('2026-08', 5000, 'previsto', '2026-08-05'), id: 'l-outro', cartaoId: 'k2' };
+    const confOutro = { ...conf('2026-08', 7777, true), cartaoId: 'k2' };
+    const d = diffSincronizacao(cartaoK, faturas, [confOutro], [deOutro], '2026-07-15');
+    // o previsto do outro cartão não é excluído nem atualizado; a conferência do outro cartão não muda o valor
+    expect(d.excluirIds).toEqual([]);
+    expect(d.atualizar).toEqual([]);
+    expect(d.criar).toEqual([
+      { faturaMes: '2026-08', data: '2026-08-05', valor: 5000 },
+      { faturaMes: '2026-09', data: '2026-09-05', valor: 5000 },
+    ]);
+  });
 });

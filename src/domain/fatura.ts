@@ -105,7 +105,8 @@ export interface DiffSincronizacao {
 /** Diff entre as faturas calculadas e os lançamentos de fatura no Flow (mesma disciplina
  *  de `materializar`): efetivo nunca é tocado; previsto novo só com vencimento > hoje
  *  (não dá para distinguir "nunca criado" de "descartado" no passado); previsto existente
- *  segue valor/data do alvo; alvo ausente ou zerado ⇒ previsto excluído. */
+ *  segue valor/data do alvo; alvo ausente ou zerado ⇒ previsto excluído.
+ *  Entradas de outro cartão são ignoradas (defesa além do pré-filtro do chamador). */
 export function diffSincronizacao(
   cartao: Cartao,
   faturas: Fatura[],
@@ -113,14 +114,15 @@ export function diffSincronizacao(
   existentes: Lancamento[],
   hoje: ISODate,
 ): DiffSincronizacao {
-  const confPorMes = new Map(conferencias.map((c) => [c.mes, c]));
+  const confs = conferencias.filter((c) => c.cartaoId === cartao.id);
+  const confPorMes = new Map(confs.map((c) => [c.mes, c]));
   const alvo = new Map<string, { valor: number; data: ISODate }>();
   if (cartao.ativo) {
     for (const f of faturas) {
       const valor = valorSincronizado(f, confPorMes.get(f.mes));
       if (valor > 0) alvo.set(f.mes, { valor, data: f.dataVencimento });
     }
-    for (const c of conferencias) {
+    for (const c of confs) {
       if (c.usarValorApp && c.valorAppCent > 0 && !alvo.has(c.mes)) {
         alvo.set(c.mes, { valor: c.valorAppCent, data: datasFaturaDoMes(cartao, c.mes).dataVencimento });
       }
@@ -129,7 +131,7 @@ export function diffSincronizacao(
   const diff: DiffSincronizacao = { criar: [], atualizar: [], excluirIds: [] };
   const vistos = new Set<string>();
   for (const l of existentes) {
-    if (l.faturaMes == null) continue;
+    if (l.cartaoId !== cartao.id || l.faturaMes == null) continue;
     vistos.add(l.faturaMes);
     if (l.status === 'efetivo') continue;
     const a = alvo.get(l.faturaMes);
