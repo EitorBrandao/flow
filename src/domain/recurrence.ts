@@ -1,5 +1,5 @@
 import { dataComDia } from './dates';
-import type { ID, ISODate, Lancamento, Recorrencia } from './types';
+import type { ID, ISODate, Recorrencia, StatusLancamento } from './types';
 
 export function ocorrencias(
   rec: Pick<Recorrencia, 'dataInicio' | 'diaDoMes' | 'parcelas'>,
@@ -27,8 +27,8 @@ export interface DiffMaterializacao {
  *  ressuscitar na próxima materialização. Isso é um trade-off aceito: uma recorrência
  *  criada com dataInicio no passado não materializa as ocorrências já passadas. */
 export function materializar(
-  rec: Recorrencia,
-  existentes: Lancamento[],
+  rec: Pick<Recorrencia, 'ativa' | 'dataInicio' | 'diaDoMes' | 'parcelas'>,
+  existentes: { id: ID; data: ISODate; status: StatusLancamento }[],
   hoje: ISODate,
   ate: ISODate,
 ): DiffMaterializacao {
