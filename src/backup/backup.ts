@@ -44,6 +44,11 @@ export function mesclar(atual: Dados, doBackup: Dados): Dados {
     lancamentos: mesclarTabela(atual.lancamentos, doBackup.lancamentos),
     recorrencias: mesclarTabela(atual.recorrencias, doBackup.recorrencias),
     cenarios: mesclarTabela(atual.cenarios, doBackup.cenarios),
+    cartoes: [],
+    categoriasCartao: [],
+    comprasCartao: [],
+    recorrenciasCartao: [],
+    conferenciasFatura: [],
     config: atual.config,
   };
 }

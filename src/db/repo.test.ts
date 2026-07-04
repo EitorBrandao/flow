@@ -228,6 +228,11 @@ it('substituirTudo troca completamente os dados e reseta mudancasDesdeBackup', a
     }],
     recorrencias: [],
     cenarios: [],
+    cartoes: [],
+    categoriasCartao: [],
+    comprasCartao: [],
+    recorrenciasCartao: [],
+    conferenciasFatura: [],
     config: {
       id: 'config', boxPadraoId: 'nb1', ultimoBackupEm: agora,
       mudancasDesdeBackup: true, horizonteProjecao: `${new Date().getFullYear() + 1}-12-31`,
@@ -261,4 +266,33 @@ it('aplicarImport é idempotente (reimportar não duplica)', async () => {
   expect(dados.boxes).toHaveLength(1);
   expect(dados.categorias).toHaveLength(1);
   expect(dados.lancamentos).toHaveLength(1);
+});
+
+describe('tabelas do cartão', () => {
+  it('carregarTudo devolve as tabelas novas (vazias num banco novo)', async () => {
+    const dados = await repo.carregarTudo();
+    expect(dados.cartoes).toEqual([]);
+    expect(dados.categoriasCartao).toEqual([]);
+    expect(dados.comprasCartao).toEqual([]);
+    expect(dados.recorrenciasCartao).toEqual([]);
+    expect(dados.conferenciasFatura).toEqual([]);
+  });
+
+  it('substituirTudo limpa e regrava as tabelas do cartão', async () => {
+    const agora = agoraISO();
+    await db.cartoes.add({
+      id: 'velho', boxId: 'b', nome: 'Velho', diaFechamento: 1, diaVencimento: 10,
+      categoriaFaturaId: 'c', ativo: true, criadoEm: agora, alteradoEm: agora,
+    });
+    const dados = await repo.carregarTudo();
+    await repo.substituirTudo({
+      ...dados,
+      cartoes: [{
+        id: 'novo', boxId: 'b', nome: 'Novo', diaFechamento: 28, diaVencimento: 5,
+        categoriaFaturaId: 'c', ativo: true, criadoEm: agora, alteradoEm: agora,
+      }],
+    });
+    const depois = await db.cartoes.toArray();
+    expect(depois.map((c) => c.id)).toEqual(['novo']);
+  });
 });
