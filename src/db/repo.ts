@@ -34,11 +34,19 @@ export async function carregarTudo(): Promise<Dados> {
     config = { ...config, horizonteProjecao: horizonteMinimo };
     await db.config.put(config);
   }
-  const [boxes, categorias, lancamentos, recorrencias, cenarios] = await Promise.all([
+  const [
+    boxes, categorias, lancamentos, recorrencias, cenarios,
+    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura,
+  ] = await Promise.all([
     db.boxes.toArray(), db.categorias.toArray(), db.lancamentos.toArray(),
     db.recorrencias.toArray(), db.cenarios.toArray(),
+    db.cartoes.toArray(), db.categoriasCartao.toArray(), db.comprasCartao.toArray(),
+    db.recorrenciasCartao.toArray(), db.conferenciasFatura.toArray(),
   ]);
-  return { boxes, categorias, lancamentos, recorrencias, cenarios, config };
+  return {
+    boxes, categorias, lancamentos, recorrencias, cenarios,
+    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, config,
+  };
 }
 
 export interface NovoLancamento {
@@ -273,16 +281,23 @@ export async function aplicarImport(d: DadosImportados): Promise<void> {
 }
 
 export async function substituirTudo(d: Dados): Promise<void> {
-  await db.transaction('rw', [db.boxes, db.categorias, db.lancamentos, db.recorrencias, db.cenarios, db.config], async () => {
-    await Promise.all([
-      db.boxes.clear(), db.categorias.clear(), db.lancamentos.clear(),
-      db.recorrencias.clear(), db.cenarios.clear(), db.config.clear(),
-    ]);
+  const tabelas = [
+    db.boxes, db.categorias, db.lancamentos, db.recorrencias, db.cenarios,
+    db.cartoes, db.categoriasCartao, db.comprasCartao, db.recorrenciasCartao,
+    db.conferenciasFatura, db.config,
+  ];
+  await db.transaction('rw', tabelas, async () => {
+    await Promise.all(tabelas.map((t) => t.clear()));
     await db.boxes.bulkAdd(d.boxes);
     await db.categorias.bulkAdd(d.categorias);
     await db.lancamentos.bulkAdd(d.lancamentos);
     await db.recorrencias.bulkAdd(d.recorrencias);
     await db.cenarios.bulkAdd(d.cenarios);
+    await db.cartoes.bulkAdd(d.cartoes);
+    await db.categoriasCartao.bulkAdd(d.categoriasCartao);
+    await db.comprasCartao.bulkAdd(d.comprasCartao);
+    await db.recorrenciasCartao.bulkAdd(d.recorrenciasCartao);
+    await db.conferenciasFatura.bulkAdd(d.conferenciasFatura);
     await db.config.put({ ...d.config, mudancasDesdeBackup: false });
   });
 }

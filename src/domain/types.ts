@@ -2,7 +2,7 @@ export type ID = string;
 export type ISODate = string; // "AAAA-MM-DD"
 export type TipoCategoria = 'ganho' | 'gasto';
 export type StatusLancamento = 'efetivo' | 'previsto';
-export type OrigemLancamento = 'manual' | 'recorrencia' | 'import';
+export type OrigemLancamento = 'manual' | 'recorrencia' | 'import' | 'cartao';
 
 interface Entidade {
   id: ID;
@@ -37,6 +37,8 @@ export interface Lancamento extends Entidade {
   origem: OrigemLancamento;
   recorrenciaId?: ID;
   cenarioId?: ID; // lançamento hipotético; nunca 'efetivo'
+  cartaoId?: ID;     // lançamento de fatura: cartão dono
+  faturaMes?: string; // 'AAAA-MM' do vencimento — chave estável da fatura
 }
 
 export interface Recorrencia extends Entidade {
@@ -50,6 +52,51 @@ export interface Recorrencia extends Entidade {
   ativa: boolean;
   origem: 'manual' | 'import';
   cenarioId?: ID;
+}
+
+export interface Cartao extends Entidade {
+  boxId: ID;
+  nome: string;
+  diaFechamento: number; // 1-31, clampado ao fim do mês
+  diaVencimento: number; // 1-31, clampado
+  categoriaFaturaId: ID; // categoria de gasto do Flow que recebe a fatura
+  ativo: boolean;
+}
+
+export interface CategoriaCartao extends Entidade {
+  cartaoId: ID;
+  nome: string;
+  ordem: number;
+  arquivada: boolean;
+}
+
+export interface CompraCartao extends Entidade {
+  cartaoId: ID;
+  categoriaCartaoId: ID;
+  data: ISODate;   // data da compra
+  valorTotal: number; // centavos, total da compra
+  parcelas: number;   // >= 1; 1 = à vista
+  descricao?: string;
+  recorrenciaCartaoId?: ID; // se gerada por assinatura
+}
+
+export interface RecorrenciaCartao extends Entidade {
+  cartaoId: ID;
+  categoriaCartaoId: ID;
+  valor: number; // centavos
+  dataInicio: ISODate;
+  diaDoMes: number;
+  parcelas: number | null; // null = sem fim
+  descricao?: string;
+  ativa: boolean;
+}
+
+/** Valor de conferência da fatura digitado a partir do app do banco (máx. 1 por cartão+mês). */
+export interface ConferenciaFatura extends Entidade {
+  cartaoId: ID;
+  mes: string; // 'AAAA-MM' do vencimento
+  valorAppCent: number;
+  usarValorApp: boolean; // marcado: o previsto no Flow usa valorAppCent no lugar da soma
 }
 
 export interface Cenario extends Entidade {
@@ -73,6 +120,11 @@ export interface Dados {
   lancamentos: Lancamento[];
   recorrencias: Recorrencia[];
   cenarios: Cenario[];
+  cartoes: Cartao[];
+  categoriasCartao: CategoriaCartao[];
+  comprasCartao: CompraCartao[];
+  recorrenciasCartao: RecorrenciaCartao[];
+  conferenciasFatura: ConferenciaFatura[];
   config: Config;
 }
 
