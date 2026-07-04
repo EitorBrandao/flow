@@ -296,3 +296,117 @@ describe('tabelas do cartão', () => {
     expect(depois.map((c) => c.id)).toEqual(['novo']);
   });
 });
+
+describe('cartão de crédito', () => {
+  async function montarCartao() {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const catFlow = await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+    const cartao = await repo.salvarCartao({
+      boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5, categoriaFaturaId: catFlow.id,
+    }, '2027-12-31');
+    const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+    return { box, catFlow, cartao, catCartao };
+  }
+
+  it('compra parcelada gera um previsto por fatura', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, catCartao } = await montarCartao();
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-10',
+        valorTotal: 10000, parcelas: 3,
+      }, '2027-12-31');
+      const previstos = (await db.lancamentos.toArray())
+        .filter((l) => l.origem === 'cartao')
+        .sort((a, b) => a.data.localeCompare(b.data));
+      expect(previstos.map((l) => [l.faturaMes, l.data, l.valor, l.status])).toEqual([
+        ['2026-08', '2026-08-05', 3334, 'previsto'],
+        ['2026-09', '2026-09-05', 3333, 'previsto'],
+        ['2026-10', '2026-10-05', 3333, 'previsto'],
+      ]);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('editar e excluir compra atualizam os previstos; efetivo confirmado fica intacto', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, catCartao } = await montarCartao();
+      const compra = await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-10',
+        valorTotal: 6000, parcelas: 2,
+      }, '2027-12-31');
+      const ago = (await db.lancamentos.toArray()).find((l) => l.faturaMes === '2026-08')!;
+      await repo.confirmarPendente(ago.id, 3100); // confirma a 1ª fatura com valor ajustado
+
+      await repo.atualizarCompraCartao(compra.id, { valorTotal: 8000 }, '2027-12-31');
+      const depois = await db.lancamentos.toArray();
+      expect(depois.find((l) => l.faturaMes === '2026-08')!.valor).toBe(3100); // efetivo intocado
+      expect(depois.find((l) => l.faturaMes === '2026-09')!.valor).toBe(4000); // previsto seguiu
+
+      await repo.excluirCompraCartao(compra.id, '2027-12-31');
+      const fim = await db.lancamentos.toArray();
+      expect(fim.find((l) => l.faturaMes === '2026-08')!.valor).toBe(3100); // história preservada
+      expect(fim.find((l) => l.faturaMes === '2026-09')).toBeUndefined();   // previsto removido
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('assinatura materializa compras futuras e pausar remove as não passadas', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, catCartao } = await montarCartao();
+      const ass = await repo.salvarAssinatura({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, valor: 4990,
+        dataInicio: '2026-07-15', diaDoMes: 15, parcelas: null, descricao: 'Netflix',
+      }, '2026-12-31');
+      const compras = await db.comprasCartao.where('recorrenciaCartaoId').equals(ass.id).toArray();
+      // compras materializadas até o horizonte (2026-12-31); a de 12-15 cai na fatura de
+      // vencimento 2027-01-05, que passa do horizonte — a compra existe, o previsto não.
+      expect(compras.map((c) => c.data).sort()).toEqual([
+        '2026-07-15', '2026-08-15', '2026-09-15', '2026-10-15', '2026-11-15', '2026-12-15',
+      ]);
+      expect(compras.every((c) => c.valorTotal === 4990 && c.parcelas === 1)).toBe(true);
+
+      await repo.salvarAssinatura({ ...ass, ativa: false }, '2026-12-31');
+      expect(await db.comprasCartao.where('recorrenciaCartaoId').equals(ass.id).count()).toBe(0);
+      // (nada é "passado" aqui: hoje=2026-07-01 é antes da 1ª ocorrência)
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('conferência usarValorApp muda o valor do previsto; desmarcar volta à soma', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, catCartao } = await montarCartao();
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-10',
+        valorTotal: 8000, parcelas: 1,
+      }, '2027-12-31');
+      await repo.salvarConferenciaFatura(cartao.id, '2026-08', 10000, true, '2027-12-31');
+      let previsto = (await db.lancamentos.toArray()).find((l) => l.faturaMes === '2026-08')!;
+      expect(previsto.valor).toBe(10000);
+      await repo.salvarConferenciaFatura(cartao.id, '2026-08', 10000, false, '2027-12-31');
+      previsto = (await db.lancamentos.toArray()).find((l) => l.faturaMes === '2026-08')!;
+      expect(previsto.valor).toBe(8000);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('desativar cartão remove os previstos e preserva efetivos e compras', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, catCartao } = await montarCartao();
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-10',
+        valorTotal: 5000, parcelas: 1,
+      }, '2027-12-31');
+      await repo.salvarCartao({ ...cartao, ativo: false }, '2027-12-31');
+      expect((await db.lancamentos.toArray()).filter((l) => l.origem === 'cartao')).toEqual([]);
+      expect(await db.comprasCartao.count()).toBe(1);
+    } finally { vi.useRealTimers(); }
+  });
+});
