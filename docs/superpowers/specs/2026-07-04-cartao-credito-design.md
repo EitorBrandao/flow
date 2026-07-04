@@ -98,8 +98,8 @@ Valor de conferência digitado a partir do app do banco, por fatura (mesmo espí
 2. **Vencimento:** se `diaVencimento > diaFechamento`, a fatura vence no mesmo mês do
    fechamento; senão, no mês seguinte.
 3. **Parcelas ao centavo:** o valor total é dividido em N parcelas inteiras em centavos;
-   o resto da divisão vai na primeira parcela (ex.: R$ 100,00 em 3x → 34,00 + 33,00 +
-   33,00). Parcela 1 cai na fatura da data da compra; parcela k cai k−1 meses depois.
+   o resto da divisão vai na primeira parcela (ex.: R$ 100,00 em 3x → 33,34 + 33,33 +
+   33,33). Parcela 1 cai na fatura da data da compra; parcela k cai k−1 meses depois.
 4. **Fronteira rígida:** compras do cartão **nunca** entram no motor de projeção — só o
    lançamento da fatura entra no Flow. Sem contagem dupla por construção.
 
@@ -212,7 +212,7 @@ Tipo `Aba` ganha `'cartao'`.
 
 - **`fatura.test.ts`** (unidade, função pura): compra no dia do fechamento → fatura
   seguinte; vencimento no mesmo mês vs. mês seguinte; clamp de fim de mês (fechamento dia
-  31 em fevereiro); parcelas com resto de centavo (100/3 = 34+33+33); compra parcelada
+  31 em fevereiro); parcelas com resto de centavo (10000/3 = 3334+3333+3333); compra parcelada
   atravessando a virada de ano; assinatura materializada; soma ao centavo.
 - **Sincronização:** previsto atualiza ao vivo; efetivo nunca é tocado; descartado não
   ressuscita; fatura zerada remove o previsto; desativar cartão limpa previstos; com
