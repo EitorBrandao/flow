@@ -1,4 +1,5 @@
-import { datasFaturaDoMes, mesFaturaDaCompra, mesFechamentoDaCompra } from './fatura';
+import type { CompraCartao } from './types';
+import { calcularFaturas, datasFaturaDoMes, mesFaturaDaCompra, mesFechamentoDaCompra, valorParcela } from './fatura';
 
 const nubank = { diaFechamento: 28, diaVencimento: 5 }; // vence no mês seguinte ao fechamento
 const outro = { diaFechamento: 10, diaVencimento: 20 }; // vence no mesmo mês do fechamento
@@ -31,5 +32,54 @@ describe('mesFaturaDaCompra e datasFaturaDoMes', () => {
   it('atravessa a virada de ano', () => {
     expect(mesFaturaDaCompra(nubank, '2026-12-28')).toBe('2027-02'); // fecha 2027-01-28, vence 2027-02-05
     expect(mesFaturaDaCompra(nubank, '2026-12-27')).toBe('2027-01');
+  });
+});
+
+function compra(data: string, valorTotal: number, parcelas = 1): CompraCartao {
+  return {
+    id: `c-${data}-${valorTotal}-${parcelas}`, cartaoId: 'k1', categoriaCartaoId: 'cat1',
+    data, valorTotal, parcelas, criadoEm: '', alteradoEm: '',
+  };
+}
+
+describe('valorParcela', () => {
+  it('divide ao centavo, resto na primeira parcela', () => {
+    expect(valorParcela(10000, 3, 1)).toBe(3334);
+    expect(valorParcela(10000, 3, 2)).toBe(3333);
+    expect(valorParcela(10000, 3, 3)).toBe(3333);
+    expect(valorParcela(9999, 2, 1)).toBe(5000);
+    expect(valorParcela(9999, 2, 2)).toBe(4999);
+    expect(valorParcela(5000, 1, 1)).toBe(5000);
+  });
+});
+
+describe('calcularFaturas', () => {
+  it('agrupa compras nas faturas certas e soma ao centavo', () => {
+    const fs = calcularFaturas(nubank, [compra('2026-07-10', 5000), compra('2026-07-28', 2000)], '2026-12-31');
+    expect(fs.map((f) => [f.mes, f.totalCent])).toEqual([['2026-08', 5000], ['2026-09', 2000]]);
+    expect(fs[0].dataVencimento).toBe('2026-08-05');
+  });
+
+  it('espalha parcelas pelas faturas seguintes, resto na primeira', () => {
+    const fs = calcularFaturas(nubank, [compra('2026-07-10', 10000, 3)], '2026-12-31');
+    expect(fs.map((f) => [f.mes, f.totalCent]))
+      .toEqual([['2026-08', 3334], ['2026-09', 3333], ['2026-10', 3333]]);
+    expect(fs[0].itens[0]).toMatchObject({ parcela: 1, totalParcelas: 3, valorCent: 3334 });
+    expect(fs[1].itens[0]).toMatchObject({ parcela: 2, totalParcelas: 3, valorCent: 3333 });
+  });
+
+  it('corta parcelas com vencimento além do horizonte', () => {
+    const fs = calcularFaturas(nubank, [compra('2026-07-10', 12000, 12)], '2026-10-31');
+    expect(fs.map((f) => f.mes)).toEqual(['2026-08', '2026-09', '2026-10']);
+  });
+
+  it('parcelas atravessam a virada de ano', () => {
+    const fs = calcularFaturas(nubank, [compra('2026-11-10', 6000, 3)], '2027-12-31');
+    expect(fs.map((f) => f.mes)).toEqual(['2026-12', '2027-01', '2027-02']);
+  });
+
+  it('soma múltiplas compras e parcelas na mesma fatura', () => {
+    const fs = calcularFaturas(nubank, [compra('2026-07-10', 10000, 3), compra('2026-08-01', 500)], '2026-12-31');
+    expect(fs.find((f) => f.mes === '2026-09')?.totalCent).toBe(3333 + 500);
   });
 });
