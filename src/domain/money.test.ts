@@ -26,4 +26,9 @@ describe('parseValorDigitado', () => {
     expect(parseValorDigitado('0')).toBeNull();
     expect(parseValorDigitado('-5')).toBeNull();
   });
+  it('com permitirZero, aceita zero mas continua rejeitando negativo', () => {
+    expect(parseValorDigitado('0', { permitirZero: true })).toBe(0);
+    expect(parseValorDigitado('0,00', { permitirZero: true })).toBe(0);
+    expect(parseValorDigitado('-5', { permitirZero: true })).toBeNull();
+  });
 });

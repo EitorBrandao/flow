@@ -1,12 +1,54 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import * as repo from '../db/repo';
 import { addDias } from '../domain/dates';
-import { formatarBRL } from '../domain/money';
+import { formatarBRL, parseValorDigitado } from '../domain/money';
+import type { ISODate } from '../domain/types';
 import { pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, useApp } from '../state/store';
 import BalanceChart from './BalanceChart';
 
 const SETE_DIAS_MS = 7 * 86_400_000;
+
+function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalvar }: {
+  saldoApp: number;
+  declaradoCent: number | null;
+  dataDeclarado: ISODate | null;
+  hoje: ISODate;
+  onSalvar: (cents: number, data: ISODate) => Promise<void>;
+}) {
+  const [saldo, setSaldo] = useState(declaradoCent != null ? (declaradoCent / 100).toFixed(2).replace('.', ',') : '');
+  const [data, setData] = useState(dataDeclarado ?? hoje);
+
+  async function salvar() {
+    const negativo = saldo.trim().startsWith('-');
+    const cents = parseValorDigitado(saldo.replace('-', ''), { permitirZero: true });
+    if (cents == null) return;
+    await onSalvar(negativo ? -cents : cents, data);
+  }
+
+  const diff = declaradoCent != null ? declaradoCent - saldoApp : null;
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div className="linha" style={{ justifyContent: 'space-between' }}>
+        <input aria-label="Saldo real no banco" placeholder="saldo real no banco" inputMode="decimal" value={saldo}
+          onChange={(e) => setSaldo(e.target.value)} style={{ width: 110 }} />
+        <input aria-label="Data da conferência" type="date" value={data} onChange={(e) => setData(e.target.value)} />
+        <button className="botao" onClick={salvar}>Salvar</button>
+      </div>
+      {diff != null && (
+        <p className="sub" style={{ margin: '4px 0 0' }}>
+          {Math.abs(diff) <= 1
+            ? 'Bate certinho.'
+            : diff > 0
+              ? `Diferença: ${formatarBRL(diff)} — falta inserir no app`
+              : `Diferença: ${formatarBRL(-diff)} — sobra no app (confira duplicado ou algo não confirmado no banco)`}
+          {dataDeclarado ? ` · conferido em ${dataDeclarado}` : ''}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function TelaHoje() {
   const { dados, boxSel, hoje, recarregar, setAba } = useApp();
@@ -33,6 +75,16 @@ export default function TelaHoje() {
     && (!dados.config.ultimoBackupEm
       || Date.parse(dados.config.ultimoBackupEm) < Date.now() - SETE_DIAS_MS);
 
+  const boxAtual = boxSel !== 'casa' ? dados.boxes.find((b) => b.id === boxSel) : undefined;
+  const declaradoCent = (boxSel === 'casa' ? dados.config.saldoDeclaradoCent : boxAtual?.saldoDeclaradoCent) ?? null;
+  const dataDeclarado = (boxSel === 'casa' ? dados.config.dataSaldoDeclarado : boxAtual?.dataSaldoDeclarado) ?? null;
+
+  async function salvarSaldoReal(cents: number, data: string) {
+    if (boxSel === 'casa') await repo.salvarConfig({ saldoDeclaradoCent: cents, dataSaldoDeclarado: data });
+    else if (boxAtual) await repo.salvarBox({ ...boxAtual, saldoDeclaradoCent: cents, dataSaldoDeclarado: data });
+    await recarregar();
+  }
+
   async function confirmar(id: string) {
     await repo.confirmarPendente(id);
     await recarregar();
@@ -55,6 +107,8 @@ export default function TelaHoje() {
         {deHoje && deHoje.saldoProjetado !== deHoje.saldoEfetivo && (
           <p className="sub" style={{ margin: 0 }}>projetado: {formatarBRL(deHoje.saldoProjetado)}</p>
         )}
+        <ConferenciaSaldo key={boxSel} saldoApp={deHoje?.saldoEfetivo ?? 0} declaradoCent={declaradoCent}
+          dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} />
         <BalanceChart serie={janela} hoje={hoje} altura={120} mostrarCenarios={ligados.size > 0} />
       </div>
       <h2>Pendentes ({fila.length})</h2>

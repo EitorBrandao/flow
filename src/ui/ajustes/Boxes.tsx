@@ -11,7 +11,7 @@ function EditorBox({ box }: { box: Box }) {
   const [data, setData] = useState(box.dataSaldoInicial ?? '');
 
   async function salvar() {
-    const cents = saldo ? parseValorDigitado(saldo.replace('-', '')) : null;
+    const cents = saldo ? parseValorDigitado(saldo.replace('-', ''), { permitirZero: true }) : null;
     const negativo = saldo.trim().startsWith('-');
     await repo.salvarBox({
       ...box, nome: nome.trim() || box.nome,
