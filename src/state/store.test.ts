@@ -11,19 +11,25 @@ beforeEach(async () => {
 });
 
 it('iniciar carrega dados, materializa recorrências e escolhe box padrão', async () => {
-  const agora = agoraISO();
-  const box = { id: novoId(), nome: 'eitor', saldoInicial: 1000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
-  await repo.salvarBox(box);
-  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'x', tipo: 'gasto', ordem: 0 });
-  await repo.salvarRecorrencia(
-    { boxId: box.id, categoriaId: cat.id, valor: 100, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 2 },
-    '2026-12-31',
-  );
-  await useApp.getState().iniciar();
-  const s = useApp.getState();
-  expect(s.carregado).toBe(true);
-  expect(s.boxSel).toBe(box.id); // primeira box com saldo próprio
-  expect(s.dados!.lancamentos).toHaveLength(2); // materializadas no boot
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 1000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'x', tipo: 'gasto', ordem: 0 });
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: cat.id, valor: 100, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 2 },
+      '2026-12-31',
+    );
+    await useApp.getState().iniciar();
+    const s = useApp.getState();
+    expect(s.carregado).toBe(true);
+    expect(s.boxSel).toBe(box.id); // primeira box com saldo próprio
+    expect(s.dados!.lancamentos).toHaveLength(2); // materializadas no boot
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it('iniciar ignora boxPadraoId que aponta para uma box sem saldo próprio (ex.: casa) e cai no fallback', async () => {
