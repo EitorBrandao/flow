@@ -3,7 +3,7 @@ import * as repo from '../db/repo';
 import { hojeISO } from '../domain/dates';
 import type { Dados, ID, ISODate } from '../domain/types';
 
-export type Aba = 'hoje' | 'fluxo' | 'lancar' | 'analises' | 'simulador' | 'ajustes';
+export type Aba = 'hoje' | 'fluxo' | 'lancar' | 'cartao' | 'analises' | 'simulador' | 'ajustes';
 export type BoxSelecionada = ID | 'casa';
 
 interface AppState {

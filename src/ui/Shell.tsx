@@ -1,6 +1,7 @@
 import { useApp, type Aba } from '../state/store';
 import TelaAjustes from './TelaAjustes';
 import TelaAnalises from './TelaAnalises';
+import TelaCartao from './TelaCartao';
 import TelaFluxo from './TelaFluxo';
 import TelaHoje from './TelaHoje';
 import TelaLancar from './TelaLancar';
@@ -10,6 +11,7 @@ const ABAS: { id: Aba; rotulo: string; central?: boolean }[] = [
   { id: 'hoje', rotulo: 'Hoje' },
   { id: 'fluxo', rotulo: 'Fluxo' },
   { id: 'lancar', rotulo: '+', central: true },
+  { id: 'cartao', rotulo: 'Cartão' },
   { id: 'analises', rotulo: 'Análises' },
   { id: 'simulador', rotulo: 'Simular' },
 ];
@@ -47,6 +49,7 @@ export default function Shell() {
           {aba === 'hoje' && <TelaHoje />}
           {aba === 'fluxo' && <TelaFluxo />}
           {aba === 'lancar' && <TelaLancar />}
+          {aba === 'cartao' && <TelaCartao />}
           {aba === 'analises' && <TelaAnalises />}
           {aba === 'simulador' && <TelaSimulador />}
           {aba === 'ajustes' && <TelaAjustes />}
