@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import type { Dados } from '../../domain/types';
 import { formatarBRL } from '../../domain/money';
@@ -20,6 +20,7 @@ export default function Importar() {
   const [erro, setErro] = useState('');
   const [concluido, setConcluido] = useState(false);
   const [confirmarSubstituicao, setConfirmarSubstituicao] = useState(false);
+  const uid = useId();
 
   async function selecionar(file: File) {
     setConcluido(false);
@@ -58,10 +59,13 @@ export default function Importar() {
     <div className="tela">
       <h2>Importar planilha</h2>
       <p className="sub">Selecione o arquivo "flow of the box" (.xlsx). Reimportar substitui os dados importados anteriormente; lançamentos manuais são preservados.</p>
-      <input
-        type="file" accept=".xlsx" aria-label="Planilha"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) void selecionar(f); e.target.value = ''; }}
-      />
+      <div className="campo">
+        <label htmlFor={`${uid}-arquivo`}>Planilha</label>
+        <input
+          id={`${uid}-arquivo`} type="file" accept=".xlsx"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) void selecionar(f); e.target.value = ''; }}
+        />
+      </div>
       {erro && <p className="aviso">{erro}</p>}
       {concluido && <p className="aviso">Import concluído ✓ — confira o saldo na tela Hoje.</p>}
 

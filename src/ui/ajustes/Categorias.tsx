@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import type { TipoCategoria } from '../../domain/types';
 import { useApp } from '../../state/store';
@@ -10,6 +10,7 @@ export default function Categorias() {
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nomeEdit, setNomeEdit] = useState('');
+  const uid = useId();
   if (!dados) return null;
   const cats = dados.categorias
     .filter((c) => c.boxId === boxId)
@@ -60,18 +61,21 @@ export default function Categorias() {
   return (
     <div className="tela">
       <h2>Categorias</h2>
-      <select aria-label="Box" value={boxId} onChange={(e) => setBoxId(e.target.value)}>
-        {dados.boxes.map((b) => <option key={b.id} value={b.id}>{b.nome}</option>)}
-      </select>
+      <div className="campo">
+        <label htmlFor={`${uid}-box`}>Box</label>
+        <select id={`${uid}-box`} value={boxId} onChange={(e) => setBoxId(e.target.value)}>
+          {dados.boxes.map((b) => <option key={b.id} value={b.id}>{b.nome}</option>)}
+        </select>
+      </div>
       <div className="lista">
         {cats.map((c) => (
           <div className="item" key={c.id} style={{ opacity: c.arquivada ? 0.5 : 1 }}>
             {editandoId === c.id ? (
               <>
-                <input
-                  aria-label="Editar nome" className="cresce" value={nomeEdit}
-                  onChange={(e) => setNomeEdit(e.target.value)}
-                />
+                <div className="campo cresce">
+                  <label htmlFor={`${uid}-editar`}>Editar nome</label>
+                  <input id={`${uid}-editar`} value={nomeEdit} onChange={(e) => setNomeEdit(e.target.value)} />
+                </div>
                 <button className="botao botao-primario" onClick={salvarEdicao}>Salvar</button>
                 <button className="botao" onClick={cancelarEdicao}>Cancelar</button>
               </>
@@ -93,12 +97,18 @@ export default function Categorias() {
         ))}
       </div>
       <div className="linha">
-        <input aria-label="Nova categoria" placeholder="nova categoria" value={nome} onChange={(e) => setNome(e.target.value)} style={{ flex: 1 }} />
-        <select aria-label="Tipo" value={tipo} onChange={(e) => setTipo(e.target.value as TipoCategoria)}>
-          <option value="gasto">gasto</option>
-          <option value="ganho">ganho</option>
-        </select>
-        <button className="botao botao-primario" onClick={criar}>Criar</button>
+        <div className="campo" style={{ flex: 1 }}>
+          <label htmlFor={`${uid}-nova`}>Nova categoria</label>
+          <input id={`${uid}-nova`} placeholder="nome" value={nome} onChange={(e) => setNome(e.target.value)} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-tipo`}>Tipo</label>
+          <select id={`${uid}-tipo`} value={tipo} onChange={(e) => setTipo(e.target.value as TipoCategoria)}>
+            <option value="gasto">gasto</option>
+            <option value="ganho">ganho</option>
+          </select>
+        </div>
+        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={criar}>Criar</button>
       </div>
     </div>
   );

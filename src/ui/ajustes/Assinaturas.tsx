@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { formatarBRL, parseValorDigitado } from '../../domain/money';
 import { useApp } from '../../state/store';
@@ -12,6 +12,7 @@ export default function Assinaturas() {
   const [parcelas, setParcelas] = useState('');
   const [descricao, setDescricao] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  const uid = useId();
   if (!dados) return null;
   if (dados.cartoes.length === 0) {
     return <div className="tela"><h2>Assinaturas</h2><p className="sub">Cadastre um cartão primeiro.</p></div>;
@@ -90,29 +91,47 @@ export default function Assinaturas() {
       </div>
       <h2>{editandoId ? 'Editar assinatura' : 'Nova assinatura'}</h2>
       <div className="linha">
-        <input aria-label="Valor" placeholder="valor" inputMode="decimal" value={valor}
-          onChange={(e) => setValor(e.target.value)} style={{ width: 100 }} />
-        <select aria-label="Categoria do cartão" value={categoriaId}
-          onChange={(e) => setCategoriaId(e.target.value)}>
-          <option value="">categoria…</option>
-          {dados.categoriasCartao.filter((c) => !c.arquivada).map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nome} ({dados.cartoes.find((k) => k.id === c.cartaoId)?.nome ?? '?'})
-            </option>
-          ))}
-        </select>
-        <input aria-label="Início" type="date" value={dataInicio}
-          onChange={(e) => setDataInicio(e.target.value)} />
-        <input aria-label="Dia do mês" type="number" min={1} max={31} value={diaDoMes}
-          onChange={(e) => setDiaDoMes(e.target.value)} style={{ width: 64 }} />
-        <input aria-label="Parcelas" type="number" min={1} placeholder="∞" value={parcelas}
-          onChange={(e) => setParcelas(e.target.value)} style={{ width: 64 }} />
+        <div className="campo">
+          <label htmlFor={`${uid}-valor`}>Valor</label>
+          <input id={`${uid}-valor`} placeholder="0,00" inputMode="decimal" value={valor}
+            onChange={(e) => setValor(e.target.value)} style={{ width: 100 }} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-cat`}>Categoria do cartão</label>
+          <select id={`${uid}-cat`} value={categoriaId}
+            onChange={(e) => setCategoriaId(e.target.value)}>
+            <option value="">categoria…</option>
+            {dados.categoriasCartao.filter((c) => !c.arquivada).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome} ({dados.cartoes.find((k) => k.id === c.cartaoId)?.nome ?? '?'})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-inicio`}>Início</label>
+          <input id={`${uid}-inicio`} type="date" value={dataInicio}
+            onChange={(e) => setDataInicio(e.target.value)} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-dia`}>Dia do mês</label>
+          <input id={`${uid}-dia`} type="number" min={1} max={31} value={diaDoMes}
+            onChange={(e) => setDiaDoMes(e.target.value)} style={{ width: 64 }} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-parcelas`}>Parcelas</label>
+          <input id={`${uid}-parcelas`} type="number" min={1} placeholder="∞" value={parcelas}
+            onChange={(e) => setParcelas(e.target.value)} style={{ width: 64 }} />
+        </div>
       </div>
       <div className="linha">
-        <input aria-label="Descrição" placeholder="descrição (ex.: Netflix)" value={descricao}
-          onChange={(e) => setDescricao(e.target.value)} className="cresce" />
-        <button className="botao botao-primario" onClick={salvar}>{editandoId ? 'Salvar' : 'Criar'}</button>
-        {editandoId && <button className="botao" onClick={limparForm}>Cancelar</button>}
+        <div className="campo cresce">
+          <label htmlFor={`${uid}-desc`}>Descrição (opcional)</label>
+          <input id={`${uid}-desc`} placeholder="ex.: Netflix" value={descricao}
+            onChange={(e) => setDescricao(e.target.value)} />
+        </div>
+        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={salvar}>{editandoId ? 'Salvar' : 'Criar'}</button>
+        {editandoId && <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={limparForm}>Cancelar</button>}
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { useApp } from '../../state/store';
 
@@ -8,6 +8,7 @@ export default function CategoriasCartao() {
   const [nome, setNome] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nomeEdit, setNomeEdit] = useState('');
+  const uid = useId();
   if (!dados) return null;
   if (dados.cartoes.length === 0) {
     return <div className="tela"><h2>Categorias do cartão</h2><p className="sub">Cadastre um cartão primeiro.</p></div>;
@@ -50,16 +51,21 @@ export default function CategoriasCartao() {
   return (
     <div className="tela">
       <h2>Categorias do cartão</h2>
-      <select aria-label="Cartão" value={cartaoId} onChange={(e) => setCartaoId(e.target.value)}>
-        {dados.cartoes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-      </select>
+      <div className="campo">
+        <label htmlFor={`${uid}-cartao`}>Cartão</label>
+        <select id={`${uid}-cartao`} value={cartaoId} onChange={(e) => setCartaoId(e.target.value)}>
+          {dados.cartoes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+        </select>
+      </div>
       <div className="lista">
         {cats.map((c) => (
           <div className="item" key={c.id} style={{ opacity: c.arquivada ? 0.5 : 1 }}>
             {editandoId === c.id ? (
               <>
-                <input aria-label="Editar nome" className="cresce" value={nomeEdit}
-                  onChange={(e) => setNomeEdit(e.target.value)} />
+                <div className="campo cresce">
+                  <label htmlFor={`${uid}-editar`}>Editar nome</label>
+                  <input id={`${uid}-editar`} value={nomeEdit} onChange={(e) => setNomeEdit(e.target.value)} />
+                </div>
                 <button className="botao botao-primario" onClick={salvarEdicao}>Salvar</button>
                 <button className="botao" onClick={() => { setEditandoId(null); setNomeEdit(''); }}>Cancelar</button>
               </>
@@ -81,9 +87,11 @@ export default function CategoriasCartao() {
         ))}
       </div>
       <div className="linha">
-        <input aria-label="Nova categoria do cartão" placeholder="nova categoria" value={nome}
-          onChange={(e) => setNome(e.target.value)} style={{ flex: 1 }} />
-        <button className="botao botao-primario" onClick={criar}>Criar</button>
+        <div className="campo" style={{ flex: 1 }}>
+          <label htmlFor={`${uid}-nova`}>Nova categoria do cartão</label>
+          <input id={`${uid}-nova`} placeholder="nome" value={nome} onChange={(e) => setNome(e.target.value)} />
+        </div>
+        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={criar}>Criar</button>
       </div>
     </div>
   );
