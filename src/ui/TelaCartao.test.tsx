@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -80,7 +80,7 @@ it('conferência mostra a diferença e a caixa troca o valor do previsto', async
     expect(screen.getByText(/R\$\s*20,00/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByLabelText(/usar este valor no Flow/));
-    await vi.waitFor(async () => {
+    await waitFor(async () => {
       const previsto = (await db.lancamentos.toArray()).find((l) => l.origem === 'cartao');
       expect(previsto?.valor).toBe(10000);
     });
