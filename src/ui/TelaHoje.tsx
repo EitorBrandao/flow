@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import * as repo from '../db/repo';
 import { addDias } from '../domain/dates';
 import { formatarBRL, parseValorDigitado } from '../domain/money';
@@ -18,6 +18,7 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
 }) {
   const [saldo, setSaldo] = useState(declaradoCent != null ? (declaradoCent / 100).toFixed(2).replace('.', ',') : '');
   const [data, setData] = useState(dataDeclarado ?? hoje);
+  const uid = useId();
 
   async function salvar() {
     const negativo = saldo.trim().startsWith('-');
@@ -31,10 +32,16 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
   return (
     <div style={{ marginTop: 8 }}>
       <div className="linha" style={{ justifyContent: 'space-between' }}>
-        <input aria-label="Saldo real no banco" placeholder="saldo real no banco" inputMode="decimal" value={saldo}
-          onChange={(e) => setSaldo(e.target.value)} style={{ width: 110 }} />
-        <input aria-label="Data da conferência" type="date" value={data} onChange={(e) => setData(e.target.value)} />
-        <button className="botao" onClick={salvar}>Salvar</button>
+        <div className="campo">
+          <label htmlFor={`${uid}-saldo`}>Saldo real no banco</label>
+          <input id={`${uid}-saldo`} placeholder="0,00" inputMode="decimal" value={saldo}
+            onChange={(e) => setSaldo(e.target.value)} style={{ width: 110 }} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-data`}>Data</label>
+          <input id={`${uid}-data`} type="date" value={data} onChange={(e) => setData(e.target.value)} />
+        </div>
+        <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={salvar}>Salvar</button>
       </div>
       {diff != null && (
         <p className="sub" style={{ margin: '4px 0 0' }}>

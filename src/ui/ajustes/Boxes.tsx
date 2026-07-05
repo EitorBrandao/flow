@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { formatarBRL, parseValorDigitado } from '../../domain/money';
 import { agoraISO, novoId, type Box } from '../../domain/types';
@@ -9,6 +9,7 @@ function EditorBox({ box }: { box: Box }) {
   const [nome, setNome] = useState(box.nome);
   const [saldo, setSaldo] = useState(box.saldoInicial != null ? (box.saldoInicial / 100).toFixed(2).replace('.', ',') : '');
   const [data, setData] = useState(box.dataSaldoInicial ?? '');
+  const uid = useId();
 
   async function salvar() {
     const cents = saldo ? parseValorDigitado(saldo.replace('-', ''), { permitirZero: true }) : null;
@@ -23,11 +24,20 @@ function EditorBox({ box }: { box: Box }) {
 
   return (
     <div className="linha">
-      <input aria-label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} style={{ width: 100 }} />
-      <input aria-label="Saldo inicial" placeholder="saldo inicial" inputMode="decimal" value={saldo}
-        onChange={(e) => setSaldo(e.target.value)} style={{ width: 110 }} />
-      <input aria-label="Data do saldo" type="date" value={data} onChange={(e) => setData(e.target.value)} />
-      <button className="botao" onClick={salvar}>Salvar</button>
+      <div className="campo">
+        <label htmlFor={`${uid}-nome`}>Nome</label>
+        <input id={`${uid}-nome`} value={nome} onChange={(e) => setNome(e.target.value)} style={{ width: 100 }} />
+      </div>
+      <div className="campo">
+        <label htmlFor={`${uid}-saldo`}>Saldo inicial</label>
+        <input id={`${uid}-saldo`} placeholder="0,00" inputMode="decimal" value={saldo}
+          onChange={(e) => setSaldo(e.target.value)} style={{ width: 110 }} />
+      </div>
+      <div className="campo">
+        <label htmlFor={`${uid}-data`}>Data do saldo</label>
+        <input id={`${uid}-data`} type="date" value={data} onChange={(e) => setData(e.target.value)} />
+      </div>
+      <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={salvar}>Salvar</button>
     </div>
   );
 }
@@ -35,6 +45,7 @@ function EditorBox({ box }: { box: Box }) {
 export default function Boxes() {
   const { dados, recarregar } = useApp();
   const [nomeNova, setNomeNova] = useState('');
+  const uid = useId();
   if (!dados) return null;
 
   async function criar() {
@@ -75,8 +86,11 @@ export default function Boxes() {
         </div>
       ))}
       <div className="linha">
-        <input aria-label="Nova box" placeholder="nova box" value={nomeNova} onChange={(e) => setNomeNova(e.target.value)} style={{ flex: 1 }} />
-        <button className="botao botao-primario" onClick={criar}>Criar</button>
+        <div className="campo" style={{ flex: 1 }}>
+          <label htmlFor={`${uid}-novabox`}>Nova box</label>
+          <input id={`${uid}-novabox`} placeholder="nome" value={nomeNova} onChange={(e) => setNomeNova(e.target.value)} />
+        </div>
+        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={criar}>Criar</button>
       </div>
     </div>
   );

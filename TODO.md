@@ -3,7 +3,23 @@
 Backlog pós-v1. Cada item tem contexto, proposta e decisões em aberto; detalhar em spec
 (`docs/superpowers/specs/`) antes de implementar os maiores.
 
-## 1. Detalhamento do Pix nas Análises
+## 1. Ajustar a UI
+
+**Contexto:** a maioria dos formulários do app (Ajustes inteiro, blocos de conferência,
+"nova compra" do Cartão, cenários do Simulador) usa `aria-label` + `placeholder` no lugar de
+um `<label>` visível — o rótulo some assim que o campo ganha texto ou é um `<select>`/`date`
+sem texto de apoio nenhum. Só **Lançar** e o editor de lançamento (`LancEditor`) seguiam o
+padrão certo (`.campo` com `<label>` acima do campo). Corrigido nesta sessão: todos os campos
+passaram a usar `.campo` + `<label>` visível.
+
+**Ainda em aberto (próximas idas nessa frente):**
+- Indicador visual de campo obrigatório na própria UI (hoje só a wiki documenta isso).
+- Revisar espaçamento das `.linha` com muitos `.campo` lado a lado em telas estreitas — pode
+  precisar de quebra melhor que o `flex-wrap` atual.
+- Mensagens de erro de validação são silenciosas (botão só não faz nada) em vários formulários
+  — considerar feedback visível como o `TelaLancar`/`LancEditor` já têm.
+
+## 2. Detalhamento do Pix nas Análises
 
 **Contexto:** "pix" é uma categoria comum (existe como ganho e como gasto) que agrega
 transferências para destinos totalmente diferentes. Na aba Análises ela aparece só como um
@@ -22,7 +38,7 @@ total mensal — um balde opaco que pode ser a maior linha de gasto sem dizer na
   espaços, prefixos do banco)?
 - O drill-down vale para todas as categorias (provavelmente sim — de graça) ou só pix?
 
-## 2. Saldo em dias específicos do futuro
+## 3. Saldo em dias específicos do futuro
 
 **Contexto:** o motor já existe — `projetarBoxes` (`src/domain/projection.ts`) devolve o
 saldo projetado de cada dia até `config.horizonteProjecao`. Falta só uma forma direta de
@@ -39,7 +55,7 @@ consultar "quanto vou ter no dia X?" sem ler o gráfico a olho.
 - Onde mora o controle: Fluxo, Hoje, ou os dois?
 - Mostrar também o delta em relação ao saldo de hoje ("R$ 3.200, −R$ 450 vs. hoje")?
 
-## 3. Pesquisa na aba Fluxo
+## 4. Pesquisa na aba Fluxo
 
 **Contexto:** a lista do Fluxo (`src/ui/TelaFluxo.tsx`) só mostra a janela recente
 (`hoje − diasAtras`) e não tem filtro — achar um lançamento antigo exige apertar
@@ -55,7 +71,7 @@ consultar "quanto vou ter no dia X?" sem ler o gráfico a olho.
 **Decisões em aberto:**
 - Debounce/quantidade mínima de caracteres (o histórico importado pode ser grande)?
 
-## 4. Transformar o app num .apk
+## 5. Transformar o app num .apk
 
 **Contexto:** hoje o Flow é PWA (vite-plugin-pwa), local-first com IndexedDB/Dexie — nada
 de servidor. Instalar o PWA no Android já era pendência; um .apk é o passo além.

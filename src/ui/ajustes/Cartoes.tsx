@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { useApp } from '../../state/store';
 
@@ -11,6 +11,7 @@ export default function Cartoes() {
   const [categoriaFaturaId, setCategoriaFaturaId] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [aviso, setAviso] = useState('');
+  const uid = useId();
   if (!dados) return null;
   const horizonte = dados.config.horizonteProjecao;
   const catsGasto = dados.categorias.filter((c) => c.boxId === boxId && c.tipo === 'gasto' && !c.arquivada);
@@ -80,26 +81,40 @@ export default function Cartoes() {
       <h2>{editandoId ? 'Editar cartão' : 'Novo cartão'}</h2>
       {aviso && <p className="aviso">{aviso}</p>}
       <div className="linha">
-        <select aria-label="Box do cartão" value={boxId}
-          onChange={(e) => { setBoxId(e.target.value); setCategoriaFaturaId(''); }}>
-          {dados.boxes.filter((b) => b.saldoInicial != null).map((b) => (
-            <option key={b.id} value={b.id}>{b.nome}</option>
-          ))}
-        </select>
-        <input aria-label="Nome do cartão" placeholder="nome (ex.: Nubank)" value={nome}
-          onChange={(e) => setNome(e.target.value)} className="cresce" />
+        <div className="campo">
+          <label htmlFor={`${uid}-box`}>Box do cartão</label>
+          <select id={`${uid}-box`} value={boxId}
+            onChange={(e) => { setBoxId(e.target.value); setCategoriaFaturaId(''); }}>
+            {dados.boxes.filter((b) => b.saldoInicial != null).map((b) => (
+              <option key={b.id} value={b.id}>{b.nome}</option>
+            ))}
+          </select>
+        </div>
+        <div className="campo cresce">
+          <label htmlFor={`${uid}-nome`}>Nome do cartão</label>
+          <input id={`${uid}-nome`} placeholder="ex.: Nubank" value={nome} onChange={(e) => setNome(e.target.value)} />
+        </div>
       </div>
       <div className="linha">
-        <input aria-label="Dia de fechamento" type="number" min={1} max={31} value={diaFechamento}
-          onChange={(e) => setDiaFechamento(e.target.value)} style={{ width: 64 }} />
-        <input aria-label="Dia de vencimento" type="number" min={1} max={31} value={diaVencimento}
-          onChange={(e) => setDiaVencimento(e.target.value)} style={{ width: 64 }} />
-        <select aria-label="Categoria da fatura" value={catSel}
-          onChange={(e) => setCategoriaFaturaId(e.target.value)}>
-          <option value="">categoria da fatura…</option>
-          {catsGasto.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-        </select>
-        <button className="botao botao-primario" onClick={salvar}>
+        <div className="campo">
+          <label htmlFor={`${uid}-fecha`}>Dia de fechamento</label>
+          <input id={`${uid}-fecha`} type="number" min={1} max={31} value={diaFechamento}
+            onChange={(e) => setDiaFechamento(e.target.value)} style={{ width: 64 }} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-vence`}>Dia de vencimento</label>
+          <input id={`${uid}-vence`} type="number" min={1} max={31} value={diaVencimento}
+            onChange={(e) => setDiaVencimento(e.target.value)} style={{ width: 64 }} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-catfatura`}>Categoria da fatura</label>
+          <select id={`${uid}-catfatura`} value={catSel}
+            onChange={(e) => setCategoriaFaturaId(e.target.value)}>
+            <option value="">categoria da fatura…</option>
+            {catsGasto.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+          </select>
+        </div>
+        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={salvar}>
           {editandoId ? 'Salvar' : 'Criar'}
         </button>
       </div>

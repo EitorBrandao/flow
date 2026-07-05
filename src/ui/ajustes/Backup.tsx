@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { gerarBackup, mesclar, validarBackup } from '../../backup/backup';
 import * as repo from '../../db/repo';
 import { hojeISO } from '../../domain/dates';
@@ -9,6 +9,7 @@ export default function Backup() {
   const [modo, setModo] = useState<'substituir' | 'mesclar'>('substituir');
   const [msg, setMsg] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const uid = useId();
   if (!dados) return null;
 
   async function exportar() {
@@ -66,10 +67,14 @@ export default function Backup() {
         <label className="linha"><input type="radio" checked={modo === 'substituir'} onChange={() => setModo('substituir')} /> substituir tudo</label>
         <label className="linha"><input type="radio" checked={modo === 'mesclar'} onChange={() => setModo('mesclar')} /> mesclar</label>
       </div>
-      <input
-        ref={inputRef} type="file" accept="application/json,.json" aria-label="Arquivo de backup"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) void restaurar(f); e.target.value = ''; }}
-      />
+      <div className="campo">
+        <label htmlFor={`${uid}-arquivo`}>Arquivo de backup (.json)</label>
+        <input
+          id={`${uid}-arquivo`}
+          ref={inputRef} type="file" accept="application/json,.json"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) void restaurar(f); e.target.value = ''; }}
+        />
+      </div>
       {msg && <p className="aviso">{msg}</p>}
     </div>
   );

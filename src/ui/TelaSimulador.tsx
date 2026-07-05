@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import * as repo from '../db/repo';
 import { formatarBRL, parseValorDigitado } from '../domain/money';
 import { agoraISO, novoId, type Cenario } from '../domain/types';
@@ -10,6 +10,7 @@ function FormHipotetico({ cenario }: { cenario: Cenario }) {
   const [categoriaId, setCategoriaId] = useState('');
   const [data, setData] = useState(hoje);
   const [parcelas, setParcelas] = useState('1');
+  const uid = useId();
   if (!dados) return null;
   const categorias = dados.categorias.filter((c) => !c.arquivada);
   const boxDe = (catId: string) => dados.categorias.find((c) => c.id === catId)?.boxId;
@@ -36,16 +37,28 @@ function FormHipotetico({ cenario }: { cenario: Cenario }) {
 
   return (
     <div className="linha" style={{ marginTop: 8 }}>
-      <input aria-label="Valor total" placeholder="valor" inputMode="decimal" value={valor}
-        onChange={(e) => setValor(e.target.value)} style={{ width: 90 }} />
-      <select aria-label="Categoria" value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
-        <option value="">categoria…</option>
-        {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome} ({c.tipo})</option>)}
-      </select>
-      <input aria-label="Data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
-      <input aria-label="Parcelas" type="number" min={1} value={parcelas}
-        onChange={(e) => setParcelas(e.target.value)} style={{ width: 64 }} />
-      <button className="botao" onClick={adicionar}>Adicionar</button>
+      <div className="campo">
+        <label htmlFor={`${uid}-valor`}>Valor total</label>
+        <input id={`${uid}-valor`} placeholder="0,00" inputMode="decimal" value={valor}
+          onChange={(e) => setValor(e.target.value)} style={{ width: 90 }} />
+      </div>
+      <div className="campo">
+        <label htmlFor={`${uid}-cat`}>Categoria</label>
+        <select id={`${uid}-cat`} value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
+          <option value="">categoria…</option>
+          {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome} ({c.tipo})</option>)}
+        </select>
+      </div>
+      <div className="campo">
+        <label htmlFor={`${uid}-data`}>Data</label>
+        <input id={`${uid}-data`} type="date" value={data} onChange={(e) => setData(e.target.value)} />
+      </div>
+      <div className="campo">
+        <label htmlFor={`${uid}-parcelas`}>Parcelas</label>
+        <input id={`${uid}-parcelas`} type="number" min={1} value={parcelas}
+          onChange={(e) => setParcelas(e.target.value)} style={{ width: 64 }} />
+      </div>
+      <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={adicionar}>Adicionar</button>
     </div>
   );
 }

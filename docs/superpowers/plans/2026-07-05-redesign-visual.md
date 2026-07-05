@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - **Zero mudança de comportamento:** proibido tocar em `src/domain/`, `src/db/`, `src/state/`, `src/importer/`, `src/backup/`.
-- **Testes existentes continuam passando.** Preservar todos os `aria-label`s e textos visíveis citados nos testes ("Lançar", "Confirmar X", "Descartar", "Ajustes", "Box", "Pendentes (N)", "Linha do saldo no tempo"). Única exceção autorizada: `src/App.test.tsx` troca a âncora `findByText('Flow')` (o título "Flow" sai do topo) — ver Task 3.
+- **Testes existentes continuam passando.** Preservar todos os `aria-label`s e textos visíveis citados nos testes ("Lançar", "Confirmar X", "Descartar", "Ajustes", "Box", "Pendentes (N)", "Linha do saldo no tempo"). Exceções autorizadas (ajuste de seletor, não de comportamento): `src/App.test.tsx` troca a âncora `findByText('Flow')` (o título "Flow" sai do topo) — ver Task 3; `src/ui/TelaHoje.test.tsx:25` troca `getByText('R$ 1.000,00')` por um matcher tolerante à quebra em `<p>{reais}<b>,{centavos}</b></p>` — ver Task 6.
 - **Formulários de Ajustes permanecem inline** (sempre visíveis, como hoje) — apenas re-estilizados via CSS. O Sheet é só para o LancEditor. (Decisão registrada no spec.)
 - Tokens exatos do spec: bg `#0b0d11`, surface `#161b24`, surface2 `#212836`, fg `#e9edf3`, muted `#8b95a3`, line `#232936`, ação `#3b9df8`, ganho `#2ee6a8`, gasto `#ff6b7a`. Azul só em ações; verde/vermelho só em valores.
 - Comandos de verificação por task: `npm run test` e, onde indicado, `npm run build`. Ao final: `npm run preview -- --host` para conferência no celular (hábito do projeto).
@@ -586,6 +586,7 @@ git commit -m "feat(ui): gráfico de saldo verde com preenchimento em gradiente"
 
 **Files:**
 - Modify: `src/ui/TelaHoje.tsx` (apenas o JSX do `return` principal)
+- Modify: `src/ui/TelaHoje.test.tsx:25` (ajuste de seletor — ver Step 1b)
 
 **Interfaces:**
 - Consumes: `.rotulo`, `.delta.pos/.neg`, `.saldo-grande b`, `.saldo-grande.negativo`, `.item-coluna`, `.linha-topo`, `.acoes` (Task 2).
@@ -621,6 +622,22 @@ No `return` de `TelaHoje`, dentro do `<div className="card">`, substituir os doi
 ```
 
 (O `<p className="sub">projetado: …</p>` existente logo abaixo permanece.)
+
+- [ ] **Step 1b: Ajustar o teste do saldo dividido**
+
+O saldo agora é renderizado como `{reais}<b>,{centavos}</b>` — dois nós de texto separados pelo elemento `<b>`. `getByText` da Testing Library só casa contra o texto direto de cada nó (ignora filhos), então a asserção atual (`src/ui/TelaHoje.test.tsx:25`) deixa de encontrar o elemento:
+
+```tsx
+expect(screen.getByText('R$ 1.000,00')).toBeInTheDocument(); // saldo efetivo
+```
+
+Trocar por:
+
+```tsx
+expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === 'R$ 1.000,00')).toBeInTheDocument(); // saldo efetivo
+```
+
+Sem essa troca, `npm run test -- src/ui/TelaHoje.test.tsx` falha no Step 3 abaixo.
 
 - [ ] **Step 2: Pendentes com ações em linha própria e animação de saída**
 

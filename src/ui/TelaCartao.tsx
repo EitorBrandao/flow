@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import * as repo from '../db/repo';
 import { addMeses } from '../domain/dates';
 import {
@@ -26,6 +26,7 @@ function FormCompra({ cartao, compra, onFechar }: {
   const [categoriaId, setCategoriaId] = useState(compra?.categoriaCartaoId ?? '');
   const [parcelas, setParcelas] = useState(compra ? String(compra.parcelas) : '1');
   const [descricao, setDescricao] = useState(compra?.descricao ?? '');
+  const uid = useId();
   if (!dados) return null;
   const cats = dados.categoriasCartao.filter((c) => c.cartaoId === cartao.id && !c.arquivada);
   const horizonte = dados.config.horizonteProjecao;
@@ -56,22 +57,36 @@ function FormCompra({ cartao, compra, onFechar }: {
     <div className="card">
       <h3>{compra ? 'Editar compra' : 'Nova compra'}</h3>
       <div className="linha">
-        <input aria-label="Valor" placeholder="valor" inputMode="decimal" value={valor}
-          onChange={(e) => setValor(e.target.value)} style={{ width: 100 }} />
-        <input aria-label="Data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
-        <select aria-label="Categoria" value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
-          <option value="">categoria…</option>
-          {cats.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-        </select>
-        <input aria-label="Parcelas" type="number" min={1} max={48} value={parcelas}
-          onChange={(e) => setParcelas(e.target.value)} style={{ width: 64 }} />
+        <div className="campo">
+          <label htmlFor={`${uid}-valor`}>Valor</label>
+          <input id={`${uid}-valor`} placeholder="0,00" inputMode="decimal" value={valor}
+            onChange={(e) => setValor(e.target.value)} style={{ width: 100 }} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-data`}>Data</label>
+          <input id={`${uid}-data`} type="date" value={data} onChange={(e) => setData(e.target.value)} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-cat`}>Categoria</label>
+          <select id={`${uid}-cat`} value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
+            <option value="">categoria…</option>
+            {cats.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+          </select>
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-parcelas`}>Parcelas</label>
+          <input id={`${uid}-parcelas`} type="number" min={1} max={48} value={parcelas}
+            onChange={(e) => setParcelas(e.target.value)} style={{ width: 64 }} />
+        </div>
       </div>
       <div className="linha">
-        <input aria-label="Descrição" placeholder="descrição (opcional)" value={descricao}
-          onChange={(e) => setDescricao(e.target.value)} className="cresce" />
-        <button className="botao botao-primario" onClick={salvar}>Salvar</button>
-        <button className="botao" onClick={onFechar}>Cancelar</button>
-        {compra && <button className="botao botao-perigo" onClick={excluir}>Excluir</button>}
+        <div className="campo cresce">
+          <label htmlFor={`${uid}-desc`}>Descrição (opcional)</label>
+          <input id={`${uid}-desc`} value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+        </div>
+        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={salvar}>Salvar</button>
+        <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={onFechar}>Cancelar</button>
+        {compra && <button className="botao botao-perigo" style={{ alignSelf: 'flex-end' }} onClick={excluir}>Excluir</button>}
       </div>
     </div>
   );
@@ -81,6 +96,7 @@ function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: str
   const { dados, recarregar } = useApp();
   const conf = dados?.conferenciasFatura.find((c) => c.cartaoId === cartao.id && c.mes === mes);
   const [valor, setValor] = useState(conf ? centavosParaTexto(conf.valorAppCent) : '');
+  const uid = useId();
   if (!dados) return null;
   const horizonte = dados.config.horizonteProjecao;
 
@@ -108,9 +124,12 @@ function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: str
   return (
     <div style={{ marginTop: 8 }}>
       <div className="linha">
-        <input aria-label="Valor no app do banco" placeholder="valor no app do banco" inputMode="decimal"
-          value={valor} onChange={(e) => setValor(e.target.value)} style={{ width: 140 }} />
-        <button className="botao" aria-label="Salvar conferência" onClick={salvar}>Salvar</button>
+        <div className="campo">
+          <label htmlFor={`${uid}-valorapp`}>Valor no app do banco</label>
+          <input id={`${uid}-valorapp`} placeholder="0,00" inputMode="decimal"
+            value={valor} onChange={(e) => setValor(e.target.value)} style={{ width: 140 }} />
+        </div>
+        <button className="botao" style={{ alignSelf: 'flex-end' }} aria-label="Salvar conferência" onClick={salvar}>Salvar</button>
       </div>
       {diff != null && (
         <p className="sub" style={{ margin: '4px 0 0' }}>
