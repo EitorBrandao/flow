@@ -61,7 +61,8 @@ Transformar a cara do Flow de "site de 2009" para "aplicativo nativo", **sem alt
 
 ### Bottom sheet (novo componente `Sheet`)
 - Painel que sobe de baixo com fundo `--surface`, raio superior 24px, alça (handle) no topo, backdrop escurecido; fecha por backdrop, botão ou arraste para baixo (drag via framer-motion).
-- Passa a hospedar: **LancEditor** (edição de lançamento) e os formulários de criação/edição em Ajustes (categorias, boxes, cartões, recorrências, assinaturas) que hoje aparecem inline.
+- Passa a hospedar: **LancEditor** (edição de lançamento), que hoje já é modal — re-skin puro, sem mudança de comportamento.
+- **Formulários de Ajustes permanecem inline** (decisão de planejamento): hoje eles são sempre visíveis, sem estado abrir/fechar; migrá-los para sheet exigiria botão de abrir + estado novo, mudando comportamento e quebrando os testes existentes — violaria as Restrições abaixo. Ficam re-estilizados pela nova linguagem (inputs `--surface2`, cards). Migração a sheet pode ser fast-follow se sentir falta no uso.
 - **TelaLancar continua sendo uma aba** (aberta pelo FAB), não vira sheet — é fluxo principal, merece tela cheia.
 
 ### Transições (framer-motion)
