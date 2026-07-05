@@ -15,8 +15,8 @@ export default defineConfig({
         description: 'Fluxo de caixa diário com saldo projetado',
         lang: 'pt-BR',
         display: 'standalone',
-        theme_color: '#0f766e',
-        background_color: '#f6f7f8',
+        theme_color: '#0b0d11',
+        background_color: '#0b0d11',
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
