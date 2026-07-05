@@ -1,4 +1,5 @@
 import { useId, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import * as repo from '../db/repo';
 import { addDias } from '../domain/dates';
 import { formatarBRL, parseValorDigitado } from '../domain/money';
@@ -109,8 +110,28 @@ export default function TelaHoje() {
         </button>
       )}
       <div className="card">
-        <p className="sub" style={{ margin: 0 }}>Saldo hoje ({boxSel === 'casa' ? 'casa' : dados.boxes.find((b) => b.id === boxSel)?.nome})</p>
-        <p className="saldo-grande" style={{ margin: '4px 0' }}>{formatarBRL(deHoje?.saldoEfetivo ?? 0)}</p>
+        <p className="rotulo" style={{ margin: 0 }}>
+          Saldo hoje · {boxSel === 'casa' ? 'casa' : dados.boxes.find((b) => b.id === boxSel)?.nome}
+        </p>
+        {(() => {
+          const saldoHoje = deHoje?.saldoEfetivo ?? 0;
+          const [reais, centavos] = formatarBRL(saldoHoje).split(',');
+          return (
+            <p className={`saldo-grande${saldoHoje < 0 ? ' negativo' : ''}`} style={{ margin: '4px 0' }}>
+              {reais}<b>,{centavos}</b>
+            </p>
+          );
+        })()}
+        {(() => {
+          const fim = janela.at(-1);
+          const delta = fim && deHoje ? fim.saldoProjetado - deHoje.saldoEfetivo : null;
+          if (delta == null || delta === 0) return null;
+          return (
+            <span className={`delta ${delta > 0 ? 'pos' : 'neg'}`}>
+              {delta > 0 ? '▲' : '▼'} {formatarBRL(Math.abs(delta))} nos próximos 28 dias
+            </span>
+          );
+        })()}
         {deHoje && deHoje.saldoProjetado !== deHoje.saldoEfetivo && (
           <p className="sub" style={{ margin: 0 }}>projetado: {formatarBRL(deHoje.saldoProjetado)}</p>
         )}
@@ -120,19 +141,30 @@ export default function TelaHoje() {
       </div>
       <h2>Pendentes ({fila.length})</h2>
       <div className="lista">
-        {fila.map((l) => (
-          <div className="item" key={l.id}>
-            <div className="cresce">
-              <div>{nomeCat(l.categoriaId)}</div>
-              <div className="sub">{l.data.split('-').reverse().join('/')}{l.nota ? ` · ${l.nota}` : ''}</div>
-            </div>
-            <span className={tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
-              {formatarBRL(l.valor)}
-            </span>
-            <button className="botao" aria-label={`Confirmar ${nomeCat(l.categoriaId)}`} onClick={() => confirmar(l.id)}>✓ Confirmar</button>
-            <button className="botao botao-perigo" aria-label="Descartar" onClick={() => descartar(l.id)}>✕</button>
-          </div>
-        ))}
+        <AnimatePresence initial={false}>
+          {fila.map((l) => (
+            <motion.div
+              className="item item-coluna" key={l.id} layout
+              exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }}
+              style={{ overflow: 'hidden' }}
+              transition={{ duration: 0.18 }}
+            >
+              <div className="linha-topo">
+                <div className="cresce">
+                  <div>{nomeCat(l.categoriaId)}</div>
+                  <div className="sub">{l.data.split('-').reverse().join('/')}{l.nota ? ` · ${l.nota}` : ''}</div>
+                </div>
+                <span className={tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
+                  {formatarBRL(l.valor)}
+                </span>
+              </div>
+              <div className="acoes">
+                <button className="botao botao-primario" aria-label={`Confirmar ${nomeCat(l.categoriaId)}`} onClick={() => confirmar(l.id)}>✓ Confirmar</button>
+                <button className="botao" aria-label="Descartar" onClick={() => descartar(l.id)}>Descartar</button>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
         {fila.length === 0 && <p className="sub">Nada a confirmar — tudo em dia.</p>}
       </div>
     </div>
