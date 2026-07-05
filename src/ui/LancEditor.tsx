@@ -3,6 +3,7 @@ import * as repo from '../db/repo';
 import { parseValorDigitado } from '../domain/money';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
+import Sheet from './Sheet';
 
 export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFechar: () => void }) {
   const { dados, recarregar } = useApp();
@@ -43,11 +44,7 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
   const previstoDeRecorrencia = lanc.recorrenciaId != null && lanc.status === 'previsto';
 
   return (
-    <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'grid', placeItems: 'center', zIndex: 50, padding: 16 }}
-      onClick={onFechar}
-    >
-      <div className="card" style={{ width: '100%', maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+    <Sheet aberto onFechar={onFechar} rotulo={lanc.status === 'previsto' ? 'Previsto' : 'Lançamento'}>
         <h2 style={{ marginTop: 0 }}>
           {lanc.status === 'previsto' ? 'Previsto' : 'Lançamento'}
           {lanc.recorrenciaId && <span className="badge" style={{ marginLeft: 8 }}>recorrência</span>}
@@ -88,7 +85,6 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
           <button className="botao botao-perigo" onClick={excluir}>Excluir</button>
           <button className="botao" style={{ marginLeft: 'auto' }} onClick={onFechar}>Fechar</button>
         </div>
-      </div>
-    </div>
+    </Sheet>
   );
 }
