@@ -45,6 +45,32 @@ it('iniciar ignora boxPadraoId que aponta para uma box sem saldo próprio (ex.: 
   expect(useApp.getState().boxSel).toBe(boxComSaldo.id);
 });
 
+it('boot sincroniza faturas de cartão montado direto no banco', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await db.boxes.add(box);
+    const catFlow = { id: novoId(), boxId: box.id, nome: 'cartão', tipo: 'gasto' as const, ordem: 0, arquivada: false, criadoEm: agora, alteradoEm: agora };
+    await db.categorias.add(catFlow);
+    const cartao = { id: novoId(), boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5, categoriaFaturaId: catFlow.id, ativo: true, criadoEm: agora, alteradoEm: agora };
+    await db.cartoes.add(cartao);
+    const catCartao = { id: novoId(), cartaoId: cartao.id, nome: 'mercado', ordem: 0, arquivada: false, criadoEm: agora, alteradoEm: agora };
+    await db.categoriasCartao.add(catCartao);
+    await db.comprasCartao.add({
+      id: novoId(), cartaoId: cartao.id, categoriaCartaoId: catCartao.id,
+      data: '2026-07-10', valorTotal: 5000, parcelas: 1, criadoEm: agora, alteradoEm: agora,
+    });
+
+    await useApp.getState().iniciar();
+
+    const previstos = useApp.getState().dados!.lancamentos.filter((l) => l.origem === 'cartao');
+    expect(previstos).toHaveLength(1);
+    expect(previstos[0]).toMatchObject({ faturaMes: '2026-08', data: '2026-08-05', valor: 5000, status: 'previsto' });
+  } finally { vi.useRealTimers(); }
+});
+
 it('boxIdsSelecionadas: casa = todas as boxes', async () => {
   await useApp.getState().iniciar();
   const s = useApp.getState();

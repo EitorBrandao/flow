@@ -27,6 +27,7 @@ export const useApp = create<AppState>((set) => ({
   async iniciar() {
     const inicial = await repo.carregarTudo();
     await repo.materializarTodas(inicial.config.horizonteProjecao);
+    await repo.sincronizarCartoes(inicial.config.horizonteProjecao);
     const dados = await repo.carregarTudo();
     // boxPadraoId só é válido se apontar para uma box com saldo próprio: é a única lista
     // que o seletor do Shell exibe (+ o sentinela 'casa'). Um valor órfão (ex.: box da
