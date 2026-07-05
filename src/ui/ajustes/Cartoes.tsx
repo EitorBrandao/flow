@@ -1,0 +1,108 @@
+import { useState } from 'react';
+import * as repo from '../../db/repo';
+import { useApp } from '../../state/store';
+
+export default function Cartoes() {
+  const { dados, recarregar } = useApp();
+  const [boxId, setBoxId] = useState(dados?.boxes.find((b) => b.saldoInicial != null)?.id ?? '');
+  const [nome, setNome] = useState('');
+  const [diaFechamento, setDiaFechamento] = useState('28');
+  const [diaVencimento, setDiaVencimento] = useState('5');
+  const [categoriaFaturaId, setCategoriaFaturaId] = useState('');
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [aviso, setAviso] = useState('');
+  if (!dados) return null;
+  const horizonte = dados.config.horizonteProjecao;
+  const catsGasto = dados.categorias.filter((c) => c.boxId === boxId && c.tipo === 'gasto' && !c.arquivada);
+  const categoriaPadrao = catsGasto.find((c) => c.nome === 'cartão')?.id ?? '';
+  const catSel = categoriaFaturaId || categoriaPadrao;
+  const nomeBox = (id: string) => dados.boxes.find((b) => b.id === id)?.nome ?? '?';
+
+  function clampDia(t: string): number {
+    return Math.min(31, Math.max(1, Math.round(Number(t) || 1)));
+  }
+
+  function editar(id: string) {
+    const c = dados!.cartoes.find((x) => x.id === id)!;
+    setEditandoId(id); setBoxId(c.boxId); setNome(c.nome);
+    setDiaFechamento(String(c.diaFechamento)); setDiaVencimento(String(c.diaVencimento));
+    setCategoriaFaturaId(c.categoriaFaturaId); setAviso('');
+  }
+
+  async function salvar() {
+    if (!nome.trim() || !catSel || !boxId) return;
+    if (dados!.cartoes.some((c) => c.boxId === boxId && c.ativo && c.id !== editandoId)) {
+      setAviso('Esta box já tem um cartão ativo — desative-o antes de cadastrar outro.');
+      return;
+    }
+    const campos = {
+      boxId, nome: nome.trim(), diaFechamento: clampDia(diaFechamento),
+      diaVencimento: clampDia(diaVencimento), categoriaFaturaId: catSel,
+    };
+    if (editandoId) {
+      const original = dados!.cartoes.find((c) => c.id === editandoId)!;
+      await repo.salvarCartao({ ...original, ...campos }, horizonte);
+    } else {
+      await repo.salvarCartao(campos, horizonte);
+    }
+    setEditandoId(null); setNome(''); setCategoriaFaturaId(''); setAviso('');
+    await recarregar();
+  }
+
+  async function alternarAtivo(id: string) {
+    const c = dados!.cartoes.find((x) => x.id === id)!;
+    if (!c.ativo && dados!.cartoes.some((x) => x.boxId === c.boxId && x.ativo && x.id !== id)) {
+      setAviso('Esta box já tem um cartão ativo.');
+      return;
+    }
+    await repo.salvarCartao({ ...c, ativo: !c.ativo }, horizonte);
+    await recarregar();
+  }
+
+  return (
+    <div className="tela">
+      <h2>Cartões</h2>
+      <div className="lista">
+        {dados.cartoes.map((c) => (
+          <div className="item" key={c.id} style={{ opacity: c.ativo ? 1 : 0.5 }}>
+            <div className="cresce">
+              {c.nome} <span className="badge">{nomeBox(c.boxId)}</span>
+              <div className="sub">fecha dia {c.diaFechamento} · vence dia {c.diaVencimento}</div>
+            </div>
+            <button className="botao" onClick={() => editar(c.id)}>Editar</button>
+            <button className="botao" onClick={() => alternarAtivo(c.id)}>
+              {c.ativo ? 'Desativar' : 'Ativar'}
+            </button>
+          </div>
+        ))}
+        {dados.cartoes.length === 0 && <p className="sub">Nenhum cartão cadastrado.</p>}
+      </div>
+      <h2>{editandoId ? 'Editar cartão' : 'Novo cartão'}</h2>
+      {aviso && <p className="aviso">{aviso}</p>}
+      <div className="linha">
+        <select aria-label="Box do cartão" value={boxId}
+          onChange={(e) => { setBoxId(e.target.value); setCategoriaFaturaId(''); }}>
+          {dados.boxes.filter((b) => b.saldoInicial != null).map((b) => (
+            <option key={b.id} value={b.id}>{b.nome}</option>
+          ))}
+        </select>
+        <input aria-label="Nome do cartão" placeholder="nome (ex.: Nubank)" value={nome}
+          onChange={(e) => setNome(e.target.value)} className="cresce" />
+      </div>
+      <div className="linha">
+        <input aria-label="Dia de fechamento" type="number" min={1} max={31} value={diaFechamento}
+          onChange={(e) => setDiaFechamento(e.target.value)} style={{ width: 64 }} />
+        <input aria-label="Dia de vencimento" type="number" min={1} max={31} value={diaVencimento}
+          onChange={(e) => setDiaVencimento(e.target.value)} style={{ width: 64 }} />
+        <select aria-label="Categoria da fatura" value={catSel}
+          onChange={(e) => setCategoriaFaturaId(e.target.value)}>
+          <option value="">categoria da fatura…</option>
+          {catsGasto.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+        </select>
+        <button className="botao botao-primario" onClick={salvar}>
+          {editandoId ? 'Salvar' : 'Criar'}
+        </button>
+      </div>
+    </div>
+  );
+}
