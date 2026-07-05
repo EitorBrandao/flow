@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { ArrowDown, ArrowUp, Pencil } from 'lucide-react';
 import * as repo from '../../db/repo';
 import type { TipoCategoria } from '../../domain/types';
 import { useApp } from '../../state/store';
@@ -85,9 +86,9 @@ export default function Categorias() {
                   {c.nome} <span className="badge">{c.tipo}</span>
                   {c.arquivada && <span className="badge">arquivada</span>}
                 </span>
-                <button className="botao" aria-label="Subir" onClick={() => mover(c.id, -1)}>↑</button>
-                <button className="botao" aria-label="Descer" onClick={() => mover(c.id, 1)}>↓</button>
-                <button className="botao" aria-label="Editar" onClick={() => iniciarEdicao(c.id, c.nome)}>✏️</button>
+                <button className="botao" aria-label="Subir" onClick={() => mover(c.id, -1)}><ArrowUp size={16} /></button>
+                <button className="botao" aria-label="Descer" onClick={() => mover(c.id, 1)}><ArrowDown size={16} /></button>
+                <button className="botao" aria-label="Editar" onClick={() => iniciarEdicao(c.id, c.nome)}><Pencil size={16} /></button>
                 <button className="botao" onClick={() => alternarArquivada(c.id, c.arquivada)}>
                   {c.arquivada ? 'Restaurar' : 'Arquivar'}
                 </button>
