@@ -22,7 +22,7 @@ it('mostra saldo e confirma um pendente', async () => {
   useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
 
   render(<TelaHoje />);
-  expect(screen.getByText('R$ 1.000,00')).toBeInTheDocument(); // saldo efetivo
+  expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent?.replace(/ /g, ' ') === 'R$ 1.000,00')).toBeInTheDocument(); // saldo efetivo
   expect(screen.getByText(/salario/)).toBeInTheDocument();     // pendente na fila
 
   await userEvent.click(screen.getByRole('button', { name: /Confirmar/ }));
