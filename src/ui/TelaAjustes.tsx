@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import Assinaturas from './ajustes/Assinaturas';
 import Backup from './ajustes/Backup';
 import Boxes from './ajustes/Boxes';
@@ -32,7 +33,7 @@ export default function TelaAjustes() {
           {ITENS.map((i) => (
             <button key={i.id} className="item" style={{ cursor: 'pointer' }} onClick={() => setSecao(i.id)}>
               <span className="cresce" style={{ textAlign: 'left' }}>{i.rotulo}</span>
-              <span>›</span>
+              <ChevronRight size={18} color="var(--muted)" aria-hidden="true" />
             </button>
           ))}
         </div>
