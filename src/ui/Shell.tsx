@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Settings } from 'lucide-react';
 import { useApp, type Aba } from '../state/store';
+import AdicionarSheet from './AdicionarSheet';
 import TelaAjustes from './TelaAjustes';
 import TelaAnalises from './TelaAnalises';
 import TelaCartao from './TelaCartao';
@@ -20,6 +22,7 @@ const ABAS: { id: Aba; rotulo: string; central?: boolean }[] = [
 
 export default function Shell() {
   const { aba, setAba, boxSel, setBoxSel, dados } = useApp();
+  const [menuAberto, setMenuAberto] = useState(false);
   if (!dados) return null;
   const boxesComSaldo = dados.boxes.filter((b) => b.saldoInicial != null);
   return (
@@ -29,8 +32,8 @@ export default function Shell() {
           <button
             key={a.id}
             className={`${aba === a.id ? 'ativo' : ''} ${a.central ? 'central' : ''}`}
-            onClick={() => setAba(a.id)}
-            aria-label={a.central ? 'Lançar' : a.rotulo}
+            onClick={() => (a.central ? setMenuAberto(true) : setAba(a.id))}
+            aria-label={a.central ? 'Adicionar' : a.rotulo}
           >
             {a.rotulo}
           </button>
@@ -65,6 +68,7 @@ export default function Shell() {
           </motion.div>
         </main>
       </div>
+      <AdicionarSheet aberto={menuAberto} onFechar={() => setMenuAberto(false)} />
     </div>
   );
 }
