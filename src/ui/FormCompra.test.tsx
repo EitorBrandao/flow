@@ -73,3 +73,67 @@ it('editar uma compra existente mostra "Editar compra" e o botão Excluir', asyn
   expect(screen.getByRole('heading', { name: 'Editar compra' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Excluir' })).toBeInTheDocument();
 });
+
+it('digitar Parcelas já pagas recalcula Data para trás em meses', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao } = await montarCartao();
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+    render(<FormCompra cartao={cartao} onFechar={() => {}} />);
+    const inputData = screen.getByLabelText('Data') as HTMLInputElement;
+    const inputParcelas = screen.getByLabelText('Parcelas');
+    const inputParcelasPagas = screen.getByLabelText('Parcelas já pagas');
+
+    // Inicialmente, data é 'hoje' (2026-07-01)
+    expect(inputData.value).toBe('2026-07-01');
+
+    // Definir 3 parcelas
+    await userEvent.clear(inputParcelas);
+    await userEvent.type(inputParcelas, '3');
+
+    // Digitar 2 em "Parcelas já pagas"
+    await userEvent.type(inputParcelasPagas, '2');
+
+    // Data deve recalcular para 2 meses antes (2026-05-01)
+    expect(inputData.value).toBe('2026-05-01');
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('limpar Parcelas já pagas NÃO reverte Data ao valor original', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao } = await montarCartao();
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+    render(<FormCompra cartao={cartao} onFechar={() => {}} />);
+    const inputData = screen.getByLabelText('Data') as HTMLInputElement;
+    const inputParcelas = screen.getByLabelText('Parcelas');
+    const inputParcelasPagas = screen.getByLabelText('Parcelas já pagas');
+
+    // Inicialmente, data é 'hoje' (2026-07-01)
+    expect(inputData.value).toBe('2026-07-01');
+
+    // Definir 3 parcelas
+    await userEvent.clear(inputParcelas);
+    await userEvent.type(inputParcelas, '3');
+
+    // Digitar 2 em "Parcelas já pagas"
+    await userEvent.type(inputParcelasPagas, '2');
+    expect(inputData.value).toBe('2026-05-01');
+
+    // Limpar "Parcelas já pagas"
+    await userEvent.clear(inputParcelasPagas);
+
+    // Data permanece em 2026-05-01 (não reverte para 2026-07-01)
+    expect(inputData.value).toBe('2026-05-01');
+  } finally {
+    vi.useRealTimers();
+  }
+});
