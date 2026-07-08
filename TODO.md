@@ -3,21 +3,22 @@
 Backlog pós-v1. Cada item tem contexto, proposta e decisões em aberto; detalhar em spec
 (`docs/superpowers/specs/`) antes de implementar os maiores.
 
-## 1. Ajustar a UI
+## 1. Saldo em dias específicos do futuro
 
-**Contexto:** a maioria dos formulários do app (Ajustes inteiro, blocos de conferência,
-"nova compra" do Cartão, cenários do Simulador) usa `aria-label` + `placeholder` no lugar de
-um `<label>` visível — o rótulo some assim que o campo ganha texto ou é um `<select>`/`date`
-sem texto de apoio nenhum. Só **Lançar** e o editor de lançamento (`LancEditor`) seguiam o
-padrão certo (`.campo` com `<label>` acima do campo). Corrigido nesta sessão: todos os campos
-passaram a usar `.campo` + `<label>` visível.
+**Contexto:** o motor já existe — `projetarBoxes` (`src/domain/projection.ts`) devolve o
+saldo projetado de cada dia até `config.horizonteProjecao`. Falta só uma forma direta de
+consultar "quanto vou ter no dia X?" sem ler o gráfico a olho.
 
-**Ainda em aberto (próximas idas nessa frente):**
-- Indicador visual de campo obrigatório na própria UI (hoje só a wiki documenta isso).
-- Revisar espaçamento das `.linha` com muitos `.campo` lado a lado em telas estreitas — pode
-  precisar de quebra melhor que o `flex-wrap` atual.
-- Mensagens de erro de validação são silenciosas (botão só não faz nada) em vários formulários
-  — considerar feedback visível como o `TelaLancar`/`LancEditor` já têm.
+**Proposta:**
+- Um seletor de data (input `date`) na aba Fluxo, acima ou abaixo do gráfico: escolhe o dia,
+  vê o saldo projetado naquele dia — respeitando boxes selecionadas e cenários ligados.
+- Extra natural: tocar/arrastar no `BalanceChart` mostra tooltip com dia + saldo (o mesmo
+  dado, acesso mais rápido).
+- Data além do horizonte de projeção: avisar e/ou oferecer estender o horizonte.
+
+**Decisões em aberto:**
+- Onde mora o controle: Fluxo, Hoje, ou os dois?
+- Mostrar também o delta em relação ao saldo de hoje ("R$ 3.200, −R$ 450 vs. hoje")?
 
 ## 2. Detalhamento do Pix nas Análises
 
@@ -38,40 +39,24 @@ total mensal — um balde opaco que pode ser a maior linha de gasto sem dizer na
   espaços, prefixos do banco)?
 - O drill-down vale para todas as categorias (provavelmente sim — de graça) ou só pix?
 
-## 3. Saldo em dias específicos do futuro
+## 3. Importar extrato bancário
 
-**Contexto:** o motor já existe — `projetarBoxes` (`src/domain/projection.ts`) devolve o
-saldo projetado de cada dia até `config.horizonteProjecao`. Falta só uma forma direta de
-consultar "quanto vou ter no dia X?" sem ler o gráfico a olho.
-
-**Proposta:**
-- Um seletor de data (input `date`) na aba Fluxo, acima ou abaixo do gráfico: escolhe o dia,
-  vê o saldo projetado naquele dia — respeitando boxes selecionadas e cenários ligados.
-- Extra natural: tocar/arrastar no `BalanceChart` mostra tooltip com dia + saldo (o mesmo
-  dado, acesso mais rápido).
-- Data além do horizonte de projeção: avisar e/ou oferecer estender o horizonte.
-
-**Decisões em aberto:**
-- Onde mora o controle: Fluxo, Hoje, ou os dois?
-- Mostrar também o delta em relação ao saldo de hoje ("R$ 3.200, −R$ 450 vs. hoje")?
-
-## 4. Pesquisa na aba Fluxo
-
-**Contexto:** a lista do Fluxo (`src/ui/TelaFluxo.tsx`) só mostra a janela recente
-(`hoje − diasAtras`) e não tem filtro — achar um lançamento antigo exige apertar
-"+30 dias atrás" repetidamente e rolar.
+**Contexto:** hoje o import via xlsx (`src/importer/xlsx.ts`) é o único caminho de entrada em
+massa de lançamentos. Extratos bancários (ex.: export do banco em OFX/CSV/PDF) não são
+suportados — lançar cada item manualmente na aba Lançar não escala para o histórico real.
 
 **Proposta:**
-- Campo de busca no topo da lista, filtrando por nota e nome da categoria (match
-  case-insensitive; considerar também busca por valor, ex.: "150").
-- Com busca ativa, ignorar a janela de dias e procurar no histórico inteiro (e nos
-  previstos futuros) — senão a busca "não acha" o que está fora da janela.
-- Manter o resultado agrupado por dia como hoje, com o saldo do dia no cabeçalho.
+- Suportar pelo menos um formato de extrato bancário comum (CSV ou OFX) como novo caminho de
+  importação, reaproveitando a infraestrutura de dedupe/preview do importador de xlsx.
+- Mapear categoria automaticamente quando possível (por nota/contraparte), com fallback para
+  categorização manual antes de confirmar o import.
 
 **Decisões em aberto:**
-- Debounce/quantidade mínima de caracteres (o histórico importado pode ser grande)?
+- Qual banco/formato priorizar primeiro (depende do banco que o usuário usa no dia a dia)?
+- OFX é mais estruturado que CSV mas exige parser dedicado — vale a pena vs. CSV genérico
+  com mapeamento de colunas configurável?
 
-## 5. Transformar o app num .apk
+## 4. Transformar o app num .apk
 
 **Contexto:** hoje o Flow é PWA (vite-plugin-pwa), local-first com IndexedDB/Dexie — nada
 de servidor. Instalar o PWA no Android já era pendência; um .apk é o passo além.
