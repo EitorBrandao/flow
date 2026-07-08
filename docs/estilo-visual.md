@@ -68,6 +68,8 @@ Reaproveite estas antes de criar uma classe nova.
 | `.badge` | pílula neutra pequena (contagem, status) |
 | `.aviso` | faixa âmbar de aviso |
 | `.rotulo` | rótulo maiúsculo pequeno acima de um valor/seção |
+| `.rotulo-grupo` | rótulo maiúsculo pequeno de subgrupo dentro de uma lista (ex.: "À vista"/"Parceladas" na fatura do cartão) |
+| `.botao-ver-mais` | link azul de mostrar/ocultar uma lista longa (ex.: lançamentos da fatura, escondidos por padrão) |
 | `.secao` (+ `.acao`) | cabeçalho de seção: título à esquerda, ação/contagem em azul à direita |
 | `.campo` | wrapper label+input; `.linha` para agrupar campos lado a lado |
 | `.grade-categorias` | grade 3 colunas de seleção de categoria; `.selecionada` marca o item ativo |
