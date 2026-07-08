@@ -252,3 +252,29 @@ it('busca sem resultados dentro do intervalo mostra mensagem de nenhum resultado
 
   expect(await screen.findByText('Nenhum resultado para a busca.')).toBeInTheDocument();
 });
+
+it('clicar no card do gráfico abre o modal expandido', async () => {
+  const { box, catMercado } = await seedBoxComCategoria();
+  const hoje = '2026-07-05';
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: hoje, valor: -5000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje });
+
+  render(<TelaFluxo />);
+  await userEvent.click(screen.getByRole('button', { name: 'Expandir gráfico de saldo' }));
+
+  // primeiro import dinâmico do FluxoChartModal (carrega recharts) é lento no ambiente de teste
+  expect(await screen.findByRole('dialog', { name: 'Gráfico de saldo expandido' }, { timeout: 5000 })).toBeInTheDocument();
+});
+
+it('sem ao menos 2 dias na série projetada, o gráfico não fica clicável', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-05' });
+
+  render(<TelaFluxo />);
+
+  expect(screen.queryByRole('button', { name: 'Expandir gráfico de saldo' })).not.toBeInTheDocument();
+});

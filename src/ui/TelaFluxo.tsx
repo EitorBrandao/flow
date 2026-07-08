@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
+import { Maximize2 } from 'lucide-react';
 import { addDias } from '../domain/dates';
 import { formatarBRL } from '../domain/money';
 import { projetarBoxes } from '../domain/projection';
@@ -6,6 +7,8 @@ import type { Lancamento } from '../domain/types';
 import { boxIdsSelecionadas, cenariosLigados, useApp } from '../state/store';
 import BalanceChart from './BalanceChart';
 import LancEditor from './LancEditor';
+
+const FluxoChartModal = lazy(() => import('./FluxoChartModal'));
 
 function dataBonita(d: string): string {
   const [ano, mes, dia] = d.split('-');
@@ -16,6 +19,7 @@ function dataBonita(d: string): string {
 export default function TelaFluxo() {
   const { dados, boxSel, hoje } = useApp();
   const [editando, setEditando] = useState<Lancamento | null>(null);
+  const [graficoExpandido, setGraficoExpandido] = useState(false);
   const [diasAtras, setDiasAtras] = useState(14);
   const [busca, setBusca] = useState('');
   const [dataDe, setDataDe] = useState('');
@@ -70,9 +74,19 @@ export default function TelaFluxo() {
   return (
     <div className="tela">
       <h2>Fluxo</h2>
-      <div className="card">
-        <BalanceChart serie={serie} hoje={hoje} mostrarCenarios={ligados.size > 0} />
-      </div>
+      {serie.length >= 2 ? (
+        <button
+          type="button" className="card grafico-expandido-abrir" aria-label="Expandir gráfico de saldo"
+          onClick={() => setGraficoExpandido(true)}
+        >
+          <Maximize2 size={18} className="grafico-expandido-icone" aria-hidden="true" />
+          <BalanceChart serie={serie} hoje={hoje} mostrarCenarios={ligados.size > 0} />
+        </button>
+      ) : (
+        <div className="card">
+          <BalanceChart serie={serie} hoje={hoje} mostrarCenarios={ligados.size > 0} />
+        </div>
+      )}
       <div className="linha">
         <input className="campo-busca" placeholder="Buscar por nota, categoria, data ou valor..." value={busca}
                onChange={(e) => { setBusca(e.target.value); if (e.target.value) setDataDe(''); }}
@@ -125,6 +139,14 @@ export default function TelaFluxo() {
           <p className="sub">{filtroAtivo ? 'Nenhum resultado para a busca.' : 'Nenhum lançamento no período.'}</p>
         )}
       </div>
+      {graficoExpandido && (
+        <Suspense fallback={null}>
+          <FluxoChartModal
+            serie={serie} hoje={hoje} mostrarCenarios={ligados.size > 0}
+            onFechar={() => setGraficoExpandido(false)}
+          />
+        </Suspense>
+      )}
       {editando && <LancEditor lanc={editando} onFechar={() => setEditando(null)} />}
     </div>
   );

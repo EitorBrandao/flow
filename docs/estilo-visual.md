@@ -86,6 +86,11 @@ Reaproveite estas antes de criar uma classe nova.
   (fade + leve deslize, ~150–200ms).
 - **`BalanceChart.tsx`** — linha verde com gradiente, marcador "hoje", cenários em azul
   tracejado.
+- **`FluxoChartModal.tsx`** — versão em tela cheia do `BalanceChart`, aberta ao clicar no
+  card do gráfico na aba Fluxo. Navegação por clique-e-arraste (seleciona um dia),
+  clique-duplo-e-arraste (pan) e pinça/scroll (zoom), via `recharts` carregado sob demanda
+  (`React.lazy`). Ver
+  `docs/superpowers/specs/2026-07-08-grafico-fluxo-pan-zoom-design.md`.
 
 ## Convenções de código
 
