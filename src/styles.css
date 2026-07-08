@@ -174,3 +174,32 @@ table.tabela tr:last-child td { border-bottom: none; }
   .sheet-backdrop { align-items: center; }
   .sheet { border-radius: 24px; }
 }
+
+/* ---- Gráfico expandido (FluxoChartModal) ---- */
+.grafico-expandido {
+  position: fixed; inset: 0; z-index: 50; background: var(--bg);
+  display: flex; flex-direction: column; gap: 14px;
+  padding: calc(14px + env(safe-area-inset-top)) 16px calc(14px + env(safe-area-inset-bottom));
+}
+.grafico-expandido-cabecalho { display: flex; align-items: center; justify-content: center; position: relative; min-height: 32px; }
+.grafico-expandido-periodo { font-size: 13px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.grafico-expandido-fechar {
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; border-radius: 999px; border: none;
+  background: var(--surface2); color: var(--fg);
+  display: flex; align-items: center; justify-content: center;
+}
+.grafico-expandido-leitura { display: flex; flex-direction: column; gap: 2px; }
+.grafico-expandido-area {
+  flex: 1; min-height: 0; position: relative; touch-action: none; cursor: grab; user-select: none;
+}
+.grafico-expandido-area:active { cursor: grabbing; }
+.grafico-expandido-legenda { display: flex; align-items: center; justify-content: center; gap: 18px; font-size: 12px; color: var(--muted); }
+.grafico-expandido-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.grafico-expandido-legenda i { width: 16px; height: 0; display: inline-block; border-top-style: solid; }
+.grafico-expandido-legenda .real i { border-color: var(--pos); border-top-width: 2px; }
+.grafico-expandido-legenda .proj i { border-color: var(--pos); border-top-style: dashed; border-top-width: 2px; }
+.grafico-expandido-legenda .cen i { border-color: var(--ac); border-top-style: dotted; border-top-width: 3px; }
+.grafico-expandido-rodape { text-align: center; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.grafico-expandido-abrir { border: none; width: 100%; text-align: left; position: relative; }
+.grafico-expandido-icone { position: absolute; top: 16px; right: 16px; color: var(--muted); }
