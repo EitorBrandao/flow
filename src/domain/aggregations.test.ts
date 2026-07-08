@@ -1,5 +1,5 @@
 import type { Categoria, Lancamento } from './types';
-import { compararMeses, mediaMovel3, resumoMensal, serieMensal } from './aggregations';
+import { compararMeses, lancamentosDaCategoria, mediaMovel3, resumoMensal, serieMensal } from './aggregations';
 
 const ts = { criadoEm: '2026-01-01T00:00:00Z', alteradoEm: '2026-01-01T00:00:00Z' };
 const cats: Categoria[] = [
@@ -51,4 +51,39 @@ it('serieMensal e mediaMovel3', () => {
   const meses = ['2026-05', '2026-06', '2026-07'];
   expect(serieMensal('car', meses, ['be'], lancs, false)).toEqual([0, 90000, 110000]);
   expect(mediaMovel3([30, 60, 90, 120])).toEqual([null, null, 60, 90]);
+});
+
+it('lancamentosDaCategoria agrupa por nota normalizada, soma subtotal e ordena', () => {
+  const lancsPix: Lancamento[] = [
+    lanc({ id: 'p1', data: '2026-07-05', valor: 30000, categoriaId: 'car', nota: 'Maria Silva' }),
+    lanc({ id: 'p2', data: '2026-07-12', valor: 20000, categoriaId: 'car', nota: ' maria silva ' }),
+    lanc({ id: 'p3', data: '2026-07-08', valor: 15000, categoriaId: 'car', nota: 'Padaria' }),
+    lanc({ id: 'p4', data: '2026-07-01', valor: 5000, categoriaId: 'car' }), // sem nota
+  ];
+  const grupos = lancamentosDaCategoria('2026-07', 'car', ['be'], lancsPix, false);
+
+  expect(grupos).toHaveLength(3);
+  expect(grupos[0].notaExibicao).toBe('Maria Silva');
+  expect(grupos[0].notaChave).toBe('maria silva');
+  expect(grupos[0].subtotal).toBe(50000);
+  expect(grupos[0].itens.map((i) => i.data)).toEqual(['2026-07-12', '2026-07-05']); // recente primeiro
+  expect(grupos[1].notaExibicao).toBe('Padaria');
+  expect(grupos[1].subtotal).toBe(15000);
+  expect(grupos[2].notaExibicao).toBe('sem nota');
+  expect(grupos[2].subtotal).toBe(5000);
+});
+
+it('lancamentosDaCategoria respeita o filtro de box/mês/status/cenário', () => {
+  const lancsPix: Lancamento[] = [
+    lanc({ id: 'p1', data: '2026-07-05', valor: 30000, categoriaId: 'car', nota: 'Maria' }),
+    lanc({ id: 'p2', data: '2026-07-05', valor: 30000, categoriaId: 'car', nota: 'Maria', boxId: 'outra' }),
+    lanc({ id: 'p3', data: '2026-06-05', valor: 30000, categoriaId: 'car', nota: 'Maria' }), // mês errado
+    lanc({ id: 'p4', data: '2026-07-05', valor: 30000, categoriaId: 'car', nota: 'Maria', status: 'previsto' }),
+    lanc({ id: 'p5', data: '2026-07-05', valor: 999999, categoriaId: 'car', nota: 'Maria', status: 'previsto', cenarioId: 'x' }),
+  ];
+  const semPrevistos = lancamentosDaCategoria('2026-07', 'car', ['be'], lancsPix, false);
+  expect(semPrevistos[0].subtotal).toBe(30000); // só p1
+
+  const comPrevistos = lancamentosDaCategoria('2026-07', 'car', ['be'], lancsPix, true);
+  expect(comPrevistos[0].subtotal).toBe(60000); // p1 + p4, cenário fora
 });

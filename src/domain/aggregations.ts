@@ -1,5 +1,5 @@
 import { addMeses, mesDe } from './dates';
-import type { Categoria, ID, Lancamento, TipoCategoria } from './types';
+import type { Categoria, ID, ISODate, Lancamento, TipoCategoria } from './types';
 
 export interface LinhaResumo {
   categoriaId: ID;
@@ -117,4 +117,43 @@ export function mediaMovel3(valores: number[]): (number | null)[] {
   return valores.map((_, i) =>
     i < 2 ? null : Math.round((valores[i] + valores[i - 1] + valores[i - 2]) / 3),
   );
+}
+
+export interface ItemLancamento {
+  data: ISODate;
+  valor: number;
+}
+
+export interface GrupoLancamentos {
+  notaChave: string;
+  notaExibicao: string;
+  subtotal: number;
+  itens: ItemLancamento[];
+}
+
+export function lancamentosDaCategoria(
+  mes: string,
+  categoriaId: ID,
+  boxIds: readonly ID[],
+  lancamentos: Lancamento[],
+  incluirPrevistos: boolean,
+): GrupoLancamentos[] {
+  const doCategoria = filtrar(mes, boxIds, lancamentos, incluirPrevistos).filter(
+    (l) => l.categoriaId === categoriaId,
+  );
+  const grupos = new Map<string, GrupoLancamentos>();
+  for (const l of doCategoria) {
+    const chave = (l.nota ?? '').trim().toLowerCase();
+    let grupo = grupos.get(chave);
+    if (!grupo) {
+      grupo = { notaChave: chave, notaExibicao: chave === '' ? 'sem nota' : l.nota!.trim(), subtotal: 0, itens: [] };
+      grupos.set(chave, grupo);
+    }
+    grupo.subtotal += l.valor;
+    grupo.itens.push({ data: l.data, valor: l.valor });
+  }
+  for (const g of grupos.values()) {
+    g.itens.sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0));
+  }
+  return [...grupos.values()].sort((a, b) => b.subtotal - a.subtotal);
 }
