@@ -6,6 +6,7 @@ import { projetarBoxes } from '../domain/projection';
 import type { Lancamento } from '../domain/types';
 import { boxIdsSelecionadas, cenariosLigados, useApp } from '../state/store';
 import BalanceChart from './BalanceChart';
+import FaturaResumo from './FaturaResumo';
 import LancEditor from './LancEditor';
 
 const FluxoChartModal = lazy(() => import('./FluxoChartModal'));
@@ -19,6 +20,7 @@ function dataBonita(d: string): string {
 export default function TelaFluxo() {
   const { dados, boxSel, hoje } = useApp();
   const [editando, setEditando] = useState<Lancamento | null>(null);
+  const [faturaSel, setFaturaSel] = useState<Lancamento | null>(null);
   const [graficoExpandido, setGraficoExpandido] = useState(false);
   const [diasAtras, setDiasAtras] = useState(14);
   const [busca, setBusca] = useState('');
@@ -122,7 +124,7 @@ export default function TelaFluxo() {
               <span className="sub">{formatarBRL(saldoPorDia.get(dia) ?? 0)}</span>
             </div>
             {porDia.get(dia)!.map((l) => (
-              <button key={l.id} className="item" style={{ width: '100%', textAlign: 'left', cursor: 'pointer' }} onClick={() => setEditando(l)}>
+              <button key={l.id} className="item" style={{ width: '100%', textAlign: 'left', cursor: 'pointer' }} onClick={() => (l.origem === 'cartao' ? setFaturaSel(l) : setEditando(l))}>
                 <div className="cresce">
                   {nomeCat(l.categoriaId)}
                   {l.status === 'previsto' && <span className="badge" style={{ marginLeft: 6 }}>{l.cenarioId ? 'cenário' : 'previsto'}</span>}
@@ -148,6 +150,7 @@ export default function TelaFluxo() {
         </Suspense>
       )}
       {editando && <LancEditor lanc={editando} onFechar={() => setEditando(null)} />}
+      {faturaSel && <FaturaResumo lanc={faturaSel} onFechar={() => setFaturaSel(null)} />}
     </div>
   );
 }
