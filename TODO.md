@@ -3,24 +3,10 @@
 Backlog pós-v1. Cada item tem contexto, proposta e decisões em aberto; detalhar em spec
 (`docs/superpowers/specs/`) antes de implementar os maiores.
 
-## 1. Saldo em dias específicos do futuro
+Prioridade atual: item 1 (drill-down do Pix) é a próxima feature — maior dor no dia a dia
+hoje, escolhida em 2026-07-08.
 
-**Contexto:** o motor já existe — `projetarBoxes` (`src/domain/projection.ts`) devolve o
-saldo projetado de cada dia até `config.horizonteProjecao`. Falta só uma forma direta de
-consultar "quanto vou ter no dia X?" sem ler o gráfico a olho.
-
-**Proposta:**
-- Um seletor de data (input `date`) na aba Fluxo, acima ou abaixo do gráfico: escolhe o dia,
-  vê o saldo projetado naquele dia — respeitando boxes selecionadas e cenários ligados.
-- Extra natural: tocar/arrastar no `BalanceChart` mostra tooltip com dia + saldo (o mesmo
-  dado, acesso mais rápido).
-- Data além do horizonte de projeção: avisar e/ou oferecer estender o horizonte.
-
-**Decisões em aberto:**
-- Onde mora o controle: Fluxo, Hoje, ou os dois?
-- Mostrar também o delta em relação ao saldo de hoje ("R$ 3.200, −R$ 450 vs. hoje")?
-
-## 2. Detalhamento do Pix nas Análises
+## 1. Detalhamento do Pix nas Análises
 
 **Contexto:** "pix" é uma categoria comum (existe como ganho e como gasto) que agrega
 transferências para destinos totalmente diferentes. Na aba Análises ela aparece só como um
@@ -38,6 +24,23 @@ total mensal — um balde opaco que pode ser a maior linha de gasto sem dizer na
 - Só listar os lançamentos, ou agrupar por contraparte (exige normalizar notas — caixa,
   espaços, prefixos do banco)?
 - O drill-down vale para todas as categorias (provavelmente sim — de graça) ou só pix?
+
+## 2. Saldo em dias específicos do futuro
+
+**Contexto:** o motor já existe — `projetarBoxes` (`src/domain/projection.ts`) devolve o
+saldo projetado de cada dia até `config.horizonteProjecao`. Falta só uma forma direta de
+consultar "quanto vou ter no dia X?" sem ler o gráfico a olho.
+
+**Proposta:**
+- Um seletor de data (input `date`) na aba Fluxo, acima ou abaixo do gráfico: escolhe o dia,
+  vê o saldo projetado naquele dia — respeitando boxes selecionadas e cenários ligados.
+- Extra natural: tocar/arrastar no `BalanceChart` mostra tooltip com dia + saldo (o mesmo
+  dado, acesso mais rápido).
+- Data além do horizonte de projeção: avisar e/ou oferecer estender o horizonte.
+
+**Decisões em aberto:**
+- Onde mora o controle: Fluxo, Hoje, ou os dois?
+- Mostrar também o delta em relação ao saldo de hoje ("R$ 3.200, −R$ 450 vs. hoje")?
 
 ## 3. Importar extrato bancário
 
