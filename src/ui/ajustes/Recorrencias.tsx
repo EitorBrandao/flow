@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
+import { categoriasFaturaIds } from '../../domain/fatura';
 import { formatarBRL, parseValorDigitado } from '../../domain/money';
 import { useApp } from '../../state/store';
 
@@ -16,6 +17,7 @@ export default function Recorrencias() {
   const recs = dados.recorrencias.filter((r) => !r.cenarioId);
   const nomeCat = (id: string) => dados.categorias.find((c) => c.id === id)?.nome ?? '?';
   const boxDe = (catId: string) => dados.categorias.find((c) => c.id === catId)?.boxId;
+  const ocultas = categoriasFaturaIds(dados.cartoes);
 
   function limparForm() {
     setValor(''); setCategoriaId(''); setDataInicio(hoje); setDiaDoMes('1'); setParcelas('');
@@ -104,7 +106,7 @@ export default function Recorrencias() {
           <label htmlFor={`${uid}-cat`}>Categoria</label>
           <select id={`${uid}-cat`} value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
             <option value="">categoria…</option>
-            {dados.categorias.filter((c) => !c.arquivada).map((c) => (
+            {dados.categorias.filter((c) => !c.arquivada && !ocultas.has(c.id)).map((c) => (
               <option key={c.id} value={c.id}>{c.nome} ({c.tipo})</option>
             ))}
           </select>
