@@ -16,9 +16,8 @@ async function montarCartao() {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
-  const catFlow = await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
   const cartao = await repo.salvarCartao({
-    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5, categoriaFaturaId: catFlow.id,
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
   }, '2027-12-31');
   const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
   return { box, cartao, catCartao };

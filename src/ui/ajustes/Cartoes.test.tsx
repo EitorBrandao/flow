@@ -20,8 +20,8 @@ async function montarBox() {
   return { box, cat };
 }
 
-it('cadastra um cartão com a categoria "cartão" pré-selecionada', async () => {
-  const { box, cat } = await montarBox();
+it('cadastra um cartão e cria a categoria da fatura automaticamente', async () => {
+  const { box } = await montarBox();
   await useApp.getState().iniciar();
   useApp.setState({ hoje: '2026-07-01' });
   render(<Cartoes />);
@@ -29,21 +29,22 @@ it('cadastra um cartão com a categoria "cartão" pré-selecionada', async () =>
   await userEvent.type(screen.getByLabelText('Nome do cartão'), 'Nubank');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
 
-  // aguarda o recarregar() da criação assentar (evita corrida com o beforeEach do próximo teste)
-  await waitFor(() => expect(screen.getByText(/Nubank/)).toBeInTheDocument());
+  // espera pelo dado persistido em vez de texto na tela — evita ambiguidade com a opção
+  // "Nubank" que agora também aparece no select de categoria (a própria categoria oculta)
+  await waitFor(async () => expect(await db.cartoes.count()).toBe(1));
 
   const cartoes = await db.cartoes.toArray();
-  expect(cartoes).toHaveLength(1);
   expect(cartoes[0]).toMatchObject({
-    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
-    categoriaFaturaId: cat.id, ativo: true,
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5, ativo: true,
   });
+  const categoria = await db.categorias.get(cartoes[0].categoriaFaturaId);
+  expect(categoria).toMatchObject({ boxId: box.id, nome: 'Nubank', tipo: 'gasto' });
 });
 
 it('impede segundo cartão ativo na mesma box', async () => {
-  const { box, cat } = await montarBox();
+  const { box } = await montarBox();
   await repo.salvarCartao({
-    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5, categoriaFaturaId: cat.id,
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
   }, '2027-12-31');
   await useApp.getState().iniciar();
   useApp.setState({ hoje: '2026-07-01' });

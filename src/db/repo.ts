@@ -307,15 +307,26 @@ export async function substituirTudo(d: Dados): Promise<void> {
 // ---------- Cartão de crédito ----------
 
 export interface NovoCartao {
-  boxId: ID; nome: string; diaFechamento: number; diaVencimento: number; categoriaFaturaId: ID;
+  boxId: ID; nome: string; diaFechamento: number; diaVencimento: number;
 }
 
 export async function salvarCartao(n: NovoCartao | Cartao, horizonte: ISODate): Promise<Cartao> {
   const agora = agoraISO();
   const cartao: Cartao = 'id' in n
     ? { ...n, alteradoEm: agora }
-    : { id: novoId(), ativo: true, criadoEm: agora, alteradoEm: agora, ...n };
-  await db.transaction('rw', db.cartoes, db.config, async () => {
+    : {
+        id: novoId(), boxId: n.boxId, nome: n.nome, diaFechamento: n.diaFechamento, diaVencimento: n.diaVencimento,
+        ativo: true, criadoEm: agora, alteradoEm: agora, categoriaFaturaId: novoId(),
+      };
+  await db.transaction('rw', [db.cartoes, db.categorias, db.config], async () => {
+    if ('id' in n) {
+      await db.categorias.update(cartao.categoriaFaturaId, { nome: cartao.nome, alteradoEm: agora });
+    } else {
+      await db.categorias.add({
+        id: cartao.categoriaFaturaId, boxId: cartao.boxId, nome: cartao.nome, tipo: 'gasto',
+        ordem: 0, arquivada: false, criadoEm: agora, alteradoEm: agora,
+      });
+    }
     await db.cartoes.put(cartao);
     await marcarMudanca();
   });
