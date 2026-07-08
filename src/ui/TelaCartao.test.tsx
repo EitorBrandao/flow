@@ -52,11 +52,12 @@ it('editar uma compra existente abre o formulário num Sheet', async () => {
     expect(await screen.findByRole('dialog', { name: 'Editar compra' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Editar compra' })).toBeInTheDocument();
 
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
     await waitFor(async () => {
       expect(await db.comprasCartao.get(compra.id)).toBeUndefined();
     });
+    confirmSpy.mockRestore();
   } finally { vi.useRealTimers(); }
 });
 
