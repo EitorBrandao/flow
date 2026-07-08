@@ -322,6 +322,22 @@ describe('cartão de crédito', () => {
     expect(categoria?.nome).toBe('Nubank Ultravioleta');
   });
 
+  it('editar um cartão ignora categoriaFaturaId estranho no payload e não renomeia categoria alheia', async () => {
+    const { cartao } = await montarCartao();
+    const outraCategoria = await repo.salvarCategoria({ boxId: cartao.boxId, nome: 'mercado', tipo: 'gasto', ordem: 1 });
+
+    await repo.salvarCartao({ ...cartao, nome: 'Nubank Ultravioleta', categoriaFaturaId: outraCategoria.id }, '2027-12-31');
+
+    const atualizado = await db.cartoes.get(cartao.id);
+    expect(atualizado?.categoriaFaturaId).toBe(cartao.categoriaFaturaId);
+
+    const categoriaOriginal = await db.categorias.get(cartao.categoriaFaturaId);
+    expect(categoriaOriginal?.nome).toBe('Nubank Ultravioleta');
+
+    const categoriaAlheia = await db.categorias.get(outraCategoria.id);
+    expect(categoriaAlheia?.nome).toBe('mercado');
+  });
+
   it('compra parcelada gera um previsto por fatura', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     try {
