@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { compararMeses, mediaMovel3, resumoMensal, serieMensal } from '../domain/aggregations';
 import { addMeses, mesDe } from '../domain/dates';
 import { formatarBRL } from '../domain/money';
+import type { ID } from '../domain/types';
 import { boxIdsSelecionadas, useApp } from '../state/store';
+import LancamentosSheet from './LancamentosSheet';
 
 function nomeMes(mes: string): string {
   return new Date(`${mes}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
@@ -16,7 +18,9 @@ export default function TelaAnalises() {
   const { dados, boxSel, hoje } = useApp();
   const [mes, setMes] = useState(() => mesDe(hoje));
   const [incluirPrevistos, setIncluirPrevistos] = useState(true);
+  const [categoriaAberta, setCategoriaAberta] = useState<ID | null>(null);
   if (!dados) return null;
+  const categoriaObj = dados.categorias.find((c) => c.id === categoriaAberta);
   const ids = boxIdsSelecionadas(dados, boxSel);
   const resumo = resumoMensal(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
   const comparativo = compararMeses(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
@@ -54,7 +58,16 @@ export default function TelaAnalises() {
           </thead>
           <tbody>
             {resumo.linhas.map((l) => (
-              <tr key={l.categoriaId}>
+              <tr
+                key={l.categoriaId}
+                onClick={() => setCategoriaAberta(l.categoriaId)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCategoriaAberta(l.categoriaId); }
+                }}
+                role="button"
+                tabIndex={0}
+                style={{ cursor: 'pointer' }}
+              >
                 <td>{l.nome}</td>
                 <td className={l.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(l.total)}</td>
                 <td>{pct(l.pctDaRenda)}</td>
@@ -88,6 +101,18 @@ export default function TelaAnalises() {
           </tbody>
         </table>
       </div>
+
+      <LancamentosSheet
+        aberto={categoriaAberta !== null}
+        categoriaId={categoriaAberta}
+        nome={categoriaObj?.nome ?? ''}
+        tipo={categoriaObj?.tipo ?? 'gasto'}
+        mes={mes}
+        boxIds={ids}
+        lancamentos={dados.lancamentos}
+        incluirPrevistos={incluirPrevistos}
+        onFechar={() => setCategoriaAberta(null)}
+      />
     </div>
   );
 }
