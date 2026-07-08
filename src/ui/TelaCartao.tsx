@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import * as repo from '../db/repo';
-import { addMeses } from '../domain/dates';
+import { addMeses, addMesesData } from '../domain/dates';
 import {
   calcularFaturas, datasFaturaDoMes, mesFaturaDaCompra, type Fatura,
 } from '../domain/fatura';
@@ -25,15 +25,31 @@ function FormCompra({ cartao, compra, onFechar }: {
   const [data, setData] = useState(compra?.data ?? hoje);
   const [categoriaId, setCategoriaId] = useState(compra?.categoriaCartaoId ?? '');
   const [parcelas, setParcelas] = useState(compra ? String(compra.parcelas) : '1');
+  const [parcelasPagas, setParcelasPagas] = useState('');
   const [descricao, setDescricao] = useState(compra?.descricao ?? '');
   const uid = useId();
   if (!dados) return null;
   const cats = dados.categoriasCartao.filter((c) => c.cartaoId === cartao.id && !c.arquivada);
   const horizonte = dados.config.horizonteProjecao;
+  const parcelasNum = Math.min(48, Math.max(1, Math.round(Number(parcelas) || 1)));
+
+  function onParcelasChange(v: string) {
+    setParcelas(v);
+    const n = Math.min(48, Math.max(1, Math.round(Number(v) || 1)));
+    const p = Math.round(Number(parcelasPagas) || 0);
+    if (p > 0 && p >= n) setParcelasPagas('');
+  }
+
+  function onParcelasPagasChange(v: string) {
+    setParcelasPagas(v);
+    const n = Math.round(Number(v));
+    if (v.trim() === '' || !Number.isFinite(n) || n <= 0) return;
+    const pClamped = Math.min(n, parcelasNum - 1);
+    setData(addMesesData(hoje, -pClamped));
+  }
 
   async function salvar() {
     const cents = parseValorDigitado(valor);
-    const parcelasNum = Math.min(48, Math.max(1, Math.round(Number(parcelas) || 1)));
     if (cents == null || !categoriaId) return;
     const campos = {
       data, valorTotal: cents, parcelas: parcelasNum, categoriaCartaoId: categoriaId,
@@ -76,7 +92,14 @@ function FormCompra({ cartao, compra, onFechar }: {
         <div className="campo">
           <label htmlFor={`${uid}-parcelas`}>Parcelas</label>
           <input id={`${uid}-parcelas`} type="number" min={1} max={48} value={parcelas}
-            onChange={(e) => setParcelas(e.target.value)} style={{ width: 64 }} />
+            onChange={(e) => onParcelasChange(e.target.value)} style={{ width: 64 }} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-parcelaspagas`}>Parcelas já pagas</label>
+          <input id={`${uid}-parcelaspagas`} type="number" min={0} max={Math.max(0, parcelasNum - 1)}
+            disabled={parcelasNum <= 1}
+            value={parcelasNum <= 1 ? '' : parcelasPagas}
+            onChange={(e) => onParcelasPagasChange(e.target.value)} style={{ width: 64 }} />
         </div>
       </div>
       <div className="linha">
