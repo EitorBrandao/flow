@@ -12,3 +12,6 @@ dist/
 
 # Worktrees isolados (superpowers:using-git-worktrees)
 .worktrees/
+
+# Scratch de execução do superpowers:subagent-driven-development (briefs, reports, ledger)
+.superpowers/
