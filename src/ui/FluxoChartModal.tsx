@@ -1,4 +1,6 @@
-import { useEffect, useId, useState } from 'react';
+import {
+  useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent,
+} from 'react';
 import {
   Area, AreaChart, ReferenceDot, ReferenceLine, ResponsiveContainer, XAxis, YAxis,
 } from 'recharts';
@@ -6,7 +8,7 @@ import { X } from 'lucide-react';
 import { formatarBRL } from '../domain/money';
 import type { DiaSaldo } from '../domain/projection';
 import type { ISODate } from '../domain/types';
-import { janelaInicial, type Janela } from './chartGestures';
+import { janelaInicial, panJanela, zoomJanela, type Janela } from './chartGestures';
 
 interface Props {
   serie: DiaSaldo[];
@@ -31,6 +33,95 @@ export default function FluxoChartModal({ serie, hoje, mostrarCenarios, onFechar
 
   const [janela, setJanela] = useState<Janela>(() => janelaInicial(hojeIdx, serie.length));
   const [selecionado, setSelecionado] = useState<ISODate>(hojeData);
+
+  const areaRef = useRef<HTMLDivElement>(null);
+  const pointersRef = useRef(new Map<number, number>());
+  const modoRef = useRef<'scrub' | 'pan' | null>(null);
+  const panRefRef = useRef<{ x: number; janela: Janela } | null>(null);
+  const pinchRef = useRef<{ dist: number; janela: Janela; ancoraIdx: number } | null>(null);
+  const ultimoCliqueRef = useRef<{ tempo: number; x: number } | null>(null);
+
+  const DBLCLIQUE_MS = 350;
+  const DBLCLIQUE_PX = 24;
+
+  function idxNaPosicao(clientX: number): number {
+    const rect = areaRef.current!.getBoundingClientRect();
+    const f = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    return Math.round(janela.inicioIdx + f * (janela.fimIdx - janela.inicioIdx));
+  }
+
+  function selecionarPeloX(clientX: number) {
+    const idx = Math.min(serie.length - 1, Math.max(0, idxNaPosicao(clientX)));
+    setSelecionado(serie[idx].data);
+  }
+
+  function onWheel(e: ReactWheelEvent) {
+    e.preventDefault();
+    const rect = areaRef.current!.getBoundingClientRect();
+    const f = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    const ancoraIdx = janela.inicioIdx + f * (janela.fimIdx - janela.inicioIdx);
+    const fator = e.deltaY > 0 ? 1.15 : 1 / 1.15;
+    setJanela((j) => zoomJanela(j, fator, ancoraIdx, serie.length));
+  }
+
+  function onPointerDown(e: ReactPointerEvent) {
+    areaRef.current?.setPointerCapture?.(e.pointerId);
+    pointersRef.current.set(e.pointerId, e.clientX);
+    if (pointersRef.current.size === 1) {
+      const ultimo = ultimoCliqueRef.current;
+      const isDuplo = ultimo != null
+        && e.timeStamp - ultimo.tempo < DBLCLIQUE_MS
+        && Math.abs(e.clientX - ultimo.x) < DBLCLIQUE_PX;
+      if (isDuplo) {
+        modoRef.current = 'pan';
+        panRefRef.current = { x: e.clientX, janela };
+      } else {
+        modoRef.current = 'scrub';
+        selecionarPeloX(e.clientX);
+      }
+      pinchRef.current = null;
+    } else if (pointersRef.current.size === 2) {
+      modoRef.current = null;
+      panRefRef.current = null;
+      const xs = [...pointersRef.current.values()];
+      const dist = Math.max(Math.abs(xs[0] - xs[1]), 1);
+      const rect = areaRef.current!.getBoundingClientRect();
+      const midX = (xs[0] + xs[1]) / 2;
+      const f = Math.min(1, Math.max(0, (midX - rect.left) / rect.width));
+      pinchRef.current = { dist, janela, ancoraIdx: janela.inicioIdx + f * (janela.fimIdx - janela.inicioIdx) };
+    }
+  }
+
+  function onPointerMove(e: ReactPointerEvent) {
+    if (!pointersRef.current.has(e.pointerId)) return;
+    pointersRef.current.set(e.pointerId, e.clientX);
+    if (pointersRef.current.size === 2 && pinchRef.current) {
+      const xs = [...pointersRef.current.values()];
+      const dist = Math.max(Math.abs(xs[0] - xs[1]), 1);
+      const { janela: janelaRef, ancoraIdx, dist: distInicial } = pinchRef.current;
+      setJanela(zoomJanela(janelaRef, distInicial / dist, ancoraIdx, serie.length));
+    } else if (pointersRef.current.size === 1 && modoRef.current === 'pan' && panRefRef.current) {
+      const rect = areaRef.current!.getBoundingClientRect();
+      const dx = e.clientX - panRefRef.current.x;
+      const winLen = panRefRef.current.janela.fimIdx - panRefRef.current.janela.inicioIdx;
+      const deltaIdx = (-dx / rect.width) * winLen;
+      setJanela(panJanela(panRefRef.current.janela, deltaIdx, serie.length));
+    } else if (pointersRef.current.size === 1 && modoRef.current === 'scrub') {
+      selecionarPeloX(e.clientX);
+    }
+  }
+
+  function onPointerUp(e: ReactPointerEvent) {
+    if (modoRef.current) ultimoCliqueRef.current = { tempo: e.timeStamp, x: e.clientX };
+    pointersRef.current.delete(e.pointerId);
+    if (pointersRef.current.size < 2) pinchRef.current = null;
+    if (pointersRef.current.size === 0) { modoRef.current = null; panRefRef.current = null; }
+  }
+
+  function onPointerCancel(e: ReactPointerEvent) {
+    pointersRef.current.delete(e.pointerId);
+    pinchRef.current = null; modoRef.current = null; panRefRef.current = null;
+  }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -90,7 +181,11 @@ export default function FluxoChartModal({ serie, hoje, mostrarCenarios, onFechar
         </span>
       </div>
 
-      <div className="grafico-expandido-area" data-testid="grafico-expandido-area">
+      <div
+        className="grafico-expandido-area" data-testid="grafico-expandido-area" ref={areaRef}
+        onWheel={onWheel} onPointerDown={onPointerDown} onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={pontos} margin={{ top: 8, right: 4, bottom: 0, left: 4 }}>
             <defs>
