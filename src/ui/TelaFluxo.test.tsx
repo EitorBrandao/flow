@@ -263,6 +263,7 @@ it('clicar no card do gráfico abre o modal expandido', async () => {
   render(<TelaFluxo />);
   await userEvent.click(screen.getByRole('button', { name: 'Expandir gráfico de saldo' }));
 
+  // primeiro import dinâmico do FluxoChartModal (carrega recharts) é lento no ambiente de teste
   expect(await screen.findByRole('dialog', { name: 'Gráfico de saldo expandido' }, { timeout: 5000 })).toBeInTheDocument();
 });
 
