@@ -126,6 +126,11 @@ strong.valor-ganho, strong.valor-gasto {
   background: var(--surface2); min-height: 44px;
 }
 .linha { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.campo-busca {
+  padding: 11px 12px; border: none; border-radius: 12px;
+  background: var(--surface2); color: var(--fg); min-height: 44px;
+}
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: .7; }
 
 table.tabela { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 table.tabela th {
