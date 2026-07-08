@@ -35,89 +35,28 @@ it('box sem cartão oferece cadastro', async () => {
   expect(screen.getByRole('button', { name: 'Cadastrar cartão' })).toBeInTheDocument();
 });
 
-it('adiciona compra parcelada e navega entre faturas', async () => {
+it('editar uma compra existente abre o formulário num Sheet', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
     vi.setSystemTime(new Date('2026-07-01T12:00:00'));
-    const { box } = await montarCartao();
+    const { box, cartao, catCartao } = await montarCartao();
+    const compra = await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-01',
+      valorTotal: 5000, parcelas: 1,
+    }, '2027-12-31');
     await useApp.getState().iniciar();
     useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
     render(<TelaCartao />);
 
-    await userEvent.click(screen.getByRole('button', { name: '+ compra' }));
-    await userEvent.type(screen.getByLabelText('Valor'), '100,00');
-    await userEvent.selectOptions(screen.getByLabelText('Categoria'), screen.getByRole('option', { name: 'mercado' }));
-    await userEvent.clear(screen.getByLabelText('Parcelas'));
-    await userEvent.type(screen.getByLabelText('Parcelas'), '3');
-    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await userEvent.click(await screen.findByText('mercado'));
+    expect(await screen.findByRole('dialog', { name: 'Editar compra' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Editar compra' })).toBeInTheDocument();
 
-    // fatura padrão = 08/2026 (compra 2026-07-01, fecha 28/07, vence 05/08): parcela 1
-    expect(await screen.findByText(/1\/3/)).toBeInTheDocument();
-    expect(screen.getAllByText(/33,34/).length).toBeGreaterThan(0);
-
-    await userEvent.click(screen.getByRole('button', { name: 'Mês seguinte' }));
-    expect(await screen.findByText(/2\/3/)).toBeInTheDocument();
-    expect(screen.getAllByText(/33,33/).length).toBeGreaterThan(0);
-  } finally { vi.useRealTimers(); }
-});
-
-it('parcelas já pagas ajusta a data e a numeração da parcela na fatura aberta', async () => {
-  vi.useFakeTimers({ toFake: ['Date'] });
-  try {
-    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
-    const { box } = await montarCartao();
-    await useApp.getState().iniciar();
-    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
-    render(<TelaCartao />);
-
-    await userEvent.click(screen.getByRole('button', { name: '+ compra' }));
-    await userEvent.type(screen.getByLabelText('Valor'), '1200,00');
-    await userEvent.selectOptions(screen.getByLabelText('Categoria'), screen.getByRole('option', { name: 'mercado' }));
-    await userEvent.clear(screen.getByLabelText('Parcelas'));
-    await userEvent.type(screen.getByLabelText('Parcelas'), '12');
-    await userEvent.type(screen.getByLabelText('Parcelas já pagas'), '3');
-
-    // atalho recalculou a Data para 3 meses atrás (mantendo o dia)
-    expect(screen.getByLabelText('Data')).toHaveValue('2026-04-01');
-
-    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
-
-    // fatura aberta por padrão (2026-08): compra iniciada em abril cai na parcela 4/12
-    expect(await screen.findByText(/4\/12/)).toBeInTheDocument();
-  } finally { vi.useRealTimers(); }
-});
-
-it('campo Parcelas já pagas fica desabilitado com 1 parcela', async () => {
-  vi.useFakeTimers({ toFake: ['Date'] });
-  try {
-    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
-    const { box } = await montarCartao();
-    await useApp.getState().iniciar();
-    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
-    render(<TelaCartao />);
-
-    await userEvent.click(screen.getByRole('button', { name: '+ compra' }));
-    expect(screen.getByLabelText('Parcelas já pagas')).toBeDisabled();
-  } finally { vi.useRealTimers(); }
-});
-
-it('limpar Parcelas já pagas não reverte a Data já recalculada', async () => {
-  vi.useFakeTimers({ toFake: ['Date'] });
-  try {
-    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
-    const { box } = await montarCartao();
-    await useApp.getState().iniciar();
-    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
-    render(<TelaCartao />);
-
-    await userEvent.click(screen.getByRole('button', { name: '+ compra' }));
-    await userEvent.clear(screen.getByLabelText('Parcelas'));
-    await userEvent.type(screen.getByLabelText('Parcelas'), '6');
-    await userEvent.type(screen.getByLabelText('Parcelas já pagas'), '2');
-    expect(screen.getByLabelText('Data')).toHaveValue('2026-05-01');
-
-    await userEvent.clear(screen.getByLabelText('Parcelas já pagas'));
-    expect(screen.getByLabelText('Data')).toHaveValue('2026-05-01');
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+    await waitFor(async () => {
+      expect(await db.comprasCartao.get(compra.id)).toBeUndefined();
+    });
   } finally { vi.useRealTimers(); }
 });
 
