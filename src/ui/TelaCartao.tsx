@@ -82,6 +82,7 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const { dados, hoje } = useApp();
   const [mes, setMes] = useState(() => mesFaturaDaCompra(cartao, hoje));
   const [editando, setEditando] = useState<CompraCartao | null>(null);
+  const [mostrarLista, setMostrarLista] = useState(false);
   if (!dados) return null;
 
   const compras = dados.comprasCartao.filter((c) => c.cartaoId === cartao.id);
@@ -96,6 +97,10 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
     porCategoria.set(i.categoriaCartaoId, (porCategoria.get(i.categoriaCartaoId) ?? 0) + i.valorCent);
   }
   const resumo = [...porCategoria.entries()].sort((a, b) => b[1] - a[1]);
+
+  const aVista = fatura.itens.filter((i) => i.totalParcelas === 1).sort((a, b) => b.data.localeCompare(a.data));
+  const parceladas = fatura.itens.filter((i) => i.totalParcelas > 1).sort((a, b) => b.data.localeCompare(a.data));
+  const mostrarGrupos = aVista.length > 0 && parceladas.length > 0;
 
   return (
     <div className="card">
@@ -118,27 +123,45 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
           ))}
         </div>
       )}
-      <div className="lista" style={{ marginTop: 8 }}>
-        {fatura.itens.map((i) => (
-          <button className="item" key={`${i.compraId}:${i.parcela}`}
-            style={{ cursor: 'pointer', textAlign: 'left' }}
-            onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)}>
-            <div className="cresce">
-              <div>{i.descricao ?? nomeCat(i.categoriaCartaoId)}</div>
-              <div className="sub">
-                {i.data.split('-').reverse().join('/')} · {nomeCat(i.categoriaCartaoId)}
-                {i.totalParcelas > 1 ? ` · ${i.parcela}/${i.totalParcelas}` : ''}
-              </div>
-            </div>
-            <span className="valor-gasto">{formatarBRL(i.valorCent)}</span>
-          </button>
-        ))}
-        {fatura.itens.length === 0 && <p className="sub">Nenhum gasto nesta fatura.</p>}
-      </div>
+      <button className="botao-ver-mais" style={{ marginTop: 8 }} onClick={() => setMostrarLista((v) => !v)}>
+        {mostrarLista ? 'Ocultar lançamentos' : 'Ver lançamentos'}
+      </button>
+      {mostrarLista && (
+        <div className="lista" style={{ marginTop: 8 }}>
+          {mostrarGrupos && <p className="rotulo-grupo">À vista</p>}
+          {aVista.map((i) => (
+            <ItemFaturaBotao key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCat}
+              onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)} />
+          ))}
+          {mostrarGrupos && <p className="rotulo-grupo" style={{ marginTop: 6 }}>Parceladas</p>}
+          {parceladas.map((i) => (
+            <ItemFaturaBotao key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCat}
+              onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)} />
+          ))}
+          {fatura.itens.length === 0 && <p className="sub">Nenhum gasto nesta fatura.</p>}
+        </div>
+      )}
       <Sheet aberto={editando != null} onFechar={() => setEditando(null)} rotulo="Editar compra">
         {editando && <FormCompra cartao={cartao} compra={editando} onFechar={() => setEditando(null)} />}
       </Sheet>
     </div>
+  );
+}
+
+function ItemFaturaBotao({ item, nomeCat, onClick }: {
+  item: Fatura['itens'][number]; nomeCat: (id: string) => string; onClick: () => void;
+}) {
+  return (
+    <button className="item" style={{ cursor: 'pointer', textAlign: 'left' }} onClick={onClick}>
+      <div className="cresce">
+        <div>{item.descricao ?? nomeCat(item.categoriaCartaoId)}</div>
+        <div className="sub">
+          {item.data.split('-').reverse().join('/')} · {nomeCat(item.categoriaCartaoId)}
+          {item.totalParcelas > 1 ? ` · ${item.parcela}/${item.totalParcelas}` : ''}
+        </div>
+      </div>
+      <span className="valor-gasto">{formatarBRL(item.valorCent)}</span>
+    </button>
   );
 }
 

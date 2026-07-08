@@ -38,6 +38,15 @@ button { cursor: pointer; }
   color: var(--muted); font-size: 12px; font-weight: 600;
   letter-spacing: .05em; text-transform: uppercase;
 }
+.rotulo-grupo {
+  color: var(--muted); font-size: 12px; font-weight: 600;
+  letter-spacing: .05em; text-transform: uppercase; margin: 0;
+}
+.botao-ver-mais {
+  background: none; border: none; color: var(--ac); font-weight: 600;
+  font-size: 13px; padding: 4px 0; min-height: 0;
+  display: inline-flex; align-items: center; gap: 4px;
+}
 .secao { display: flex; align-items: baseline; justify-content: space-between; padding: 0 2px; }
 .secao .acao { color: var(--ac); font-size: 13px; font-weight: 600; }
 
