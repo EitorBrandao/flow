@@ -312,16 +312,18 @@ export interface NovoCartao {
 
 export async function salvarCartao(n: NovoCartao | Cartao, horizonte: ISODate): Promise<Cartao> {
   const agora = agoraISO();
-  const cartao: Cartao = 'id' in n
-    ? { ...n, alteradoEm: agora }
-    : {
+  let cartao!: Cartao;
+  await db.transaction('rw', [db.cartoes, db.categorias, db.config], async () => {
+    if ('id' in n) {
+      const atual = await db.cartoes.get(n.id);
+      const categoriaFaturaId = atual?.categoriaFaturaId ?? n.categoriaFaturaId;
+      cartao = { ...n, categoriaFaturaId, alteradoEm: agora };
+      await db.categorias.update(categoriaFaturaId, { nome: cartao.nome, alteradoEm: agora });
+    } else {
+      cartao = {
         id: novoId(), boxId: n.boxId, nome: n.nome, diaFechamento: n.diaFechamento, diaVencimento: n.diaVencimento,
         ativo: true, criadoEm: agora, alteradoEm: agora, categoriaFaturaId: novoId(),
       };
-  await db.transaction('rw', [db.cartoes, db.categorias, db.config], async () => {
-    if ('id' in n) {
-      await db.categorias.update(cartao.categoriaFaturaId, { nome: cartao.nome, alteradoEm: agora });
-    } else {
       await db.categorias.add({
         id: cartao.categoriaFaturaId, boxId: cartao.boxId, nome: cartao.nome, tipo: 'gasto',
         ordem: 0, arquivada: false, criadoEm: agora, alteradoEm: agora,
