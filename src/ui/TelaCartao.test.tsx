@@ -61,6 +61,66 @@ it('adiciona compra parcelada e navega entre faturas', async () => {
   } finally { vi.useRealTimers(); }
 });
 
+it('parcelas já pagas ajusta a data e a numeração da parcela na fatura aberta', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box } = await montarCartao();
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    render(<TelaCartao />);
+
+    await userEvent.click(screen.getByRole('button', { name: '+ compra' }));
+    await userEvent.type(screen.getByLabelText('Valor'), '1200,00');
+    await userEvent.selectOptions(screen.getByLabelText('Categoria'), screen.getByRole('option', { name: 'mercado' }));
+    await userEvent.clear(screen.getByLabelText('Parcelas'));
+    await userEvent.type(screen.getByLabelText('Parcelas'), '12');
+    await userEvent.type(screen.getByLabelText('Parcelas já pagas'), '3');
+
+    // atalho recalculou a Data para 3 meses atrás (mantendo o dia)
+    expect(screen.getByLabelText('Data')).toHaveValue('2026-04-01');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    // fatura aberta por padrão (2026-08): compra iniciada em abril cai na parcela 4/12
+    expect(await screen.findByText(/4\/12/)).toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});
+
+it('campo Parcelas já pagas fica desabilitado com 1 parcela', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box } = await montarCartao();
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    render(<TelaCartao />);
+
+    await userEvent.click(screen.getByRole('button', { name: '+ compra' }));
+    expect(screen.getByLabelText('Parcelas já pagas')).toBeDisabled();
+  } finally { vi.useRealTimers(); }
+});
+
+it('limpar Parcelas já pagas não reverte a Data já recalculada', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box } = await montarCartao();
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    render(<TelaCartao />);
+
+    await userEvent.click(screen.getByRole('button', { name: '+ compra' }));
+    await userEvent.clear(screen.getByLabelText('Parcelas'));
+    await userEvent.type(screen.getByLabelText('Parcelas'), '6');
+    await userEvent.type(screen.getByLabelText('Parcelas já pagas'), '2');
+    expect(screen.getByLabelText('Data')).toHaveValue('2026-05-01');
+
+    await userEvent.clear(screen.getByLabelText('Parcelas já pagas'));
+    expect(screen.getByLabelText('Data')).toHaveValue('2026-05-01');
+  } finally { vi.useRealTimers(); }
+});
+
 it('conferência mostra a diferença e a caixa troca o valor do previsto', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {

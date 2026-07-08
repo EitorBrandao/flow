@@ -47,6 +47,13 @@ export function addMeses(mes: string, n: number): string {
   return new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7);
 }
 
+/** Desloca uma data completa em N meses, mantendo o dia do mês (clampado ao fim do mês
+ *  se necessário). N pode ser negativo. */
+export function addMesesData(d: ISODate, n: number): ISODate {
+  const [ano, mes, dia] = d.split('-').map(Number);
+  return dataComDia(ano, mes + n, dia);
+}
+
 /** Serial de data do Excel (base 1899-12-30) → ISODate. */
 export function serialExcelParaISO(serial: number): ISODate {
   return isoDeUTC(Date.UTC(1899, 11, 30) + Math.round(serial) * MS_DIA);
