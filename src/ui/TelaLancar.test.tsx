@@ -89,3 +89,18 @@ it('marca como previsto quando o toggle está ativo, mesmo com data de hoje', as
   expect(lancs).toHaveLength(1);
   expect(lancs[0]).toMatchObject({ data: '2026-07-02', status: 'previsto' });
 });
+
+it('categoria da fatura de um cartão não aparece na grade de seleção', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+
+  expect(screen.getByRole('button', { name: 'mercado' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Nubank' })).not.toBeInTheDocument();
+});
