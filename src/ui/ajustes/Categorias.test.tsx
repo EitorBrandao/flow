@@ -31,3 +31,18 @@ it('renomeia uma categoria existente via edição inline', async () => {
   const atualizado = await db.categorias.get(cat.id);
   expect(atualizado?.nome).toBe('cartão de crédito');
 });
+
+it('categoria da fatura de um cartão não aparece na lista de categorias', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+  await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 1 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+
+  render(<Categorias />);
+
+  expect(screen.getByText('mercado')).toBeInTheDocument();
+  expect(screen.queryByText('Nubank')).not.toBeInTheDocument();
+});
