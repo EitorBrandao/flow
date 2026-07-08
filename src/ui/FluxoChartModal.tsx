@@ -1,5 +1,5 @@
 import {
-  useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent,
+  useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent,
 } from 'react';
 import {
   Area, AreaChart, ReferenceDot, ReferenceLine, ResponsiveContainer, XAxis, YAxis,
@@ -55,7 +55,10 @@ export default function FluxoChartModal({ serie, hoje, mostrarCenarios, onFechar
     setSelecionado(serie[idx].data);
   }
 
-  function onWheel(e: ReactWheelEvent) {
+  function onWheel(e: WheelEvent) {
+    // listener nativo e não-passivo (registrado abaixo via useEffect): preventDefault
+    // aqui de fato suprime o scroll da página, o que não acontece com onWheel do JSX
+    // (React registra esse handler como passivo na raiz).
     e.preventDefault();
     const rect = areaRef.current!.getBoundingClientRect();
     const f = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
@@ -63,6 +66,13 @@ export default function FluxoChartModal({ serie, hoje, mostrarCenarios, onFechar
     const fator = e.deltaY > 0 ? 1.15 : 1 / 1.15;
     setJanela((j) => zoomJanela(j, fator, ancoraIdx, serie.length));
   }
+
+  useEffect(() => {
+    const el = areaRef.current;
+    if (!el) return undefined;
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [janela, serie.length]);
 
   function onPointerDown(e: ReactPointerEvent) {
     areaRef.current?.setPointerCapture?.(e.pointerId);
@@ -183,7 +193,7 @@ export default function FluxoChartModal({ serie, hoje, mostrarCenarios, onFechar
 
       <div
         className="grafico-expandido-area" data-testid="grafico-expandido-area" ref={areaRef}
-        onWheel={onWheel} onPointerDown={onPointerDown} onPointerMove={onPointerMove}
+        onPointerDown={onPointerDown} onPointerMove={onPointerMove}
         onPointerUp={onPointerUp} onPointerCancel={onPointerCancel}
       >
         <ResponsiveContainer width="100%" height="100%">

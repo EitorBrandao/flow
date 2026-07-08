@@ -53,8 +53,9 @@ escopo".
 - Estado `selecionado: ISODate | null` — guarda a **data**, não o índice (estável se a janela
   mudar). Inicia na data de hoje.
 - Deriva a cada mudança de `janela`: rótulo de período (primeira/última data de
-  `serieVisivel`) e mín/máx (sobre `serieVisivel`, mesma fórmula que o `BalanceChart` já usa
-  — `Math.min(...valores, 0)` / `Math.max(...valores, 0)`).
+  `serieVisivel`) e mín/máx exibidos no rodapé — `Math.min(...valores)` / `Math.max(...valores)`
+  sobre `serieVisivel`, **sem** forçar inclusão do 0 (diferente do domínio do eixo Y, que força
+  0 à parte só para manter a linha de referência visível no gráfico).
 - O crosshair do `selecionado` (linha + ponto em destaque) só é desenhado quando a data cai
   dentro de `serieVisivel`; fora da janela visível, o readout continua mostrando o valor
   daquele dia (o dado não muda, só o marcador visual some do gráfico).
