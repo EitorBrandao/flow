@@ -37,6 +37,7 @@ it('box sem cartão oferece cadastro', async () => {
 
 it('editar uma compra existente abre o formulário num Sheet', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
+  let confirmSpy: any;
   try {
     vi.setSystemTime(new Date('2026-07-01T12:00:00'));
     const { box, cartao, catCartao } = await montarCartao();
@@ -52,13 +53,15 @@ it('editar uma compra existente abre o formulário num Sheet', async () => {
     expect(await screen.findByRole('dialog', { name: 'Editar compra' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Editar compra' })).toBeInTheDocument();
 
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
     await waitFor(async () => {
       expect(await db.comprasCartao.get(compra.id)).toBeUndefined();
     });
-    confirmSpy.mockRestore();
-  } finally { vi.useRealTimers(); }
+  } finally {
+    confirmSpy?.mockRestore();
+    vi.useRealTimers();
+  }
 });
 
 it('conferência mostra a diferença e a caixa troca o valor do previsto', async () => {
