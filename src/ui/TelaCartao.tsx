@@ -1,12 +1,14 @@
 import { useId, useState } from 'react';
 import * as repo from '../db/repo';
-import { addMeses, addMesesData } from '../domain/dates';
+import { addMeses } from '../domain/dates';
 import {
   calcularFaturas, datasFaturaDoMes, mesFaturaDaCompra, type Fatura,
 } from '../domain/fatura';
 import { formatarBRL, parseValorDigitado } from '../domain/money';
 import type { Cartao, CompraCartao } from '../domain/types';
 import { boxIdsSelecionadas, useApp } from '../state/store';
+import FormCompra from './FormCompra';
+import Sheet from './Sheet';
 
 function centavosParaTexto(c: number): string {
   return (c / 100).toFixed(2).replace('.', ',');
@@ -15,104 +17,6 @@ function centavosParaTexto(c: number): string {
 function fmtDia(d: string): string {
   const [, m, dia] = d.split('-');
   return `${dia}/${m}`;
-}
-
-function FormCompra({ cartao, compra, onFechar }: {
-  cartao: Cartao; compra?: CompraCartao; onFechar: () => void;
-}) {
-  const { dados, hoje, recarregar } = useApp();
-  const [valor, setValor] = useState(compra ? centavosParaTexto(compra.valorTotal) : '');
-  const [data, setData] = useState(compra?.data ?? hoje);
-  const [categoriaId, setCategoriaId] = useState(compra?.categoriaCartaoId ?? '');
-  const [parcelas, setParcelas] = useState(compra ? String(compra.parcelas) : '1');
-  const [parcelasPagas, setParcelasPagas] = useState('');
-  const [descricao, setDescricao] = useState(compra?.descricao ?? '');
-  const uid = useId();
-  if (!dados) return null;
-  const cats = dados.categoriasCartao.filter((c) => c.cartaoId === cartao.id && !c.arquivada);
-  const horizonte = dados.config.horizonteProjecao;
-  const parcelasNum = Math.min(48, Math.max(1, Math.round(Number(parcelas) || 1)));
-
-  function onParcelasChange(v: string) {
-    setParcelas(v);
-    const n = Math.min(48, Math.max(1, Math.round(Number(v) || 1)));
-    const p = Math.round(Number(parcelasPagas) || 0);
-    if (p > 0 && p >= n) setParcelasPagas('');
-  }
-
-  function onParcelasPagasChange(v: string) {
-    setParcelasPagas(v);
-    const n = Math.round(Number(v));
-    if (v.trim() === '' || !Number.isFinite(n) || n <= 0) return;
-    const pClamped = Math.min(n, parcelasNum - 1);
-    setData(addMesesData(hoje, -pClamped));
-  }
-
-  async function salvar() {
-    const cents = parseValorDigitado(valor);
-    if (cents == null || !categoriaId) return;
-    const campos = {
-      data, valorTotal: cents, parcelas: parcelasNum, categoriaCartaoId: categoriaId,
-      ...(descricao.trim() ? { descricao: descricao.trim() } : {}),
-    };
-    if (compra) await repo.atualizarCompraCartao(compra.id, campos, horizonte);
-    else await repo.salvarCompraCartao({ cartaoId: cartao.id, ...campos }, horizonte);
-    await recarregar();
-    onFechar();
-  }
-
-  async function excluir() {
-    if (!compra) return;
-    if (!window.confirm('Excluir a compra e todas as suas parcelas?')) return;
-    await repo.excluirCompraCartao(compra.id, horizonte);
-    await recarregar();
-    onFechar();
-  }
-
-  return (
-    <div className="card">
-      <h3>{compra ? 'Editar compra' : 'Nova compra'}</h3>
-      <div className="linha">
-        <div className="campo">
-          <label htmlFor={`${uid}-valor`}>Valor</label>
-          <input id={`${uid}-valor`} placeholder="0,00" inputMode="decimal" value={valor}
-            onChange={(e) => setValor(e.target.value)} style={{ width: 100 }} />
-        </div>
-        <div className="campo">
-          <label htmlFor={`${uid}-data`}>Data</label>
-          <input id={`${uid}-data`} type="date" value={data} onChange={(e) => setData(e.target.value)} />
-        </div>
-        <div className="campo">
-          <label htmlFor={`${uid}-cat`}>Categoria</label>
-          <select id={`${uid}-cat`} value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
-            <option value="">categoria…</option>
-            {cats.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-          </select>
-        </div>
-        <div className="campo">
-          <label htmlFor={`${uid}-parcelas`}>Parcelas</label>
-          <input id={`${uid}-parcelas`} type="number" min={1} max={48} value={parcelas}
-            onChange={(e) => onParcelasChange(e.target.value)} style={{ width: 64 }} />
-        </div>
-        <div className="campo">
-          <label htmlFor={`${uid}-parcelaspagas`}>Parcelas já pagas</label>
-          <input id={`${uid}-parcelaspagas`} type="number" min={0} max={Math.max(0, parcelasNum - 1)}
-            disabled={parcelasNum <= 1}
-            value={parcelasNum <= 1 ? '' : parcelasPagas}
-            onChange={(e) => onParcelasPagasChange(e.target.value)} style={{ width: 64 }} />
-        </div>
-      </div>
-      <div className="linha">
-        <div className="campo cresce">
-          <label htmlFor={`${uid}-desc`}>Descrição (opcional)</label>
-          <input id={`${uid}-desc`} value={descricao} onChange={(e) => setDescricao(e.target.value)} />
-        </div>
-        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={salvar}>Salvar</button>
-        <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={onFechar}>Cancelar</button>
-        {compra && <button className="botao botao-perigo" style={{ alignSelf: 'flex-end' }} onClick={excluir}>Excluir</button>}
-      </div>
-    </div>
-  );
 }
 
 function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: string; totalCent: number }) {
@@ -177,8 +81,8 @@ function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: str
 function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const { dados, hoje } = useApp();
   const [mes, setMes] = useState(() => mesFaturaDaCompra(cartao, hoje));
-  const [formAberto, setFormAberto] = useState(false);
   const [editando, setEditando] = useState<CompraCartao | null>(null);
+  const [mostrarLista, setMostrarLista] = useState(false);
   if (!dados) return null;
 
   const compras = dados.comprasCartao.filter((c) => c.cartaoId === cartao.id);
@@ -193,6 +97,10 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
     porCategoria.set(i.categoriaCartaoId, (porCategoria.get(i.categoriaCartaoId) ?? 0) + i.valorCent);
   }
   const resumo = [...porCategoria.entries()].sort((a, b) => b[1] - a[1]);
+
+  const aVista = fatura.itens.filter((i) => i.totalParcelas === 1).sort((a, b) => b.data.localeCompare(a.data));
+  const parceladas = fatura.itens.filter((i) => i.totalParcelas > 1).sort((a, b) => b.data.localeCompare(a.data));
+  const mostrarGrupos = aVista.length > 0 && parceladas.length > 0;
 
   return (
     <div className="card">
@@ -215,31 +123,45 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
           ))}
         </div>
       )}
-      <div className="lista" style={{ marginTop: 8 }}>
-        {fatura.itens.map((i) => (
-          <button className="item" key={`${i.compraId}:${i.parcela}`}
-            style={{ cursor: 'pointer', textAlign: 'left' }}
-            onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)}>
-            <div className="cresce">
-              <div>{i.descricao ?? nomeCat(i.categoriaCartaoId)}</div>
-              <div className="sub">
-                {i.data.split('-').reverse().join('/')} · {nomeCat(i.categoriaCartaoId)}
-                {i.totalParcelas > 1 ? ` · ${i.parcela}/${i.totalParcelas}` : ''}
-              </div>
-            </div>
-            <span className="valor-gasto">{formatarBRL(i.valorCent)}</span>
-          </button>
-        ))}
-        {fatura.itens.length === 0 && <p className="sub">Nenhum gasto nesta fatura.</p>}
-      </div>
-      {(formAberto || editando) ? (
-        <FormCompra cartao={cartao} compra={editando ?? undefined}
-          onFechar={() => { setFormAberto(false); setEditando(null); }} />
-      ) : (
-        <button className="botao botao-primario" style={{ marginTop: 8 }}
-          onClick={() => setFormAberto(true)}>+ compra</button>
+      <button className="botao-ver-mais" style={{ marginTop: 8 }} onClick={() => setMostrarLista((v) => !v)}>
+        {mostrarLista ? 'Ocultar lançamentos' : 'Ver lançamentos'}
+      </button>
+      {mostrarLista && (
+        <div className="lista" style={{ marginTop: 8 }}>
+          {mostrarGrupos && <p className="rotulo-grupo">À vista</p>}
+          {aVista.map((i) => (
+            <ItemFaturaBotao key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCat}
+              onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)} />
+          ))}
+          {mostrarGrupos && <p className="rotulo-grupo" style={{ marginTop: 6 }}>Parceladas</p>}
+          {parceladas.map((i) => (
+            <ItemFaturaBotao key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCat}
+              onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)} />
+          ))}
+          {fatura.itens.length === 0 && <p className="sub">Nenhum gasto nesta fatura.</p>}
+        </div>
       )}
+      <Sheet aberto={editando != null} onFechar={() => setEditando(null)} rotulo="Editar compra">
+        {editando && <FormCompra cartao={cartao} compra={editando} onFechar={() => setEditando(null)} />}
+      </Sheet>
     </div>
+  );
+}
+
+function ItemFaturaBotao({ item, nomeCat, onClick }: {
+  item: Fatura['itens'][number]; nomeCat: (id: string) => string; onClick: () => void;
+}) {
+  return (
+    <button className="item" style={{ cursor: 'pointer', textAlign: 'left' }} onClick={onClick}>
+      <div className="cresce">
+        <div>{item.descricao ?? nomeCat(item.categoriaCartaoId)}</div>
+        <div className="sub">
+          {item.data.split('-').reverse().join('/')} · {nomeCat(item.categoriaCartaoId)}
+          {item.totalParcelas > 1 ? ` · ${item.parcela}/${item.totalParcelas}` : ''}
+        </div>
+      </div>
+      <span className="valor-gasto">{formatarBRL(item.valorCent)}</span>
+    </button>
   );
 }
 
