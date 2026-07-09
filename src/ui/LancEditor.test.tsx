@@ -70,3 +70,21 @@ it('previsto vinculado a recorrência: sem botão Salvar, mostra dica, e Confirm
     vi.useRealTimers();
   }
 });
+
+it('categoria da fatura de um cartão não aparece no select de categoria do editor', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const categoria = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-07-05', valor: 5000, status: 'efetivo',
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<LancEditor lanc={lanc} onFechar={() => {}} />);
+
+  expect(screen.getByRole('option', { name: /mercado/ })).toBeInTheDocument();
+  expect(screen.queryByRole('option', { name: /Nubank/ })).not.toBeInTheDocument();
+});

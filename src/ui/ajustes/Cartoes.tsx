@@ -8,15 +8,11 @@ export default function Cartoes() {
   const [nome, setNome] = useState('');
   const [diaFechamento, setDiaFechamento] = useState('28');
   const [diaVencimento, setDiaVencimento] = useState('5');
-  const [categoriaFaturaId, setCategoriaFaturaId] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [aviso, setAviso] = useState('');
   const uid = useId();
   if (!dados) return null;
   const horizonte = dados.config.horizonteProjecao;
-  const catsGasto = dados.categorias.filter((c) => c.boxId === boxId && c.tipo === 'gasto' && !c.arquivada);
-  const categoriaPadrao = catsGasto.find((c) => c.nome === 'cartão')?.id ?? '';
-  const catSel = categoriaFaturaId || categoriaPadrao;
   const nomeBox = (id: string) => dados.boxes.find((b) => b.id === id)?.nome ?? '?';
 
   function clampDia(t: string): number {
@@ -27,18 +23,18 @@ export default function Cartoes() {
     const c = dados!.cartoes.find((x) => x.id === id)!;
     setEditandoId(id); setBoxId(c.boxId); setNome(c.nome);
     setDiaFechamento(String(c.diaFechamento)); setDiaVencimento(String(c.diaVencimento));
-    setCategoriaFaturaId(c.categoriaFaturaId); setAviso('');
+    setAviso('');
   }
 
   async function salvar() {
-    if (!nome.trim() || !catSel || !boxId) return;
+    if (!nome.trim() || !boxId) return;
     if (dados!.cartoes.some((c) => c.boxId === boxId && c.ativo && c.id !== editandoId)) {
       setAviso('Esta box já tem um cartão ativo — desative-o antes de cadastrar outro.');
       return;
     }
     const campos = {
       boxId, nome: nome.trim(), diaFechamento: clampDia(diaFechamento),
-      diaVencimento: clampDia(diaVencimento), categoriaFaturaId: catSel,
+      diaVencimento: clampDia(diaVencimento),
     };
     if (editandoId) {
       const original = dados!.cartoes.find((c) => c.id === editandoId)!;
@@ -46,7 +42,7 @@ export default function Cartoes() {
     } else {
       await repo.salvarCartao(campos, horizonte);
     }
-    setEditandoId(null); setNome(''); setCategoriaFaturaId(''); setAviso('');
+    setEditandoId(null); setNome(''); setAviso('');
     await recarregar();
   }
 
@@ -84,7 +80,7 @@ export default function Cartoes() {
         <div className="campo">
           <label htmlFor={`${uid}-box`}>Box do cartão</label>
           <select id={`${uid}-box`} value={boxId}
-            onChange={(e) => { setBoxId(e.target.value); setCategoriaFaturaId(''); }}>
+            onChange={(e) => setBoxId(e.target.value)}>
             {dados.boxes.filter((b) => b.saldoInicial != null).map((b) => (
               <option key={b.id} value={b.id}>{b.nome}</option>
             ))}
@@ -105,14 +101,6 @@ export default function Cartoes() {
           <label htmlFor={`${uid}-vence`}>Dia de vencimento</label>
           <input id={`${uid}-vence`} type="number" min={1} max={31} value={diaVencimento}
             onChange={(e) => setDiaVencimento(e.target.value)} style={{ width: 64 }} />
-        </div>
-        <div className="campo">
-          <label htmlFor={`${uid}-catfatura`}>Categoria da fatura</label>
-          <select id={`${uid}-catfatura`} value={catSel}
-            onChange={(e) => setCategoriaFaturaId(e.target.value)}>
-            <option value="">categoria da fatura…</option>
-            {catsGasto.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-          </select>
         </div>
         <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={salvar}>
           {editandoId ? 'Salvar' : 'Criar'}

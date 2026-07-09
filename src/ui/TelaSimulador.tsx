@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import * as repo from '../db/repo';
+import { categoriasFaturaIds } from '../domain/fatura';
 import { formatarBRL, parseValorDigitado } from '../domain/money';
 import { agoraISO, novoId, type Cenario } from '../domain/types';
 import { useApp } from '../state/store';
@@ -12,7 +13,8 @@ function FormHipotetico({ cenario }: { cenario: Cenario }) {
   const [parcelas, setParcelas] = useState('1');
   const uid = useId();
   if (!dados) return null;
-  const categorias = dados.categorias.filter((c) => !c.arquivada);
+  const ocultas = categoriasFaturaIds(dados.cartoes);
+  const categorias = dados.categorias.filter((c) => !c.arquivada && !ocultas.has(c.id));
   const boxDe = (catId: string) => dados.categorias.find((c) => c.id === catId)?.boxId;
 
   async function adicionar() {

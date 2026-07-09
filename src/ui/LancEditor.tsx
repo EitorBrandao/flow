@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import * as repo from '../db/repo';
+import { categoriasFaturaIds } from '../domain/fatura';
 import { parseValorDigitado } from '../domain/money';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
@@ -15,8 +16,9 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
   const [erro, setErro] = useState('');
   if (!dados) return null;
 
+  const ocultas = categoriasFaturaIds(dados.cartoes);
   const categorias = dados.categorias
-    .filter((c) => c.boxId === lanc.boxId && !c.arquivada)
+    .filter((c) => c.boxId === lanc.boxId && !c.arquivada && !ocultas.has(c.id))
     .sort((a, b) => (a.tipo === b.tipo ? a.ordem - b.ordem : a.tipo === 'ganho' ? -1 : 1));
 
   function centsDigitados(): number | null {

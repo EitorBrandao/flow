@@ -144,3 +144,9 @@ export function diffSincronizacao(
   diff.criar.sort((a, b) => a.faturaMes.localeCompare(b.faturaMes));
   return diff;
 }
+
+/** Ids das categorias reservadas para receber a fatura de algum cartão (ativo ou não) — não
+ *  devem aparecer em nenhuma lista de seleção manual de categoria. */
+export function categoriasFaturaIds(cartoes: Cartao[]): Set<ID> {
+  return new Set(cartoes.map((c) => c.categoriaFaturaId));
+}
