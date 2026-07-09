@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as repo from '../db/repo';
+import { categoriasFaturaIds } from '../domain/fatura';
 import { parseValorDigitado } from '../domain/money';
 import type { TipoCategoria } from '../domain/types';
 import { useApp } from '../state/store';
@@ -23,11 +24,12 @@ export default function TelaLancar() {
     ? dados?.boxes.find((b) => b.nome === 'casa')?.id
     : boxSel;
 
+  const ocultas = useMemo(() => categoriasFaturaIds(dados?.cartoes ?? []), [dados]);
   const categorias = useMemo(
     () => (dados?.categorias ?? [])
-      .filter((c) => c.boxId === boxId && c.tipo === tipo && !c.arquivada)
+      .filter((c) => c.boxId === boxId && c.tipo === tipo && !c.arquivada && !ocultas.has(c.id))
       .sort((a, b) => a.ordem - b.ordem),
-    [dados, boxId, tipo],
+    [dados, boxId, tipo, ocultas],
   );
 
   const cents = parseValorDigitado(valor);

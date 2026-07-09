@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { ArrowDown, ArrowUp, Pencil } from 'lucide-react';
 import * as repo from '../../db/repo';
+import { categoriasFaturaIds } from '../../domain/fatura';
 import type { TipoCategoria } from '../../domain/types';
 import { useApp } from '../../state/store';
 
@@ -13,8 +14,9 @@ export default function Categorias() {
   const [nomeEdit, setNomeEdit] = useState('');
   const uid = useId();
   if (!dados) return null;
+  const ocultas = categoriasFaturaIds(dados.cartoes);
   const cats = dados.categorias
-    .filter((c) => c.boxId === boxId)
+    .filter((c) => c.boxId === boxId && !ocultas.has(c.id))
     .sort((a, b) => (a.tipo === b.tipo ? a.ordem - b.ordem : a.tipo === 'ganho' ? -1 : 1));
 
   async function criar() {

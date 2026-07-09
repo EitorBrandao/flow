@@ -16,15 +16,16 @@ async function montarBox() {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
-  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
-  return { box, cat };
+  return box;
 }
 
-it('cadastra um cartão com a categoria "cartão" pré-selecionada', async () => {
-  const { box, cat } = await montarBox();
+it('cadastra um cartão sem pedir categoria e cria a categoria da fatura sozinho', async () => {
+  const box = await montarBox();
   await useApp.getState().iniciar();
   useApp.setState({ hoje: '2026-07-01' });
   render(<Cartoes />);
+
+  expect(screen.queryByLabelText('Categoria da fatura')).not.toBeInTheDocument();
 
   await userEvent.type(screen.getByLabelText('Nome do cartão'), 'Nubank');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
@@ -34,16 +35,15 @@ it('cadastra um cartão com a categoria "cartão" pré-selecionada', async () =>
 
   const cartoes = await db.cartoes.toArray();
   expect(cartoes).toHaveLength(1);
-  expect(cartoes[0]).toMatchObject({
-    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
-    categoriaFaturaId: cat.id, ativo: true,
-  });
+  expect(cartoes[0]).toMatchObject({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5, ativo: true });
+  const categoria = await db.categorias.get(cartoes[0].categoriaFaturaId);
+  expect(categoria).toMatchObject({ boxId: box.id, nome: 'Nubank', tipo: 'gasto' });
 });
 
 it('impede segundo cartão ativo na mesma box', async () => {
-  const { box, cat } = await montarBox();
+  const box = await montarBox();
   await repo.salvarCartao({
-    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5, categoriaFaturaId: cat.id,
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
   }, '2027-12-31');
   await useApp.getState().iniciar();
   useApp.setState({ hoje: '2026-07-01' });

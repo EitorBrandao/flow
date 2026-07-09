@@ -278,3 +278,32 @@ it('sem ao menos 2 dias na série projetada, o gráfico não fica clicável', as
 
   expect(screen.queryByRole('button', { name: 'Expandir gráfico de saldo' })).not.toBeInTheDocument();
 });
+
+it('lançamento de fatura de cartão abre o resumo em vez do editor, e "Editar" navega para a aba Cartão', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box } = await seedBoxComCategoria();
+    const cartao = await repo.salvarCartao({
+      boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
+    }, '2027-12-31');
+    const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-10',
+      valorTotal: 5000, parcelas: 1, descricao: 'Mercado',
+    }, '2027-12-31');
+    const hoje = '2026-07-01';
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje });
+
+    render(<TelaFluxo />);
+    // o item mostra "Nubank" + badge "previsto" no mesmo nó — nome exato não bate, usa regex
+    await userEvent.click(await screen.findByRole('button', { name: /Nubank/ }));
+
+    expect(await screen.findByRole('dialog', { name: 'Fatura Nubank' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Previsto' })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    expect(useApp.getState().aba).toBe('cartao');
+  } finally { vi.useRealTimers(); }
+});

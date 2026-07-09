@@ -1,5 +1,5 @@
 import type { Cartao, CompraCartao, ConferenciaFatura, Lancamento } from './types';
-import { calcularFaturas, datasFaturaDoMes, diffSincronizacao, mesFaturaDaCompra, mesFechamentoDaCompra, valorParcela } from './fatura';
+import { calcularFaturas, categoriasFaturaIds, datasFaturaDoMes, diffSincronizacao, mesFaturaDaCompra, mesFechamentoDaCompra, valorParcela } from './fatura';
 
 const nubank = { diaFechamento: 28, diaVencimento: 5 }; // vence no mês seguinte ao fechamento
 const outro = { diaFechamento: 10, diaVencimento: 20 }; // vence no mesmo mês do fechamento
@@ -168,5 +168,17 @@ describe('diffSincronizacao', () => {
       { faturaMes: '2026-08', data: '2026-08-05', valor: 5000 },
       { faturaMes: '2026-09', data: '2026-09-05', valor: 5000 },
     ]);
+  });
+});
+
+describe('categoriasFaturaIds', () => {
+  it('retorna o categoriaFaturaId de cada cartão, ativo ou não', () => {
+    const ativo: Cartao = { ...cartaoK, id: 'k1', categoriaFaturaId: 'cat1' };
+    const inativo: Cartao = { ...cartaoK, id: 'k2', categoriaFaturaId: 'cat2', ativo: false };
+    expect(categoriasFaturaIds([ativo, inativo])).toEqual(new Set(['cat1', 'cat2']));
+  });
+
+  it('lista vazia de cartões retorna conjunto vazio', () => {
+    expect(categoriasFaturaIds([])).toEqual(new Set());
   });
 });

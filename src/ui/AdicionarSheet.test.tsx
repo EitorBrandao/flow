@@ -48,9 +48,8 @@ it('sem cartão cadastrado: "Compra no cartão" mostra aviso e leva para Ajustes
 
 it('1 cartão ativo: "Compra no cartão" pula direto para o formulário', async () => {
   const box = await montarBox();
-  const catFlow = await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
   await repo.salvarCartao({
-    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5, categoriaFaturaId: catFlow.id,
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
   }, '2027-12-31');
   await useApp.getState().iniciar();
   useApp.setState({ boxSel: box.id });
@@ -62,12 +61,11 @@ it('1 cartão ativo: "Compra no cartão" pula direto para o formulário', async 
 
 it('2+ cartões ativos: "Compra no cartão" mostra lista de escolha antes do formulário', async () => {
   const box = await montarBox();
-  const catFlow = await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
   await repo.salvarCartao({
-    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5, categoriaFaturaId: catFlow.id,
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
   }, '2027-12-31');
   await repo.salvarCartao({
-    boxId: box.id, nome: 'Inter', diaFechamento: 20, diaVencimento: 28, categoriaFaturaId: catFlow.id,
+    boxId: box.id, nome: 'Inter', diaFechamento: 20, diaVencimento: 28,
   }, '2027-12-31');
   await useApp.getState().iniciar();
   useApp.setState({ boxSel: box.id });
