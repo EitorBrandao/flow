@@ -61,6 +61,25 @@ Como toda mutation é seguida de `recarregar()` no store (que chama
 preservam ordem, então os quatro pontos sem ordenação (Simulador, Recorrências,
 FormCompra, Assinaturas) ficam corretos sem serem tocados.
 
+### Superfícies cobertas (checklist de verificação)
+
+Toda listagem/dropdown de categoria passa a refletir a ordem do cadastro:
+
+| Superfície | Arquivo | Como fica correto |
+|---|---|---|
+| Grade de categorias ao lançar | `TelaLancar.tsx` | sort local removido; usa ordem do store |
+| Dropdown ao editar lançamento | `LancEditor.tsx` | sort local removido; usa ordem do store |
+| Dropdown do Simulador | `TelaSimulador.tsx` | corrigido pela ordenação na fonte |
+| Dropdown de Recorrências (Ajustes) | `ajustes/Recorrencias.tsx` | corrigido pela ordenação na fonte |
+| Dropdown de categoria do cartão (nova compra) | `FormCompra.tsx` | corrigido pela ordenação na fonte |
+| Dropdown de categoria do cartão (Assinaturas) | `ajustes/Assinaturas.tsx` | corrigido pela ordenação na fonte |
+| Lista de Ajustes → Categorias | `ajustes/Categorias.tsx` | sort local removido; usa ordem do store |
+| Lista de Ajustes → Categorias do cartão | `ajustes/CategoriasCartao.tsx` | sort local removido; usa ordem do store |
+| Grupos da aba Análises | `domain/aggregations.ts` | sort mantido, via `compararCategorias` |
+
+Qualquer dropdown futuro que mapeie `dados.categorias`/`dados.categoriasCartao`
+sem reordenar já nasce correto.
+
 ### 3. Remover sorts locais redundantes na UI
 
 - `src/ui/TelaLancar.tsx:31` — remove o `.sort()`; de quebra a tela passa a
