@@ -5,6 +5,7 @@
   --pos: #2ee6a8; --pos-bg: rgba(46, 230, 168, .14);
   --neg: #ff6b7a; --neg-bg: rgba(255, 107, 122, .13);
   --aviso-bg: #423306; --aviso-fg: #fcd34d;
+  --hoje-bg: #0d4a32;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -114,6 +115,13 @@ strong.valor-ganho, strong.valor-gasto {
 .aviso {
   background: var(--aviso-bg); color: var(--aviso-fg);
   padding: 12px 14px; border-radius: 12px; font-size: 14px;
+}
+.cabecalho-dia {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 10px 4px 4px;
+}
+.cabecalho-dia.dia-hoje {
+  background: var(--hoje-bg); padding: 12px 14px; border-radius: 12px;
 }
 .saldo-grande {
   font-size: 38px; font-weight: 800; letter-spacing: -.03em;
