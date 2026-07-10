@@ -307,3 +307,31 @@ it('lançamento de fatura de cartão abre o resumo em vez do editor, e "Editar" 
     expect(useApp.getState().aba).toBe('cartao');
   } finally { vi.useRealTimers(); }
 });
+
+it('dia de hoje aparece na lista mesmo sem lançamentos, destacado e só com o cabeçalho', async () => {
+  const { box } = await seedBoxComCategoria();
+  const hoje = '2026-07-05';
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje });
+
+  render(<TelaFluxo />);
+
+  const cabecalhoHoje = await screen.findByText(/· hoje/);
+  expect(cabecalhoHoje).toBeInTheDocument();
+  expect(cabecalhoHoje.closest('.dia-hoje')).toBeInTheDocument();
+  expect(screen.queryByText('Nenhum lançamento no período.')).not.toBeInTheDocument();
+});
+
+it('filtro de data ativo não força hoje a aparecer se não tiver lançamento no filtro', async () => {
+  const { box, catMercado } = await seedBoxComCategoria();
+  const hoje = '2026-07-05';
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: hoje, valor: -5000, status: 'efetivo', nota: 'compra de hoje' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje });
+
+  render(<TelaFluxo />);
+  fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-01-01' } });
+
+  expect(await screen.findByText('Nenhum resultado para a busca.')).toBeInTheDocument();
+  expect(screen.queryByText(/· hoje/)).not.toBeInTheDocument();
+});
