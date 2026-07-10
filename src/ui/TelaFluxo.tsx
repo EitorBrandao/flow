@@ -71,7 +71,9 @@ export default function TelaFluxo() {
     else porDia.set(l.data, [l]);
   }
   const saldoPorDia = new Map(serie.map((s) => [s.data, s.saldoProjetado]));
-  const dias = [...porDia.keys()].sort();
+  const diasSet = new Set(porDia.keys());
+  if (!filtroAtivo) diasSet.add(hoje);
+  const dias = [...diasSet].sort();
 
   return (
     <div className="tela">
@@ -119,11 +121,11 @@ export default function TelaFluxo() {
       <div className="lista">
         {dias.map((dia) => (
           <div key={dia}>
-            <div className="linha" style={{ padding: '10px 4px 4px', justifyContent: 'space-between' }}>
-              <strong className={dia === hoje ? 'valor-ganho' : ''}>{dataBonita(dia)}{dia === hoje ? ' · hoje' : ''}</strong>
+            <div className={dia === hoje ? 'cabecalho-dia dia-hoje' : 'cabecalho-dia'}>
+              <strong>{dataBonita(dia)}{dia === hoje ? ' · hoje' : ''}</strong>
               <span className="sub">{formatarBRL(saldoPorDia.get(dia) ?? 0)}</span>
             </div>
-            {porDia.get(dia)!.map((l) => (
+            {(porDia.get(dia) ?? []).map((l) => (
               <button key={l.id} className="item" style={{ width: '100%', textAlign: 'left', cursor: 'pointer' }} onClick={() => (l.origem === 'cartao' ? setFaturaSel(l) : setEditando(l))}>
                 <div className="cresce">
                   {nomeCat(l.categoriaId)}
