@@ -82,9 +82,9 @@ sem reordenar já nasce correto.
 
 ### 3. Remover sorts locais redundantes na UI
 
-- `src/ui/TelaLancar.tsx:31` — remove o `.sort()`; de quebra a tela passa a
-  separar ganhos de gastos, batendo com Ajustes (mudança de comportamento
-  desejada, decisão 1).
+- `src/ui/TelaLancar.tsx:31` — remove o `.sort()`; a tela já filtra por tipo
+  (mostra um tipo por vez), então o comportamento visível não muda — só sai
+  a duplicação.
 - `src/ui/LancEditor.tsx:22` — remove o `.sort()`.
 - `src/ui/ajustes/Categorias.tsx:20` — remove o `.sort()`.
 - `src/ui/ajustes/CategoriasCartao.tsx:18` — remove o `.sort()`.
