@@ -22,6 +22,7 @@ tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
 | `.aviso` | faixa âmbar de aviso |
 | `.rotulo` | rótulo maiúsculo pequeno acima de um valor/seção |
 | `.rotulo-grupo` | rótulo maiúsculo pequeno de subgrupo dentro de uma lista (ex.: "À vista"/"Parceladas" na fatura do cartão) |
+| `.cabecalho-dia` (+ `.dia-hoje`) | cabeçalho de dia na lista do Fluxo; `.dia-hoje` destaca o dia atual (fundo `--hoje-bg`) |
 | `.botao-ver-mais` | link azul de mostrar/ocultar uma lista longa (ex.: lançamentos da fatura, escondidos por padrão) |
 | `.secao` (+ `.acao`) | cabeçalho de seção: título à esquerda, ação/contagem em azul à direita |
 | `.campo` | wrapper label+input; `.linha` para agrupar campos lado a lado |

@@ -1,7 +1,7 @@
 # Nível 3 — Criar um token novo
 
 **Você está no nível certo?** Sim, se uma classe nova (nível 2) precisa de uma **cor com
-significado** que nenhum token cobre. Token novo é raro — o app inteiro tem 14.
+significado** que nenhum token cobre. Token novo é raro — o app inteiro tem 15.
 - Mudar o **valor** de um token existente, criar tema, fonte nova, raio novo ou outra cor de
   ação → `nivel-6-mudanca-de-linguagem.md`. PARE lá.
 

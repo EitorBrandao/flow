@@ -40,6 +40,7 @@ Token novo → `nivel-3-novo-token.md`. Mudar valor de token existente → níve
 | `--pos` / `--pos-bg` | `#2ee6a8` / `rgba(46,230,168,.14)` | ganho / saldo positivo |
 | `--neg` / `--neg-bg` | `#ff6b7a` / `rgba(255,107,122,.13)` | gasto / saldo negativo |
 | `--aviso-bg` / `--aviso-fg` | `#423306` / `#fcd34d` | aviso âmbar (ex.: backup atrasado) |
+| `--hoje-bg` | `#0d4a32` | fundo de destaque da linha "hoje" na lista do Fluxo |
 
 ## Escalas
 
