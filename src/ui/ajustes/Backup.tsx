@@ -12,28 +12,41 @@ export default function Backup() {
   const uid = useId();
   if (!dados) return null;
 
+  function baixarArquivo(arquivo: File) {
+    const url = URL.createObjectURL(arquivo);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = arquivo.name;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function exportar() {
-    const atuais = await repo.carregarTudo();
-    const json = JSON.stringify(gerarBackup(atuais), null, 2);
-    const nome = `flow-backup-${hojeISO()}.json`;
-    const arquivo = new File([json], nome, { type: 'application/json' });
-    if (navigator.share && navigator.canShare?.({ files: [arquivo] })) {
-      try {
-        await navigator.share({ files: [arquivo], title: nome });
-      } catch {
-        return; // usuário cancelou o share
+    try {
+      const atuais = await repo.carregarTudo();
+      const json = JSON.stringify(gerarBackup(atuais), null, 2);
+      const nome = `flow-backup-${hojeISO()}.json`;
+      const arquivo = new File([json], nome, { type: 'application/json' });
+      if (navigator.share && navigator.canShare?.({ files: [arquivo] })) {
+        try {
+          await navigator.share({ files: [arquivo], title: nome });
+        } catch (e) {
+          if (e instanceof Error && e.name === 'AbortError') return; // usuário cancelou o share
+          // share falhou por outro motivo (permissão, app incompatível, ativação perdida):
+          // cai para download direto em vez de falhar em silêncio
+          console.error('Falha ao compartilhar backup, baixando como arquivo:', e);
+          baixarArquivo(arquivo);
+        }
+      } else {
+        baixarArquivo(arquivo);
       }
-    } else {
-      const url = URL.createObjectURL(arquivo);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = nome;
-      a.click();
-      URL.revokeObjectURL(url);
+      await repo.salvarConfig({ ultimoBackupEm: new Date().toISOString(), mudancasDesdeBackup: false });
+      await recarregar();
+      setMsg('Backup exportado.');
+    } catch (e) {
+      console.error('Falha ao exportar backup:', e);
+      setMsg(e instanceof Error ? `Falha ao exportar: ${e.message}` : 'Falha ao exportar backup.');
     }
-    await repo.salvarConfig({ ultimoBackupEm: new Date().toISOString(), mudancasDesdeBackup: false });
-    await recarregar();
-    setMsg('Backup exportado.');
   }
 
   async function restaurar(file: File) {
