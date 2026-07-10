@@ -12,7 +12,7 @@ código. Se código e guia divergirem, o código manda — atualize o guia junto
 | criar uma classe CSS nova | [`nivel-2-nova-classe.md`](estilo/nivel-2-nova-classe.md) | `catalogo.md`, `fundamentos.md` |
 | criar um token/cor nova | [`nivel-3-novo-token.md`](estilo/nivel-3-novo-token.md) | `fundamentos.md` |
 | criar/extrair componente compartilhado | [`nivel-4-novo-componente.md`](estilo/nivel-4-novo-componente.md) | `catalogo.md`, `transversais.md` |
-| criar uma tela nova | [`nivel-5-nova-tela.md`](estilo/nivel-5-nova-tela.md) | `catalogo.md`, `fundamentos.md` |
+| criar uma tela nova | [`nivel-5-nova-tela.md`](estilo/nivel-5-nova-tela.md) | `catalogo.md`, `transversais.md` |
 | mudar princípio, tema, fonte, cor de ação ou valor de token | [`nivel-6-mudanca-de-linguagem.md`](estilo/nivel-6-mudanca-de-linguagem.md) | — |
 
 **Em dúvida entre dois níveis, o número maior ganha.** Animação ou acessibilidade em

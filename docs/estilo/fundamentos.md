@@ -21,6 +21,8 @@ Fonte da verdade dos valores: `src/styles.css` (`:root` e classes base).
   lista com ícone por categoria — título forte + subtítulo apagado basta.
 - **Fonte:** stack do sistema (`system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif`),
   16px base. Sem fonte customizada/importada.
+- **CSS em um único arquivo:** todo estilo vive em `src/styles.css`, como classes
+  reutilizáveis. Não há CSS modules, styled-components nem Tailwind.
 
 ## Tokens (`:root` em `src/styles.css`)
 

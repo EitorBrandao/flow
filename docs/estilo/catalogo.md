@@ -32,7 +32,7 @@ tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
 | `.rolavel` | wrapper com `overflow-x: auto` para conteúdo largo (tabelas) |
 | `.sheet-backdrop` / `.sheet` / `.sheet-alca` | bottom sheet (ver componente `Sheet`) |
 | `.navegacao` | tab bar mobile / sidebar desktop (breakpoint 900px) |
-| `.shell` / `.topo` / `.conteudo` | casco do app (ver componente `Shell`) |
+| `.shell` / `.shell-corpo` / `.topo` / `.conteudo` | casco do app (ver componente `Shell`) |
 | `.grafico-expandido-*` | classes internas do `FluxoChartModal` (exemplo do padrão de prefixo por componente) |
 
 ## Componentes compartilhados (em `src/ui/`)
