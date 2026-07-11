@@ -1,3 +1,4 @@
+import { compararCategorias, compararCategoriasCartao } from '../domain/categorias';
 import { hojeISO } from '../domain/dates';
 import { calcularFaturas, diffSincronizacao } from '../domain/fatura';
 import { materializar } from '../domain/recurrence';
@@ -45,6 +46,9 @@ export async function carregarTudo(): Promise<Dados> {
     db.cartoes.toArray(), db.categoriasCartao.toArray(), db.comprasCartao.toArray(),
     db.recorrenciasCartao.toArray(), db.conferenciasFatura.toArray(),
   ]);
+  // ordem canônica na fonte: todo consumidor do snapshot herda a ordem de Ajustes
+  categorias.sort(compararCategorias);
+  categoriasCartao.sort(compararCategoriasCartao);
   return {
     boxes, categorias, lancamentos, recorrencias, cenarios,
     cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, config,
