@@ -438,3 +438,35 @@ describe('cartão de crédito', () => {
     } finally { vi.useRealTimers(); }
   });
 });
+
+it('carregarTudo devolve categorias na ordem canônica (ganho→gasto, ordem, nome)', async () => {
+  const agora = agoraISO();
+  const box: Box = {
+    id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01',
+    criadoEm: agora, alteradoEm: agora,
+  };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 1 });
+  await repo.salvarCategoria({ boxId: box.id, nome: 'pix', tipo: 'gasto', ordem: 0 });
+  await repo.salvarCategoria({ boxId: box.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+  await repo.salvarCategoria({ boxId: box.id, nome: 'salário', tipo: 'ganho', ordem: 5 });
+  const dados = await repo.carregarTudo();
+  expect(dados.categorias.map((c) => c.nome)).toEqual(['salário', 'aluguel', 'pix', 'mercado']);
+});
+
+it('carregarTudo devolve categorias de cartão ordenadas por ordem e nome', async () => {
+  const agora = agoraISO();
+  const box: Box = {
+    id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01',
+    criadoEm: agora, alteradoEm: agora,
+  };
+  await repo.salvarBox(box);
+  const cartao = await repo.salvarCartao({
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
+  }, '2027-12-31');
+  await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'streaming', ordem: 1 });
+  await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'farmácia', ordem: 0 });
+  const dados = await repo.carregarTudo();
+  expect(dados.categoriasCartao.map((c) => c.nome)).toEqual(['farmácia', 'mercado', 'streaming']);
+});

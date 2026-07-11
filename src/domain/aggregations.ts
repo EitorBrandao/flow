@@ -1,5 +1,6 @@
 import { addMeses, mesDe } from './dates';
 import type { Categoria, ID, ISODate, Lancamento, TipoCategoria } from './types';
+import { compararCategorias } from './categorias';
 
 export interface LinhaResumo {
   categoriaId: ID;
@@ -47,9 +48,7 @@ export function resumoMensal(
   incluirPrevistos: boolean,
 ): ResumoMensal {
   const totais = totaisPorCategoria(filtrar(mes, boxIds, lancamentos, incluirPrevistos));
-  const catsOrdenadas = [...categorias].sort(
-    (a, b) => (a.tipo === b.tipo ? a.ordem - b.ordem : a.tipo === 'ganho' ? -1 : 1),
-  );
+  const catsOrdenadas = [...categorias].sort(compararCategorias);
   let totalGanhos = 0;
   let totalGastos = 0;
   for (const c of catsOrdenadas) {
