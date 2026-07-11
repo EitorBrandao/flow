@@ -14,8 +14,7 @@ export default function CategoriasCartao() {
     return <div className="tela"><h2>Categorias do cartão</h2><p className="sub">Cadastre um cartão primeiro.</p></div>;
   }
   const cats = dados.categoriasCartao
-    .filter((c) => c.cartaoId === cartaoId)
-    .sort((a, b) => a.ordem - b.ordem);
+    .filter((c) => c.cartaoId === cartaoId);
 
   async function criar() {
     if (!nome.trim() || !cartaoId) return;
