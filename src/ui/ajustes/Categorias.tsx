@@ -16,8 +16,7 @@ export default function Categorias() {
   if (!dados) return null;
   const ocultas = categoriasFaturaIds(dados.cartoes);
   const cats = dados.categorias
-    .filter((c) => c.boxId === boxId && !ocultas.has(c.id))
-    .sort((a, b) => (a.tipo === b.tipo ? a.ordem - b.ordem : a.tipo === 'ganho' ? -1 : 1));
+    .filter((c) => c.boxId === boxId && !ocultas.has(c.id));
 
   async function criar() {
     if (!nome.trim() || !boxId) return;
