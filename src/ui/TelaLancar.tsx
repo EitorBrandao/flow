@@ -27,8 +27,7 @@ export default function TelaLancar() {
   const ocultas = useMemo(() => categoriasFaturaIds(dados?.cartoes ?? []), [dados]);
   const categorias = useMemo(
     () => (dados?.categorias ?? [])
-      .filter((c) => c.boxId === boxId && c.tipo === tipo && !c.arquivada && !ocultas.has(c.id))
-      .sort((a, b) => a.ordem - b.ordem),
+      .filter((c) => c.boxId === boxId && c.tipo === tipo && !c.arquivada && !ocultas.has(c.id)),
     [dados, boxId, tipo, ocultas],
   );
 

@@ -18,8 +18,7 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
 
   const ocultas = categoriasFaturaIds(dados.cartoes);
   const categorias = dados.categorias
-    .filter((c) => c.boxId === lanc.boxId && !c.arquivada && !ocultas.has(c.id))
-    .sort((a, b) => (a.tipo === b.tipo ? a.ordem - b.ordem : a.tipo === 'ganho' ? -1 : 1));
+    .filter((c) => c.boxId === lanc.boxId && !c.arquivada && !ocultas.has(c.id));
 
   function centsDigitados(): number | null {
     const v = parseValorDigitado(valor);
