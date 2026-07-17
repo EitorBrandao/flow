@@ -32,9 +32,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test-setup.ts',
-    // .worktrees/ contém checkouts paralelos completos (node_modules incluso) usados por
-    // sessões de implementação isoladas — sem excluir, o Vitest coleta os testes de lá
+    // .worktrees/ e .claude/worktrees/ contêm checkouts paralelos completos (node_modules incluso)
+    // usados por sessões de implementação isoladas — sem excluir, o Vitest coleta os testes de lá
     // também e carrega uma segunda cópia do React, quebrando hooks ("Invalid hook call").
-    exclude: [...configDefaults.exclude, '.worktrees/**', 'worktrees/**'],
+    exclude: [...configDefaults.exclude, '.worktrees/**', 'worktrees/**', '.claude/worktrees/**'],
   },
 });
