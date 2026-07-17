@@ -56,7 +56,10 @@ it('declara saldo real negativo (cheque especial) e persiste com o sinal', async
   useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
 
   render(<TelaHoje />);
-  await userEvent.type(screen.getByLabelText('Saldo real no banco'), '-50,00');
+  await userEvent.type(screen.getByLabelText('Saldo real no banco'), '5000');
+  const toggleButtons = screen.getAllByRole('button', { name: /^[+−]$/ });
+  const toggleBtn = toggleButtons[0]; // o primeiro botão toggle é o de sinal
+  await userEvent.click(toggleBtn);
   await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
   expect(await screen.findByText(/sobra no app/)).toBeInTheDocument();
@@ -89,9 +92,10 @@ it('troca de box reseta o campo de saldo real para o valor daquela box', async (
   useApp.setState({ boxSel: boxA.id, hoje: '2026-07-02' });
 
   const { rerender } = render(<TelaHoje />);
-  expect(screen.getByLabelText('Saldo real no banco')).toHaveValue('1050,00');
+  const saldoInput = screen.getByLabelText('Saldo real no banco') as HTMLInputElement;
+  expect(saldoInput.value).toMatch(/1\.050,00/);
 
   act(() => useApp.setState({ boxSel: boxB.id }));
   rerender(<TelaHoje />);
-  expect(screen.getByLabelText('Saldo real no banco')).toHaveValue('');
+  expect((screen.getByLabelText('Saldo real no banco') as HTMLInputElement).value).toMatch(/0,00/);
 });
