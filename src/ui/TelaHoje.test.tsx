@@ -57,8 +57,7 @@ it('declara saldo real negativo (cheque especial) e persiste com o sinal', async
 
   render(<TelaHoje />);
   await userEvent.type(screen.getByLabelText('Saldo real no banco'), '5000');
-  const toggleButtons = screen.getAllByRole('button', { name: /^[+−]$/ });
-  const toggleBtn = toggleButtons[0]; // o primeiro botão toggle é o de sinal
+  const toggleBtn = screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' });
   await userEvent.click(toggleBtn);
   await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 

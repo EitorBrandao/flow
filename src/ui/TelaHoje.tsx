@@ -37,7 +37,7 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
           <label htmlFor={`${uid}-saldo`}>Saldo real no banco</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
             <CampoValor id={`${uid}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} style={{ width: 110 }} />
-            <button type="button" className="botao" onClick={() => setNegativo(n => !n)} style={{ padding: '8px 12px' }}>
+            <button type="button" className="botao" aria-label="Alternar sinal (positivo/negativo)" onClick={() => setNegativo(n => !n)} style={{ padding: '8px 12px' }}>
               {negativo ? '−' : '+'}
             </button>
           </div>
