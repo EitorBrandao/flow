@@ -73,6 +73,51 @@ it('editar uma compra existente mostra "Editar compra" e o botão Excluir', asyn
   expect(screen.getByRole('button', { name: 'Excluir' })).toBeInTheDocument();
 });
 
+it('editar uma compra existente mostra o valor atual formatado e permite trocá-lo', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao, catCartao } = await montarCartao();
+    const compra = await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-01',
+      valorTotal: 8000, parcelas: 1,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+    const onFechar = vi.fn();
+    render(<FormCompra cartao={cartao} compra={compra} onFechar={onFechar} />);
+
+    // Campo de valor deve mostrar o valor inicial formatado como R$ 80,00
+    const inputValor = screen.getByLabelText('Valor') as HTMLInputElement;
+    expect(inputValor.value).toContain('80,00');
+
+    // Focar e limpar o valor usando backspace 4 vezes (para 8000 centavos)
+    await userEvent.click(inputValor);
+    for (let i = 0; i < 4; i++) {
+      await userEvent.keyboard('{Backspace}');
+    }
+
+    // Digitar um novo valor (5000 centavos = 50,00)
+    await userEvent.type(inputValor, '5000');
+
+    // Verificar que o novo valor está exibido como R$ 50,00
+    expect(inputValor.value).toContain('50,00');
+
+    // Salvar
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => {
+      expect(onFechar).toHaveBeenCalledOnce();
+    });
+
+    // Verificar que a compra foi atualizada
+    const compras = await db.comprasCartao.toArray();
+    expect(compras).toHaveLength(1);
+    expect(compras[0]).toMatchObject({ valorTotal: 5000, parcelas: 1 });
+  } finally { vi.useRealTimers(); }
+});
+
 it('digitar Parcelas já pagas recalcula Data para trás em meses', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
