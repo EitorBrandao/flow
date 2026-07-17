@@ -1,11 +1,12 @@
 import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
-import { formatarBRL, parseValorDigitado } from '../../domain/money';
+import { formatarBRL } from '../../domain/money';
 import { useApp } from '../../state/store';
+import CampoValor from '../CampoValor';
 
 export default function Assinaturas() {
   const { dados, hoje, recarregar } = useApp();
-  const [valor, setValor] = useState('');
+  const [valor, setValor] = useState<number>(0);
   const [categoriaId, setCategoriaId] = useState('');
   const [dataInicio, setDataInicio] = useState(hoje);
   const [diaDoMes, setDiaDoMes] = useState('1');
@@ -22,14 +23,14 @@ export default function Assinaturas() {
   const cartaoDe = (catId: string) => dados.categoriasCartao.find((c) => c.id === catId)?.cartaoId;
 
   function limparForm() {
-    setValor(''); setCategoriaId(''); setDataInicio(hoje); setDiaDoMes('1');
+    setValor(0); setCategoriaId(''); setDataInicio(hoje); setDiaDoMes('1');
     setParcelas(''); setDescricao(''); setEditandoId(null);
   }
 
   function editar(id: string) {
     const a = dados!.recorrenciasCartao.find((x) => x.id === id)!;
     setEditandoId(id);
-    setValor((a.valor / 100).toFixed(2).replace('.', ','));
+    setValor(a.valor);
     setCategoriaId(a.categoriaCartaoId);
     setDataInicio(a.dataInicio);
     setDiaDoMes(String(a.diaDoMes));
@@ -38,11 +39,10 @@ export default function Assinaturas() {
   }
 
   async function salvar() {
-    const cents = parseValorDigitado(valor);
     const cartaoId = cartaoDe(categoriaId);
-    if (cents == null || !cartaoId) return;
+    if (valor <= 0 || !cartaoId) return;
     const campos = {
-      cartaoId, categoriaCartaoId: categoriaId, valor: cents, dataInicio,
+      cartaoId, categoriaCartaoId: categoriaId, valor, dataInicio,
       diaDoMes: Math.min(31, Math.max(1, Number(diaDoMes) || 1)),
       parcelas: parcelas ? Number(parcelas) : null,
       ...(descricao.trim() ? { descricao: descricao.trim() } : {}),
@@ -93,8 +93,8 @@ export default function Assinaturas() {
       <div className="linha">
         <div className="campo">
           <label htmlFor={`${uid}-valor`}>Valor</label>
-          <input id={`${uid}-valor`} placeholder="0,00" inputMode="decimal" value={valor}
-            onChange={(e) => setValor(e.target.value)} style={{ width: 100 }} />
+          <CampoValor id={`${uid}-valor`} valorCentavos={valor}
+            onChange={setValor} style={{ width: 100 }} />
         </div>
         <div className="campo">
           <label htmlFor={`${uid}-cat`}>Categoria do cartão</label>
