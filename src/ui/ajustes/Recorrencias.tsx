@@ -1,12 +1,13 @@
 import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { categoriasFaturaIds } from '../../domain/fatura';
-import { formatarBRL, parseValorDigitado } from '../../domain/money';
+import { formatarBRL } from '../../domain/money';
 import { useApp } from '../../state/store';
+import CampoValor from '../CampoValor';
 
 export default function Recorrencias() {
   const { dados, hoje, recarregar } = useApp();
-  const [valor, setValor] = useState('');
+  const [valor, setValor] = useState(0);
   const [categoriaId, setCategoriaId] = useState('');
   const [dataInicio, setDataInicio] = useState(hoje);
   const [diaDoMes, setDiaDoMes] = useState('1');
@@ -20,13 +21,13 @@ export default function Recorrencias() {
   const ocultas = categoriasFaturaIds(dados.cartoes);
 
   function limparForm() {
-    setValor(''); setCategoriaId(''); setDataInicio(hoje); setDiaDoMes('1'); setParcelas('');
+    setValor(0); setCategoriaId(''); setDataInicio(hoje); setDiaDoMes('1'); setParcelas('');
   }
 
   function editar(id: string) {
     const rec = recs.find((r) => r.id === id)!;
     setEditandoId(id);
-    setValor((rec.valor / 100).toFixed(2).replace('.', ','));
+    setValor(rec.valor);
     setCategoriaId(rec.categoriaId);
     setDataInicio(rec.dataInicio);
     setDiaDoMes(String(rec.diaDoMes));
@@ -39,25 +40,24 @@ export default function Recorrencias() {
   }
 
   async function salvar() {
-    const cents = parseValorDigitado(valor);
     const boxId = boxDe(categoriaId);
-    if (cents == null || !boxId) return;
+    if (valor <= 0 || !boxId) return;
     const diaDoMesNum = Math.min(31, Math.max(1, Number(diaDoMes) || 1));
     const parcelasNum = parcelas ? Number(parcelas) : null;
     if (editandoId) {
       const original = recs.find((r) => r.id === editandoId)!;
       await repo.salvarRecorrencia({
-        ...original, boxId, categoriaId, valor: cents, dataInicio,
+        ...original, boxId, categoriaId, valor, dataInicio,
         diaDoMes: diaDoMesNum, parcelas: parcelasNum,
       }, dados!.config.horizonteProjecao);
       setEditandoId(null);
       limparForm();
     } else {
       await repo.salvarRecorrencia({
-        boxId, categoriaId, valor: cents, dataInicio,
+        boxId, categoriaId, valor, dataInicio,
         diaDoMes: diaDoMesNum, parcelas: parcelasNum,
       }, dados!.config.horizonteProjecao);
-      setValor(''); setParcelas('');
+      setValor(0); setParcelas('');
     }
     await recarregar();
   }
@@ -99,8 +99,7 @@ export default function Recorrencias() {
       <div className="linha">
         <div className="campo">
           <label htmlFor={`${uid}-valor`}>Valor</label>
-          <input id={`${uid}-valor`} placeholder="0,00" inputMode="decimal" value={valor}
-            onChange={(e) => setValor(e.target.value)} style={{ width: 100 }} />
+          <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} style={{ width: 100 }} />
         </div>
         <div className="campo">
           <label htmlFor={`${uid}-cat`}>Categoria</label>
