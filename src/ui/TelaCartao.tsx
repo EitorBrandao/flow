@@ -4,15 +4,12 @@ import { addMeses } from '../domain/dates';
 import {
   calcularFaturas, datasFaturaDoMes, mesFaturaDaCompra, type Fatura,
 } from '../domain/fatura';
-import { formatarBRL, parseValorDigitado } from '../domain/money';
+import { formatarBRL } from '../domain/money';
 import type { Cartao, CompraCartao } from '../domain/types';
 import { boxIdsSelecionadas, useApp } from '../state/store';
+import CampoValor from './CampoValor';
 import FormCompra from './FormCompra';
 import Sheet from './Sheet';
-
-function centavosParaTexto(c: number): string {
-  return (c / 100).toFixed(2).replace('.', ',');
-}
 
 function fmtDia(d: string): string {
   const [, m, dia] = d.split('-');
@@ -22,23 +19,23 @@ function fmtDia(d: string): string {
 function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: string; totalCent: number }) {
   const { dados, recarregar } = useApp();
   const conf = dados?.conferenciasFatura.find((c) => c.cartaoId === cartao.id && c.mes === mes);
-  const [valor, setValor] = useState(conf ? centavosParaTexto(conf.valorAppCent) : '');
+  const [valor, setValor] = useState<number>(conf?.valorAppCent ?? 0);
   const uid = useId();
   if (!dados) return null;
   const horizonte = dados.config.horizonteProjecao;
 
   async function salvar() {
-    if (!valor.trim()) {
-      if (conf) {
-        await repo.removerConferenciaFatura(cartao.id, mes, horizonte);
-        await recarregar();
-      }
-      return;
+    if (valor > 0) {
+      await repo.salvarConferenciaFatura(cartao.id, mes, valor, conf?.usarValorApp ?? false, horizonte);
+      await recarregar();
     }
-    const cents = parseValorDigitado(valor);
-    if (cents == null) return;
-    await repo.salvarConferenciaFatura(cartao.id, mes, cents, conf?.usarValorApp ?? false, horizonte);
-    await recarregar();
+  }
+
+  async function remover() {
+    if (conf) {
+      await repo.removerConferenciaFatura(cartao.id, mes, horizonte);
+      await recarregar();
+    }
   }
 
   async function alternarUsar(usar: boolean) {
@@ -53,10 +50,17 @@ function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: str
       <div className="linha">
         <div className="campo">
           <label htmlFor={`${uid}-valorapp`}>Valor no app do banco</label>
-          <input id={`${uid}-valorapp`} placeholder="0,00" inputMode="decimal"
-            value={valor} onChange={(e) => setValor(e.target.value)} style={{ width: 140 }} />
+          <CampoValor
+            id={`${uid}-valorapp`}
+            valorCentavos={valor}
+            onChange={setValor}
+            style={{ width: 140 }}
+          />
         </div>
         <button className="botao" style={{ alignSelf: 'flex-end' }} aria-label="Salvar conferência" onClick={salvar}>Salvar</button>
+        {conf && (
+          <button className="botao botao-perigo" style={{ alignSelf: 'flex-end' }} aria-label="Remover conferência" onClick={remover}>Remover</button>
+        )}
       </div>
       {diff != null && (
         <p className="sub" style={{ margin: '4px 0 0' }}>
