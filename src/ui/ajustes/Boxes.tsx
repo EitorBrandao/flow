@@ -1,23 +1,26 @@
 import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
-import { formatarBRL, parseValorDigitado } from '../../domain/money';
+import { formatarBRL } from '../../domain/money';
 import { agoraISO, novoId, type Box } from '../../domain/types';
 import { useApp } from '../../state/store';
+import CampoValor from '../CampoValor';
 
 function EditorBox({ box }: { box: Box }) {
   const { recarregar } = useApp();
   const [nome, setNome] = useState(box.nome);
-  const [saldo, setSaldo] = useState(box.saldoInicial != null ? (box.saldoInicial / 100).toFixed(2).replace('.', ',') : '');
+  const [temSaldoProprio, setTemSaldoProprio] = useState(box.saldoInicial != null);
+  const [magnitude, setMagnitude] = useState(Math.abs(box.saldoInicial ?? 0));
+  const [negativo, setNegativo] = useState((box.saldoInicial ?? 0) < 0);
   const [data, setData] = useState(box.dataSaldoInicial ?? '');
   const uid = useId();
 
   async function salvar() {
-    const cents = saldo ? parseValorDigitado(saldo.replace('-', ''), { permitirZero: true }) : null;
-    const negativo = saldo.trim().startsWith('-');
+    const saldoInicial = temSaldoProprio ? (negativo ? -magnitude : magnitude) : null;
+    const dataSaldoInicial = temSaldoProprio ? (data || null) : null;
     await repo.salvarBox({
       ...box, nome: nome.trim() || box.nome,
-      saldoInicial: cents == null ? null : (negativo ? -cents : cents),
-      dataSaldoInicial: data || null,
+      saldoInicial,
+      dataSaldoInicial,
     });
     await recarregar();
   }
@@ -29,14 +32,28 @@ function EditorBox({ box }: { box: Box }) {
         <input id={`${uid}-nome`} value={nome} onChange={(e) => setNome(e.target.value)} style={{ width: 100 }} />
       </div>
       <div className="campo">
-        <label htmlFor={`${uid}-saldo`}>Saldo inicial</label>
-        <input id={`${uid}-saldo`} placeholder="0,00" inputMode="decimal" value={saldo}
-          onChange={(e) => setSaldo(e.target.value)} style={{ width: 110 }} />
+        <label htmlFor={`${uid}-saldo-proprio`}>
+          <input id={`${uid}-saldo-proprio`} type="checkbox" checked={temSaldoProprio} onChange={(e) => setTemSaldoProprio(e.target.checked)} />
+          {' '}Esta box tem saldo próprio
+        </label>
       </div>
-      <div className="campo">
-        <label htmlFor={`${uid}-data`}>Data do saldo</label>
-        <input id={`${uid}-data`} type="date" value={data} onChange={(e) => setData(e.target.value)} />
-      </div>
+      {temSaldoProprio && (
+        <>
+          <div className="campo" style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
+            <div>
+              <label htmlFor={`${uid}-saldo`}>Saldo inicial</label>
+              <CampoValor id={`${uid}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} />
+            </div>
+            <button type="button" className="botao" onClick={() => setNegativo(n => !n)} style={{ height: 'fit-content' }}>
+              {negativo ? '−' : '+'}
+            </button>
+          </div>
+          <div className="campo">
+            <label htmlFor={`${uid}-data`}>Data do saldo</label>
+            <input id={`${uid}-data`} type="date" value={data} onChange={(e) => setData(e.target.value)} />
+          </div>
+        </>
+      )}
       <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={salvar}>Salvar</button>
     </div>
   );
