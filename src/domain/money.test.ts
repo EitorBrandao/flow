@@ -1,4 +1,4 @@
-import { formatarBRL, parseValorDigitado } from './money';
+import { formatarBRL, parseValorDigitado, empurrarDigito, apagarUltimoDigito, digitosParaCentavos } from './money';
 
 describe('formatarBRL', () => {
   it('formata centavos como moeda pt-BR', () => {
@@ -30,5 +30,53 @@ describe('parseValorDigitado', () => {
     expect(parseValorDigitado('0', { permitirZero: true })).toBe(0);
     expect(parseValorDigitado('0,00', { permitirZero: true })).toBe(0);
     expect(parseValorDigitado('-5', { permitirZero: true })).toBeNull();
+  });
+});
+
+describe('empurrarDigito', () => {
+  it('acrescenta dígito único ao buffer vazio', () => {
+    expect(empurrarDigito(0, '1')).toBe(1);
+    expect(empurrarDigito(0, '5')).toBe(5);
+  });
+  it('encadeia dígitos (0 → 1 → 12)', () => {
+    expect(empurrarDigito(empurrarDigito(0, '1'), '2')).toBe(12);
+  });
+  it('encadeia a partir de valor não-zero', () => {
+    expect(empurrarDigito(12, '3')).toBe(123);
+    expect(empurrarDigito(99, '0')).toBe(990);
+  });
+});
+
+describe('apagarUltimoDigito', () => {
+  it('remove o último dígito de um valor', () => {
+    expect(apagarUltimoDigito(12)).toBe(1);
+    expect(apagarUltimoDigito(1)).toBe(0);
+  });
+  it('desce de vários dígitos até 0', () => {
+    expect(apagarUltimoDigito(1234)).toBe(123);
+    expect(apagarUltimoDigito(123)).toBe(12);
+    expect(apagarUltimoDigito(12)).toBe(1);
+    expect(apagarUltimoDigito(1)).toBe(0);
+  });
+  it('não fica negativo em zero', () => {
+    expect(apagarUltimoDigito(0)).toBe(0);
+  });
+});
+
+describe('digitosParaCentavos', () => {
+  it('extrai dígitos de "R$ 12,34"', () => {
+    expect(digitosParaCentavos('R$ 12,34')).toBe(1234);
+  });
+  it('converte "1234" em 1234', () => {
+    expect(digitosParaCentavos('1234')).toBe(1234);
+  });
+  it('retorna 0 para texto vazio', () => {
+    expect(digitosParaCentavos('')).toBe(0);
+  });
+  it('retorna 0 para texto sem dígitos', () => {
+    expect(digitosParaCentavos('abc')).toBe(0);
+  });
+  it('extrai dígitos de texto formatado com pontos e vírgulas', () => {
+    expect(digitosParaCentavos('R$ 1.234,56')).toBe(123456);
   });
 });
