@@ -247,27 +247,6 @@ it('substituirTudo troca completamente os dados e reseta mudancasDesdeBackup', a
   expect(dados.config.mudancasDesdeBackup).toBe(false);
 });
 
-it('aplicarImport é idempotente (reimportar não duplica)', async () => {
-  const agora = agoraISO();
-  const boxImp: Box = { id: 'bi', nome: 'eitor', saldoInicial: 134035, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
-  const catImp: Categoria = { id: 'ci', boxId: 'bi', nome: 'cartão', tipo: 'gasto', ordem: 0, arquivada: false, criadoEm: agora, alteradoEm: agora };
-  const montar = () => ({
-    boxes: [boxImp],
-    categorias: [catImp],
-    lancamentos: [{
-      id: novoId(), boxId: 'bi', categoriaId: 'ci', data: '2026-03-10', valor: 5000,
-      status: 'efetivo' as const, origem: 'import' as const, criadoEm: agora, alteradoEm: agora,
-    }],
-    recorrencias: [],
-  });
-  await repo.aplicarImport(montar());
-  await repo.aplicarImport(montar());
-  const dados = await repo.carregarTudo();
-  expect(dados.boxes).toHaveLength(1);
-  expect(dados.categorias).toHaveLength(1);
-  expect(dados.lancamentos).toHaveLength(1);
-});
-
 describe('tabelas do cartão', () => {
   it('carregarTudo devolve as tabelas novas (vazias num banco novo)', async () => {
     const dados = await repo.carregarTudo();

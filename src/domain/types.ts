@@ -2,7 +2,7 @@ export type ID = string;
 export type ISODate = string; // "AAAA-MM-DD"
 export type TipoCategoria = 'ganho' | 'gasto';
 export type StatusLancamento = 'efetivo' | 'previsto';
-export type OrigemLancamento = 'manual' | 'recorrencia' | 'import' | 'cartao';
+export type OrigemLancamento = 'manual' | 'recorrencia' | 'cartao';
 
 interface Entidade {
   id: ID;
@@ -31,7 +31,7 @@ export interface Lancamento extends Entidade {
   boxId: ID;
   categoriaId: ID;
   data: ISODate;
-  valor: number; // centavos; normalmente > 0, negativo permitido p/ estorno importado
+  valor: number; // centavos; normalmente > 0, negativo permitido p/ estorno
   nota?: string;
   status: StatusLancamento;
   origem: OrigemLancamento;
@@ -50,7 +50,7 @@ export interface Recorrencia extends Entidade {
   parcelas: number | null; // null = sem fim
   nota?: string;
   ativa: boolean;
-  origem: 'manual' | 'import';
+  origem: 'manual';
   cenarioId?: ID;
 }
 
