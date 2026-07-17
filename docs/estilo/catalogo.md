@@ -38,6 +38,10 @@ tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
 
 ## Componentes compartilhados (em `src/ui/`)
 
+- **`CampoValor.tsx`** — input numérico controlado com comportamento estilo caixa eletrônico:
+  digita da direita pra esquerda, Backspace remove último dígito, colar substitui o buffer
+  inteiro. Exibe valor formatado em BRL (ex.: `R$ 12,34`). Usado para entrada de valores
+  monetários em formulários.
 - **`Sheet.tsx`** — bottom sheet padrão (framer-motion: slide-up com mola, drag-to-dismiss,
   backdrop com fade). Use para editores modais (ex.: `LancEditor`). Formulários de Ajustes
   ficam **inline**, não em sheet (decisão registrada em
