@@ -1,15 +1,15 @@
 import { useId, useState } from 'react';
 import * as repo from '../db/repo';
 import { addMesesData } from '../domain/dates';
-import { parseValorDigitado } from '../domain/money';
 import type { Cartao, CompraCartao } from '../domain/types';
 import { useApp } from '../state/store';
+import CampoValor from './CampoValor';
 
 export default function FormCompra({ cartao, compra, onFechar }: {
   cartao: Cartao; compra?: CompraCartao; onFechar: () => void;
 }) {
   const { dados, hoje, recarregar } = useApp();
-  const [valor, setValor] = useState(compra ? centavosParaTexto(compra.valorTotal) : '');
+  const [valor, setValor] = useState(compra?.valorTotal ?? 0);
   const [data, setData] = useState(compra?.data ?? hoje);
   const [categoriaId, setCategoriaId] = useState(compra?.categoriaCartaoId ?? '');
   const [parcelas, setParcelas] = useState(compra ? String(compra.parcelas) : '1');
@@ -37,10 +37,9 @@ export default function FormCompra({ cartao, compra, onFechar }: {
   }
 
   async function salvar() {
-    const cents = parseValorDigitado(valor);
-    if (cents == null || !categoriaId) return;
+    if (valor <= 0 || !categoriaId) return;
     const campos = {
-      data, valorTotal: cents, parcelas: parcelasNum, categoriaCartaoId: categoriaId,
+      data, valorTotal: valor, parcelas: parcelasNum, categoriaCartaoId: categoriaId,
       ...(descricao.trim() ? { descricao: descricao.trim() } : {}),
     };
     if (compra) await repo.atualizarCompraCartao(compra.id, campos, horizonte);
@@ -63,8 +62,7 @@ export default function FormCompra({ cartao, compra, onFechar }: {
       <div className="linha">
         <div className="campo">
           <label htmlFor={`${uid}-valor`}>Valor</label>
-          <input id={`${uid}-valor`} placeholder="0,00" inputMode="decimal" value={valor}
-            onChange={(e) => setValor(e.target.value)} style={{ width: 100 }} />
+          <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} style={{ width: 100 }} />
         </div>
         <div className="campo">
           <label htmlFor={`${uid}-data`}>Data</label>
@@ -101,8 +99,4 @@ export default function FormCompra({ cartao, compra, onFechar }: {
       </div>
     </>
   );
-}
-
-function centavosParaTexto(c: number): string {
-  return (c / 100).toFixed(2).replace('.', ',');
 }
