@@ -2,11 +2,12 @@ import { useId, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as repo from '../db/repo';
 import { addDias } from '../domain/dates';
-import { formatarBRL, parseValorDigitado } from '../domain/money';
+import { formatarBRL } from '../domain/money';
 import type { ISODate } from '../domain/types';
 import { pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, useApp } from '../state/store';
 import BalanceChart from './BalanceChart';
+import CampoValor from './CampoValor';
 
 const SETE_DIAS_MS = 7 * 86_400_000;
 
@@ -17,15 +18,14 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
   hoje: ISODate;
   onSalvar: (cents: number, data: ISODate) => Promise<void>;
 }) {
-  const [saldo, setSaldo] = useState(declaradoCent != null ? (declaradoCent / 100).toFixed(2).replace('.', ',') : '');
+  const [magnitude, setMagnitude] = useState(Math.abs(declaradoCent ?? 0));
+  const [negativo, setNegativo] = useState((declaradoCent ?? 0) < 0);
   const [data, setData] = useState(dataDeclarado ?? hoje);
   const uid = useId();
 
   async function salvar() {
-    const negativo = saldo.trim().startsWith('-');
-    const cents = parseValorDigitado(saldo.replace('-', ''), { permitirZero: true });
-    if (cents == null) return;
-    await onSalvar(negativo ? -cents : cents, data);
+    const valor = negativo ? -magnitude : magnitude;
+    await onSalvar(valor, data);
   }
 
   const diff = declaradoCent != null ? declaradoCent - saldoApp : null;
@@ -35,8 +35,12 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
       <div className="linha" style={{ justifyContent: 'space-between' }}>
         <div className="campo">
           <label htmlFor={`${uid}-saldo`}>Saldo real no banco</label>
-          <input id={`${uid}-saldo`} placeholder="0,00" inputMode="decimal" value={saldo}
-            onChange={(e) => setSaldo(e.target.value)} style={{ width: 110 }} />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            <CampoValor id={`${uid}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} style={{ width: 110 }} />
+            <button type="button" className="botao" onClick={() => setNegativo(n => !n)} style={{ padding: '8px 12px' }}>
+              {negativo ? '−' : '+'}
+            </button>
+          </div>
         </div>
         <div className="campo">
           <label htmlFor={`${uid}-data`}>Data</label>
