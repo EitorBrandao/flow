@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import * as repo from '../db/repo';
 import { categoriasFaturaIds } from '../domain/fatura';
-import { parseValorDigitado } from '../domain/money';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
+import CampoValor from './CampoValor';
 import Sheet from './Sheet';
 
 export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFechar: () => void }) {
   const { dados, recarregar } = useApp();
-  const [valor, setValor] = useState((Math.abs(lanc.valor) / 100).toFixed(2).replace('.', ','));
+  const [valorCentavos, setValorCentavos] = useState(Math.abs(lanc.valor));
   const [negativo] = useState(lanc.valor < 0);
   const [data, setData] = useState(lanc.data);
   const [categoriaId, setCategoriaId] = useState(lanc.categoriaId);
@@ -21,8 +21,7 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
     .filter((c) => c.boxId === lanc.boxId && !c.arquivada && !ocultas.has(c.id));
 
   function centsDigitados(): number | null {
-    const v = parseValorDigitado(valor);
-    return v == null ? null : (negativo ? -v : v);
+    return valorCentavos > 0 ? (negativo ? -valorCentavos : valorCentavos) : null;
   }
 
   async function aplicar(confirmarTb: boolean) {
@@ -52,7 +51,7 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
         </h2>
         <div className="campo">
           <label htmlFor="ed-valor">Valor{negativo ? ' (estorno)' : ''}</label>
-          <input id="ed-valor" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} />
+          <CampoValor id="ed-valor" valorCentavos={valorCentavos} onChange={setValorCentavos} />
         </div>
         <div className="campo">
           <label htmlFor="ed-data">Data</label>
