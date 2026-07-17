@@ -35,6 +35,7 @@ function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: str
     if (conf) {
       await repo.removerConferenciaFatura(cartao.id, mes, horizonte);
       await recarregar();
+      setValor(0);
     }
   }
 

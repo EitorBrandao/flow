@@ -115,6 +115,18 @@ it('botão Remover remove a conferência salva', async () => {
     await waitFor(async () => {
       expect(screen.queryByText(/Falta bater/)).not.toBeInTheDocument();
     });
+
+    // Clique Salvar novamente — não deve recriar a conferência
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
+
+    // Confirme que a diferença ainda não aparece (valor foi resetado para 0)
+    await waitFor(async () => {
+      expect(screen.queryByText(/Falta bater/)).not.toBeInTheDocument();
+    });
+
+    // Confirme que a conferência não foi recriada no DB
+    const confRefresh = await db.conferenciasFatura.toArray();
+    expect(confRefresh).toHaveLength(0);
   } finally { vi.useRealTimers(); }
 });
 
