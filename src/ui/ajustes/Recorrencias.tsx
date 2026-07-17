@@ -84,7 +84,6 @@ export default function Recorrencias() {
               {nomeCat(r.categoriaId)}{r.nota ? ` · ${r.nota}` : ''}
               <div className="sub">
                 dia {r.diaDoMes} · {r.parcelas == null ? 'sem fim' : `${r.parcelas}x`} · desde {r.dataInicio}
-                {r.origem === 'import' && <span className="badge" style={{ marginLeft: 6 }}>import</span>}
               </div>
             </div>
             <span>{formatarBRL(r.valor)}</span>
