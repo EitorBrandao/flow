@@ -44,7 +44,7 @@ function EditorBox({ box }: { box: Box }) {
               <label htmlFor={`${uid}-saldo`}>Saldo inicial</label>
               <CampoValor id={`${uid}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} />
             </div>
-            <button type="button" className="botao" onClick={() => setNegativo(n => !n)} style={{ height: 'fit-content' }}>
+            <button type="button" className="botao" aria-label="Alternar sinal (positivo/negativo)" onClick={() => setNegativo(n => !n)} style={{ padding: '8px 12px' }}>
               {negativo ? '−' : '+'}
             </button>
           </div>
