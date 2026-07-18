@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as repo from '../db/repo';
+import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import { categoriasFaturaIds } from '../domain/fatura';
 import type { TipoCategoria } from '../domain/types';
@@ -76,7 +77,7 @@ export default function TelaLancar() {
       <div className="linha">
         <div className="campo">
           <label htmlFor="data">Data</label>
-          <input id="data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
+          <CampoData id="data" value={data} onChange={setData} />
         </div>
         <div className="campo" style={{ flex: 1 }}>
           <label htmlFor="nota">Nota (opcional)</label>

@@ -1,9 +1,10 @@
 :root {
   --bg: #0b0d11; --fg: #e9edf3; --muted: #8b95a3;
-  --surface: #161b24; --surface2: #212836; --line: #232936;
+  --surface: #1c2331; --surface2: #29334a; --line: #232936;
   --ac: #3b9df8; --ac-dim: rgba(59, 157, 248, .14);
   --pos: #2ee6a8; --pos-bg: rgba(46, 230, 168, .14);
   --neg: #ff6b7a; --neg-bg: rgba(255, 107, 122, .13);
+  --total-pos: #008000; --total-neg: #ff4d4d;
   --aviso-bg: #423306; --aviso-fg: #fcd34d;
   --hoje-bg: #0d4a32;
   color-scheme: dark;
@@ -79,6 +80,9 @@ button { cursor: pointer; }
 .item-coluna { flex-direction: column; align-items: stretch; gap: 12px; }
 .linha-topo { display: flex; align-items: center; gap: 12px; }
 .linha-topo .cresce { flex: 1; min-width: 0; }
+.linha-topo-2-1 { display: grid; grid-template-columns: 2fr 1fr; align-items: start; }
+.linha-topo-2-1 .cresce { min-width: 0; }
+.linha-topo-2-1 > span { text-align: right; white-space: nowrap; }
 .acoes { display: flex; gap: 8px; }
 .acoes .botao { flex: 1; }
 
@@ -89,6 +93,15 @@ button { cursor: pointer; }
 }
 .botao-primario { background: var(--ac); color: #fff; }
 .botao-perigo { background: var(--surface2); color: var(--neg); }
+.botao-com-icone { display: inline-flex; align-items: center; gap: 8px; }
+.botao.ativo { background: var(--ac-dim); color: var(--ac); }
+
+.campo-data { position: relative; display: inline-flex; }
+.campo-data .botao { width: 100%; }
+.campo-data-input {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; margin: 0; padding: 0; border: none; background: none;
+}
 
 .grade-categorias { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .grade-categorias .botao { min-height: 56px; }
@@ -102,6 +115,9 @@ button { cursor: pointer; }
 }
 .valor-ganho { color: var(--pos); background: var(--pos-bg); }
 .valor-gasto { color: var(--neg); background: var(--neg-bg); }
+/* lista do Fluxo: totalizador do dia (cabeçalho, fora de .item) fica em negrito por já ser
+   <strong>; o valor de cada transação (dentro de .item) fica sem negrito pra diferenciar. */
+.lista-fluxo .item .valor-ganho, .lista-fluxo .item .valor-gasto { font-weight: 400; }
 /* em tabelas e em texto corrido (ex.: rótulo do dia no Fluxo), só a cor — sem pílula */
 .tabela .valor-ganho, .tabela .valor-gasto,
 strong.valor-ganho, strong.valor-gasto {
@@ -123,6 +139,9 @@ strong.valor-ganho, strong.valor-gasto {
 .cabecalho-dia.dia-hoje {
   background: var(--hoje-bg); padding: 12px 14px; border-radius: 12px;
 }
+.total-dia { font-variant-numeric: tabular-nums; }
+.total-dia.pos { color: var(--total-pos); }
+.total-dia.neg { color: var(--total-neg); }
 .saldo-grande {
   font-size: 38px; font-weight: 800; letter-spacing: -.03em;
   font-variant-numeric: tabular-nums;

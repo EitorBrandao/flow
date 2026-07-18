@@ -7,6 +7,7 @@ import type { ISODate } from '../domain/types';
 import { pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, useApp } from '../state/store';
 import BalanceChart from './BalanceChart';
+import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 
 const SETE_DIAS_MS = 7 * 86_400_000;
@@ -44,7 +45,7 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
         </div>
         <div className="campo">
           <label htmlFor={`${uid}-data`}>Data</label>
-          <input id={`${uid}-data`} type="date" value={data} onChange={(e) => setData(e.target.value)} />
+          <CampoData id={`${uid}-data`} value={data} onChange={setData} />
         </div>
         <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={salvar}>Salvar</button>
       </div>
@@ -137,7 +138,11 @@ export default function TelaHoje() {
           );
         })()}
         {deHoje && deHoje.saldoProjetado !== deHoje.saldoEfetivo && (
-          <p className="sub" style={{ margin: 0 }}>projetado: {formatarBRL(deHoje.saldoProjetado)}</p>
+          <p className="sub" style={{ margin: 0 }}>
+            projetado: <strong className={deHoje.saldoProjetado >= 0 ? 'valor-ganho' : 'valor-gasto'}>
+              {formatarBRL(deHoje.saldoProjetado)}
+            </strong>
+          </p>
         )}
         <ConferenciaSaldo key={boxSel} saldoApp={deHoje?.saldoEfetivo ?? 0} declaradoCent={declaradoCent}
           dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} />
