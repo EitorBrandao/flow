@@ -44,13 +44,13 @@ consultar "quanto vou ter no dia X?" sem ler o gráfico a olho.
 
 ## 3. Importar extrato bancário
 
-**Contexto:** hoje o import via xlsx (`src/importer/xlsx.ts`) é o único caminho de entrada em
-massa de lançamentos. Extratos bancários (ex.: export do banco em OFX/CSV/PDF) não são
-suportados — lançar cada item manualmente na aba Lançar não escala para o histórico real.
+**Contexto:** não há nenhum caminho de entrada em massa de lançamentos hoje (o import via
+planilha xlsx foi descontinuado). Extratos bancários (ex.: export do banco em OFX/CSV/PDF)
+não são suportados — lançar cada item manualmente na aba Lançar não escala para o histórico real.
 
 **Proposta:**
 - Suportar pelo menos um formato de extrato bancário comum (CSV ou OFX) como novo caminho de
-  importação, reaproveitando a infraestrutura de dedupe/preview do importador de xlsx.
+  importação, com preview e dedupe antes de confirmar.
 - Mapear categoria automaticamente quando possível (por nota/contraparte), com fallback para
   categorização manual antes de confirmar o import.
 
@@ -74,11 +74,21 @@ de servidor. Instalar o PWA no Android já era pendência; um .apk é o passo al
 
 **Riscos / atenção:**
 - Os dados (IndexedDB) passam a viver dentro do WebView do app: desinstalar o app apaga
-  tudo. Reforça a importância do backup — testar exportação/importação de backup e o import
-  de xlsx dentro do WebView (lição registrada: WebView tem lacunas de API vs. Chrome).
+  tudo. Reforça a importância do backup — testar exportação/importação de backup dentro do
+  WebView (lição registrada: WebView tem lacunas de API vs. Chrome).
 - Assinatura: para uso próprio, APK debug por sideload basta; guardar keystore se um dia
   quiser release.
 
 **Decisões em aberto:**
 - Vale antes simplesmente instalar o PWA (pendência antiga) e só ir de APK se o PWA
   decepcionar (ex.: acesso a arquivos, ícone, fullscreen)?
+
+## 5. Reativar aba Simular
+
+**Contexto:** a aba "Simular" (`TelaSimulador.tsx`, cenários) foi ocultada temporariamente da
+navegação em `src/ui/Shell.tsx` (item removido do array `ABAS`) a pedido do usuário, em
+2026-07-17. O código da tela e a lógica de cenários continuam intactos — só o botão de
+navegação some.
+
+**Proposta:** quando o usuário pedir, devolver a entrada `{ id: 'simulador', rotulo: 'Simular' }`
+ao array `ABAS` em `src/ui/Shell.tsx`.
