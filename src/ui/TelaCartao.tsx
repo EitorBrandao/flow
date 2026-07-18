@@ -113,7 +113,7 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
         <button className="botao" aria-label="Mês anterior" onClick={() => setMes(addMeses(mes, -1))}>‹</button>
         <div style={{ textAlign: 'center' }}>
           <p className="sub" style={{ margin: 0 }}>{cartao.nome} · fatura {mes.split('-').reverse().join('/')}</p>
-          <p className="saldo-grande" style={{ margin: '4px 0' }}>{formatarBRL(fatura.totalCent)}</p>
+          <p className="saldo-grande negativo" style={{ margin: '4px 0' }}>{formatarBRL(fatura.totalCent)}</p>
           <p className="sub" style={{ margin: 0 }}>
             fecha {fmtDia(fatura.dataFechamento)} · vence {fmtDia(fatura.dataVencimento)}
           </p>
@@ -124,7 +124,9 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
       {resumo.length > 1 && (
         <div style={{ marginTop: 8 }}>
           {resumo.map(([catId, cent]) => (
-            <p className="sub" key={catId} style={{ margin: 0 }}>{nomeCat(catId)}: {formatarBRL(cent)}</p>
+            <p className="sub" key={catId} style={{ margin: 0 }}>
+              {nomeCat(catId)}: <strong className="valor-gasto">{formatarBRL(cent)}</strong>
+            </p>
           ))}
         </div>
       )}

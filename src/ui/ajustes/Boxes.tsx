@@ -3,6 +3,7 @@ import * as repo from '../../db/repo';
 import { formatarBRL } from '../../domain/money';
 import { agoraISO, novoId, type Box } from '../../domain/types';
 import { useApp } from '../../state/store';
+import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 
 function EditorBox({ box }: { box: Box }) {
@@ -50,7 +51,7 @@ function EditorBox({ box }: { box: Box }) {
           </div>
           <div className="campo">
             <label htmlFor={`${uid}-data`}>Data do saldo</label>
-            <input id={`${uid}-data`} type="date" value={data} onChange={(e) => setData(e.target.value)} />
+            <CampoData id={`${uid}-data`} value={data} onChange={setData} />
           </div>
         </>
       )}

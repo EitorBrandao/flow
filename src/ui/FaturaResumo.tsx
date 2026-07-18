@@ -24,7 +24,7 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
   return (
     <Sheet aberto onFechar={onFechar} rotulo={`Fatura ${cartao.nome}`}>
       <h2 style={{ marginTop: 0 }}>{cartao.nome} · fatura {mesBonito}</h2>
-      <p className="sub" style={{ margin: 0 }}>Total: {formatarBRL(lanc.valor)}</p>
+      <p className="sub" style={{ margin: 0 }}>Total: <strong className="valor-gasto">{formatarBRL(lanc.valor)}</strong></p>
       <div className="lista" style={{ marginTop: 8 }}>
         {itens.map((i) => (
           <div className="item" key={`${i.compraId}:${i.parcela}`}>
