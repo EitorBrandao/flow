@@ -42,3 +42,12 @@ it('ignora texto fora de versão/seção', () => {
   const versoes = parseChangelog('texto solto\n- item órfão\n');
   expect(versoes).toEqual([]);
 });
+
+it('lida com quebras de linha CRLF (Windows)', () => {
+  const crlf = EXEMPLO.replace(/\n/g, '\r\n');
+  const versoes = parseChangelog(crlf);
+  expect(versoes).toHaveLength(2);
+  expect(versoes[0].versao).toBe('0.2.0');
+  expect(versoes[0].data).toBe('2026-07-05');
+  expect(versoes[0].secoes[0].itens).toEqual(['item novo A', 'item novo B']);
+});
