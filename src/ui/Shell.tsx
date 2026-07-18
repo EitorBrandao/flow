@@ -17,7 +17,7 @@ const ABAS: { id: Aba; rotulo: string; central?: boolean }[] = [
   { id: 'lancar', rotulo: '+', central: true },
   { id: 'cartao', rotulo: 'Cartão' },
   { id: 'analises', rotulo: 'Análises' },
-  { id: 'simulador', rotulo: 'Simular' },
+  // aba 'simulador' ocultada temporariamente — ver TODO.md
 ];
 
 export default function Shell() {

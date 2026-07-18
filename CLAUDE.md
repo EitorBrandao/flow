@@ -29,7 +29,7 @@ Camadas, de baixo para cima:
 - **`src/db/`** — `database.ts` é o schema Dexie (versionado; nova tabela/índice = nova `this.version(n)`). `repo.ts` concentra TODA a persistência. Mutations que afetam recorrências ou cartões recebem `horizonte` e re-materializam/sincronizam (`materializarTodas`, `sincronizarCartoes`) — faturas viram lançamentos com `origem: 'cartao'` na categoria de fatura do cartão.
 - **`src/state/store.ts`** — um único store Zustand. `iniciar()` carrega tudo (`repo.carregarTudo()`), materializa e sincroniza; depois de qualquer mutation a UI chama `recarregar()`, que recarrega o snapshot inteiro (`dados: Dados`). `boxSel` aceita um ID de box ou o sentinela `'casa'` (todas as boxes consolidadas). `aba` define a tela ativa.
 - **`src/ui/`** — uma `Tela*.tsx` por aba (Hoje, Fluxo, Cartão, Análises, Ajustes...), `Shell.tsx` é a navegação. Sheets/modais compartilhados (`Sheet.tsx`, `AdicionarSheet.tsx`, `LancamentosSheet.tsx`).
-- **`src/importer/`** — importação de planilha xlsx com preview/dedupe e reconciliação (`reconcile.ts`). **`src/backup/`** — export/import de backup JSON com merge (`mesclar`).
+- **`src/backup/`** — export/import de backup JSON com merge (`mesclar`).
 
 Convenções do domínio: valores monetários são **centavos inteiros**; datas são strings ISO `"AAAA-MM-DD"`. Lançamentos têm `status` (`efetivo`/`previsto`) e `origem` (`manual`/`recorrencia`/`import`/`cartao`). Cenários são lançamentos hipotéticos ligáveis/desligáveis na projeção — nunca `efetivo`.
 
