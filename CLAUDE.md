@@ -39,3 +39,4 @@ Convenções do domínio: valores monetários são **centavos inteiros**; datas 
 - Specs e planos de features ficam em `docs/superpowers/specs/` e `docs/superpowers/plans/`; o backlog com contexto e decisões em aberto está em `TODO.md`.
 - **Nunca commitar dados financeiros reais** — `*.xlsx` e `*.json.backup` estão no `.gitignore` de propósito.
 - Nunca trabalhar direto na `main`: criar branch antes de alterar arquivos. Sessões concorrentes rodam no mesmo checkout — trabalho com commits deve ir para um git worktree próprio (`.worktrees/`).
+- **Ao final de cada ciclo de desenvolvimento, registrar a entrega em `CHANGELOG.md`** — nova seção `## [x.y.z] - AAAA-MM-DD` com o que foi Adicionado/Alterado/Removido, e bump de `"version"` em `package.json` para o mesmo número. A tela de Ajustes (`src/ui/ajustes/Versao.tsx`) lê esse arquivo direto — não há número de versão em nenhum outro lugar.
