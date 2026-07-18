@@ -36,7 +36,7 @@ it('mostra os itens e o total da fatura, e "Editar" navega para a aba Cartão', 
 
     expect(await screen.findByRole('dialog', { name: 'Fatura Nubank' })).toBeInTheDocument();
     expect(screen.getByText('Mercado')).toBeInTheDocument();
-    expect(screen.getByText(/Total: R\$\s*50,00/)).toBeInTheDocument();
+    expect(screen.getByText((_, el) => el?.tagName === 'P' && /Total:\s*R\$\s*50,00/.test(el.textContent ?? ''))).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
     expect(useApp.getState().aba).toBe('cartao');

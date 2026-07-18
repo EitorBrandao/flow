@@ -33,12 +33,13 @@ Token novo → `nivel-3-novo-token.md`. Mudar valor de token existente → níve
 | `--bg` | `#0b0d11` | fundo do app |
 | `--fg` | `#e9edf3` | texto principal |
 | `--muted` | `#8b95a3` | texto secundário, rótulos, subtítulos |
-| `--surface` | `#161b24` | cards, itens de lista, sheet, chip |
-| `--surface2` | `#212836` | inputs, botão secundário, elevação sobre `--surface` |
+| `--surface` | `#1c2331` | cards, itens de lista, sheet, chip |
+| `--surface2` | `#29334a` | inputs, botão secundário, elevação sobre `--surface` |
 | `--line` | `#232936` | separadores raros (borda do nav, linha de tabela) |
 | `--ac` / `--ac-dim` | `#3b9df8` / `rgba(59,157,248,.14)` | ação (única cor de ação do app) |
 | `--pos` / `--pos-bg` | `#2ee6a8` / `rgba(46,230,168,.14)` | ganho / saldo positivo |
 | `--neg` / `--neg-bg` | `#ff6b7a` / `rgba(255,107,122,.13)` | gasto / saldo negativo |
+| `--total-pos` / `--total-neg` | `#008000` / `#ff4d4d` | totalizador do dia no Fluxo (cabeçalho, fora da pílula de transação) |
 | `--aviso-bg` / `--aviso-fg` | `#423306` / `#fcd34d` | aviso âmbar (ex.: backup atrasado) |
 | `--hoje-bg` | `#0d4a32` | fundo de destaque da linha "hoje" na lista do Fluxo |
 
