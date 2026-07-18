@@ -14,7 +14,7 @@ export function parseChangelog(raw: string): ChangelogVersao[] {
   let versaoAtual: ChangelogVersao | null = null;
   let secaoAtual: ChangelogSecao | null = null;
 
-  for (const linha of raw.split('\n')) {
+  for (const linha of raw.split(/\r?\n/)) {
     const versaoMatch = linha.match(/^## \[(.+?)\] - (.+)$/);
     if (versaoMatch) {
       versaoAtual = { versao: versaoMatch[1], data: versaoMatch[2], secoes: [] };
