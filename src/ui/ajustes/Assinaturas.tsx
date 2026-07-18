@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { formatarBRL } from '../../domain/money';
 import { useApp } from '../../state/store';
+import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 
 export default function Assinaturas() {
@@ -74,17 +75,20 @@ export default function Assinaturas() {
       <h2>Assinaturas do cartão</h2>
       <div className="lista">
         {dados.recorrenciasCartao.map((a) => (
-          <div className="item" key={a.id} style={{ opacity: a.ativa ? 1 : 0.5 }}>
-            <div className="cresce">
-              {a.descricao ?? nomeCat(a.categoriaCartaoId)}
-              <div className="sub">
-                dia {a.diaDoMes} · {a.parcelas == null ? 'sem fim' : `${a.parcelas}x`} · desde {a.dataInicio}
+          <div className="item item-coluna" key={a.id} style={{ opacity: a.ativa ? 1 : 0.5 }}>
+            <div className="linha-topo linha-topo-2-1">
+              <div className="cresce">
+                <div>{a.descricao ?? nomeCat(a.categoriaCartaoId)}</div>
+                <div className="sub">desde {a.dataInicio}</div>
+                <div className="sub">todo dia {a.diaDoMes}, {a.parcelas == null ? 'sem fim' : `${a.parcelas}x`}</div>
               </div>
+              <span className="valor-gasto">{formatarBRL(a.valor)}</span>
             </div>
-            <span>{formatarBRL(a.valor)}</span>
-            <button className="botao" onClick={() => editar(a.id)}>Editar</button>
-            <button className="botao" onClick={() => alternarAtiva(a.id)}>{a.ativa ? 'Pausar' : 'Ativar'}</button>
-            <button className="botao botao-perigo" onClick={() => excluir(a.id)}>Excluir</button>
+            <div className="acoes">
+              <button className="botao" onClick={() => editar(a.id)}>Editar</button>
+              <button className="botao" onClick={() => alternarAtiva(a.id)}>{a.ativa ? 'Pausar' : 'Ativar'}</button>
+              <button className="botao botao-perigo" onClick={() => excluir(a.id)}>Excluir</button>
+            </div>
           </div>
         ))}
         {dados.recorrenciasCartao.length === 0 && <p className="sub">Nenhuma assinatura.</p>}
@@ -110,8 +114,7 @@ export default function Assinaturas() {
         </div>
         <div className="campo">
           <label htmlFor={`${uid}-inicio`}>Início</label>
-          <input id={`${uid}-inicio`} type="date" value={dataInicio}
-            onChange={(e) => setDataInicio(e.target.value)} />
+          <CampoData id={`${uid}-inicio`} value={dataInicio} onChange={setDataInicio} />
         </div>
         <div className="campo">
           <label htmlFor={`${uid}-dia`}>Dia do mês</label>

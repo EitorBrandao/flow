@@ -3,6 +3,7 @@ import * as repo from '../db/repo';
 import { categoriasFaturaIds } from '../domain/fatura';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
+import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import Sheet from './Sheet';
 
@@ -55,7 +56,7 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
         </div>
         <div className="campo">
           <label htmlFor="ed-data">Data</label>
-          <input id="ed-data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
+          <CampoData id="ed-data" value={data} onChange={setData} />
         </div>
         <div className="campo">
           <label htmlFor="ed-cat">Categoria</label>

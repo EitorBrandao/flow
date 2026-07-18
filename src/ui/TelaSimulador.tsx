@@ -4,6 +4,7 @@ import { categoriasFaturaIds } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import { agoraISO, novoId, type Cenario } from '../domain/types';
 import { useApp } from '../state/store';
+import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 
 function FormHipotetico({ cenario }: { cenario: Cenario }) {
@@ -53,7 +54,7 @@ function FormHipotetico({ cenario }: { cenario: Cenario }) {
       </div>
       <div className="campo">
         <label htmlFor={`${uid}-data`}>Data</label>
-        <input id={`${uid}-data`} type="date" value={data} onChange={(e) => setData(e.target.value)} />
+        <CampoData id={`${uid}-data`} value={data} onChange={setData} />
       </div>
       <div className="campo">
         <label htmlFor={`${uid}-parcelas`}>Parcelas</label>

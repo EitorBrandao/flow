@@ -92,3 +92,32 @@ navegação some.
 
 **Proposta:** quando o usuário pedir, devolver a entrada `{ id: 'simulador', rotulo: 'Simular' }`
 ao array `ABAS` em `src/ui/Shell.tsx`.
+
+## 6. Botão de reordenar em Recorrências
+
+**Contexto:** a lista de Recorrências (`src/ui/ajustes/Recorrencias.tsx`) hoje aparece na
+ordem em que vem de `dados.recorrencias` (ordem de criação/carregamento), sem controle do
+usuário. Levantado em 2026-07-17 durante o ajuste de contraste/word-wrap da mesma tela.
+
+**Proposta:** um botão/toggle pra reordenar a lista — da mais recente para a mais antiga
+(por `dataInicio`) ou em ordem alfabética (por nome da categoria/descrição).
+
+**Decisões em aberto:**
+- É uma ordenação (clica e alterna critério) ou dois botões separados?
+- "Mais recente" ordena por `dataInicio` decrescente — confirmar se é essa a leitura de
+  "recente" (data de início da recorrência, não data do último lançamento gerado).
+- Vale o mesmo controle em Assinaturas (`src/ui/ajustes/Assinaturas.tsx`), que tem a mesma
+  estrutura de lista?
+
+## 7. Bug de cor no Simulador (baixa prioridade — aba sem uso no momento)
+
+**Contexto:** `TelaSimulador.tsx` (linha ~135) pinta todo item de cenário hipotético com a
+classe `valor-gasto` (vermelho), sem checar o tipo da categoria escolhida. Como
+`FormHipotetico` permite escolher qualquer categoria (inclusive tipo "ganho"), um cenário
+de aumento salarial ou outro ganho hipotético aparece incorretamente em vermelho, como se
+fosse gasto. Achado em 2026-07-17 durante a auditoria de cores monetárias no app; não
+corrigido a pedido do usuário porque a aba Simular está oculta e sem uso (ver item 5).
+
+**Proposta:** replicar o padrão de `tipoCat()` já usado em `TelaHoje.tsx`/`TelaFluxo.tsx` —
+olhar `categoria.tipo` do lançamento do cenário e escolher `valor-ganho`/`valor-gasto`
+condicionalmente, em vez do `valor-gasto` fixo.
