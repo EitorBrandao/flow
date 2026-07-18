@@ -8,9 +8,10 @@ import Categorias from './ajustes/Categorias';
 import CategoriasCartao from './ajustes/CategoriasCartao';
 import Recorrencias from './ajustes/Recorrencias';
 import Wiki from './ajustes/Wiki';
+import Versao from './ajustes/Versao';
 
 type Secao = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'cartoes'
-  | 'categoriasCartao' | 'assinaturas' | 'backup' | 'wiki';
+  | 'categoriasCartao' | 'assinaturas' | 'backup' | 'wiki' | 'versao';
 
 const ITENS: { id: Secao; rotulo: string }[] = [
   { id: 'categorias', rotulo: 'Categorias' },
@@ -21,6 +22,7 @@ const ITENS: { id: Secao; rotulo: string }[] = [
   { id: 'assinaturas', rotulo: 'Assinaturas do cartão' },
   { id: 'backup', rotulo: 'Backup e restauração' },
   { id: 'wiki', rotulo: 'Wiki' },
+  { id: 'versao', rotulo: 'Versão' },
 ];
 
 export default function TelaAjustes() {
@@ -51,6 +53,7 @@ export default function TelaAjustes() {
       {secao === 'assinaturas' && <Assinaturas />}
       {secao === 'backup' && <Backup />}
       {secao === 'wiki' && <Wiki />}
+      {secao === 'versao' && <Versao />}
     </div>
   );
 }
