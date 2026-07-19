@@ -4,6 +4,7 @@ import { addMeses, mesDe } from '../domain/dates';
 import { formatarBRL } from '../domain/money';
 import type { ID } from '../domain/types';
 import { boxIdsSelecionadas, useApp } from '../state/store';
+import FaturaCategoriaSheet from './FaturaCategoriaSheet';
 import LancamentosSheet from './LancamentosSheet';
 
 function nomeMes(mes: string): string {
@@ -15,12 +16,13 @@ function pct(x: number | null): string {
 }
 
 export default function TelaAnalises() {
-  const { dados, boxSel, hoje } = useApp();
+  const { dados, boxSel, hoje, setAba } = useApp();
   const [mes, setMes] = useState(() => mesDe(hoje));
   const [incluirPrevistos, setIncluirPrevistos] = useState(true);
   const [categoriaAberta, setCategoriaAberta] = useState<ID | null>(null);
   if (!dados) return null;
   const categoriaObj = dados.categorias.find((c) => c.id === categoriaAberta);
+  const cartaoDaCategoria = dados.cartoes.find((c) => c.categoriaFaturaId === categoriaAberta) ?? null;
   const ids = boxIdsSelecionadas(dados, boxSel);
   const resumo = resumoMensal(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
   const comparativo = compararMeses(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
@@ -102,17 +104,30 @@ export default function TelaAnalises() {
         </table>
       </div>
 
-      <LancamentosSheet
-        aberto={categoriaAberta !== null}
-        categoriaId={categoriaAberta}
-        nome={categoriaObj?.nome ?? ''}
-        tipo={categoriaObj?.tipo ?? 'gasto'}
-        mes={mes}
-        boxIds={ids}
-        lancamentos={dados.lancamentos}
-        incluirPrevistos={incluirPrevistos}
-        onFechar={() => setCategoriaAberta(null)}
-      />
+      {cartaoDaCategoria ? (
+        <FaturaCategoriaSheet
+          aberto={categoriaAberta !== null}
+          cartao={cartaoDaCategoria}
+          mes={mes}
+          comprasCartao={dados.comprasCartao}
+          categoriasCartao={dados.categoriasCartao}
+          horizonteProjecao={dados.config.horizonteProjecao}
+          onFechar={() => setCategoriaAberta(null)}
+          onAbrirCartao={() => { setAba('cartao'); setCategoriaAberta(null); }}
+        />
+      ) : (
+        <LancamentosSheet
+          aberto={categoriaAberta !== null}
+          categoriaId={categoriaAberta}
+          nome={categoriaObj?.nome ?? ''}
+          tipo={categoriaObj?.tipo ?? 'gasto'}
+          mes={mes}
+          boxIds={ids}
+          lancamentos={dados.lancamentos}
+          incluirPrevistos={incluirPrevistos}
+          onFechar={() => setCategoriaAberta(null)}
+        />
+      )}
     </div>
   );
 }

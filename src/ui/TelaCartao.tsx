@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import * as repo from '../db/repo';
 import { addMeses } from '../domain/dates';
 import {
-  calcularFaturas, datasFaturaDoMes, mesFaturaDaCompra, type Fatura,
+  calcularFaturas, datasFaturaDoMes, mesFaturaDaCompra, resumoPorCategoria, type Fatura,
 } from '../domain/fatura';
 import { formatarBRL, parseValorDigitado } from '../domain/money';
 import type { Cartao, CompraCartao } from '../domain/types';
@@ -92,11 +92,7 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
     ?? { mes, dataFechamento, dataVencimento, itens: [], totalCent: 0 };
 
   const nomeCat = (id: string) => dados.categoriasCartao.find((c) => c.id === id)?.nome ?? '?';
-  const porCategoria = new Map<string, number>();
-  for (const i of fatura.itens) {
-    porCategoria.set(i.categoriaCartaoId, (porCategoria.get(i.categoriaCartaoId) ?? 0) + i.valorCent);
-  }
-  const resumo = [...porCategoria.entries()].sort((a, b) => b[1] - a[1]);
+  const resumo = resumoPorCategoria(fatura);
 
   const aVista = fatura.itens.filter((i) => i.totalParcelas === 1).sort((a, b) => b.data.localeCompare(a.data));
   const parceladas = fatura.itens.filter((i) => i.totalParcelas > 1).sort((a, b) => b.data.localeCompare(a.data));

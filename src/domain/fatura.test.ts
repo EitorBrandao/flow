@@ -1,5 +1,5 @@
 import type { Cartao, CompraCartao, ConferenciaFatura, Lancamento } from './types';
-import { calcularFaturas, categoriasFaturaIds, datasFaturaDoMes, diffSincronizacao, mesFaturaDaCompra, mesFechamentoDaCompra, valorParcela } from './fatura';
+import { calcularFaturas, categoriasFaturaIds, datasFaturaDoMes, diffSincronizacao, mesFaturaDaCompra, mesFechamentoDaCompra, resumoPorCategoria, valorParcela } from './fatura';
 
 const nubank = { diaFechamento: 28, diaVencimento: 5 }; // vence no mês seguinte ao fechamento
 const outro = { diaFechamento: 10, diaVencimento: 20 }; // vence no mesmo mês do fechamento
@@ -35,9 +35,9 @@ describe('mesFaturaDaCompra e datasFaturaDoMes', () => {
   });
 });
 
-function compra(data: string, valorTotal: number, parcelas = 1): CompraCartao {
+function compra(data: string, valorTotal: number, parcelas = 1, categoriaCartaoId = 'cat1'): CompraCartao {
   return {
-    id: `c-${data}-${valorTotal}-${parcelas}`, cartaoId: 'k1', categoriaCartaoId: 'cat1',
+    id: `c-${data}-${valorTotal}-${parcelas}-${categoriaCartaoId}`, cartaoId: 'k1', categoriaCartaoId,
     data, valorTotal, parcelas, criadoEm: '', alteradoEm: '',
   };
 }
@@ -81,6 +81,21 @@ describe('calcularFaturas', () => {
   it('soma múltiplas compras e parcelas na mesma fatura', () => {
     const fs = calcularFaturas(nubank, [compra('2026-07-10', 10000, 3), compra('2026-08-01', 500)], '2026-12-31');
     expect(fs.find((f) => f.mes === '2026-09')?.totalCent).toBe(3333 + 500);
+  });
+});
+
+describe('resumoPorCategoria', () => {
+  it('soma por categoria e ordena do maior pro menor', () => {
+    const fs = calcularFaturas(nubank, [
+      compra('2026-07-10', 5000, 1, 'mercado'),
+      compra('2026-07-12', 2000, 1, 'streaming'),
+      compra('2026-07-15', 3000, 1, 'mercado'),
+    ], '2026-12-31');
+    expect(resumoPorCategoria(fs[0])).toEqual([['mercado', 8000], ['streaming', 2000]]);
+  });
+
+  it('fatura sem itens retorna lista vazia', () => {
+    expect(resumoPorCategoria({ mes: '2026-07', dataFechamento: '2026-06-28', dataVencimento: '2026-07-05', itens: [], totalCent: 0 })).toEqual([]);
   });
 });
 
