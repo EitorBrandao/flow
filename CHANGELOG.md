@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.7.3] - 2026-07-19
+
+### Corrigido
+
+- Changelog na tela de Ajustes: itens que quebram linha no `CHANGELOG.md` (linhas de
+  continuação indentadas) apareciam cortados na primeira linha; o parser agora junta a
+  continuação ao item.
+
 ## [0.7.2] - 2026-07-19
 
 ### Alterado
