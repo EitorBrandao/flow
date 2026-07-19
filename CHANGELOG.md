@@ -3,6 +3,24 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.8.0] - 2026-07-19
+
+### Adicionado
+
+- Componente `CampoData`: botão com ícone de calendário no lugar do input de data nativo,
+  usado em todos os formulários com data do app.
+- Cor própria (verde/vermelho) para o totalizador do dia na aba Fluxo, separada da cor da
+  transação individual.
+
+### Alterado
+
+- Maior contraste entre o fundo e os cards/itens de lista em toda a UI.
+- Recorrências e Assinaturas: descrição, data e recorrência em linhas separadas, evitando
+  quebra de texto ruim; botões de ação numa linha própria.
+- Valores monetários (Recorrências, Assinaturas, fatura do cartão, tabela "Comparativo" em
+  Análises) passam a ser coloridos por ganho/gasto onde antes ficavam sem cor.
+- Aba Fluxo: valor de cada transação sem negrito, destacando o totalizador do dia.
+
 ## [0.7.0] - 2026-07-17
 
 ### Adicionado
