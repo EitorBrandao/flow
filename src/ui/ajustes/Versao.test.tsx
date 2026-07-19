@@ -3,6 +3,6 @@ import Versao from './Versao';
 
 it('mostra a versão atual e o histórico de versões anteriores', () => {
   render(<Versao />);
-  expect(screen.getByText(/Você está na versão 0\.8\.0/)).toBeInTheDocument();
+  expect(screen.getByText(/Você está na versão 0\.9\.0/)).toBeInTheDocument();
   expect(screen.getByText('0.1.0')).toBeInTheDocument();
 });
