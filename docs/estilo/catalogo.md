@@ -31,6 +31,7 @@ tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
 | `.grade-categorias` | grade 3 colunas de seleção de categoria; `.selecionada` marca o item ativo |
 | `table.tabela` | tabela numérica (Fluxo, Análises) — alinhado à direita exceto 1ª coluna, sem linhas verticais |
 | `.rolavel` | wrapper com `overflow-x: auto` para conteúdo largo (tabelas) |
+| `.recuo-1` / `.recuo-2` | recuo horizontal (ambos os lados) pra indicar nível de hierarquia numa lista aninhada — ex.: grupo/data em `LancamentosSheet` |
 | `.sheet-backdrop` / `.sheet` / `.sheet-alca` | bottom sheet (ver componente `Sheet`) |
 | `.navegacao` | tab bar mobile / sidebar desktop (breakpoint 900px) |
 | `.shell` / `.shell-corpo` / `.topo` / `.conteudo` | casco do app (ver componente `Shell`) |

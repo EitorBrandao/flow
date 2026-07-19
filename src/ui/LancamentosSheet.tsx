@@ -37,18 +37,20 @@ export default function LancamentosSheet({
       <div className="lista" style={{ marginTop: 12 }}>
         {grupos.map((g) => (
           <div key={g.notaChave}>
-            <div className="linha" style={{ justifyContent: 'space-between' }}>
+            <div className="linha recuo-1" style={{ justifyContent: 'space-between' }}>
               <p className="rotulo-grupo">{g.notaExibicao}</p>
               <span className={classeValor}>{formatarBRL(g.subtotal)}</span>
             </div>
-            <div className="lista" style={{ marginTop: 6 }}>
-              {g.itens.map((it, i) => (
-                <div className="item" key={`${it.data}:${i}`} style={{ cursor: 'default' }}>
-                  <div className="cresce">{dataFormatada(it.data)}</div>
-                  <span className={classeValor}>{formatarBRL(it.valor)}</span>
-                </div>
-              ))}
-            </div>
+            {g.itens.length > 1 && (
+              <div className="lista" style={{ marginTop: 6 }}>
+                {g.itens.map((it, i) => (
+                  <div className="item recuo-2" key={`${it.data}:${i}`} style={{ cursor: 'default' }}>
+                    <div className="cresce">{dataFormatada(it.data)}</div>
+                    <span className={classeValor}>{formatarBRL(it.valor)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
         {grupos.length === 0 && <p className="sub">Sem lançamentos no mês.</p>}

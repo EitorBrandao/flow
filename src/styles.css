@@ -82,6 +82,9 @@ button { cursor: pointer; }
 .acoes { display: flex; gap: 8px; }
 .acoes .botao { flex: 1; }
 
+.recuo-1 { margin-left: 14px; margin-right: 14px; }
+.recuo-2 { margin-left: 28px; margin-right: 28px; }
+
 .botao {
   padding: 10px 14px; border: none; border-radius: 12px;
   background: var(--surface2); color: var(--fg); font-weight: 600; font-size: 14px;
