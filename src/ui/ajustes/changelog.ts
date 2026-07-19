@@ -31,6 +31,13 @@ export function parseChangelog(raw: string): ChangelogVersao[] {
     const itemMatch = linha.match(/^- (.+)$/);
     if (itemMatch && secaoAtual) {
       secaoAtual.itens.push(itemMatch[1]);
+      continue;
+    }
+    // continuação de um item que quebrou linha no markdown (indentada, sem "- " próprio)
+    const continuacaoMatch = linha.match(/^\s+(\S.*)$/);
+    if (continuacaoMatch && secaoAtual && secaoAtual.itens.length > 0) {
+      const ultimo = secaoAtual.itens.length - 1;
+      secaoAtual.itens[ultimo] += ` ${continuacaoMatch[1]}`;
     }
   }
 

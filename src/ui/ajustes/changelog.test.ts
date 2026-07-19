@@ -43,6 +43,23 @@ it('ignora texto fora de versão/seção', () => {
   expect(versoes).toEqual([]);
 });
 
+it('junta linhas de continuação de um item que quebrou no markdown', () => {
+  const comQuebra = `## [0.3.0] - 2026-07-19
+
+### Alterado
+
+- primeira linha do item
+  segunda linha do mesmo item
+  terceira linha do mesmo item.
+- item seguinte, numa linha só
+`;
+  const [v030] = parseChangelog(comQuebra);
+  expect(v030.secoes[0].itens).toEqual([
+    'primeira linha do item segunda linha do mesmo item terceira linha do mesmo item.',
+    'item seguinte, numa linha só',
+  ]);
+});
+
 it('lida com quebras de linha CRLF (Windows)', () => {
   const crlf = EXEMPLO.replace(/\n/g, '\r\n');
   const versoes = parseChangelog(crlf);
