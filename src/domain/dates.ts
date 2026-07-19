@@ -42,6 +42,12 @@ export function mesDe(d: ISODate): string {
   return d.slice(0, 7);
 }
 
+/** ISODate ("AAAA-MM-DD") → "DD/MM/AAAA" pra exibição compacta. */
+export function formatarDataBR(d: ISODate): string {
+  const [ano, mes, dia] = d.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
 export function addMeses(mes: string, n: number): string {
   const [y, m] = mes.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7);

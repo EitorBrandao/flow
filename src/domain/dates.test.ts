@@ -1,5 +1,5 @@
 import {
-  addDias, addMeses, addMesesData, dataComDia, diasEntre, hojeISO, mesDe,
+  addDias, addMeses, addMesesData, dataComDia, diasEntre, formatarDataBR, hojeISO, mesDe,
   serialExcelParaISO, ultimoDiaDoMes,
 } from './dates';
 
@@ -41,6 +41,10 @@ it('addMesesData mantém o dia e clampa', () => {
   expect(addMesesData('2026-03-31', -1)).toBe('2026-02-28');
   expect(addMesesData('2028-03-31', -1)).toBe('2028-02-29');
   expect(addMesesData('2026-01-15', -2)).toBe('2025-11-15');
+});
+
+it('formatarDataBR converte AAAA-MM-DD pra DD/MM/AAAA', () => {
+  expect(formatarDataBR('2026-07-09')).toBe('09/07/2026');
 });
 
 it('serialExcelParaISO usa base 1899-12-30', () => {

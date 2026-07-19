@@ -3,7 +3,7 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
-## [0.7.3] - 2026-07-19
+## [0.8.3] - 2026-07-19
 
 ### Corrigido
 
@@ -11,7 +11,7 @@ com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado
   continuação indentadas) apareciam cortados na primeira linha; o parser agora junta a
   continuação ao item.
 
-## [0.7.2] - 2026-07-19
+## [0.8.2] - 2026-07-19
 
 ### Alterado
 
@@ -20,13 +20,31 @@ com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado
   lançamento por mês) — agora mostra o detalhamento por categoria de compra do cartão,
   com um link para ver a fatura completa na aba Cartão.
 
-## [0.7.1] - 2026-07-19
+## [0.8.1] - 2026-07-19
 
 ### Alterado
 
 - Sheet de lançamentos por categoria (Análises): grupos com um único lançamento não
   mostram mais a linha de data (redundante com o subtotal); linha do grupo e da data
   recuam visualmente para indicar o nível de hierarquia.
+
+## [0.8.0] - 2026-07-19
+
+### Adicionado
+
+- Componente `CampoData`: botão com ícone de calendário no lugar do input de data nativo,
+  usado em todos os formulários com data do app.
+- Cor própria (verde/vermelho) para o totalizador do dia na aba Fluxo, separada da cor da
+  transação individual.
+
+### Alterado
+
+- Maior contraste entre o fundo e os cards/itens de lista em toda a UI.
+- Recorrências e Assinaturas: descrição, data e recorrência em linhas separadas, evitando
+  quebra de texto ruim; botões de ação numa linha própria.
+- Valores monetários (Recorrências, Assinaturas, fatura do cartão, tabela "Comparativo" em
+  Análises) passam a ser coloridos por ganho/gasto onde antes ficavam sem cor.
+- Aba Fluxo: valor de cada transação sem negrito, destacando o totalizador do dia.
 
 ## [0.7.0] - 2026-07-17
 

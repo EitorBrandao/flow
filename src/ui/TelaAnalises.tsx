@@ -92,10 +92,10 @@ export default function TelaAnalises() {
               return (
                 <tr key={c.categoriaId}>
                   <td>{c.nome}</td>
-                  <td>{formatarBRL(c.atual)}</td>
-                  <td>{formatarBRL(c.mesAnterior)}</td>
-                  <td>{formatarBRL(c.anoAnterior)}</td>
-                  <td>{media == null ? '—' : formatarBRL(media)}</td>
+                  <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.atual)}</td>
+                  <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.mesAnterior)}</td>
+                  <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.anoAnterior)}</td>
+                  <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{media == null ? '—' : formatarBRL(media)}</td>
                 </tr>
               );
             })}

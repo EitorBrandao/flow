@@ -6,6 +6,7 @@ import { projetarBoxes } from '../domain/projection';
 import type { Lancamento } from '../domain/types';
 import { boxIdsSelecionadas, cenariosLigados, useApp } from '../state/store';
 import BalanceChart from './BalanceChart';
+import CampoData from './CampoData';
 import FaturaResumo from './FaturaResumo';
 import LancEditor from './LancEditor';
 
@@ -95,21 +96,21 @@ export default function TelaFluxo() {
         <input className="campo-busca" placeholder="Buscar por nota, categoria, data ou valor..." value={busca}
                onChange={(e) => { setBusca(e.target.value); if (e.target.value) setDataDe(''); }}
                style={{ flex: 1 }} />
-        <input className="campo-busca" type="date" aria-label="Buscar por data" value={dataDe}
-               onChange={(e) => { setDataDe(e.target.value); if (e.target.value) setBusca(''); }} />
-        {filtroAtivo && (
-          <button className="botao" onClick={() => { setBusca(''); setDataDe(''); setDataAte(''); setPeriodoAtivo(false); }}>Limpar</button>
-        )}
       </div>
       <div className="linha">
-        {!periodoAtivo ? (
-          <button className="botao" onClick={() => setPeriodoAtivo(true)}>Selecionar período</button>
-        ) : (
-          <>
-            <input className="campo-busca" type="date" aria-label="Até" value={dataAte}
-                   onChange={(e) => setDataAte(e.target.value)} />
-            <button className="botao" onClick={() => { setPeriodoAtivo(false); setDataAte(''); }}>Dia único</button>
-          </>
+        <CampoData id="fluxo-data-de" ariaLabel="Buscar por data" placeholder="Filtrar por data"
+                   value={dataDe} ativo={dataAtiva}
+                   onChange={(v) => { setDataDe(v); if (v) setBusca(''); }} />
+        {periodoAtivo && (
+          <CampoData id="fluxo-data-ate" ariaLabel="Até" placeholder="Até"
+                     value={dataAte} ativo={dataAte.length > 0}
+                     onChange={setDataAte} />
+        )}
+        <button className="botao" onClick={() => { setPeriodoAtivo((v) => !v); setDataAte(''); }}>
+          {periodoAtivo ? 'Dia único' : 'Selecionar período'}
+        </button>
+        {filtroAtivo && (
+          <button className="botao" onClick={() => { setBusca(''); setDataDe(''); setDataAte(''); setPeriodoAtivo(false); }}>Limpar</button>
         )}
       </div>
       {!dataAtiva && (
@@ -118,12 +119,16 @@ export default function TelaFluxo() {
           <button className="botao" onClick={() => setDiasAtras(diasAtras + 30)}>+30 dias atrás</button>
         </div>
       )}
-      <div className="lista">
+      <div className="lista lista-fluxo">
         {dias.map((dia) => (
           <div key={dia}>
             <div className={dia === hoje ? 'cabecalho-dia dia-hoje' : 'cabecalho-dia'}>
               <strong>{dataBonita(dia)}{dia === hoje ? ' · hoje' : ''}</strong>
-              <span className="sub">{formatarBRL(saldoPorDia.get(dia) ?? 0)}</span>
+              <span className="sub">
+                <strong className={`total-dia ${(saldoPorDia.get(dia) ?? 0) >= 0 ? 'pos' : 'neg'}`}>
+                  {formatarBRL(saldoPorDia.get(dia) ?? 0)}
+                </strong>
+              </span>
             </div>
             {(porDia.get(dia) ?? []).map((l) => (
               <button key={l.id} className="item" style={{ width: '100%', textAlign: 'left', cursor: 'pointer' }} onClick={() => (l.origem === 'cartao' ? setFaturaSel(l) : setEditando(l))}>

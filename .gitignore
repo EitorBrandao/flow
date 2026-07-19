@@ -4,6 +4,7 @@
 
 # Configuração local
 .claude/settings.local.json
+deploy.bat
 
 # Node
 node_modules/

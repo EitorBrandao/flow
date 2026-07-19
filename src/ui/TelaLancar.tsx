@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as repo from '../db/repo';
+import CampoData from './CampoData';
+import CampoValor from './CampoValor';
 import { categoriasFaturaIds } from '../domain/fatura';
-import { parseValorDigitado } from '../domain/money';
 import type { TipoCategoria } from '../domain/types';
 import { useApp } from '../state/store';
 
 export default function TelaLancar() {
   const { dados, boxSel, hoje, recarregar } = useApp();
-  const [valor, setValor] = useState('');
+  const [cents, setCents] = useState(0);
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
   const [categoriaId, setCategoriaId] = useState<string | null>(null);
   const [data, setData] = useState(hoje);
@@ -31,18 +32,17 @@ export default function TelaLancar() {
     [dados, boxId, tipo, ocultas],
   );
 
-  const cents = parseValorDigitado(valor);
-  const valido = boxId != null && cents != null && categoriaId != null && data !== '';
+  const valido = boxId != null && cents > 0 && categoriaId != null && data !== '';
 
   async function lancar() {
     if (!valido) return;
     await repo.salvarLancamento({
-      boxId: boxId!, categoriaId: categoriaId!, data, valor: cents!,
+      boxId: boxId!, categoriaId: categoriaId!, data, valor: cents,
       ...(nota ? { nota } : {}),
       status: previsto ? 'previsto' : (data > hoje ? 'previsto' : 'efetivo'),
     });
     await recarregar();
-    setValor(''); setCategoriaId(null); setNota(''); setData(hoje); setPrevisto(false); setSalvo(true);
+    setCents(0); setCategoriaId(null); setNota(''); setData(hoje); setPrevisto(false); setSalvo(true);
     if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
     salvoTimeoutRef.current = setTimeout(() => setSalvo(false), 2500);
   }
@@ -52,11 +52,7 @@ export default function TelaLancar() {
       <h2>Lançar</h2>
       <div className="campo">
         <label htmlFor="valor">Valor</label>
-        <input
-          id="valor" inputMode="decimal" autoFocus placeholder="0,00"
-          value={valor} onChange={(e) => setValor(e.target.value)}
-          style={{ fontSize: 28 }}
-        />
+        <CampoValor id="valor" valorCentavos={cents} onChange={setCents} autoFocus style={{ fontSize: 28 }} />
       </div>
       <div className="linha" role="radiogroup" aria-label="Tipo">
         <button
@@ -81,7 +77,7 @@ export default function TelaLancar() {
       <div className="linha">
         <div className="campo">
           <label htmlFor="data">Data</label>
-          <input id="data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
+          <CampoData id="data" value={data} onChange={setData} />
         </div>
         <div className="campo" style={{ flex: 1 }}>
           <label htmlFor="nota">Nota (opcional)</label>

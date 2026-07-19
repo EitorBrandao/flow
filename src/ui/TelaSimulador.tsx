@@ -1,13 +1,15 @@
 import { useId, useState } from 'react';
 import * as repo from '../db/repo';
 import { categoriasFaturaIds } from '../domain/fatura';
-import { formatarBRL, parseValorDigitado } from '../domain/money';
+import { formatarBRL } from '../domain/money';
 import { agoraISO, novoId, type Cenario } from '../domain/types';
 import { useApp } from '../state/store';
+import CampoData from './CampoData';
+import CampoValor from './CampoValor';
 
 function FormHipotetico({ cenario }: { cenario: Cenario }) {
   const { dados, hoje, recarregar } = useApp();
-  const [valor, setValor] = useState('');
+  const [valor, setValor] = useState(0);
   const [categoriaId, setCategoriaId] = useState('');
   const [data, setData] = useState(hoje);
   const [parcelas, setParcelas] = useState('1');
@@ -18,10 +20,10 @@ function FormHipotetico({ cenario }: { cenario: Cenario }) {
   const boxDe = (catId: string) => dados.categorias.find((c) => c.id === catId)?.boxId;
 
   async function adicionar() {
-    const cents = parseValorDigitado(valor);
+    const cents = valor;
     const nParcelas = Math.max(1, Number(parcelas) || 1);
     const boxId = boxDe(categoriaId);
-    if (cents == null || !boxId) return;
+    if (cents <= 0 || !boxId) return;
     if (nParcelas === 1) {
       await repo.salvarLancamento({
         boxId, categoriaId, data, valor: cents, status: 'previsto', cenarioId: cenario.id,
@@ -34,15 +36,14 @@ function FormHipotetico({ cenario }: { cenario: Cenario }) {
       }, dados!.config.horizonteProjecao);
     }
     await recarregar();
-    setValor('');
+    setValor(0);
   }
 
   return (
     <div className="linha" style={{ marginTop: 8 }}>
       <div className="campo">
         <label htmlFor={`${uid}-valor`}>Valor total</label>
-        <input id={`${uid}-valor`} placeholder="0,00" inputMode="decimal" value={valor}
-          onChange={(e) => setValor(e.target.value)} style={{ width: 90 }} />
+        <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} style={{ width: 90 }} />
       </div>
       <div className="campo">
         <label htmlFor={`${uid}-cat`}>Categoria</label>
@@ -53,7 +54,7 @@ function FormHipotetico({ cenario }: { cenario: Cenario }) {
       </div>
       <div className="campo">
         <label htmlFor={`${uid}-data`}>Data</label>
-        <input id={`${uid}-data`} type="date" value={data} onChange={(e) => setData(e.target.value)} />
+        <CampoData id={`${uid}-data`} value={data} onChange={setData} />
       </div>
       <div className="campo">
         <label htmlFor={`${uid}-parcelas`}>Parcelas</label>
