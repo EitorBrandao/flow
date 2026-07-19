@@ -9,7 +9,8 @@ com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado
 
 - Sheets (modais deslizantes, como o detalhe de fatura do cartão) agora rolam corretamente
   quando o conteúdo é maior que a tela — antes o gesto de arrastar para fechar bloqueava a
-  rolagem do conteúdo. Arrastar para fechar continua funcionando pela alcinha no topo.
+  rolagem do conteúdo. A alcinha para arrastar e fechar fica fixa no topo, visível mesmo
+  com o conteúdo rolado.
 
 ## [0.9.0] - 2026-07-19
 

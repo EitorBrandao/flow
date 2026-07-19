@@ -33,7 +33,7 @@ export default function Sheet({ aberto, onFechar, rotulo, children }: Props) {
           onPointerDown={(e) => dragControls.start(e)}
           style={{ touchAction: 'none' }}
         />
-        {children}
+        <div className="sheet-conteudo">{children}</div>
       </motion.div>
     </motion.div>
   );

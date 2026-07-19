@@ -188,12 +188,15 @@ table.tabela tr:last-child td { border-bottom: none; }
 .sheet {
   background: var(--surface); width: 100%; max-width: 560px;
   border-radius: 24px 24px 0 0;
-  padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
-  max-height: 88dvh; overflow-y: auto;
+  max-height: 88dvh; display: flex; flex-direction: column;
 }
 .sheet-alca {
-  width: 40px; height: 4px; border-radius: 2px;
-  background: var(--surface2); margin: 2px auto 14px;
+  width: 40px; height: 4px; border-radius: 2px; flex: 0 0 auto;
+  background: var(--surface2); margin: 12px auto 14px;
+}
+.sheet-conteudo {
+  overflow-y: auto; min-height: 0;
+  padding: 0 20px calc(20px + env(safe-area-inset-bottom));
 }
 
 @media (min-width: 900px) {
