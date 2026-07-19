@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -53,4 +53,35 @@ it('trocar o mês com o sheet aberto atualiza os grupos exibidos', async () => {
 
   expect(await screen.findByText('João')).toBeInTheDocument();
   expect(screen.queryByText('Maria Silva')).not.toBeInTheDocument();
+});
+
+it('clicar na categoria do cartão mostra o detalhamento por categoria de cartão, não por nota', async () => {
+  const { box } = await seedBoxComCategoria();
+  const cartao = await repo.salvarCartao({
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
+  }, '2027-12-31');
+  const catMercado = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'Mercado', ordem: 0 });
+  const catFarmacia = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'Farmácia', ordem: 1 });
+  await repo.salvarCompraCartao({
+    cartaoId: cartao.id, categoriaCartaoId: catMercado.id, data: '2026-07-10', valorTotal: 62000, parcelas: 1,
+  }, '2027-12-31');
+  await repo.salvarCompraCartao({
+    cartaoId: cartao.id, categoriaCartaoId: catFarmacia.id, data: '2026-07-12', valorTotal: 5000, parcelas: 1,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-08-01' });
+
+  render(<TelaAnalises />);
+  await userEvent.click(screen.getByRole('button', { name: /Nubank/ }));
+
+  const dialog = await screen.findByRole('dialog', { name: 'Nubank' });
+  expect(within(dialog).getByText('R$ 670,00')).toBeInTheDocument(); // total da fatura
+  expect(within(dialog).getByText('Mercado')).toBeInTheDocument();
+  expect(within(dialog).getByText('R$ 620,00')).toBeInTheDocument(); // subtotal Mercado
+  expect(within(dialog).getByText('Farmácia')).toBeInTheDocument();
+  expect(within(dialog).getByText('R$ 50,00')).toBeInTheDocument(); // subtotal Farmácia
+
+  const link = within(dialog).getByRole('button', { name: /Ver fatura completa/ });
+  await userEvent.click(link);
+  expect(useApp.getState().aba).toBe('cartao');
 });

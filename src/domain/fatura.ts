@@ -91,6 +91,15 @@ export function calcularFaturas(cartao: CicloCartao, compras: CompraCartao[], at
   return out;
 }
 
+/** Subtotal da fatura por categoria de cartão, do maior para o menor. */
+export function resumoPorCategoria(fatura: Fatura): [ID, number][] {
+  const porCategoria = new Map<ID, number>();
+  for (const i of fatura.itens) {
+    porCategoria.set(i.categoriaCartaoId, (porCategoria.get(i.categoriaCartaoId) ?? 0) + i.valorCent);
+  }
+  return [...porCategoria.entries()].sort((a, b) => b[1] - a[1]);
+}
+
 /** Valor que a fatura leva ao Flow: soma dos itens, ou o valor do app se o usuário marcou. */
 export function valorSincronizado(fatura: Fatura, conf: ConferenciaFatura | undefined): number {
   return conf?.usarValorApp ? conf.valorAppCent : fatura.totalCent;

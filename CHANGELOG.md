@@ -3,6 +3,15 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.7.2] - 2026-07-19
+
+### Alterado
+
+- Análises: clicar na categoria de fatura de um cartão (ex.: "Nubank") não abre mais o
+  sheet genérico agrupado por nota (que só repetia o total, já que a fatura é um único
+  lançamento por mês) — agora mostra o detalhamento por categoria de compra do cartão,
+  com um link para ver a fatura completa na aba Cartão.
+
 ## [0.7.1] - 2026-07-19
 
 ### Alterado
