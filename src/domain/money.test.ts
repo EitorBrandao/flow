@@ -1,4 +1,4 @@
-import { formatarBRL, parseValorDigitado } from './money';
+import { formatarBRL, empurrarDigito, apagarUltimoDigito, digitosParaCentavos } from './money';
 
 describe('formatarBRL', () => {
   it('formata centavos como moeda pt-BR', () => {
@@ -9,26 +9,50 @@ describe('formatarBRL', () => {
   });
 });
 
-describe('parseValorDigitado', () => {
-  it('aceita vírgula decimal pt-BR', () => {
-    expect(parseValorDigitado('12,34')).toBe(1234);
-    expect(parseValorDigitado('1.234,56')).toBe(123456);
+describe('empurrarDigito', () => {
+  it('acrescenta dígito único ao buffer vazio', () => {
+    expect(empurrarDigito(0, '1')).toBe(1);
+    expect(empurrarDigito(0, '5')).toBe(5);
   });
-  it('aceita ponto decimal', () => {
-    expect(parseValorDigitado('1234.56')).toBe(123456);
+  it('encadeia dígitos (0 → 1 → 12)', () => {
+    expect(empurrarDigito(empurrarDigito(0, '1'), '2')).toBe(12);
   });
-  it('inteiro vira reais', () => {
-    expect(parseValorDigitado('1234')).toBe(123400);
+  it('encadeia a partir de valor não-zero', () => {
+    expect(empurrarDigito(12, '3')).toBe(123);
+    expect(empurrarDigito(99, '0')).toBe(990);
   });
-  it('rejeita vazio, não numérico, zero e negativo', () => {
-    expect(parseValorDigitado('')).toBeNull();
-    expect(parseValorDigitado('abc')).toBeNull();
-    expect(parseValorDigitado('0')).toBeNull();
-    expect(parseValorDigitado('-5')).toBeNull();
+});
+
+describe('apagarUltimoDigito', () => {
+  it('remove o último dígito de um valor', () => {
+    expect(apagarUltimoDigito(12)).toBe(1);
+    expect(apagarUltimoDigito(1)).toBe(0);
   });
-  it('com permitirZero, aceita zero mas continua rejeitando negativo', () => {
-    expect(parseValorDigitado('0', { permitirZero: true })).toBe(0);
-    expect(parseValorDigitado('0,00', { permitirZero: true })).toBe(0);
-    expect(parseValorDigitado('-5', { permitirZero: true })).toBeNull();
+  it('desce de vários dígitos até 0', () => {
+    expect(apagarUltimoDigito(1234)).toBe(123);
+    expect(apagarUltimoDigito(123)).toBe(12);
+    expect(apagarUltimoDigito(12)).toBe(1);
+    expect(apagarUltimoDigito(1)).toBe(0);
+  });
+  it('não fica negativo em zero', () => {
+    expect(apagarUltimoDigito(0)).toBe(0);
+  });
+});
+
+describe('digitosParaCentavos', () => {
+  it('extrai dígitos de "R$ 12,34"', () => {
+    expect(digitosParaCentavos('R$ 12,34')).toBe(1234);
+  });
+  it('converte "1234" em 1234', () => {
+    expect(digitosParaCentavos('1234')).toBe(1234);
+  });
+  it('retorna 0 para texto vazio', () => {
+    expect(digitosParaCentavos('')).toBe(0);
+  });
+  it('retorna 0 para texto sem dígitos', () => {
+    expect(digitosParaCentavos('abc')).toBe(0);
+  });
+  it('extrai dígitos de texto formatado com pontos e vírgulas', () => {
+    expect(digitosParaCentavos('R$ 1.234,56')).toBe(123456);
   });
 });

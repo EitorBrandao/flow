@@ -1,12 +1,14 @@
 import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { categoriasFaturaIds } from '../../domain/fatura';
-import { formatarBRL, parseValorDigitado } from '../../domain/money';
+import { formatarBRL } from '../../domain/money';
 import { useApp } from '../../state/store';
+import CampoData from '../CampoData';
+import CampoValor from '../CampoValor';
 
 export default function Recorrencias() {
   const { dados, hoje, recarregar } = useApp();
-  const [valor, setValor] = useState('');
+  const [valor, setValor] = useState(0);
   const [categoriaId, setCategoriaId] = useState('');
   const [dataInicio, setDataInicio] = useState(hoje);
   const [diaDoMes, setDiaDoMes] = useState('1');
@@ -16,17 +18,18 @@ export default function Recorrencias() {
   if (!dados) return null;
   const recs = dados.recorrencias.filter((r) => !r.cenarioId);
   const nomeCat = (id: string) => dados.categorias.find((c) => c.id === id)?.nome ?? '?';
+  const tipoCat = (id: string) => dados.categorias.find((c) => c.id === id)?.tipo;
   const boxDe = (catId: string) => dados.categorias.find((c) => c.id === catId)?.boxId;
   const ocultas = categoriasFaturaIds(dados.cartoes);
 
   function limparForm() {
-    setValor(''); setCategoriaId(''); setDataInicio(hoje); setDiaDoMes('1'); setParcelas('');
+    setValor(0); setCategoriaId(''); setDataInicio(hoje); setDiaDoMes('1'); setParcelas('');
   }
 
   function editar(id: string) {
     const rec = recs.find((r) => r.id === id)!;
     setEditandoId(id);
-    setValor((rec.valor / 100).toFixed(2).replace('.', ','));
+    setValor(rec.valor);
     setCategoriaId(rec.categoriaId);
     setDataInicio(rec.dataInicio);
     setDiaDoMes(String(rec.diaDoMes));
@@ -39,25 +42,24 @@ export default function Recorrencias() {
   }
 
   async function salvar() {
-    const cents = parseValorDigitado(valor);
     const boxId = boxDe(categoriaId);
-    if (cents == null || !boxId) return;
+    if (valor <= 0 || !boxId) return;
     const diaDoMesNum = Math.min(31, Math.max(1, Number(diaDoMes) || 1));
     const parcelasNum = parcelas ? Number(parcelas) : null;
     if (editandoId) {
       const original = recs.find((r) => r.id === editandoId)!;
       await repo.salvarRecorrencia({
-        ...original, boxId, categoriaId, valor: cents, dataInicio,
+        ...original, boxId, categoriaId, valor, dataInicio,
         diaDoMes: diaDoMesNum, parcelas: parcelasNum,
       }, dados!.config.horizonteProjecao);
       setEditandoId(null);
       limparForm();
     } else {
       await repo.salvarRecorrencia({
-        boxId, categoriaId, valor: cents, dataInicio,
+        boxId, categoriaId, valor, dataInicio,
         diaDoMes: diaDoMesNum, parcelas: parcelasNum,
       }, dados!.config.horizonteProjecao);
-      setValor(''); setParcelas('');
+      setValor(0); setParcelas('');
     }
     await recarregar();
   }
@@ -79,17 +81,22 @@ export default function Recorrencias() {
       <h2>Recorrências</h2>
       <div className="lista">
         {recs.map((r) => (
-          <div className="item" key={r.id} style={{ opacity: r.ativa ? 1 : 0.5 }}>
-            <div className="cresce">
-              {nomeCat(r.categoriaId)}{r.nota ? ` · ${r.nota}` : ''}
-              <div className="sub">
-                dia {r.diaDoMes} · {r.parcelas == null ? 'sem fim' : `${r.parcelas}x`} · desde {r.dataInicio}
+          <div className="item item-coluna" key={r.id} style={{ opacity: r.ativa ? 1 : 0.5 }}>
+            <div className="linha-topo linha-topo-2-1">
+              <div className="cresce">
+                <div>{nomeCat(r.categoriaId)}{r.nota ? ` · ${r.nota}` : ''}</div>
+                <div className="sub">desde {r.dataInicio}</div>
+                <div className="sub">todo dia {r.diaDoMes}, {r.parcelas == null ? 'sem fim' : `${r.parcelas}x`}</div>
               </div>
+              <span className={tipoCat(r.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
+                {formatarBRL(r.valor)}
+              </span>
             </div>
-            <span>{formatarBRL(r.valor)}</span>
-            <button className="botao" onClick={() => editar(r.id)}>Editar</button>
-            <button className="botao" onClick={() => alternarAtiva(r.id)}>{r.ativa ? 'Pausar' : 'Ativar'}</button>
-            <button className="botao botao-perigo" onClick={() => excluir(r.id)}>Excluir</button>
+            <div className="acoes">
+              <button className="botao" onClick={() => editar(r.id)}>Editar</button>
+              <button className="botao" onClick={() => alternarAtiva(r.id)}>{r.ativa ? 'Pausar' : 'Ativar'}</button>
+              <button className="botao botao-perigo" onClick={() => excluir(r.id)}>Excluir</button>
+            </div>
           </div>
         ))}
         {recs.length === 0 && <p className="sub">Nenhuma recorrência.</p>}
@@ -98,8 +105,7 @@ export default function Recorrencias() {
       <div className="linha">
         <div className="campo">
           <label htmlFor={`${uid}-valor`}>Valor</label>
-          <input id={`${uid}-valor`} placeholder="0,00" inputMode="decimal" value={valor}
-            onChange={(e) => setValor(e.target.value)} style={{ width: 100 }} />
+          <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} style={{ width: 100 }} />
         </div>
         <div className="campo">
           <label htmlFor={`${uid}-cat`}>Categoria</label>
@@ -112,7 +118,7 @@ export default function Recorrencias() {
         </div>
         <div className="campo">
           <label htmlFor={`${uid}-inicio`}>Início</label>
-          <input id={`${uid}-inicio`} type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+          <CampoData id={`${uid}-inicio`} value={dataInicio} onChange={setDataInicio} />
         </div>
         <div className="campo">
           <label htmlFor={`${uid}-dia`}>Dia do mês</label>

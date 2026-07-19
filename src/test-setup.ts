@@ -23,3 +23,26 @@ if (typeof window !== 'undefined' && !window.ResizeObserver) {
     disconnect() {}
   } as unknown as typeof ResizeObserver;
 }
+
+// jsdom não implementa DataTransfer e ClipboardEvent; testes de paste precisam deles
+if (typeof global !== 'undefined' && !global.DataTransfer) {
+  global.DataTransfer = class {
+    private data: Record<string, string> = {};
+    setData(format: string, value: string) {
+      this.data[format] = value;
+    }
+    getData(format: string): string {
+      return this.data[format] || '';
+    }
+  } as unknown as typeof DataTransfer;
+}
+
+if (typeof global !== 'undefined' && !global.ClipboardEvent) {
+  global.ClipboardEvent = class extends Event {
+    clipboardData: DataTransfer | null;
+    constructor(type: string, eventInit?: ClipboardEventInit) {
+      super(type, eventInit);
+      this.clipboardData = (eventInit as unknown as { clipboardData?: DataTransfer })?.clipboardData || null;
+    }
+  } as unknown as typeof ClipboardEvent;
+}

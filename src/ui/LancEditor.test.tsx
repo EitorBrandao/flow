@@ -25,8 +25,8 @@ it('confirma um pendente com valor editado: persiste o novo valor e status efeti
 
   render(<LancEditor lanc={previsto} onFechar={() => {}} />);
   const campoValor = screen.getByLabelText('Valor');
-  await userEvent.clear(campoValor);
-  await userEvent.type(campoValor, '73,45');
+  await userEvent.click(campoValor);
+  await userEvent.type(campoValor, '7345');
   await userEvent.click(screen.getByRole('button', { name: '✓ Confirmar' }));
 
   // espera a cadeia async completa (persistência + recarregar) assentar antes de checar,
@@ -57,8 +57,8 @@ it('previsto vinculado a recorrência: sem botão Salvar, mostra dica, e Confirm
     expect(screen.getByText(/edite a regra em Ajustes/i)).toBeInTheDocument();
 
     const campoValor = screen.getByLabelText('Valor');
-    await userEvent.clear(campoValor);
-    await userEvent.type(campoValor, '73,45');
+    await userEvent.click(campoValor);
+    await userEvent.type(campoValor, '7345');
     await userEvent.click(screen.getByRole('button', { name: '✓ Confirmar' }));
 
     // espera a cadeia async completa (persistência + recarregar) assentar antes de checar,
