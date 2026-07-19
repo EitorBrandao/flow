@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.7.1] - 2026-07-19
+
+### Alterado
+
+- Sheet de lançamentos por categoria (Análises): grupos com um único lançamento não
+  mostram mais a linha de data (redundante com o subtotal); linha do grupo e da data
+  recuam visualmente para indicar o nível de hierarquia.
+
 ## [0.7.0] - 2026-07-17
 
 ### Adicionado

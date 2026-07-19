@@ -30,6 +30,27 @@ describe('LancamentosSheet', () => {
     expect(screen.getByText('05/07/2026')).toBeInTheDocument();
   });
 
+  it('grupo com um único lançamento não mostra a data; grupo com mais de um mostra', () => {
+    const lancamentos: Lancamento[] = [
+      lanc({ id: '1', data: '2026-07-05', valor: 30000, nota: 'Boleto' }),
+      lanc({ id: '2', data: '2026-07-08', valor: 15000, nota: 'Checar' }),
+      lanc({ id: '3', data: '2026-07-12', valor: 10000, nota: 'Checar' }),
+    ];
+    render(
+      <LancamentosSheet
+        aberto categoriaId="pix" nome="Pix" tipo="gasto" mes="2026-07" boxIds={['be']}
+        lancamentos={lancamentos} incluirPrevistos={false} onFechar={() => {}}
+      />,
+    );
+
+    expect(screen.getByText('Boleto')).toBeInTheDocument();
+    expect(screen.queryByText('05/07/2026')).not.toBeInTheDocument();
+
+    expect(screen.getByText('Checar')).toBeInTheDocument();
+    expect(screen.getByText('12/07/2026')).toBeInTheDocument();
+    expect(screen.getByText('08/07/2026')).toBeInTheDocument();
+  });
+
   it('lançamento sem nota cai no grupo "sem nota"', () => {
     const lancamentos: Lancamento[] = [lanc({ id: '1', data: '2026-07-05', valor: 5000 })];
     render(
