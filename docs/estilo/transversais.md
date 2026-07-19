@@ -11,6 +11,7 @@ Receitas estabelecidas — use exatamente estas, não invente tempos novos:
 | Troca de conteúdo (aba, subtela) | `initial={{ opacity: 0, y: 8 }}` → `animate={{ opacity: 1, y: 0 }}`, `transition={{ duration: 0.18, ease: 'easeOut' }}` (já vem do `Shell` para abas — não duplique) |
 | Backdrop (fade) | `initial={{ opacity: 0 }}` → `animate={{ opacity: 1 }}`, `transition={{ duration: 0.15 }}` |
 | Sheet (entrada) | `initial={{ y: '100%' }}` → `animate={{ y: 0 }}`, `transition={{ type: 'spring', damping: 32, stiffness: 340 }}` |
+| Reordenar lista (arrastar) | `Reorder.Group`/`Reorder.Item` do framer-motion, `axis="y"`, física padrão (spring interno do framer-motion) — não customizar `transition` |
 
 Regras:
 

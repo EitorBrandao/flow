@@ -3,6 +3,18 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.9.0] - 2026-07-19
+
+### Adicionado
+
+- Seção "Arquivados" em Categorias e Categorias do cartão (Ajustes), separando categorias
+  arquivadas das listas ativas.
+
+### Alterado
+
+- Categorias e Categorias do cartão (Ajustes): reordenar passa a ser por arraste (alça),
+  no lugar dos botões ↑/↓; formulário de criar categoria subiu para o topo da tela.
+
 ## [0.8.3] - 2026-07-19
 
 ### Corrigido
