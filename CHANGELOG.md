@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.9.1] - 2026-07-19
+
+### Alterado
+
+- Sheets (modais deslizantes, como o detalhe de fatura do cartão) agora rolam corretamente
+  quando o conteúdo é maior que a tela — antes o gesto de arrastar para fechar bloqueava a
+  rolagem do conteúdo. Arrastar para fechar continua funcionando pela alcinha no topo.
+
 ## [0.9.0] - 2026-07-19
 
 ### Adicionado
