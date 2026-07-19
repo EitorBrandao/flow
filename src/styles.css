@@ -194,6 +194,9 @@ table.tabela tr:last-child td { border-bottom: none; }
   width: 40px; height: 4px; border-radius: 2px; flex: 0 0 auto;
   background: var(--surface2); margin: 12px auto 14px;
 }
+.sheet-cabecalho {
+  flex: 0 0 auto; padding: 0 20px 8px;
+}
 .sheet-conteudo {
   overflow-y: auto; min-height: 0;
   padding: 0 20px calc(20px + env(safe-area-inset-bottom));

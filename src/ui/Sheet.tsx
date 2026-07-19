@@ -5,10 +5,11 @@ interface Props {
   aberto: boolean;
   onFechar: () => void;
   rotulo?: string;
+  cabecalho?: ReactNode;
   children: ReactNode;
 }
 
-export default function Sheet({ aberto, onFechar, rotulo, children }: Props) {
+export default function Sheet({ aberto, onFechar, rotulo, cabecalho, children }: Props) {
   const dragControls = useDragControls();
   if (!aberto) return null;
   return (
@@ -33,6 +34,7 @@ export default function Sheet({ aberto, onFechar, rotulo, children }: Props) {
           onPointerDown={(e) => dragControls.start(e)}
           style={{ touchAction: 'none' }}
         />
+        {cabecalho && <div className="sheet-cabecalho">{cabecalho}</div>}
         <div className="sheet-conteudo">{children}</div>
       </motion.div>
     </motion.div>

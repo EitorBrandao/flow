@@ -11,6 +11,8 @@ com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado
   quando o conteúdo é maior que a tela — antes o gesto de arrastar para fechar bloqueava a
   rolagem do conteúdo. A alcinha para arrastar e fechar fica fixa no topo, visível mesmo
   com o conteúdo rolado.
+- Detalhe da fatura do cartão (ao tocar num lançamento): nome do cartão, mês e total ficam
+  fixos no topo do sheet enquanto a lista de itens rola por baixo.
 
 ## [0.9.0] - 2026-07-19
 
