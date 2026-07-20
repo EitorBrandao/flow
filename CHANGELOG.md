@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.9.1] - 2026-07-20
+
+### Corrigido
+
+- Nova compra (Cartão): o campo Categoria tinha uma opção fantasma ("categoria…", depois
+  deixada em branco) que aparecia na lista ao abrir o seletor; agora a lista mostra só as
+  categorias reais, e o campo começa sem nada selecionado.
+
 ## [0.9.0] - 2026-07-19
 
 ### Adicionado
