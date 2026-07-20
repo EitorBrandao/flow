@@ -68,13 +68,13 @@ export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenario
             sólido = passado/efetivo, tracejado = futuro/projetado, pontilhado = cenário hipotético */}
         {passado.length > 1 && (
           <polyline
-            points={pontos(passado)} fill="none" stroke="var(--pos)" strokeWidth="2.5"
+            points={pontos(passado)} fill="none" stroke="var(--fg)" strokeWidth="2.5"
             strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
           />
         )}
         {futuro.length > 1 && (
           <polyline
-            points={pontos(futuro)} fill="none" stroke="var(--pos)" strokeWidth="2.5" strokeDasharray="5 4"
+            points={pontos(futuro)} fill="none" stroke="var(--fg)" strokeWidth="2.5" strokeDasharray="5 4"
             strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
           />
         )}

@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.9.1] - 2026-07-20
+
+### Alterado
+
+- Gráfico de saldo (cartão pequeno e modal expandido): a linha passa a ser sempre branca,
+  em vez de verde fixa. No expandido, o marcador do dia selecionado e o valor em destaque
+  agora ficam verdes ou vermelhos conforme o sinal do saldo daquele dia.
+
 ## [0.9.0] - 2026-07-19
 
 ### Adicionado
