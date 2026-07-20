@@ -72,7 +72,6 @@ export default function FormCompra({ cartao, compra, onFechar }: {
         <div className="campo">
           <label htmlFor={`${uid}-cat`}>Categoria</label>
           <select id={`${uid}-cat`} value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
-            <option value="">categoria…</option>
             {cats.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
           </select>
         </div>
