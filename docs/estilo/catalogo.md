@@ -19,7 +19,7 @@ tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
 | `.campo-data` / `.campo-data-input` | ver componente `CampoData.tsx` — botão com ícone de calendário sobre um `input[type=date]` nativo (oculto, mas funcional e acessível) |
 | `.chip` | pílula `--surface` no topo (seletor de box, botão de ajustes) e filtros |
 | `.valor-ganho`, `.valor-gasto` | valor monetário em pílula (listas/cards); sem pílula automaticamente dentro de `.tabela` ou em `<strong>` |
-| `.saldo-grande` (+ `.negativo`) | saldo em destaque (card herói) |
+| `.saldo-grande` (+ `.positivo`/`.negativo`) | saldo em destaque (card herói) |
 | `.delta` (+ `.pos`/`.neg`) | badge de variação/projeção com seta ▲/▼ |
 | `.badge` | pílula neutra pequena (contagem, status) |
 | `.aviso` | faixa âmbar de aviso |

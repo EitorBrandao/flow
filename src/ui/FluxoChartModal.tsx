@@ -183,7 +183,7 @@ export default function FluxoChartModal({ serie, hoje, mostrarCenarios, onFechar
       </div>
 
       <div className="grafico-expandido-leitura">
-        <span className={`saldo-grande${valorSelecionado < 0 ? ' negativo' : ''}`}>
+        <span className={`saldo-grande ${valorSelecionado < 0 ? 'negativo' : 'positivo'}`}>
           {formatarBRL(valorSelecionado)}
         </span>
         <span className="sub" data-testid="grafico-expandido-leitura-data">
@@ -212,11 +212,11 @@ export default function FluxoChartModal({ serie, hoje, mostrarCenarios, onFechar
             <ReferenceLine y={0} stroke="var(--line)" strokeWidth={1} />
             {hojeVisivel && <ReferenceLine x={hojeData} stroke="var(--muted)" strokeDasharray="2 2" />}
             <Area
-              type="linear" dataKey="passado" stroke="var(--pos)" strokeWidth={2.5}
+              type="linear" dataKey="passado" stroke="var(--fg)" strokeWidth={2.5}
               fill={`url(#${uid}-g)`} isAnimationActive={false} connectNulls={false}
             />
             <Area
-              type="linear" dataKey="futuro" stroke="var(--pos)" strokeWidth={2.5} strokeDasharray="5 4"
+              type="linear" dataKey="futuro" stroke="var(--fg)" strokeWidth={2.5} strokeDasharray="5 4"
               fill={`url(#${uid}-g)`} isAnimationActive={false} connectNulls={false}
             />
             {mostrarCenarios && (
@@ -228,7 +228,7 @@ export default function FluxoChartModal({ serie, hoje, mostrarCenarios, onFechar
             {selecionadoVisivel && (
               <ReferenceDot
                 x={selecionado} y={valorSelecionado} r={4}
-                fill="var(--bg)" stroke="var(--pos)" strokeWidth={1.4}
+                fill="var(--bg)" stroke={valorSelecionado < 0 ? 'var(--neg)' : 'var(--pos)'} strokeWidth={1.4}
               />
             )}
           </AreaChart>

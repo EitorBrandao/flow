@@ -150,6 +150,7 @@ strong.valor-ganho, strong.valor-gasto {
   font-variant-numeric: tabular-nums;
 }
 .saldo-grande b { color: var(--pos); font-weight: 800; }
+.saldo-grande.positivo { color: var(--pos); }
 .saldo-grande.negativo, .saldo-grande.negativo b { color: var(--neg); }
 .delta {
   font-size: 13px; font-weight: 600; padding: 3px 10px;
