@@ -1,0 +1,68 @@
+import 'fake-indexeddb/auto';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { db } from '../../db/database';
+import * as repo from '../../db/repo';
+import { agoraISO, novoId } from '../../domain/types';
+import { useApp } from '../../state/store';
+import CategoriasCartao from './CategoriasCartao';
+
+beforeEach(async () => {
+  await db.delete();
+  await db.open();
+});
+
+async function prepararCartao() {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cartao = await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+  return cartao;
+}
+
+it('renomeia uma categoria de cartão existente via edição inline', async () => {
+  const cartao = await prepararCartao();
+  const cat = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  await useApp.getState().iniciar();
+
+  render(<CategoriasCartao />);
+  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+  const input = screen.getByLabelText('Editar nome');
+  await userEvent.clear(input);
+  await userEvent.type(input, 'supermercado');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+  expect(await screen.findByText('supermercado')).toBeInTheDocument();
+  const atualizado = await db.categoriasCartao.get(cat.id);
+  expect(atualizado?.nome).toBe('supermercado');
+});
+
+it('arquivar move a categoria de cartão para a seção Arquivados', async () => {
+  const cartao = await prepararCartao();
+  await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  await useApp.getState().iniciar();
+
+  render(<CategoriasCartao />);
+  expect(screen.queryByText('Arquivados')).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Arquivar' }));
+
+  expect(await screen.findByText('Arquivados')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Restaurar' })).toBeInTheDocument();
+});
+
+it('restaurar devolve a categoria de cartão pra lista ativa', async () => {
+  const cartao = await prepararCartao();
+  const cat = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  await repo.atualizarCategoriaCartao(cat.id, { arquivada: true, ordem: 0 });
+  await useApp.getState().iniciar();
+
+  render(<CategoriasCartao />);
+  expect(screen.getByText('Arquivados')).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Restaurar' }));
+
+  await waitFor(() => expect(screen.queryByText('Arquivados')).not.toBeInTheDocument());
+  const atualizado = await db.categoriasCartao.get(cat.id);
+  expect(atualizado?.arquivada).toBe(false);
+});

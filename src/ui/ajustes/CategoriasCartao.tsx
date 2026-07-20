@@ -1,6 +1,57 @@
 import { useId, useState } from 'react';
+import { Reorder, useDragControls } from 'framer-motion';
+import { GripVertical, Pencil } from 'lucide-react';
 import * as repo from '../../db/repo';
+import { diffOrdem, proximaOrdem } from '../../domain/categorias';
+import type { CategoriaCartao } from '../../domain/types';
 import { useApp } from '../../state/store';
+
+interface ItemProps {
+  cat: CategoriaCartao;
+  editando: boolean;
+  nomeEdit: string;
+  uidEditar: string;
+  onEditarNome: (v: string) => void;
+  onIniciarEdicao: () => void;
+  onCancelarEdicao: () => void;
+  onSalvarEdicao: () => void;
+  onAlternarArquivada: () => void;
+}
+
+function ItemCategoriaCartao({
+  cat, editando, nomeEdit, uidEditar,
+  onEditarNome, onIniciarEdicao, onCancelarEdicao, onSalvarEdicao, onAlternarArquivada,
+}: ItemProps) {
+  const controls = useDragControls();
+  return (
+    <Reorder.Item
+      value={cat} as="div" className="item" style={{ opacity: cat.arquivada ? 0.5 : 1 }}
+      dragListener={false} dragControls={controls}
+    >
+      {editando ? (
+        <>
+          <div className="campo cresce">
+            <label htmlFor={uidEditar}>Editar nome</label>
+            <input id={uidEditar} value={nomeEdit} onChange={(e) => onEditarNome(e.target.value)} />
+          </div>
+          <button className="botao botao-primario" onClick={onSalvarEdicao}>Salvar</button>
+          <button className="botao" onClick={onCancelarEdicao}>Cancelar</button>
+        </>
+      ) : (
+        <>
+          <button className="botao" aria-label="Arrastar para reordenar" onPointerDown={(e) => controls.start(e)}>
+            <GripVertical size={16} />
+          </button>
+          <span className="cresce">{cat.nome}</span>
+          <button className="botao" aria-label="Editar" onClick={onIniciarEdicao}><Pencil size={16} /></button>
+          <button className="botao" onClick={onAlternarArquivada}>
+            {cat.arquivada ? 'Restaurar' : 'Arquivar'}
+          </button>
+        </>
+      )}
+    </Reorder.Item>
+  );
+}
 
 export default function CategoriasCartao() {
   const { dados, recarregar } = useApp();
@@ -13,30 +64,36 @@ export default function CategoriasCartao() {
   if (dados.cartoes.length === 0) {
     return <div className="tela"><h2>Categorias do cartão</h2><p className="sub">Cadastre um cartão primeiro.</p></div>;
   }
-  const cats = dados.categoriasCartao
-    .filter((c) => c.cartaoId === cartaoId);
+  const cats = dados.categoriasCartao.filter((c) => c.cartaoId === cartaoId);
+  const ativas = cats.filter((c) => !c.arquivada);
+  const arquivadas = cats.filter((c) => c.arquivada);
 
   async function criar() {
     if (!nome.trim() || !cartaoId) return;
-    const ordem = Math.max(-1, ...cats.map((c) => c.ordem)) + 1;
-    await repo.salvarCategoriaCartao({ cartaoId, nome: nome.trim(), ordem });
+    await repo.salvarCategoriaCartao({ cartaoId, nome: nome.trim(), ordem: proximaOrdem(ativas) });
     await recarregar();
     setNome('');
   }
 
-  async function mover(id: string, direcao: -1 | 1) {
-    const cat = cats.find((c) => c.id === id)!;
-    const i = cats.findIndex((c) => c.id === id);
-    const alvo = cats[i + direcao];
-    if (!alvo) return;
-    await repo.atualizarCategoriaCartao(cat.id, { ordem: alvo.ordem });
-    await repo.atualizarCategoriaCartao(alvo.id, { ordem: cat.ordem });
+  async function reordenar(novaOrdem: CategoriaCartao[]) {
+    await Promise.all(diffOrdem(novaOrdem).map((a) => repo.atualizarCategoriaCartao(a.id, { ordem: a.ordem })));
     await recarregar();
   }
 
-  async function alternarArquivada(id: string, arquivada: boolean) {
-    await repo.atualizarCategoriaCartao(id, { arquivada: !arquivada });
+  async function alternarArquivada(cat: CategoriaCartao) {
+    const destino = cat.arquivada ? ativas : arquivadas;
+    await repo.atualizarCategoriaCartao(cat.id, { arquivada: !cat.arquivada, ordem: proximaOrdem(destino) });
     await recarregar();
+  }
+
+  function iniciarEdicao(id: string, nomeAtual: string) {
+    setEditandoId(id);
+    setNomeEdit(nomeAtual);
+  }
+
+  function cancelarEdicao() {
+    setEditandoId(null);
+    setNomeEdit('');
   }
 
   async function salvarEdicao() {
@@ -45,6 +102,20 @@ export default function CategoriasCartao() {
     setEditandoId(null);
     setNomeEdit('');
     await recarregar();
+  }
+
+  function props(c: CategoriaCartao): ItemProps {
+    return {
+      cat: c,
+      editando: editandoId === c.id,
+      nomeEdit,
+      uidEditar: `${uid}-editar`,
+      onEditarNome: setNomeEdit,
+      onIniciarEdicao: () => iniciarEdicao(c.id, c.nome),
+      onCancelarEdicao: cancelarEdicao,
+      onSalvarEdicao: salvarEdicao,
+      onAlternarArquivada: () => alternarArquivada(c),
+    };
   }
 
   return (
@@ -56,35 +127,7 @@ export default function CategoriasCartao() {
           {dados.cartoes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
         </select>
       </div>
-      <div className="lista">
-        {cats.map((c) => (
-          <div className="item" key={c.id} style={{ opacity: c.arquivada ? 0.5 : 1 }}>
-            {editandoId === c.id ? (
-              <>
-                <div className="campo cresce">
-                  <label htmlFor={`${uid}-editar`}>Editar nome</label>
-                  <input id={`${uid}-editar`} value={nomeEdit} onChange={(e) => setNomeEdit(e.target.value)} />
-                </div>
-                <button className="botao botao-primario" onClick={salvarEdicao}>Salvar</button>
-                <button className="botao" onClick={() => { setEditandoId(null); setNomeEdit(''); }}>Cancelar</button>
-              </>
-            ) : (
-              <>
-                <span className="cresce">
-                  {c.nome}{c.arquivada && <span className="badge"> arquivada</span>}
-                </span>
-                <button className="botao" aria-label="Subir" onClick={() => mover(c.id, -1)}>↑</button>
-                <button className="botao" aria-label="Descer" onClick={() => mover(c.id, 1)}>↓</button>
-                <button className="botao" aria-label="Editar"
-                  onClick={() => { setEditandoId(c.id); setNomeEdit(c.nome); }}>✏️</button>
-                <button className="botao" onClick={() => alternarArquivada(c.id, c.arquivada)}>
-                  {c.arquivada ? 'Restaurar' : 'Arquivar'}
-                </button>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
+
       <div className="linha">
         <div className="campo" style={{ flex: 1 }}>
           <label htmlFor={`${uid}-nova`}>Nova categoria do cartão</label>
@@ -92,6 +135,19 @@ export default function CategoriasCartao() {
         </div>
         <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={criar}>Criar</button>
       </div>
+
+      <Reorder.Group as="div" className="lista" axis="y" values={ativas} onReorder={reordenar}>
+        {ativas.map((c) => <ItemCategoriaCartao key={c.id} {...props(c)} />)}
+      </Reorder.Group>
+
+      {arquivadas.length > 0 && (
+        <>
+          <p className="rotulo-grupo">Arquivados</p>
+          <Reorder.Group as="div" className="lista" axis="y" values={arquivadas} onReorder={reordenar}>
+            {arquivadas.map((c) => <ItemCategoriaCartao key={c.id} {...props(c)} />)}
+          </Reorder.Group>
+        </>
+      )}
     </div>
   );
 }
