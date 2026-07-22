@@ -36,7 +36,7 @@ it('cria uma compra parcelada', async () => {
     expect(screen.getByRole('heading', { name: 'Nova compra' })).toBeInTheDocument();
 
     await userEvent.type(screen.getByLabelText('Valor'), '100,00');
-    await userEvent.selectOptions(screen.getByLabelText('Categoria'), screen.getByRole('option', { name: 'mercado' }));
+    await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
     await userEvent.clear(screen.getByLabelText('Parcelas'));
     await userEvent.type(screen.getByLabelText('Parcelas'), '3');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
