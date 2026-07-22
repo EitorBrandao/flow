@@ -40,7 +40,7 @@ it('cadastra um cartão sem pedir categoria e cria a categoria da fatura sozinho
   expect(categoria).toMatchObject({ boxId: box.id, nome: 'Nubank', tipo: 'gasto' });
 });
 
-it('impede segundo cartão ativo na mesma box', async () => {
+it('permite dois cartões ativos na mesma box', async () => {
   const box = await montarBox();
   await repo.salvarCartao({
     boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
@@ -52,6 +52,8 @@ it('impede segundo cartão ativo na mesma box', async () => {
   await userEvent.type(screen.getByLabelText('Nome do cartão'), 'Inter');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
 
-  expect(await screen.findByText(/já tem um cartão ativo/)).toBeInTheDocument();
-  expect(await db.cartoes.count()).toBe(1);
+  await waitFor(() => expect(screen.getByText(/Inter/)).toBeInTheDocument());
+  const cartoes = await db.cartoes.toArray();
+  expect(cartoes).toHaveLength(2);
+  expect(cartoes.every((c) => c.ativo)).toBe(true);
 });
