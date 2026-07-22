@@ -66,3 +66,13 @@ it('restaurar devolve a categoria de cartão pra lista ativa', async () => {
   const atualizado = await db.categoriasCartao.get(cat.id);
   expect(atualizado?.arquivada).toBe(false);
 });
+
+it('categoria automática de assinaturas não aparece na lista de categorias do cartão', async () => {
+  const cartao = await prepararCartao();
+  await repo.categoriaAssinaturasDe(cartao.id);
+  await useApp.getState().iniciar();
+
+  render(<CategoriasCartao />);
+
+  expect(screen.queryByText('Assinaturas')).not.toBeInTheDocument();
+});

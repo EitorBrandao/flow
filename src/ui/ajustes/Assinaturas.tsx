@@ -83,7 +83,7 @@ export default function Assinaturas() {
       <div className="campo">
         <label>Cartão</label>
         <SeletorPills
-          opcoes={dados.cartoes.map((c) => ({ id: c.id, nome: c.nome }))}
+          opcoes={dados.cartoes.filter((c) => c.ativo).map((c) => ({ id: c.id, nome: c.nome }))}
           selecionadaId={cartaoId}
           onSelecionar={trocarCartao}
         />

@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import { Reorder, useDragControls } from 'framer-motion';
 import { GripVertical, Pencil } from 'lucide-react';
 import * as repo from '../../db/repo';
-import { diffOrdem, proximaOrdem } from '../../domain/categorias';
+import { categoriasAssinaturasIds, diffOrdem, proximaOrdem } from '../../domain/categorias';
 import type { CategoriaCartao } from '../../domain/types';
 import { useApp } from '../../state/store';
 import SeletorPills from '../SeletorPills';
@@ -65,7 +65,8 @@ export default function CategoriasCartao() {
   if (dados.cartoes.length === 0) {
     return <div className="tela"><h2>Categorias do cartão</h2><p className="sub">Cadastre um cartão primeiro.</p></div>;
   }
-  const cats = dados.categoriasCartao.filter((c) => c.cartaoId === cartaoId);
+  const ocultas = categoriasAssinaturasIds(dados.cartoes);
+  const cats = dados.categoriasCartao.filter((c) => c.cartaoId === cartaoId && !ocultas.has(c.id));
   const ativas = cats.filter((c) => !c.arquivada);
   const arquivadas = cats.filter((c) => c.arquivada);
 
