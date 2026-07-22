@@ -42,7 +42,7 @@ it('edita o valor de uma recorrência existente e atualiza os previstos remanesc
   expect(previstos.every((l) => l.valor === 7500)).toBe(true);
 });
 
-it('categoria da fatura de um cartão não aparece no select de categoria da recorrência', async () => {
+it('categoria da fatura de um cartão não aparece no grid de categoria da recorrência', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
@@ -53,6 +53,39 @@ it('categoria da fatura de um cartão não aparece no select de categoria da rec
 
   render(<Recorrencias />);
 
-  expect(screen.getByRole('option', { name: /assinatura/ })).toBeInTheDocument();
-  expect(screen.queryByRole('option', { name: /Nubank/ })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'assinatura' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Nubank/ })).not.toBeInTheDocument();
+});
+
+it('trocar de box na tela de Recorrências mostra só as recorrências e categorias daquela box', async () => {
+  const agora = agoraISO();
+  const eitor = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  const conjunta = { id: novoId(), nome: 'conjunta', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(eitor);
+  await repo.salvarBox(conjunta);
+  const catEitor = await repo.salvarCategoria({ boxId: eitor.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+  const catConjunta = await repo.salvarCategoria({ boxId: conjunta.id, nome: 'contas da casa', tipo: 'gasto', ordem: 0 });
+  await repo.salvarRecorrencia(
+    { boxId: eitor.id, categoriaId: catEitor.id, valor: 180000, dataInicio: '2026-07-01', diaDoMes: 5, parcelas: null },
+    '2027-12-31',
+  );
+  await repo.salvarRecorrencia(
+    { boxId: conjunta.id, categoriaId: catConjunta.id, valor: 45000, dataInicio: '2026-07-01', diaDoMes: 10, parcelas: null },
+    '2027-12-31',
+  );
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-02' });
+
+  render(<Recorrencias />);
+  expect(screen.getByText('aluguel')).toBeInTheDocument();
+  expect(screen.queryByText('contas da casa')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'aluguel' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'contas da casa' })).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'conjunta' }));
+
+  expect(screen.getByText('contas da casa')).toBeInTheDocument();
+  expect(screen.queryByText('aluguel')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'contas da casa' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'aluguel' })).not.toBeInTheDocument();
 });
