@@ -11,12 +11,7 @@ import SeletorPills from '../SeletorPills';
 
 export default function Recorrencias() {
   const { dados, hoje, recarregar } = useApp();
-  const [boxId, setBoxId] = useState(
-    dados?.boxes
-      .filter((b) => b.saldoInicial != null)
-      .sort((a, b) => b.nome.localeCompare(a.nome))
-      .at(0)?.id ?? ''
-  );
+  const [boxId, setBoxId] = useState(dados?.boxes.find((b) => b.saldoInicial != null)?.id ?? '');
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
   const [valor, setValor] = useState(0);
   const [categoriaId, setCategoriaId] = useState<string | null>(null);
@@ -105,10 +100,7 @@ export default function Recorrencias() {
       <div className="campo">
         <label>Box</label>
         <SeletorPills
-          opcoes={dados.boxes
-            .filter((b) => b.saldoInicial != null)
-            .sort((a, b) => b.nome.localeCompare(a.nome))
-            .map((b) => ({ id: b.id, nome: b.nome }))}
+          opcoes={dados.boxes.filter((b) => b.saldoInicial != null).map((b) => ({ id: b.id, nome: b.nome }))}
           selecionadaId={boxId}
           onSelecionar={trocarBox}
         />
@@ -158,6 +150,7 @@ export default function Recorrencias() {
           <div className="item item-coluna" key={r.id} style={{ opacity: r.ativa ? 1 : 0.5 }}>
             <div className="linha-topo linha-topo-2-1">
               <div className="cresce">
+                <div>{nomeCat(r.categoriaId)}{r.nota ? ` · ${r.nota}` : ''}</div>
                 <div className="sub">desde {r.dataInicio}</div>
                 <div className="sub">todo dia {r.diaDoMes}, {r.parcelas == null ? 'sem fim' : `${r.parcelas}x`}</div>
               </div>

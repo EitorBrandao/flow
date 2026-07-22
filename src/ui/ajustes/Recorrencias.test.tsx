@@ -77,15 +77,15 @@ it('trocar de box na tela de Recorrências mostra só as recorrências e categor
   useApp.setState({ hoje: '2026-07-02' });
 
   render(<Recorrencias />);
-  expect(screen.getByText('aluguel')).toBeInTheDocument();
-  expect(screen.queryByText('contas da casa')).not.toBeInTheDocument();
+  expect(screen.getByText('aluguel', { selector: 'div' })).toBeInTheDocument();
+  expect(screen.queryByText('contas da casa', { selector: 'div' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'aluguel' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'contas da casa' })).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'conjunta' }));
 
-  expect(screen.getByText('contas da casa')).toBeInTheDocument();
-  expect(screen.queryByText('aluguel')).not.toBeInTheDocument();
+  expect(screen.getByText('contas da casa', { selector: 'div' })).toBeInTheDocument();
+  expect(screen.queryByText('aluguel', { selector: 'div' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'contas da casa' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'aluguel' })).not.toBeInTheDocument();
 });
