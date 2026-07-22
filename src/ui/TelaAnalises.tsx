@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { compararMeses, mediaMovel3, resumoMensal, serieMensal } from '../domain/aggregations';
 import { addMeses, mesDe } from '../domain/dates';
+import { resumoAssinaturasDoMes } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import type { ID } from '../domain/types';
 import { boxIdsSelecionadas, useApp } from '../state/store';
+import AssinaturasResumoSheet from './AssinaturasResumoSheet';
 import FaturaCategoriaSheet from './FaturaCategoriaSheet';
 import LancamentosSheet from './LancamentosSheet';
 
@@ -20,12 +22,14 @@ export default function TelaAnalises() {
   const [mes, setMes] = useState(() => mesDe(hoje));
   const [incluirPrevistos, setIncluirPrevistos] = useState(true);
   const [categoriaAberta, setCategoriaAberta] = useState<ID | null>(null);
+  const [assinaturasAberto, setAssinaturasAberto] = useState(false);
   if (!dados) return null;
   const categoriaObj = dados.categorias.find((c) => c.id === categoriaAberta);
   const cartaoDaCategoria = dados.cartoes.find((c) => c.categoriaFaturaId === categoriaAberta) ?? null;
   const ids = boxIdsSelecionadas(dados, boxSel);
   const resumo = resumoMensal(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
   const comparativo = compararMeses(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
+  const resumoAssinaturas = resumoAssinaturasDoMes(mes, ids, dados.cartoes, dados.comprasCartao, dados.recorrenciasCartao);
   // tendência: média móvel de 3 meses terminando no mês selecionado
   const meses = [-5, -4, -3, -2, -1, 0].map((n) => addMeses(mes, n));
   const media3m = (categoriaId: string) =>
@@ -75,7 +79,22 @@ export default function TelaAnalises() {
                 <td>{pct(l.pctDaRenda)}</td>
               </tr>
             ))}
-            {resumo.linhas.length === 0 && <tr><td colSpan={3}>Sem movimentos no mês.</td></tr>}
+            {resumoAssinaturas.totalCent > 0 && (
+              <tr
+                onClick={() => setAssinaturasAberto(true)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAssinaturasAberto(true); }
+                }}
+                role="button"
+                tabIndex={0}
+                style={{ cursor: 'pointer' }}
+              >
+                <td>Assinaturas <span className="badge">todos os cartões</span></td>
+                <td className="valor-gasto">{formatarBRL(resumoAssinaturas.totalCent)}</td>
+                <td>—</td>
+              </tr>
+            )}
+            {resumo.linhas.length === 0 && resumoAssinaturas.totalCent === 0 && <tr><td colSpan={3}>Sem movimentos no mês.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -128,6 +147,13 @@ export default function TelaAnalises() {
           onFechar={() => setCategoriaAberta(null)}
         />
       )}
+
+      <AssinaturasResumoSheet
+        aberto={assinaturasAberto}
+        itens={resumoAssinaturas.itens}
+        totalCent={resumoAssinaturas.totalCent}
+        onFechar={() => setAssinaturasAberto(false)}
+      />
     </div>
   );
 }
