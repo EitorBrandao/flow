@@ -5,6 +5,7 @@ import * as repo from '../../db/repo';
 import { diffOrdem, proximaOrdem } from '../../domain/categorias';
 import type { CategoriaCartao } from '../../domain/types';
 import { useApp } from '../../state/store';
+import SeletorPills from '../SeletorPills';
 
 interface ItemProps {
   cat: CategoriaCartao;
@@ -122,10 +123,12 @@ export default function CategoriasCartao() {
     <div className="tela">
       <h2>Categorias do cartão</h2>
       <div className="campo">
-        <label htmlFor={`${uid}-cartao`}>Cartão</label>
-        <select id={`${uid}-cartao`} value={cartaoId} onChange={(e) => setCartaoId(e.target.value)}>
-          {dados.cartoes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-        </select>
+        <label>Cartão</label>
+        <SeletorPills
+          opcoes={dados.cartoes.map((c) => ({ id: c.id, nome: c.nome }))}
+          selecionadaId={cartaoId}
+          onSelecionar={setCartaoId}
+        />
       </div>
 
       <div className="linha">
