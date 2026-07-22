@@ -3,6 +3,32 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.10.0] - 2026-07-22
+
+### Adicionado
+
+- Seletor de Box em Recorrências (Ajustes), escopando a lista e as categorias àquela box.
+- Linha "Assinaturas" na aba Análises, somando assinaturas de todos os cartões — abre um
+  resumo agrupado por cartão.
+
+### Alterado
+
+- Recorrências: formulário sobe pro topo da tela; categoria vira grid de botões (com
+  alternância Gasto/Ganho), no lugar do `<select>` nativo.
+- Cartões: uma box pode ter mais de um cartão ativo ao mesmo tempo; formulário de novo
+  cartão sobe pro topo.
+- Categorias do cartão: seletor de cartão vira botões, no lugar do `<select>` nativo.
+- Assinaturas: escolhe o cartão em vez da categoria (a categoria "Assinaturas" fica
+  automática); lista escopada ao cartão selecionado; formulário sobe pro topo.
+- Menu de Ajustes reordenado por hierarquia (Boxes primeiro).
+- Seletor de categoria em Lançar, Compra no cartão, editar lançamento e Simulador trocam o
+  `<select>` nativo por grid de botões (evita o picker nativo do Android com botão "Done").
+
+### Removido
+
+- Campo de categoria manual no formulário de Assinaturas.
+- Bloqueio que impedia mais de um cartão ativo por box.
+
 ## [0.9.1] - 2026-07-20
 
 ### Alterado
