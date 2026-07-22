@@ -26,6 +26,6 @@ it('categoria da fatura de um cartão não aparece no select de categoria do cen
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
   await userEvent.click(await screen.findByRole('button', { name: 'Detalhar' }));
 
-  expect(screen.getByRole('option', { name: /mercado/ })).toBeInTheDocument();
-  expect(screen.queryByRole('option', { name: /Nubank/ })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'mercado' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Nubank/ })).not.toBeInTheDocument();
 });

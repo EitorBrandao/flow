@@ -6,24 +6,25 @@ import { agoraISO, novoId, type Cenario } from '../domain/types';
 import { useApp } from '../state/store';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
+import SeletorCategoria from './SeletorCategoria';
 
 function FormHipotetico({ cenario }: { cenario: Cenario }) {
   const { dados, hoje, recarregar } = useApp();
   const [valor, setValor] = useState(0);
-  const [categoriaId, setCategoriaId] = useState('');
+  const [categoriaId, setCategoriaId] = useState<string | null>(null);
   const [data, setData] = useState(hoje);
   const [parcelas, setParcelas] = useState('1');
   const uid = useId();
   if (!dados) return null;
   const ocultas = categoriasFaturaIds(dados.cartoes);
   const categorias = dados.categorias.filter((c) => !c.arquivada && !ocultas.has(c.id));
-  const boxDe = (catId: string) => dados.categorias.find((c) => c.id === catId)?.boxId;
+  const boxDe = (catId: string | null) => dados.categorias.find((c) => c.id === catId)?.boxId;
 
   async function adicionar() {
     const cents = valor;
     const nParcelas = Math.max(1, Number(parcelas) || 1);
     const boxId = boxDe(categoriaId);
-    if (cents <= 0 || !boxId) return;
+    if (cents <= 0 || !boxId || categoriaId == null) return;
     if (nParcelas === 1) {
       await repo.salvarLancamento({
         boxId, categoriaId, data, valor: cents, status: 'previsto', cenarioId: cenario.id,
@@ -46,11 +47,8 @@ function FormHipotetico({ cenario }: { cenario: Cenario }) {
         <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} style={{ width: 90 }} />
       </div>
       <div className="campo">
-        <label htmlFor={`${uid}-cat`}>Categoria</label>
-        <select id={`${uid}-cat`} value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
-          <option value="">categoria…</option>
-          {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome} ({c.tipo})</option>)}
-        </select>
+        <label>Categoria</label>
+        <SeletorCategoria categorias={categorias} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
       </div>
       <div className="campo">
         <label htmlFor={`${uid}-data`}>Data</label>
