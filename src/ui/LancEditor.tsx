@@ -5,6 +5,7 @@ import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
+import SeletorCategoria from './SeletorCategoria';
 import Sheet from './Sheet';
 
 export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFechar: () => void }) {
@@ -59,12 +60,8 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
           <CampoData id="ed-data" value={data} onChange={setData} />
         </div>
         <div className="campo">
-          <label htmlFor="ed-cat">Categoria</label>
-          <select id="ed-cat" value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
-            {categorias.map((c) => (
-              <option key={c.id} value={c.id}>{c.nome} ({c.tipo})</option>
-            ))}
-          </select>
+          <label>Categoria</label>
+          <SeletorCategoria categorias={categorias} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
         </div>
         <div className="campo">
           <label htmlFor="ed-nota">Nota</label>

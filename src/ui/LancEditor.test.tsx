@@ -85,6 +85,6 @@ it('categoria da fatura de um cartão não aparece no select de categoria do edi
 
   render(<LancEditor lanc={lanc} onFechar={() => {}} />);
 
-  expect(screen.getByRole('option', { name: /mercado/ })).toBeInTheDocument();
-  expect(screen.queryByRole('option', { name: /Nubank/ })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'mercado' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Nubank/ })).not.toBeInTheDocument();
 });
