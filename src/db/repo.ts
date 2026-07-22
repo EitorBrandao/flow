@@ -298,6 +298,22 @@ export async function atualizarCategoriaCartao(
   });
 }
 
+export async function categoriaAssinaturasDe(cartaoId: ID): Promise<ID> {
+  const cartao = (await db.cartoes.get(cartaoId))!;
+  if (cartao.categoriaAssinaturasId) return cartao.categoriaAssinaturasId;
+  const agora = agoraISO();
+  const categoriaId = novoId();
+  await db.transaction('rw', db.cartoes, db.categoriasCartao, db.config, async () => {
+    await db.categoriasCartao.add({
+      id: categoriaId, cartaoId, nome: 'Assinaturas', ordem: 0,
+      arquivada: false, criadoEm: agora, alteradoEm: agora,
+    });
+    await db.cartoes.update(cartaoId, { categoriaAssinaturasId: categoriaId, alteradoEm: agora });
+    await marcarMudanca();
+  });
+  return categoriaId;
+}
+
 export interface NovaCompraCartao {
   cartaoId: ID; categoriaCartaoId: ID; data: ISODate; valorTotal: number;
   parcelas: number; descricao?: string;

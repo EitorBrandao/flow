@@ -449,3 +449,30 @@ it('carregarTudo devolve categorias de cartão ordenadas por ordem e nome', asyn
   const dados = await repo.carregarTudo();
   expect(dados.categoriasCartao.map((c) => c.nome)).toEqual(['farmácia', 'mercado', 'streaming']);
 });
+
+describe('categoriaAssinaturasDe', () => {
+  it('cria a categoria "Assinaturas" do cartão na primeira chamada', async () => {
+    const { box } = await boxECategoria();
+    const cartao = await repo.salvarCartao(
+      { boxId: box.id, nome: 'Nubank', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31',
+    );
+    const categoriaId = await repo.categoriaAssinaturasDe(cartao.id);
+
+    const categoria = await db.categoriasCartao.get(categoriaId);
+    expect(categoria).toMatchObject({ cartaoId: cartao.id, nome: 'Assinaturas', arquivada: false });
+    const cartaoAtualizado = await db.cartoes.get(cartao.id);
+    expect(cartaoAtualizado?.categoriaAssinaturasId).toBe(categoriaId);
+  });
+
+  it('reaproveita a categoria já criada nas chamadas seguintes', async () => {
+    const { box } = await boxECategoria();
+    const cartao = await repo.salvarCartao(
+      { boxId: box.id, nome: 'Nubank', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31',
+    );
+    const primeira = await repo.categoriaAssinaturasDe(cartao.id);
+    const segunda = await repo.categoriaAssinaturasDe(cartao.id);
+
+    expect(segunda).toBe(primeira);
+    expect(await db.categoriasCartao.count()).toBe(1);
+  });
+});
