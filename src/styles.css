@@ -112,8 +112,8 @@ button { cursor: pointer; }
   background: var(--ac-dim); color: var(--ac); outline: 1.5px solid var(--ac);
 }
 
-.pills { display: flex; gap: 8px; background: var(--surface); padding: 4px; border-radius: 14px; flex-wrap: wrap; }
-.pills button { flex: 1; background: none; padding: 9px 4px; border-radius: 10px; color: var(--muted); font-weight: 600; font-size: 13.5px; min-height: 0; white-space: nowrap; border: none; }
+.pills { display: flex; gap: 8px; background: var(--surface); padding: 4px; border-radius: 999px; flex-wrap: wrap; }
+.pills button { flex: 1; background: none; padding: 9px 4px; border-radius: 999px; color: var(--muted); font-weight: 600; font-size: 13.5px; min-height: 0; white-space: nowrap; border: none; }
 .pills button.ativo { background: var(--ac); color: #fff; }
 
 .valor-ganho, .valor-gasto {
