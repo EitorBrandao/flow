@@ -1,5 +1,5 @@
-import type { Cartao, CompraCartao, ConferenciaFatura, Lancamento } from './types';
-import { calcularFaturas, categoriasFaturaIds, datasFaturaDoMes, diffSincronizacao, mesFaturaDaCompra, mesFechamentoDaCompra, resumoPorCategoria, valorParcela } from './fatura';
+import type { Cartao, CompraCartao, ConferenciaFatura, Lancamento, RecorrenciaCartao } from './types';
+import { calcularFaturas, categoriasFaturaIds, datasFaturaDoMes, diffSincronizacao, mesFaturaDaCompra, mesFechamentoDaCompra, resumoAssinaturasDoMes, resumoPorCategoria, valorParcela } from './fatura';
 
 const nubank = { diaFechamento: 28, diaVencimento: 5 }; // vence no mês seguinte ao fechamento
 const outro = { diaFechamento: 10, diaVencimento: 20 }; // vence no mesmo mês do fechamento
@@ -195,5 +195,37 @@ describe('categoriasFaturaIds', () => {
 
   it('lista vazia de cartões retorna conjunto vazio', () => {
     expect(categoriasFaturaIds([])).toEqual(new Set());
+  });
+});
+
+describe('resumoAssinaturasDoMes', () => {
+  const cartaoNubank: Cartao = {
+    id: 'k1', boxId: 'b1', nome: 'Nubank', diaFechamento: 10, diaVencimento: 20,
+    categoriaFaturaId: 'catfat1', ativo: true, criadoEm: '', alteradoEm: '',
+  };
+  const assNetflix: RecorrenciaCartao = {
+    id: 'ass1', cartaoId: 'k1', categoriaCartaoId: 'catass1', valor: 3990,
+    dataInicio: '2026-01-05', diaDoMes: 5, parcelas: null, descricao: 'Netflix',
+    ativa: true, criadoEm: '', alteradoEm: '',
+  };
+
+  it('soma só compras marcadas com recorrenciaCartaoId, na fatura do mês certo', () => {
+    const compraAssinatura = { ...compra('2026-07-05', 3990), recorrenciaCartaoId: 'ass1' };
+    const compraAvulsa = compra('2026-07-06', 5000); // sem recorrenciaCartaoId — não entra
+    const resumo = resumoAssinaturasDoMes(
+      '2026-07', ['b1'], [cartaoNubank], [compraAssinatura, compraAvulsa], [assNetflix],
+    );
+    expect(resumo.totalCent).toBe(3990);
+    expect(resumo.itens).toEqual([
+      { cartaoId: 'k1', cartaoNome: 'Nubank', recorrenciaCartaoId: 'ass1', descricao: 'Netflix', valorCent: 3990 },
+    ]);
+  });
+
+  it('ignora cartões fora das boxes selecionadas', () => {
+    const compraAssinatura = { ...compra('2026-07-05', 3990), recorrenciaCartaoId: 'ass1' };
+    const resumo = resumoAssinaturasDoMes(
+      '2026-07', ['outra-box'], [cartaoNubank], [compraAssinatura], [assNetflix],
+    );
+    expect(resumo).toEqual({ totalCent: 0, itens: [] });
   });
 });
