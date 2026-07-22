@@ -77,6 +77,8 @@ it('trocar de box na tela de Recorrências mostra só as recorrências e categor
   useApp.setState({ hoje: '2026-07-02' });
 
   render(<Recorrencias />);
+  await userEvent.click(screen.getByRole('button', { name: 'eitor' }));
+
   expect(screen.getByText('aluguel', { selector: 'div' })).toBeInTheDocument();
   expect(screen.queryByText('contas da casa', { selector: 'div' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'aluguel' })).toBeInTheDocument();

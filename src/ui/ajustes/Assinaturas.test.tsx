@@ -54,6 +54,8 @@ it('trocar de cartão mostra só as assinaturas daquele cartão', async () => {
   useApp.setState({ hoje: '2026-07-01' });
 
   render(<Assinaturas />);
+  await userEvent.click(screen.getByRole('button', { name: 'Nubank' }));
+
   expect(await screen.findByText('Netflix')).toBeInTheDocument();
   expect(screen.queryByText('iCloud')).not.toBeInTheDocument();
 
