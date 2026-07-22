@@ -1,5 +1,5 @@
 import { addMeses, dataComDia, mesDe } from './dates';
-import type { Cartao, CompraCartao, ConferenciaFatura, ID, ISODate, Lancamento } from './types';
+import type { Cartao, CompraCartao, ConferenciaFatura, ID, ISODate, Lancamento, RecorrenciaCartao } from './types';
 
 export type CicloCartao = Pick<Cartao, 'diaFechamento' | 'diaVencimento'>;
 
@@ -158,4 +158,53 @@ export function diffSincronizacao(
  *  devem aparecer em nenhuma lista de seleção manual de categoria. */
 export function categoriasFaturaIds(cartoes: Cartao[]): Set<ID> {
   return new Set(cartoes.map((c) => c.categoriaFaturaId));
+}
+
+export interface ItemResumoAssinaturas {
+  cartaoId: ID;
+  cartaoNome: string;
+  recorrenciaCartaoId: ID;
+  descricao: string;
+  valorCent: number;
+}
+
+export interface ResumoAssinaturas {
+  totalCent: number;
+  itens: ItemResumoAssinaturas[];
+}
+
+/** Total e detalhamento (por cartão > assinatura) das compras geradas por assinatura que
+ *  caem na fatura do mês dado, entre os cartões das boxes selecionadas. */
+export function resumoAssinaturasDoMes(
+  mes: string,
+  boxIds: readonly ID[],
+  cartoes: Cartao[],
+  comprasCartao: CompraCartao[],
+  recorrenciasCartao: RecorrenciaCartao[],
+): ResumoAssinaturas {
+  const itens: ItemResumoAssinaturas[] = [];
+  for (const cartao of cartoes) {
+    if (!boxIds.includes(cartao.boxId)) continue;
+    const comprasDoCartao = comprasCartao.filter(
+      (c) => c.cartaoId === cartao.id && c.recorrenciaCartaoId != null,
+    );
+    if (comprasDoCartao.length === 0) continue;
+    const ate = datasFaturaDoMes(cartao, mes).dataVencimento;
+    const fatura = calcularFaturas(cartao, comprasDoCartao, ate).find((f) => f.mes === mes);
+    if (!fatura) continue;
+    const porAssinatura = new Map<ID, number>();
+    for (const item of fatura.itens) {
+      const compra = comprasDoCartao.find((c) => c.id === item.compraId)!;
+      const chave = compra.recorrenciaCartaoId!;
+      porAssinatura.set(chave, (porAssinatura.get(chave) ?? 0) + item.valorCent);
+    }
+    for (const [recorrenciaCartaoId, valorCent] of porAssinatura) {
+      const ass = recorrenciasCartao.find((a) => a.id === recorrenciaCartaoId);
+      itens.push({
+        cartaoId: cartao.id, cartaoNome: cartao.nome, recorrenciaCartaoId,
+        descricao: ass?.descricao ?? 'Assinatura', valorCent,
+      });
+    }
+  }
+  return { totalCent: itens.reduce((s, i) => s + i.valorCent, 0), itens };
 }
