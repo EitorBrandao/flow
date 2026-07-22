@@ -1,10 +1,12 @@
 import { useId, useState } from 'react';
 import * as repo from '../db/repo';
 import { addMesesData } from '../domain/dates';
+import { categoriasAssinaturasIds } from '../domain/categorias';
 import type { Cartao, CompraCartao } from '../domain/types';
 import { useApp } from '../state/store';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
+import SeletorCategoria from './SeletorCategoria';
 
 export default function FormCompra({ cartao, compra, onFechar }: {
   cartao: Cartao; compra?: CompraCartao; onFechar: () => void;
@@ -12,13 +14,14 @@ export default function FormCompra({ cartao, compra, onFechar }: {
   const { dados, hoje, recarregar } = useApp();
   const [valor, setValor] = useState(compra?.valorTotal ?? 0);
   const [data, setData] = useState(compra?.data ?? hoje);
-  const [categoriaId, setCategoriaId] = useState(compra?.categoriaCartaoId ?? '');
+  const [categoriaId, setCategoriaId] = useState<string | null>(compra?.categoriaCartaoId ?? null);
   const [parcelas, setParcelas] = useState(compra ? String(compra.parcelas) : '1');
   const [parcelasPagas, setParcelasPagas] = useState('');
   const [descricao, setDescricao] = useState(compra?.descricao ?? '');
   const uid = useId();
   if (!dados) return null;
-  const cats = dados.categoriasCartao.filter((c) => c.cartaoId === cartao.id && !c.arquivada);
+  const ocultas = categoriasAssinaturasIds(dados.cartoes);
+  const cats = dados.categoriasCartao.filter((c) => c.cartaoId === cartao.id && !c.arquivada && !ocultas.has(c.id));
   const horizonte = dados.config.horizonteProjecao;
   const parcelasNum = Math.min(48, Math.max(1, Math.round(Number(parcelas) || 1)));
 
@@ -70,13 +73,6 @@ export default function FormCompra({ cartao, compra, onFechar }: {
           <CampoData id={`${uid}-data`} value={data} onChange={setData} />
         </div>
         <div className="campo">
-          <label htmlFor={`${uid}-cat`}>Categoria</label>
-          <select id={`${uid}-cat`} value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
-            <option value="">categoria…</option>
-            {cats.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-          </select>
-        </div>
-        <div className="campo">
           <label htmlFor={`${uid}-parcelas`}>Parcelas</label>
           <input id={`${uid}-parcelas`} type="number" min={1} max={48} value={parcelas}
             onChange={(e) => onParcelasChange(e.target.value)} style={{ width: 64 }} />
@@ -88,6 +84,10 @@ export default function FormCompra({ cartao, compra, onFechar }: {
             value={parcelasNum <= 1 ? '' : parcelasPagas}
             onChange={(e) => onParcelasPagasChange(e.target.value)} style={{ width: 64 }} />
         </div>
+      </div>
+      <div className="campo">
+        <label>Categoria</label>
+        <SeletorCategoria categorias={cats} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
       </div>
       <div className="linha">
         <div className="campo cresce">
