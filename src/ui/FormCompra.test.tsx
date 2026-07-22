@@ -181,3 +181,14 @@ it('limpar Parcelas já pagas NÃO reverte Data ao valor original', async () => 
     vi.useRealTimers();
   }
 });
+
+it('categoria automática de assinaturas não aparece no grid de categoria da compra', async () => {
+  const { box, cartao } = await montarCartao();
+  await repo.categoriaAssinaturasDe(cartao.id);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+  render(<FormCompra cartao={cartao} onFechar={() => {}} />);
+
+  expect(screen.queryByRole('button', { name: 'Assinaturas' })).not.toBeInTheDocument();
+});
