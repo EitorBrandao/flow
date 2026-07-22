@@ -68,3 +68,6 @@ tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
   `recharts` carregado sob demanda (`React.lazy`). Ver
   `docs/superpowers/specs/2026-07-08-grafico-fluxo-pan-zoom-design.md`.
 - **`FaturaResumo.tsx`** — resumo somente leitura de uma fatura de cartão.
+- **`SeletorCategoria.tsx`** — grid de 3 colunas (`.grade-categorias`) pra escolher uma
+  categoria por toque, sem abrir o picker nativo do `<select>`. Usado em `TelaLancar.tsx`,
+  `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `TelaSimulador.tsx`.
