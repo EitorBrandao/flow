@@ -14,9 +14,9 @@ type Secao = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'cartoes'
   | 'categoriasCartao' | 'assinaturas' | 'backup' | 'wiki' | 'versao';
 
 const ITENS: { id: Secao; rotulo: string }[] = [
+  { id: 'boxes', rotulo: 'Boxes' },
   { id: 'categorias', rotulo: 'Categorias' },
   { id: 'recorrencias', rotulo: 'Recorrências' },
-  { id: 'boxes', rotulo: 'Boxes' },
   { id: 'cartoes', rotulo: 'Cartões' },
   { id: 'categoriasCartao', rotulo: 'Categorias do cartão' },
   { id: 'assinaturas', rotulo: 'Assinaturas do cartão' },
