@@ -1,5 +1,5 @@
-import type { Categoria, CategoriaCartao } from './types';
-import { compararCategorias, compararCategoriasCartao, diffOrdem, proximaOrdem } from './categorias';
+import type { Cartao, Categoria, CategoriaCartao } from './types';
+import { compararCategorias, compararCategoriasCartao, diffOrdem, proximaOrdem, categoriasAssinaturasIds } from './categorias';
 
 const ts = { criadoEm: '2026-07-10T12:00:00.000Z', alteradoEm: '2026-07-10T12:00:00.000Z' };
 
@@ -62,4 +62,23 @@ it('diffOrdem: nenhuma mudança quando a ordem já bate com o índice', () => {
 it('diffOrdem: recalcula só os itens que mudaram de posição', () => {
   const itens = [{ id: 'a', ordem: 0 }, { id: 'c', ordem: 2 }, { id: 'b', ordem: 1 }];
   expect(diffOrdem(itens)).toEqual([{ id: 'c', ordem: 1 }, { id: 'b', ordem: 2 }]);
+});
+
+function cartao(id: string, categoriaAssinaturasId?: string): Cartao {
+  return {
+    id, boxId: 'b1', nome: `cartao-${id}`, diaFechamento: 10, diaVencimento: 20,
+    categoriaFaturaId: `fat-${id}`, categoriaAssinaturasId, ativo: true,
+    criadoEm: '', alteradoEm: '',
+  };
+}
+
+describe('categoriasAssinaturasIds', () => {
+  it('retorna só os ids de categoriaAssinaturasId definidos', () => {
+    const cartoes = [cartao('k1', 'ass1'), cartao('k2'), cartao('k3', 'ass3')];
+    expect(categoriasAssinaturasIds(cartoes)).toEqual(new Set(['ass1', 'ass3']));
+  });
+
+  it('retorna conjunto vazio quando nenhum cartão tem categoria de assinaturas', () => {
+    expect(categoriasAssinaturasIds([cartao('k1')])).toEqual(new Set());
+  });
 });

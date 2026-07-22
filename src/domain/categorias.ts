@@ -1,4 +1,4 @@
-import type { Categoria, CategoriaCartao, ID } from './types';
+import type { Cartao, Categoria, CategoriaCartao, ID } from './types';
 
 // Ordem canônica definida pelo usuário em Ajustes: ganhos antes de gastos, arquivadas
 // sempre por último (grupo à parte, misturando os dois tipos); dentro do grupo, `ordem`
@@ -37,4 +37,12 @@ export function diffOrdem<T extends ComOrdem>(novaOrdem: readonly T[]): Array<{ 
 // mover uma categoria pra outro grupo (arquivar/restaurar).
 export function proximaOrdem(itensDoGrupo: readonly { ordem: number }[]): number {
   return Math.max(-1, ...itensDoGrupo.map((c) => c.ordem)) + 1;
+}
+
+/** Ids das CategoriaCartao reservadas para assinaturas automáticas — não devem aparecer em
+ *  nenhuma lista de seleção manual de categoria de cartão. */
+export function categoriasAssinaturasIds(cartoes: Cartao[]): Set<ID> {
+  return new Set(
+    cartoes.map((c) => c.categoriaAssinaturasId).filter((id): id is ID => id != null),
+  );
 }
