@@ -34,6 +34,7 @@ tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
 | `.campo-busca` | input de busca avulso (fora de `.campo`) |
 | `.sub` | subtítulo/texto secundário 13px em `--muted` |
 | `.grade-categorias` | grade 3 colunas de seleção de categoria; `.selecionada` marca o item ativo |
+| `.pills` | pílulas em linha pra escolher entre poucas opções (Box, Cartão); `button.ativo` marca a opção atual |
 | `table.tabela` | tabela numérica (Fluxo, Análises) — alinhado à direita exceto 1ª coluna, sem linhas verticais |
 | `.rolavel` | wrapper com `overflow-x: auto` para conteúdo largo (tabelas) |
 | `.recuo-1` / `.recuo-2` | recuo horizontal (ambos os lados) pra indicar nível de hierarquia numa lista aninhada — ex.: grupo/data em `LancamentosSheet` |
@@ -71,3 +72,6 @@ tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
 - **`SeletorCategoria.tsx`** — grid de 3 colunas (`.grade-categorias`) pra escolher uma
   categoria por toque, sem abrir o picker nativo do `<select>`. Usado em `TelaLancar.tsx`,
   `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `TelaSimulador.tsx`.
+- **`SeletorPills.tsx`** — pílulas em linha (`.pills`) pra escolher entre poucas opções sem
+  abrir o picker nativo do `<select>`. Usado em `Recorrencias.tsx` (Box),
+  `CategoriasCartao.tsx` e `Assinaturas.tsx` (Cartão).
