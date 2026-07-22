@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
@@ -87,29 +88,35 @@ it('clicar na categoria do cartão mostra o detalhamento por categoria de cartã
 });
 
 it('linha Assinaturas soma as compras de assinatura de todos os cartões e abre o resumo agrupado', async () => {
-  const { box } = await seedBoxComCategoria();
-  const nubank = await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31');
-  const inter = await repo.salvarCartao({ boxId: box.id, nome: 'Inter', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31');
-  const catAssNubank = await repo.categoriaAssinaturasDe(nubank.id);
-  const catAssInter = await repo.categoriaAssinaturasDe(inter.id);
-  await repo.salvarAssinatura({
-    cartaoId: nubank.id, categoriaCartaoId: catAssNubank, valor: 3990,
-    dataInicio: '2026-07-05', diaDoMes: 5, parcelas: null, descricao: 'Netflix',
-  }, '2027-12-31');
-  await repo.salvarAssinatura({
-    cartaoId: inter.id, categoriaCartaoId: catAssInter, valor: 1200,
-    dataInicio: '2026-07-05', diaDoMes: 5, parcelas: null, descricao: 'iCloud',
-  }, '2027-12-31');
-  await useApp.getState().iniciar();
-  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box } = await seedBoxComCategoria();
+    const nubank = await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31');
+    const inter = await repo.salvarCartao({ boxId: box.id, nome: 'Inter', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31');
+    const catAssNubank = await repo.categoriaAssinaturasDe(nubank.id);
+    const catAssInter = await repo.categoriaAssinaturasDe(inter.id);
+    await repo.salvarAssinatura({
+      cartaoId: nubank.id, categoriaCartaoId: catAssNubank, valor: 3990,
+      dataInicio: '2026-07-05', diaDoMes: 5, parcelas: null, descricao: 'Netflix',
+    }, '2027-12-31');
+    await repo.salvarAssinatura({
+      cartaoId: inter.id, categoriaCartaoId: catAssInter, valor: 1200,
+      dataInicio: '2026-07-05', diaDoMes: 5, parcelas: null, descricao: 'iCloud',
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
 
-  render(<TelaAnalises />);
-  await userEvent.click(screen.getByRole('button', { name: /Assinaturas/ }));
+    render(<TelaAnalises />);
+    await userEvent.click(screen.getByRole('button', { name: /Assinaturas/ }));
 
-  const dialog = await screen.findByRole('dialog', { name: 'Assinaturas' });
-  expect(within(dialog).getByText('R$ 51,90')).toBeInTheDocument();
-  expect(within(dialog).getByText('Nubank')).toBeInTheDocument();
-  expect(within(dialog).getByText('Netflix')).toBeInTheDocument();
-  expect(within(dialog).getByText('Inter')).toBeInTheDocument();
-  expect(within(dialog).getByText('iCloud')).toBeInTheDocument();
+    const dialog = await screen.findByRole('dialog', { name: 'Assinaturas' });
+    expect(within(dialog).getByText('R$ 51,90')).toBeInTheDocument();
+    expect(within(dialog).getByText('Nubank')).toBeInTheDocument();
+    expect(within(dialog).getByText('Netflix')).toBeInTheDocument();
+    expect(within(dialog).getByText('Inter')).toBeInTheDocument();
+    expect(within(dialog).getByText('iCloud')).toBeInTheDocument();
+  } finally {
+    vi.useRealTimers();
+  }
 });
