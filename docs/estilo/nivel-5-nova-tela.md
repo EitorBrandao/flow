@@ -11,25 +11,27 @@
    de Ajustes); teste `.test.tsx` no mesmo commit.
 2. **Esqueleto:** `.tela` como wrapper > blocos `.card` e/ou `.secao` + `.lista`/`.item`.
    ✅ `<div className="tela"><h2>Título</h2><section className="card">…</section></div>`
-3. Reaproveite o `catalogo.md` (regras do nível 1 valem aqui); classe nova só via nível 2;
+3. **Ação de criar/adicionar vem ANTES da lista existente** (formulário no topo, lista
+   embaixo) — não force rolar até o fim da tela pra achar como adicionar algo.
+4. Reaproveite o `catalogo.md` (regras do nível 1 valem aqui); classe nova só via nível 2;
    componente novo só via nível 4.
 
 ## Conteúdo
 
-4. **Dinheiro:** `formatarBRL` + `.valor-ganho`/`.valor-gasto`; conjunto denso de números →
+5. **Dinheiro:** `formatarBRL` + `.valor-ganho`/`.valor-gasto`; conjunto denso de números →
    `table.tabela` (a cor sem pílula já é automática lá).
-5. **No máximo UMA ação principal azul por tela** (`.botao-primario`); demais `.botao` /
+6. **No máximo UMA ação principal azul por tela** (`.botao-primario`); demais `.botao` /
    `.botao-perigo`.
-6. **Estado vazio:** texto `.sub` explicando o que aparecerá ali.
+7. **Estado vazio:** texto `.sub` explicando o que aparecerá ali.
    ❌ Ilustração, emoji grande ou ícone decorativo de estado vazio.
-7. **Título, textos e `aria-label`: português.**
+8. **Título, textos e `aria-label`: português.**
 
 ## Integração
 
-8. Aba principal: registrar a rota/botão em `Shell.tsx` — a transição de conteúdo já vem do
+9. Aba principal: registrar a rota/botão em `Shell.tsx` — a transição de conteúdo já vem do
    `Shell`; não adicione outra animação de entrada.
-9. Subtela de Ajustes: formulário **inline** (sem sheet), seguindo o padrão de
-   `TelaAjustes.tsx` e `src/ui/ajustes/`.
+10. Subtela de Ajustes: formulário **inline** (sem sheet), seguindo o padrão de
+    `TelaAjustes.tsx` e `src/ui/ajustes/`.
 
 ## Checklist de saída
 
