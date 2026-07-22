@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as repo from '../db/repo';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
+import SeletorCategoria from './SeletorCategoria';
 import { categoriasFaturaIds } from '../domain/fatura';
 import type { TipoCategoria } from '../domain/types';
 import { useApp } from '../state/store';
@@ -64,16 +65,7 @@ export default function TelaLancar() {
           onClick={() => { setTipo('ganho'); setCategoriaId(null); }}
         >Ganho</button>
       </div>
-      <div className="grade-categorias">
-        {categorias.map((c) => (
-          <button
-            key={c.id}
-            className={`botao ${categoriaId === c.id ? 'selecionada' : ''}`}
-            onClick={() => setCategoriaId(c.id)}
-          >{c.nome}</button>
-        ))}
-        {categorias.length === 0 && <p className="sub">Nenhuma categoria — crie em Ajustes.</p>}
-      </div>
+      <SeletorCategoria categorias={categorias} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
       <div className="linha">
         <div className="campo">
           <label htmlFor="data">Data</label>
