@@ -9,7 +9,6 @@ export default function Cartoes() {
   const [diaFechamento, setDiaFechamento] = useState('28');
   const [diaVencimento, setDiaVencimento] = useState('5');
   const [editandoId, setEditandoId] = useState<string | null>(null);
-  const [aviso, setAviso] = useState('');
   const uid = useId();
   if (!dados) return null;
   const horizonte = dados.config.horizonteProjecao;
@@ -23,15 +22,10 @@ export default function Cartoes() {
     const c = dados!.cartoes.find((x) => x.id === id)!;
     setEditandoId(id); setBoxId(c.boxId); setNome(c.nome);
     setDiaFechamento(String(c.diaFechamento)); setDiaVencimento(String(c.diaVencimento));
-    setAviso('');
   }
 
   async function salvar() {
     if (!nome.trim() || !boxId) return;
-    if (dados!.cartoes.some((c) => c.boxId === boxId && c.ativo && c.id !== editandoId)) {
-      setAviso('Esta box já tem um cartão ativo — desative-o antes de cadastrar outro.');
-      return;
-    }
     const campos = {
       boxId, nome: nome.trim(), diaFechamento: clampDia(diaFechamento),
       diaVencimento: clampDia(diaVencimento),
@@ -42,40 +36,19 @@ export default function Cartoes() {
     } else {
       await repo.salvarCartao(campos, horizonte);
     }
-    setEditandoId(null); setNome(''); setAviso('');
+    setEditandoId(null); setNome('');
     await recarregar();
   }
 
   async function alternarAtivo(id: string) {
     const c = dados!.cartoes.find((x) => x.id === id)!;
-    if (!c.ativo && dados!.cartoes.some((x) => x.boxId === c.boxId && x.ativo && x.id !== id)) {
-      setAviso('Esta box já tem um cartão ativo.');
-      return;
-    }
     await repo.salvarCartao({ ...c, ativo: !c.ativo }, horizonte);
     await recarregar();
   }
 
   return (
     <div className="tela">
-      <h2>Cartões</h2>
-      <div className="lista">
-        {dados.cartoes.map((c) => (
-          <div className="item" key={c.id} style={{ opacity: c.ativo ? 1 : 0.5 }}>
-            <div className="cresce">
-              {c.nome} <span className="badge">{nomeBox(c.boxId)}</span>
-              <div className="sub">fecha dia {c.diaFechamento} · vence dia {c.diaVencimento}</div>
-            </div>
-            <button className="botao" onClick={() => editar(c.id)}>Editar</button>
-            <button className="botao" onClick={() => alternarAtivo(c.id)}>
-              {c.ativo ? 'Desativar' : 'Ativar'}
-            </button>
-          </div>
-        ))}
-        {dados.cartoes.length === 0 && <p className="sub">Nenhum cartão cadastrado.</p>}
-      </div>
       <h2>{editandoId ? 'Editar cartão' : 'Novo cartão'}</h2>
-      {aviso && <p className="aviso">{aviso}</p>}
       <div className="linha">
         <div className="campo">
           <label htmlFor={`${uid}-box`}>Box do cartão</label>
@@ -105,6 +78,23 @@ export default function Cartoes() {
         <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={salvar}>
           {editandoId ? 'Salvar' : 'Criar'}
         </button>
+      </div>
+
+      <p className="rotulo-grupo">Cadastrados</p>
+      <div className="lista">
+        {dados.cartoes.map((c) => (
+          <div className="item" key={c.id} style={{ opacity: c.ativo ? 1 : 0.5 }}>
+            <div className="cresce">
+              {c.nome} <span className="badge">{nomeBox(c.boxId)}</span>
+              <div className="sub">fecha dia {c.diaFechamento} · vence dia {c.diaVencimento}</div>
+            </div>
+            <button className="botao" onClick={() => editar(c.id)}>Editar</button>
+            <button className="botao" onClick={() => alternarAtivo(c.id)}>
+              {c.ativo ? 'Desativar' : 'Ativar'}
+            </button>
+          </div>
+        ))}
+        {dados.cartoes.length === 0 && <p className="sub">Nenhum cartão cadastrado.</p>}
       </div>
     </div>
   );
