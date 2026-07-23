@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.11.1] - 2026-07-23
+
+### Alterado
+
+- Sheets (modais deslizantes, como o detalhe de fatura do cartão) agora rolam corretamente quando o conteúdo é maior que a tela — antes o gesto de arrastar para fechar bloqueava a rolagem do conteúdo.
+- A alcinha para arrastar e fechar o sheet fica fixa no topo, visível mesmo com o conteúdo rolado.
+- Detalhe da fatura do cartão (ao tocar num lançamento): nome do cartão, mês e total ficam fixos no topo do sheet enquanto a lista de itens rola por baixo.
+
 ## [0.11.0] - 2026-07-22
 
 ### Adicionado
