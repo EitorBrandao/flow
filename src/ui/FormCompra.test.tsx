@@ -133,7 +133,7 @@ it('checkbox de viagem aparece marcado quando a data cai no período de uma viag
     expect(checkbox.checked).toBe(true);
 
     await userEvent.type(screen.getByLabelText('Valor'), '100,00');
-    await userEvent.selectOptions(screen.getByLabelText('Categoria'), screen.getByRole('option', { name: 'mercado' }));
+    await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
     await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
@@ -175,7 +175,7 @@ it('desmarcar o checkbox de viagem não marca a compra', async () => {
     await userEvent.click(screen.getByLabelText(`Viagem: ${viagem.nome}`));
 
     await userEvent.type(screen.getByLabelText('Valor'), '100,00');
-    await userEvent.selectOptions(screen.getByLabelText('Categoria'), screen.getByRole('option', { name: 'mercado' }));
+    await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
     await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
