@@ -1,0 +1,1 @@
+- Título "Fluxo"/"Análises"/"Ajustes" no início de cada tela — ficou redundante com o nome da aba agora fixo no topo.
