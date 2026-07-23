@@ -1,6 +1,6 @@
 # Enforcement automático das orientações — design
 
-Status: aprovada em 2026-07-23 (usuário mandou executar; pacotes D e CI continuam pendentes de decisão)
+Status: aprovada em 2026-07-23 — implementada por completo no mesmo dia (B1/B2/B3 no branch enforcement-orientacoes; D e CI no branch enforcement-fase2, aprovados pelo usuário). Pendência de acompanhamento: sanear o catálogo e promover verificar-catalogo.mjs a bloqueio (item 2 do TODO local).
 Data: 2026-07-23
 Origem: `docs/auditoria-orientacoes-2026-07-23.md` (IDs citados abaixo)
 
