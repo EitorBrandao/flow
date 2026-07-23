@@ -56,5 +56,6 @@ it('engrenagem sempre volta pro menu inicial de Ajustes, mesmo já estando numa 
   expect(screen.queryByText('Boxes', { selector: 'h2' })).toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'Ajustes' }));
-  expect(screen.getByRole('heading', { name: 'Ajustes' })).toBeInTheDocument();
+  expect(screen.queryByText('Boxes', { selector: 'h2' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Categorias' })).toBeInTheDocument();
 });
