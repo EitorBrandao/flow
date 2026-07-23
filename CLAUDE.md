@@ -15,8 +15,11 @@ npm test             # vitest run (uma passada)
 npm run test:watch   # vitest em modo watch
 npx vitest run src/domain/fatura.test.ts        # um arquivo de teste
 npx vitest run -t "nome do teste"               # um teste pelo nome
-npm run deploy       # build + publica dist/ via gh-pages no branch main de EitorBrandao/flow
+npm run deploy       # build + publica dist/ no branch gh-pages de EitorBrandao/flow (GitHub Pages)
                      # → usuário testa em https://eitorbrandao.github.io/flow/
+npm run release -- <patch|minor|major>
+                     # junta os fragmentos de changelog.d/ numa nova versão no CHANGELOG.md,
+                     # bumpa package.json e cria commit + tag. Só na integração, no branch main.
 ```
 
 Testes usam jsdom + fake-indexeddb (`src/test-setup.ts`) e são colocados ao lado do código (`*.test.ts(x)`). O Vitest exclui `.worktrees/` de propósito — worktrees paralelos têm node_modules próprio e coletar testes de lá quebra os hooks do React.
@@ -38,5 +41,6 @@ Convenções do domínio: valores monetários são **centavos inteiros**; datas 
 - **Antes de QUALQUER edição de UI, consulte `docs/estilo-visual.md`** — é um índice que aponta para o capítulo certo em `docs/estilo/` conforme o nível da mudança (editar tela, nova classe, novo token, novo componente, nova tela, mudança de linguagem). Quem cria classe/componente cataloga em `docs/estilo/catalogo.md`. Se código e guia divergirem, o código manda — atualize o guia junto.
 - Specs e planos de features ficam em `docs/superpowers/specs/` e `docs/superpowers/plans/`; o backlog com contexto e decisões em aberto está em `TODO.md`.
 - **Nunca commitar dados financeiros reais** — `*.xlsx` e `*.json.backup` estão no `.gitignore` de propósito.
-- Nunca trabalhar direto na `main`: criar branch antes de alterar arquivos. Sessões concorrentes rodam no mesmo checkout — trabalho com commits deve ir para um git worktree próprio (`.worktrees/`).
-- **Ciclo de entrega:** (1) fazer as alterações de código; (2) se envolver UI, mockup HTML aprovado antes de implementar; (3) mostrar ao usuário uma revisão dos itens ajustados nesse ciclo, na estrutura do `CHANGELOG.md` (Adicionado/Alterado/Removido), e esperar confirmação; (4) **registrar a entrega em `CHANGELOG.md`** — nova seção `## [x.y.z] - AAAA-MM-DD`, e bump de `"version"` em `package.json` para o mesmo número; (5) só então rodar `npm run deploy`. O changelog precisa estar publicado **antes** do deploy — a tela de Ajustes (`src/ui/ajustes/Versao.tsx`) lê o `CHANGELOG.md` direto do build, então publicar sem atualizá-lo antes obriga um segundo deploy só para isso.
+- **Topologia de branches:** `main` é o branch **fonte** canônico (código). O site publicado (o build `dist/`) vive num branch separado, **`gh-pages`**, gerado por `npm run deploy` — nunca edite `gh-pages` à mão. Nunca trabalhar direto na `main`: criar branch antes de alterar arquivos. Sessões concorrentes rodam no mesmo checkout — trabalho com commits deve ir para um git worktree próprio (`.worktrees/`).
+- **Versão e changelog só na integração (isto evita colisão entre sessões paralelas):** branches de feature **nunca** editam `"version"` em `package.json` nem o topo do `CHANGELOG.md`. Toda mudança visível ao usuário vira um **fragmento** em `changelog.d/` — arquivo `<tipo>-<slug>.md` (`tipo` = `adicionado`/`alterado`/`removido`, bullets planos; ver `changelog.d/README.md`). O número da versão é decidido **uma única vez**, na integração, por `npm run release`.
+- **Ciclo de entrega:** (1) fazer as alterações de código no worktree da feature; (2) se envolver UI, mockup HTML aprovado antes de implementar; (3) criar/atualizar o(s) fragmento(s) em `changelog.d/` e mostrar ao usuário essa revisão (Adicionado/Alterado/Removido), esperando confirmação; (4) **integração no branch `main`** (uma vez): merge da feature em `main`, depois `npm run release -- <patch|minor|major>` — que monta a seção no `CHANGELOG.md`, apaga os fragmentos, bumpa `package.json` e cria commit + tag; (5) `git push origin main`; (6) só então `npm run deploy`. O `CHANGELOG.md` já sai atualizado pelo release **antes** do deploy — a tela de Ajustes (`src/ui/ajustes/Versao.tsx`) lê o `CHANGELOG.md` do build, então a versão exibida fica sempre em dia.
