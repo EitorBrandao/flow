@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.11.6] - 2026-07-23
+
+### Removido
+
+- Título "Fluxo"/"Análises"/"Ajustes" no início de cada tela — ficou redundante com o nome da aba agora fixo no topo.
+
 ## [0.11.5] - 2026-07-23
 
 ### Alterado
