@@ -279,7 +279,7 @@ describe('release.mjs', () => {
       }
     });
 
-    it('deve abortar se linha começa com espaço/tab', () => {
+    it('deve abortar se linha começa com espaço/tab (com hífen)', () => {
       const tmp = criarFixture();
       try {
         fs.writeFileSync(
@@ -290,14 +290,42 @@ describe('release.mjs', () => {
         fs.mkdirSync(path.join(tmp, 'changelog.d'));
         fs.writeFileSync(
           path.join(tmp, 'changelog.d', 'adicionado-indented.md'),
-          '- Linha válida.\n  - Linha indentada não permitida.\n'
+          '- Linha válida.\n  - sub-item indentado.\n'
         );
 
         const result = executarRelease(tmp, 'patch');
 
         expect(result.exitCode).toBe(1);
-        // Uma linha indentada não começa com "- ", então o erro é o de "- "
-        expect(result.stderr).toContain('deve começar com "- "');
+        // Uma linha indentada é rejeitada no check de indentação (ordem corrigida)
+        expect(result.stderr).toContain('não pode começar com espaço ou tab');
+        expect(result.stderr).toContain('changelog.d/README.md');
+
+        const pkg = JSON.parse(fs.readFileSync(path.join(tmp, 'package.json'), 'utf8'));
+        expect(pkg.version).toBe('1.0.0');
+      } finally {
+        fs.rmSync(tmp, { recursive: true });
+      }
+    });
+
+    it('deve abortar se linha começa com espaço/tab (sem hífen)', () => {
+      const tmp = criarFixture();
+      try {
+        fs.writeFileSync(
+          path.join(tmp, 'package.json'),
+          JSON.stringify({ version: '1.0.0' }, null, 2)
+        );
+        fs.writeFileSync(path.join(tmp, 'CHANGELOG.md'), '# Changelog\n\n');
+        fs.mkdirSync(path.join(tmp, 'changelog.d'));
+        fs.writeFileSync(
+          path.join(tmp, 'changelog.d', 'adicionado-indented.md'),
+          '- Linha válida.\n  Linha indentada sem hífen.\n'
+        );
+
+        const result = executarRelease(tmp, 'patch');
+
+        expect(result.exitCode).toBe(1);
+        // Uma linha indentada é rejeitada no check de indentação (ordem corrigida)
+        expect(result.stderr).toContain('não pode começar com espaço ou tab');
         expect(result.stderr).toContain('changelog.d/README.md');
 
         const pkg = JSON.parse(fs.readFileSync(path.join(tmp, 'package.json'), 'utf8'));
@@ -423,6 +451,38 @@ describe('release.mjs', () => {
         fs.rmSync(tmp, { recursive: true });
       }
     });
+
+    it('deve abortar se há arquivo untracked fora dos caminhos permitidos', () => {
+      const tmp = criarFixture();
+      try {
+        setupGitRepo(tmp);
+        fs.writeFileSync(
+          path.join(tmp, 'package.json'),
+          JSON.stringify({ version: '1.0.0' }, null, 2)
+        );
+        fs.writeFileSync(path.join(tmp, 'CHANGELOG.md'), '# Changelog\n\n');
+        fs.mkdirSync(path.join(tmp, 'changelog.d'));
+        fs.writeFileSync(
+          path.join(tmp, 'changelog.d', 'adicionado-test.md'),
+          '- Test.\n'
+        );
+
+        // Commit inicial
+        execFileSync('git', ['add', '.'], { cwd: tmp });
+        execFileSync('git', ['commit', '-m', 'init'], { cwd: tmp });
+
+        // Adicionar arquivo untracked fora dos caminhos permitidos
+        fs.writeFileSync(path.join(tmp, 'novo-arquivo.js'), 'console.log("novo");');
+
+        const result = executarReleaseGit(tmp, 'patch', {});
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain('working tree sujo');
+        expect(result.stderr).toContain('novo-arquivo.js');
+      } finally {
+        fs.rmSync(tmp, { recursive: true });
+      }
+    });
   });
 
   describe('caminho feliz com git', () => {
@@ -489,32 +549,4 @@ describe('release.mjs', () => {
     });
   });
 
-  describe('guard: nenhum item resultante', () => {
-    it('deve abortar se após coleta não há itens úteis', () => {
-      const tmp = criarFixture();
-      try {
-        // Criar fragmento que será ignorado (será tratado como vazio na validação)
-        // Na verdade, esse caso agora é coberto pelo guard de fragmento vazio
-        // Mas vou testar um cenário onde temos vários fragmentos vazios potenciais
-
-        fs.writeFileSync(
-          path.join(tmp, 'package.json'),
-          JSON.stringify({ version: '1.0.0' }, null, 2)
-        );
-        fs.writeFileSync(path.join(tmp, 'CHANGELOG.md'), '# Changelog\n\n');
-        fs.mkdirSync(path.join(tmp, 'changelog.d'));
-        fs.writeFileSync(
-          path.join(tmp, 'changelog.d', 'adicionado-empty.md'),
-          '\n\n'
-        );
-
-        const result = executarRelease(tmp, 'patch');
-
-        expect(result.exitCode).toBe(1);
-        expect(result.stderr).toContain('fragmento vazio');
-      } finally {
-        fs.rmSync(tmp, { recursive: true });
-      }
-    });
-  });
 });

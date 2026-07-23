@@ -135,28 +135,29 @@ function coletarFragmentos(dir) {
     }
 
     // Guard: validar formato de cada linha
-    for (let i = 0; i < linhasUteis.length; i++) {
-      const linha = linhasUteis[i];
-      const numLinha = linhas.indexOf(linha) + 1; // número da linha no arquivo (1-indexed)
+    for (let i = 0; i < linhas.length; i++) {
+      const linha = linhas[i];
+      if (linha.trim() === '') continue; // Pula linhas vazias
+      const numLinha = i + 1; // número da linha no arquivo (1-indexed)
 
-      // Deve começar com "- "
+      // Não pode começar com espaço ou tab (check primeiro)
+      if (/^\s/.test(linha)) {
+        abortar(
+          `fragmento "${nome}" linha ${numLinha}: não pode começar com espaço ou tab. Veja changelog.d/README.md.`
+        );
+      }
+
+      // Deve começar com "- " (check segundo)
       if (!/^- /.test(linha)) {
         abortar(
           `fragmento "${nome}" linha ${numLinha}: deve começar com "- ". Veja changelog.d/README.md.`
         );
       }
 
-      // Não pode conter "**"
+      // Não pode conter "**" (check terceiro)
       if (linha.includes('**')) {
         abortar(
           `fragmento "${nome}" linha ${numLinha}: não pode conter "**" (negrito). Veja changelog.d/README.md.`
-        );
-      }
-
-      // Não pode começar com espaço ou tab
-      if (/^\s/.test(linha)) {
-        abortar(
-          `fragmento "${nome}" linha ${numLinha}: não pode começar com espaço ou tab. Veja changelog.d/README.md.`
         );
       }
     }
@@ -205,6 +206,9 @@ const { itens, arquivos } = coletarFragmentos(path.join(raiz, 'changelog.d'));
 if (arquivos.length === 0) abortar('nenhum fragmento em changelog.d/ — nada para lançar.');
 
 // 4. Guard: validar que há itens resultantes após coleta
+// Nota: este é um guard de defesa em profundidade — inalcançável via CLI hoje porque
+// o guard de fragmento vazio já rejeita qualquer fragmento sem conteúdo útil. Mantido
+// como verificação redundante para segurança.
 let temItens = false;
 for (const secao of SECOES) {
   if (itens[secao] && itens[secao].length > 0) {
