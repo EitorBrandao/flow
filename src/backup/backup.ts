@@ -2,33 +2,37 @@ import type { Dados } from '../domain/types';
 
 export interface Backup {
   app: 'flow';
-  schema: 2;
+  schema: 3;
   exportadoEm: string;
   dados: Dados;
 }
 
 export function gerarBackup(dados: Dados): Backup {
-  return { app: 'flow', schema: 2, exportadoEm: new Date().toISOString(), dados };
+  return { app: 'flow', schema: 3, exportadoEm: new Date().toISOString(), dados };
 }
 
 const TABELAS_V1 = ['boxes', 'categorias', 'lancamentos', 'recorrencias', 'cenarios'] as const;
 const TABELAS_CARTAO = [
   'cartoes', 'categoriasCartao', 'comprasCartao', 'recorrenciasCartao', 'conferenciasFatura',
 ] as const;
+const TABELAS_VIAGEM = ['viagens'] as const;
 
 export function validarBackup(json: unknown): Backup {
   const b = json as { app?: unknown; schema?: unknown; exportadoEm?: unknown; dados?: Record<string, unknown> } | null;
   if (!b || typeof b !== 'object' || b.app !== 'flow') {
     throw new Error('Este arquivo não é um backup do Flow.');
   }
-  if (b.schema !== 1 && b.schema !== 2) {
+  if (b.schema !== 1 && b.schema !== 2 && b.schema !== 3) {
     throw new Error(`Backup de versão incompatível (${String(b.schema)}). Atualize o app e tente de novo.`);
   }
   const d = b.dados;
   if (!d || TABELAS_V1.some((t) => !Array.isArray(d[t])) || typeof d.config !== 'object') {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
-  if (b.schema === 2 && TABELAS_CARTAO.some((t) => !Array.isArray(d[t]))) {
+  if (b.schema >= 2 && TABELAS_CARTAO.some((t) => !Array.isArray(d[t]))) {
+    throw new Error('Backup corrompido: estrutura de dados inesperada.');
+  }
+  if (b.schema === 3 && TABELAS_VIAGEM.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
   const dados = { ...d } as unknown as Dados;
@@ -37,8 +41,13 @@ export function validarBackup(json: unknown): Backup {
     const md = dados as unknown as Record<string, unknown[]>;
     for (const t of TABELAS_CARTAO) md[t] = [];
   }
+  if (b.schema < 3) {
+    // backup antigo: viagens nasceu depois
+    const md = dados as unknown as Record<string, unknown[]>;
+    for (const t of TABELAS_VIAGEM) md[t] = [];
+  }
   return {
-    app: 'flow', schema: 2,
+    app: 'flow', schema: 3,
     exportadoEm: typeof b.exportadoEm === 'string' ? b.exportadoEm : new Date().toISOString(),
     dados,
   };
@@ -65,6 +74,7 @@ export function mesclar(atual: Dados, doBackup: Dados): Dados {
     comprasCartao: mesclarTabela(atual.comprasCartao, doBackup.comprasCartao),
     recorrenciasCartao: mesclarTabela(atual.recorrenciasCartao, doBackup.recorrenciasCartao),
     conferenciasFatura: mesclarTabela(atual.conferenciasFatura, doBackup.conferenciasFatura),
+    viagens: mesclarTabela(atual.viagens, doBackup.viagens),
     config: atual.config,
   };
 }

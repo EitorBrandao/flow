@@ -90,6 +90,61 @@ it('marca como previsto quando o toggle está ativo, mesmo com data de hoje', as
   expect(lancs[0]).toMatchObject({ data: '2026-07-02', status: 'previsto' });
 });
 
+it('checkbox de viagem aparece marcado quando a data cai no período de uma viagem e marca o lançamento', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+  const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  const checkbox = screen.getByLabelText(`Viagem: ${viagem.nome}`) as HTMLInputElement;
+  expect(checkbox.checked).toBe(true);
+
+  await userEvent.type(screen.getByLabelText('Valor'), '12,34');
+  await userEvent.click(screen.getByRole('button', { name: 'cartão' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+
+  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  const lancs = await db.lancamentos.toArray();
+  expect(lancs[0].viagemId).toBe(viagem.id);
+});
+
+it('checkbox de viagem some quando a data está fora do período e desmarcado não marca o lançamento', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+  const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  expect(screen.getByLabelText(`Viagem: ${viagem.nome}`)).toBeInTheDocument();
+  await userEvent.click(screen.getByLabelText(`Viagem: ${viagem.nome}`));
+
+  await userEvent.type(screen.getByLabelText('Valor'), '12,34');
+  await userEvent.click(screen.getByRole('button', { name: 'cartão' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  let lancs = await db.lancamentos.toArray();
+  expect(lancs[0].viagemId).toBeUndefined();
+
+  // agora fora do período: o checkbox deve sumir
+  await userEvent.clear(screen.getByLabelText('Data'));
+  await userEvent.type(screen.getByLabelText('Data'), '2026-08-01');
+  expect(screen.queryByLabelText(`Viagem: ${viagem.nome}`)).not.toBeInTheDocument();
+
+  await userEvent.type(screen.getByLabelText('Valor'), '5,00');
+  await userEvent.click(screen.getByRole('button', { name: 'cartão' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+  lancs = await db.lancamentos.toArray();
+  expect(lancs).toHaveLength(2);
+  expect(lancs[1].viagemId).toBeUndefined();
+});
+
 it('categoria da fatura de um cartão não aparece na grade de seleção', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
