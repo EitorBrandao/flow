@@ -279,7 +279,7 @@ it('sem ao menos 2 dias na série projetada, o gráfico não fica clicável', as
   expect(screen.queryByRole('button', { name: 'Expandir gráfico de saldo' })).not.toBeInTheDocument();
 });
 
-it('lançamento de fatura de cartão abre o resumo em vez do editor, e "Editar" navega para a aba Cartão', async () => {
+it('lançamento de fatura de cartão abre o resumo em vez do editor, e o link navega para a aba Cartão', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
     vi.setSystemTime(new Date('2026-07-01T12:00:00'));
@@ -303,7 +303,7 @@ it('lançamento de fatura de cartão abre o resumo em vez do editor, e "Editar" 
     expect(await screen.findByRole('dialog', { name: 'Fatura Nubank' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: 'Previsto' })).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    await userEvent.click(screen.getByRole('button', { name: /Ver fatura completa na aba Cartão/ }));
     expect(useApp.getState().aba).toBe('cartao');
   } finally { vi.useRealTimers(); }
 });
