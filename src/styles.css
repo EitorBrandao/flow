@@ -196,8 +196,13 @@ table.tabela tr:last-child td { border-bottom: none; }
   max-height: 88dvh; display: flex; flex-direction: column;
 }
 .sheet-alca {
-  width: 40px; height: 4px; border-radius: 2px; flex: 0 0 auto;
-  background: var(--surface2); margin: 12px auto 14px;
+  width: 100%; height: 28px; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  touch-action: none;
+}
+.sheet-alca::before {
+  content: ''; width: 40px; height: 4px; border-radius: 2px;
+  background: var(--surface2);
 }
 .sheet-cabecalho {
   flex: 0 0 auto; padding: 0 20px 8px;
