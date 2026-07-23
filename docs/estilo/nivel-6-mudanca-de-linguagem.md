@@ -9,11 +9,16 @@ tipo de animação novo · sheet para formulários de Ajustes.
 
 **PARE. Não implemente.** Mudança de linguagem não é decisão de implementação:
 
-1. Abra uma conversa de brainstorming com o usuário e registre a decisão em uma spec:
-   `docs/superpowers/specs/AAAA-MM-DD-<tema>-design.md` (o quê, por quê, o que substitui).
-2. Só depois da spec aprovada: atualize `fundamentos.md`/`transversais.md` (a regra nova),
-   os capítulos de nível afetados e **então** o código.
+1. Abra uma conversa de brainstorming **com o usuário** e registre a decisão **dele** em
+   uma spec: `docs/superpowers/specs/AAAA-MM-DD-<tema>-design.md` (o quê, por quê, o que
+   substitui). Registrar uma decisão própria sem essa conversa não cumpre este passo.
+2. Só depois da spec aprovada — **aprovada = a spec contém a linha
+   `Status: aprovada em AAAA-MM-DD`, escrita depois de o usuário confirmar
+   explicitamente** — atualize `fundamentos.md`/`transversais.md` (a regra nova), os
+   capítulos de nível afetados e **então** o código.
 3. Guia e código mudam no mesmo branch — o guia nunca fica mentindo sobre o app.
 
-**Se você é um subagente** executando uma tarefa e caiu neste nível sem que a tarefa cite
-uma spec aprovada: **interrompa e reporte ao orquestrador.** Não decida sozinho.
+**Se você é um subagente** executando uma tarefa e caiu neste nível: a tarefa precisa
+citar uma spec que (a) **exista**, (b) tenha **`Status: aprovada`** e (c) **cubra
+exatamente a mudança pedida** — confira as três coisas. Faltando qualquer uma:
+**interrompa e reporte ao orquestrador.** Não decida sozinho.
