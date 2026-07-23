@@ -1,2 +1,0 @@
-- Resumo da fatura (ao tocar num lançamento de cartão): itens agrupados em À vista/Parceladas, na mesma ordem usada na aba Cartão, em vez da ordem bruta anterior.
-- Resumo da fatura: os botões "Editar" e "Fechar" saem; no lugar, um link "Ver fatura completa na aba Cartão" (fechar o sheet continua possível arrastando a alcinha ou tocando fora).

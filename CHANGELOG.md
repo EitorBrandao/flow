@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.11.3] - 2026-07-23
+
+### Alterado
+
+- Resumo da fatura (ao tocar num lançamento de cartão): itens agrupados em À vista/Parceladas, na mesma ordem usada na aba Cartão, em vez da ordem bruta anterior.
+- Resumo da fatura: os botões "Editar" e "Fechar" saem; no lugar, um link "Ver fatura completa na aba Cartão" (fechar o sheet continua possível arrastando a alcinha ou tocando fora).
+
 ## [0.11.2] - 2026-07-23
 
 ### Alterado
