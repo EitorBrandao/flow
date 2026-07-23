@@ -246,12 +246,23 @@ for (const nome of arquivos) fs.rmSync(path.join(raiz, 'changelog.d', nome));
 
 console.log(`  release: ${versaoAtual} → ${versao}  (${arquivos.length} fragmento(s))`);
 
+// 8. VERIFICAÇÃO DO CATÁLOGO (não-bloqueante, para aviso)
+try {
+  execFileSync('node', ['scripts/verificar-catalogo.mjs', raiz], {
+    cwd: raiz,
+    stdio: 'inherit',
+  });
+} catch (e) {
+  // Falha do verificador não aborta o release
+  console.error(`  release: aviso ao rodar verificador: ${e.message}`);
+}
+
 if (dryRun) {
   console.log('  release: RELEASE_DRY_RUN=1 — pulando git commit/tag.');
   process.exit(0);
 }
 
-// 8. OPERAÇÕES GIT (só se não estamos em dry-run)
+// 9. OPERAÇÕES GIT (só se não estamos em dry-run)
 const git = (...args) => execFileSync('git', args, { cwd: raiz, stdio: 'inherit' });
 git('add', 'CHANGELOG.md', 'package.json', 'changelog.d');
 git('commit', '-m', `chore(release): v${versao}`);
