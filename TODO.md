@@ -121,3 +121,28 @@ corrigido a pedido do usuário porque a aba Simular está oculta e sem uso (ver 
 **Proposta:** replicar o padrão de `tipoCat()` já usado em `TelaHoje.tsx`/`TelaFluxo.tsx` —
 olhar `categoria.tipo` do lançamento do cenário e escolher `valor-ganho`/`valor-gasto`
 condicionalmente, em vez do `valor-gasto` fixo.
+
+## 8. Conectar com app do banco para captar lançamentos automaticamente
+
+**Contexto:** hoje todo lançamento entra manualmente ou via recorrência — não há nenhuma
+captura automática do que acontece na conta real. Complementa o item 3 (import de extrato),
+mas em vez de importar em lote seria captar em tempo real, direto do app do banco.
+
+**Proposta:**
+- Investigar conectar via API oficial do banco (Open Finance/Open Banking no Brasil é o
+  caminho institucional) para ler transações.
+- Alternativa caso a API não seja viável (custo, burocracia, banco sem suporte): ler as
+  notificações do app do banco no Android (ex.: `NotificationListenerService`) e extrair
+  valor/estabelecimento do texto da notificação de transação.
+- Em qualquer caminho, cair no mesmo fluxo de confirmação/categorização que um import manual
+  teria, nunca lançar direto sem revisão do usuário.
+
+**Decisões em aberto:**
+- Qual banco priorizar (o que o usuário usa no dia a dia)?
+- Open Finance exige app rodando num contexto com mais infraestrutura (backend, credenciais
+  de instituição) — ainda cabe no modelo local-first/sem servidor do Flow, ou é um desvio de
+  arquitetura?
+- Ler notificações exige o app empacotado como Android nativo/híbrido (depende do item 4,
+  transformar em .apk) — PWA puro não tem acesso a `NotificationListenerService`.
+- Risco de parsing frágil (texto de notificação muda sem aviso do banco) — vale a pena vs.
+  esperar o item 3 (extrato) amadurecer primeiro?
