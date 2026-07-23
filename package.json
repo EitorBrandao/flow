@@ -9,8 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "release": "node scripts/release.mjs",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist -b main"
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "dexie": "^4.0.11",
