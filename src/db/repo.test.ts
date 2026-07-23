@@ -36,6 +36,24 @@ it('salvarLancamento persiste e marca mudança desde backup', async () => {
   expect(dados.config.mudancasDesdeBackup).toBe(true);
 });
 
+it('carregarTudo ordena lançamentos por criadoEm, mais recente primeiro', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    const { box, gasto } = await boxECategoria();
+    vi.setSystemTime(new Date('2026-07-01T10:00:00'));
+    const primeiro = await repo.salvarLancamento({ boxId: box.id, categoriaId: gasto.id, data: '2026-07-01', valor: 1000, status: 'efetivo' });
+    vi.setSystemTime(new Date('2026-07-01T10:00:05'));
+    const segundo = await repo.salvarLancamento({ boxId: box.id, categoriaId: gasto.id, data: '2026-07-01', valor: 2000, status: 'efetivo' });
+    vi.setSystemTime(new Date('2026-07-01T10:00:10'));
+    const terceiro = await repo.salvarLancamento({ boxId: box.id, categoriaId: gasto.id, data: '2026-07-01', valor: 3000, status: 'efetivo' });
+
+    const dados = await repo.carregarTudo();
+    expect(dados.lancamentos.map((l) => l.id)).toEqual([terceiro.id, segundo.id, primeiro.id]);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 it('salvarRecorrencia materializa previstos até o horizonte', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
