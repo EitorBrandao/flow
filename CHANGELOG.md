@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.11.4] - 2026-07-23
+
+### Alterado
+
+- Alcinha de arrastar dos sheets fica branca, em vez do cinza azulado anterior — melhora a visibilidade sobre o fundo do sheet.
+
 ## [0.11.3] - 2026-07-23
 
 ### Alterado
