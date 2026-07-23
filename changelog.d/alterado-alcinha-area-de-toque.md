@@ -1,1 +1,0 @@
-- Alcinha de arrastar para fechar os sheets: área de toque aumentada — antes só funcionava tocando exatamente na barrinha de 4px, agora responde em toda a faixa ao redor dela.

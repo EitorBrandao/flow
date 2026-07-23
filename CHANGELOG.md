@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.11.2] - 2026-07-23
+
+### Alterado
+
+- Alcinha de arrastar para fechar os sheets: área de toque aumentada — antes só funcionava tocando exatamente na barrinha de 4px, agora responde em toda a faixa ao redor dela.
+
 ## [0.11.1] - 2026-07-23
 
 ### Alterado
