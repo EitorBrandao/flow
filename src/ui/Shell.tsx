@@ -20,9 +20,15 @@ const ABAS: { id: Aba; rotulo: string; central?: boolean }[] = [
   // aba 'simulador' ocultada temporariamente — ver TODO.md
 ];
 
+const NOMES_ABA: Record<Aba, string> = {
+  hoje: 'Hoje', fluxo: 'Fluxo', lancar: 'Lançar', cartao: 'Cartão',
+  analises: 'Análises', simulador: 'Simulador', ajustes: 'Ajustes',
+};
+
 export default function Shell() {
   const { aba, setAba, boxSel, setBoxSel, dados } = useApp();
   const [menuAberto, setMenuAberto] = useState(false);
+  const [ajustesKey, setAjustesKey] = useState(0);
   if (!dados) return null;
   const boxesComSaldo = dados.boxes.filter((b) => b.saldoInicial != null);
   return (
@@ -47,7 +53,11 @@ export default function Shell() {
             ))}
             <option value="casa">casa</option>
           </select>
-          <button className="chip" onClick={() => setAba('ajustes')} aria-label="Ajustes">
+          <strong>{NOMES_ABA[aba]}</strong>
+          <button
+            className="chip" aria-label="Ajustes"
+            onClick={() => { setAba('ajustes'); setAjustesKey((k) => k + 1); }}
+          >
             <Settings size={18} />
           </button>
         </header>
@@ -64,7 +74,7 @@ export default function Shell() {
             {aba === 'cartao' && <TelaCartao />}
             {aba === 'analises' && <TelaAnalises />}
             {aba === 'simulador' && <TelaSimulador />}
-            {aba === 'ajustes' && <TelaAjustes />}
+            {aba === 'ajustes' && <TelaAjustes key={ajustesKey} />}
           </motion.div>
         </main>
       </div>

@@ -27,3 +27,34 @@ it('o + central abre o popup de Adicionar em vez de trocar direto para Lançar',
   await userEvent.click(screen.getByText('Lançamento'));
   expect(useApp.getState().aba).toBe('lancar');
 });
+
+it('mostra o nome da aba atual no topo, entre a box e a engrenagem', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+  render(<Shell />);
+
+  expect(screen.getByText('Hoje')).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Ajustes' }));
+  expect(useApp.getState().aba).toBe('ajustes');
+  expect(screen.getAllByText('Ajustes').length).toBeGreaterThan(0);
+});
+
+it('engrenagem sempre volta pro menu inicial de Ajustes, mesmo já estando numa seção', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+  render(<Shell />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Ajustes' }));
+  await userEvent.click(screen.getByText('Boxes'));
+  expect(screen.queryByText('Boxes', { selector: 'h2' })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Ajustes' }));
+  expect(screen.getByRole('heading', { name: 'Ajustes' })).toBeInTheDocument();
+});
