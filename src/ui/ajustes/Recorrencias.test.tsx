@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import { limparDb } from '../../test-setup';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
@@ -8,8 +9,7 @@ import { useApp } from '../../state/store';
 import Recorrencias from './Recorrencias';
 
 beforeEach(async () => {
-  await db.delete();
-  await db.open();
+  await limparDb();
 });
 
 it('edita o valor de uma recorrência existente e atualiza os previstos remanescentes', async () => {

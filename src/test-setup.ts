@@ -1,6 +1,14 @@
+import 'fake-indexeddb/auto';
 import '@testing-library/jest-dom/vitest';
 
 import { MotionGlobalConfig } from 'framer-motion';
+import { db } from './db/database';
+
+// Limpa as tabelas sem fechar a conexão: db.delete()+open() derruba promises de
+// handlers de clique ainda em voo (onClick assíncrono não aguardado) com DatabaseClosedError.
+export async function limparDb(): Promise<void> {
+  await Promise.all(db.tables.map((t) => t.clear()));
+}
 
 // framer-motion: animações instantâneas nos testes (sem esperas nem elementos presos em exit)
 MotionGlobalConfig.skipAnimations = true;
