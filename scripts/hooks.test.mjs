@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execFileSync } from 'child_process';
-import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'fs';
+import { mkdtempSync, writeFileSync, readFileSync, rmSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { homedir } from 'os';
@@ -104,6 +104,93 @@ describe('Hook Scripts', () => {
 
       expect(output.trim()).toBe('');
     });
+
+    it('should be silent for docs/appindex.html (false positive check)', () => {
+      const input = {
+        tool_name: 'Edit',
+        tool_input: { file_path: 'docs/appindex.html' },
+        cwd: PROJECT_DIR
+      };
+
+      const output = execFileSync('node', [join(PROJECT_DIR, '.claude/hooks/lembrete-ui.mjs')], {
+        input: JSON.stringify(input),
+        encoding: 'utf-8'
+      });
+
+      expect(output.trim()).toBe('');
+    });
+
+    it('should dedupe with session_id: first call emits, second call silent', () => {
+      const sessionId = `test-session-${Date.now()}`;
+      const tempTestDir = mkdtempSync(join(tmpdir(), 'hooks-session-test-'));
+
+      try {
+        const input = {
+          tool_name: 'Edit',
+          tool_input: { file_path: 'src/ui/Button.tsx' },
+          cwd: PROJECT_DIR,
+          session_id: sessionId
+        };
+
+        // First call should emit
+        const output1 = execFileSync('node', [join(PROJECT_DIR, '.claude/hooks/lembrete-ui.mjs')], {
+          input: JSON.stringify(input),
+          encoding: 'utf-8',
+          env: { ...process.env, TMPDIR: tempTestDir, TMP: tempTestDir }
+        });
+        expect(output1).toContain('additionalContext');
+
+        // Second call with same session_id should be silent
+        const output2 = execFileSync('node', [join(PROJECT_DIR, '.claude/hooks/lembrete-ui.mjs')], {
+          input: JSON.stringify(input),
+          encoding: 'utf-8',
+          env: { ...process.env, TMPDIR: tempTestDir, TMP: tempTestDir }
+        });
+        expect(output2.trim()).toBe('');
+      } finally {
+        rmSync(tempTestDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should emit for different session_id despite marker from previous session', () => {
+      const sessionId1 = `test-session-1-${Date.now()}`;
+      const sessionId2 = `test-session-2-${Date.now()}`;
+      const tempTestDir = mkdtempSync(join(tmpdir(), 'hooks-session-test-'));
+
+      try {
+        const input1 = {
+          tool_name: 'Edit',
+          tool_input: { file_path: 'src/ui/Button.tsx' },
+          cwd: PROJECT_DIR,
+          session_id: sessionId1
+        };
+
+        // First session should emit
+        const output1 = execFileSync('node', [join(PROJECT_DIR, '.claude/hooks/lembrete-ui.mjs')], {
+          input: JSON.stringify(input1),
+          encoding: 'utf-8',
+          env: { ...process.env, TMPDIR: tempTestDir, TMP: tempTestDir }
+        });
+        expect(output1).toContain('additionalContext');
+
+        // Different session_id should emit even after first emission
+        const input2 = {
+          tool_name: 'Edit',
+          tool_input: { file_path: 'index.html' },
+          cwd: PROJECT_DIR,
+          session_id: sessionId2
+        };
+
+        const output2 = execFileSync('node', [join(PROJECT_DIR, '.claude/hooks/lembrete-ui.mjs')], {
+          input: JSON.stringify(input2),
+          encoding: 'utf-8',
+          env: { ...process.env, TMPDIR: tempTestDir, TMP: tempTestDir }
+        });
+        expect(output2).toContain('additionalContext');
+      } finally {
+        rmSync(tempTestDir, { recursive: true, force: true });
+      }
+    });
   });
 
   describe('lembrete-deps.mjs', () => {
@@ -184,6 +271,21 @@ describe('Hook Scripts', () => {
 
       expect(output.trim()).toBe('');
     });
+
+    it('should be silent when command is "npm uninstall"', () => {
+      const input = {
+        tool_name: 'Bash',
+        tool_input: { command: 'npm uninstall lodash' },
+        cwd: PROJECT_DIR
+      };
+
+      const output = execFileSync('node', [join(PROJECT_DIR, '.claude/hooks/lembrete-deps.mjs')], {
+        input: JSON.stringify(input),
+        encoding: 'utf-8'
+      });
+
+      expect(output.trim()).toBe('');
+    });
   });
 
   describe('scan-dados-reais.mjs', () => {
@@ -222,8 +324,7 @@ describe('Hook Scripts', () => {
 
     it('should be silent when patterns file is empty', () => {
       const patternsDir = join(tempHome, '.claude');
-      const fs = require('fs');
-      fs.mkdirSync(patternsDir, { recursive: true });
+      mkdirSync(patternsDir, { recursive: true });
       writeFileSync(join(patternsDir, 'flow-dados-reais.txt'), '');
 
       const input = {
@@ -248,12 +349,12 @@ describe('Hook Scripts', () => {
     it('should emit warning when pattern matches added line, without echoing matched text', () => {
       // Create patterns file with a simple regex
       const patternsDir = join(tempHome, '.claude');
-      require('fs').mkdirSync(patternsDir, { recursive: true });
+      mkdirSync(patternsDir, { recursive: true });
       writeFileSync(join(patternsDir, 'flow-dados-reais.txt'), '\\d{3}\\.\\d{3}\\.\\d{3}');
 
       // Create a test git repo with a staged file containing the pattern
       const testRepoDir = join(tempDir, 'testrepo');
-      require('fs').mkdirSync(testRepoDir);
+      mkdirSync(testRepoDir);
 
       try {
         execFileSync('git', ['init'], { cwd: testRepoDir });
@@ -297,7 +398,7 @@ describe('Hook Scripts', () => {
 
     it('should not crash on invalid regex pattern', () => {
       const patternsDir = join(tempHome, '.claude');
-      require('fs').mkdirSync(patternsDir, { recursive: true });
+      mkdirSync(patternsDir, { recursive: true });
       writeFileSync(join(patternsDir, 'flow-dados-reais.txt'), '[invalid(regex');
 
       const input = {
@@ -347,13 +448,13 @@ describe('Hook Scripts', () => {
       expect(parsed.hooks.PreToolUse.length).toBeGreaterThan(0);
     });
 
-    it('should have Edit|Write matcher for UI hook', () => {
+    it('should have Edit|Write matcher for UI hook without "once"', () => {
       const settingsPath = join(PROJECT_DIR, '.claude/settings.json');
       const content = readFileSync(settingsPath, 'utf-8');
       const parsed = JSON.parse(content);
       const editMatcher = parsed.hooks.PreToolUse.find(h => h.matcher === 'Edit|Write');
       expect(editMatcher).toBeDefined();
-      expect(editMatcher.once).toBe(true);
+      expect(editMatcher.once).toBeUndefined();
     });
 
     it('should have Bash matcher for deps and scan hooks', () => {

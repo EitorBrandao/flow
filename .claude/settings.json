@@ -6,7 +6,6 @@
     "PreToolUse": [
       {
         "matcher": "Edit|Write",
-        "once": true,
         "hooks": [
           {
             "type": "command",
