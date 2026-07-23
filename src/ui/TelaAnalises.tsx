@@ -52,7 +52,6 @@ export default function TelaAnalises() {
 
   return (
     <div className="tela">
-      <h2>Análises</h2>
       <div className="linha" style={{ justifyContent: 'space-between' }}>
         <button className="botao" onClick={() => setMes(addMeses(mes, -1))} aria-label="Mês anterior">◀</button>
         <strong>{nomeMes(mes)}</strong>

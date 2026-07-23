@@ -32,7 +32,6 @@ export default function TelaAjustes() {
   if (secao === 'menu') {
     return (
       <div className="tela">
-        <h2>Ajustes</h2>
         <div className="lista">
           {ITENS.map((i) => (
             <button key={i.id} className="item" style={{ cursor: 'pointer' }} onClick={() => setSecao(i.id)}>
