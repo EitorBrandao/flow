@@ -2,8 +2,9 @@
 
 **Você está no nível certo?** Sim, se vai existir um arquivo de tela novo: aba principal
 (`src/ui/Tela<Nome>.tsx`) ou subtela de Ajustes (`src/ui/ajustes/<Nome>.tsx`).
-- **Aba nova na navegação é decisão de produto**, não de estilo — confirme com o usuário
-  antes de implementar.
+- **Aba nova, subtela de Ajustes nova, remoção ou renomeação de tela é decisão de
+  produto**, não de estilo — confirme com o usuário antes de implementar. Vale para
+  qualquer superfície que aparece ou some da navegação, não só a tab bar.
 
 ## Estrutura
 

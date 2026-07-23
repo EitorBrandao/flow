@@ -2,7 +2,10 @@
 
 **Consulte este índice antes de QUALQUER edição de UI.** Ele leva ao capítulo do seu nível
 de edição em `docs/estilo/` — leia o capítulo indicado (são curtos) antes de escrever
-código. Se código e guia divergirem, o código manda — atualize o guia junto com a mudança.
+código. Se código e guia divergirem, o código manda **apenas quando a divergência já
+existia antes de você chegar** — atualize o guia junto com a mudança. Divergência que a
+sua própria edição criaria não é divergência: é uma mudança do nível correspondente
+(valor de token ou princípio = nível 6). Esta regra nunca legitima uma mudança sua.
 
 ## Que mudança você vai fazer?
 
