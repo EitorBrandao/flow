@@ -32,7 +32,6 @@ export default function Sheet({ aberto, onFechar, rotulo, cabecalho, children }:
         <div
           className="sheet-alca" aria-hidden="true"
           onPointerDown={(e) => dragControls.start(e)}
-          style={{ touchAction: 'none' }}
         />
         {cabecalho && <div className="sheet-cabecalho">{cabecalho}</div>}
         <div className="sheet-conteudo">{children}</div>
