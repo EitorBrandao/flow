@@ -1,15 +1,20 @@
 #!/usr/bin/env node
 /**
  * Hook: lembrete-deps.mjs
- * Detecta comandos npm install/i/add
+ * Detecta comandos npm install/i/add (mas não uninstall)
  * e emite lembrete sobre dependências novas (decisão de produto)
  */
 
 import { readFileSync } from 'fs';
 
-const stdin = readFileSync(0, 'utf-8');
-let hookInput;
+let stdin;
+try {
+  stdin = readFileSync(0, 'utf-8');
+} catch {
+  process.exit(0);
+}
 
+let hookInput;
 try {
   hookInput = JSON.parse(stdin);
 } catch {
@@ -18,10 +23,9 @@ try {
 
 const command = hookInput.tool_input?.command || '';
 
-// Check if command contains npm + (install | i | add)
-const isNpmInstall =
-  command.includes('npm') &&
-  (command.includes('install') || /\s+i\s+/.test(command) || command.includes('add'));
+// Use regex to match npm install/i/add (not uninstall)
+// \bnpm\s+(install|i|add)\b ensures we match the exact command after npm
+const isNpmInstall = /\bnpm\s+(install|i|add)\b/.test(command);
 
 if (isNpmInstall) {
   const additionalContext = `Instalação de dependência detectada: dependência nova (inclusive dev) é decisão de produto — confirme com o usuário antes, justifique por que código próprio não basta, rode npm audit e inclua o lockfile no mesmo commit (CLAUDE.md, Regras do repositório).`;
