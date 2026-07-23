@@ -31,6 +31,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 const raiz = process.cwd();
 const SECOES = ['adicionado', 'alterado', 'removido'];
@@ -248,7 +249,8 @@ console.log(`  release: ${versaoAtual} → ${versao}  (${arquivos.length} fragme
 
 // 8. VERIFICAÇÃO DO CATÁLOGO (não-bloqueante, para aviso)
 try {
-  execFileSync('node', ['scripts/verificar-catalogo.mjs', raiz], {
+  const verificadorPath = fileURLToPath(new URL('./verificar-catalogo.mjs', import.meta.url));
+  execFileSync('node', [verificadorPath, raiz], {
     cwd: raiz,
     stdio: 'inherit',
   });
