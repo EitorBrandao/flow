@@ -1,8 +1,9 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import * as repo from '../db/repo';
 import { addMesesData } from '../domain/dates';
 import { categoriasAssinaturasIds } from '../domain/categorias';
 import type { Cartao, CompraCartao } from '../domain/types';
+import { viagemAtivaEm } from '../domain/viagem';
 import { useApp } from '../state/store';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
@@ -18,12 +19,20 @@ export default function FormCompra({ cartao, compra, onFechar }: {
   const [parcelas, setParcelas] = useState(compra ? String(compra.parcelas) : '1');
   const [parcelasPagas, setParcelasPagas] = useState('');
   const [descricao, setDescricao] = useState(compra?.descricao ?? '');
+  const [viagemMarcada, setViagemMarcada] = useState(compra ? compra.viagemId != null : true);
+  const montouRef = useRef(true);
   const uid = useId();
   if (!dados) return null;
   const ocultas = categoriasAssinaturasIds(dados.cartoes);
   const cats = dados.categoriasCartao.filter((c) => c.cartaoId === cartao.id && !c.arquivada && !ocultas.has(c.id));
+  const viagemAtiva = viagemAtivaEm(dados.viagens, data);
   const horizonte = dados.config.horizonteProjecao;
   const parcelasNum = Math.min(48, Math.max(1, Math.round(Number(parcelas) || 1)));
+
+  useEffect(() => {
+    if (montouRef.current) { montouRef.current = false; return; }
+    setViagemMarcada(true);
+  }, [viagemAtiva?.id ?? null]);
 
   function onParcelasChange(v: string) {
     setParcelas(v);
@@ -45,6 +54,8 @@ export default function FormCompra({ cartao, compra, onFechar }: {
     const campos = {
       data, valorTotal: valor, parcelas: parcelasNum, categoriaCartaoId: categoriaId,
       ...(descricao.trim() ? { descricao: descricao.trim() } : {}),
+      // viagemId sempre presente (mesmo undefined) para permitir desmarcar ao editar
+      viagemId: (viagemAtiva && viagemMarcada) ? viagemAtiva.id : undefined,
     };
     if (compra) await repo.atualizarCompraCartao(compra.id, campos, horizonte);
     else await repo.salvarCompraCartao({ cartaoId: cartao.id, ...campos }, horizonte);
@@ -94,6 +105,17 @@ export default function FormCompra({ cartao, compra, onFechar }: {
           <label htmlFor={`${uid}-desc`}>Descrição (opcional)</label>
           <input id={`${uid}-desc`} value={descricao} onChange={(e) => setDescricao(e.target.value)} />
         </div>
+        {viagemAtiva && (
+          <div className="campo">
+            <label htmlFor={`${uid}-viagem`}>
+              <input
+                id={`${uid}-viagem`} type="checkbox"
+                checked={viagemMarcada} onChange={(e) => setViagemMarcada(e.target.checked)}
+              />
+              {' '}Viagem: {viagemAtiva.nome}
+            </label>
+          </div>
+        )}
         <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={salvar}>Salvar</button>
         <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={onFechar}>Cancelar</button>
         {compra && <button className="botao botao-perigo" style={{ alignSelf: 'flex-end' }} onClick={excluir}>Excluir</button>}

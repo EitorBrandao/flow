@@ -120,3 +120,53 @@ it('linha Assinaturas soma as compras de assinatura de todos os cartões e abre 
     vi.useRealTimers();
   }
 });
+
+it('linha da viagem aparece na tabela Por categoria com o total do mês e abre o sheet ao clicar', async () => {
+  const { box, catPix } = await seedBoxComCategoria();
+  const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: catPix.id, data: '2026-07-02', valor: 5000, status: 'efetivo', viagemId: viagem.id,
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  render(<TelaAnalises />);
+  const linhaViagem = screen.getByRole('button', { name: /viagem - /i });
+  expect(within(linhaViagem).getByText('R$ 50,00')).toBeInTheDocument();
+
+  await userEvent.click(linhaViagem);
+  expect(await screen.findByRole('dialog', { name: 'Praia' })).toBeInTheDocument();
+});
+
+it('linha da viagem não aparece em mês sem nenhum gasto marcado', async () => {
+  const { box } = await seedBoxComCategoria();
+  await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  render(<TelaAnalises />);
+  expect(screen.queryByRole('button', { name: /viagem - /i })).not.toBeInTheDocument();
+});
+
+it('card Viagens lista o total histórico da viagem, e continua mostrando a parcela em meses futuros', async () => {
+  const { box } = await seedBoxComCategoria();
+  const cartao = await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+  const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'hotel', ordem: 0 });
+  const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05' });
+  await repo.salvarCompraCartao({
+    cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-01-31',
+    valorTotal: 9000, parcelas: 3, viagemId: viagem.id,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-01-31' });
+
+  render(<TelaAnalises />);
+  const cardViagens = screen.getByText('Viagens').closest('.card') as HTMLElement;
+  expect(within(cardViagens).getByText('Praia')).toBeInTheDocument();
+  expect(within(cardViagens).getByText('R$ 90,00')).toBeInTheDocument(); // total histórico
+
+  // navega para março (compra fechou em fev, parcela 1 vence 05/03): a linha "viagem" deve aparecer
+  await userEvent.click(screen.getByRole('button', { name: 'Próximo mês' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Próximo mês' }));
+  expect(screen.getByRole('button', { name: /viagem - /i })).toBeInTheDocument();
+});

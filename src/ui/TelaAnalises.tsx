@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { compararMeses, mediaMovel3, resumoMensal, serieMensal } from '../domain/aggregations';
-import { addMeses, mesDe } from '../domain/dates';
+import { addMeses, formatarDataBR, mesDe } from '../domain/dates';
 import { resumoAssinaturasDoMes } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
-import type { ID } from '../domain/types';
+import type { ID, Viagem } from '../domain/types';
+import { itensDaViagem, totalViagemNoMes } from '../domain/viagem';
 import { boxIdsSelecionadas, useApp } from '../state/store';
 import AssinaturasResumoSheet from './AssinaturasResumoSheet';
 import FaturaCategoriaSheet from './FaturaCategoriaSheet';
 import LancamentosSheet from './LancamentosSheet';
+import ViagemSheet from './ViagemSheet';
 
 function nomeMes(mes: string): string {
   return new Date(`${mes}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
@@ -23,6 +25,7 @@ export default function TelaAnalises() {
   const [incluirPrevistos, setIncluirPrevistos] = useState(true);
   const [categoriaAberta, setCategoriaAberta] = useState<ID | null>(null);
   const [assinaturasAberto, setAssinaturasAberto] = useState(false);
+  const [viagemAberta, setViagemAberta] = useState<Viagem | null>(null);
   if (!dados) return null;
   const categoriaObj = dados.categorias.find((c) => c.id === categoriaAberta);
   const cartaoDaCategoria = dados.cartoes.find((c) => c.categoriaFaturaId === categoriaAberta) ?? null;
@@ -34,6 +37,18 @@ export default function TelaAnalises() {
   const meses = [-5, -4, -3, -2, -1, 0].map((n) => addMeses(mes, n));
   const media3m = (categoriaId: string) =>
     mediaMovel3(serieMensal(categoriaId, meses, ids, dados.lancamentos, incluirPrevistos)).at(-1);
+  const viagensNoMes = dados.viagens
+    .map((v) => ({
+      viagem: v,
+      total: totalViagemNoMes(v, mes, ids, dados.lancamentos, dados.comprasCartao, dados.cartoes, incluirPrevistos),
+    }))
+    .filter((x) => x.total !== 0);
+  const viagensComTotal = [...dados.viagens]
+    .sort((a, b) => (a.dataInicio < b.dataInicio ? 1 : -1))
+    .map((v) => ({
+      viagem: v,
+      total: itensDaViagem(v, dados.lancamentos, dados.comprasCartao, ids, dados.cartoes, incluirPrevistos).total,
+    }));
 
   return (
     <div className="tela">
@@ -94,9 +109,41 @@ export default function TelaAnalises() {
                 <td>—</td>
               </tr>
             )}
-            {resumo.linhas.length === 0 && resumoAssinaturas.totalCent === 0 && <tr><td colSpan={3}>Sem movimentos no mês.</td></tr>}
+            {viagensNoMes.map(({ viagem, total }) => (
+              <tr
+                key={`viagem-${viagem.id}`}
+                onClick={() => setViagemAberta(viagem)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViagemAberta(viagem); }
+                }}
+                role="button"
+                tabIndex={0}
+                style={{ cursor: 'pointer' }}
+              >
+                <td>viagem - {formatarDataBR(viagem.dataInicio)} ~ {formatarDataBR(viagem.dataFim)}</td>
+                <td className="valor-gasto">{formatarBRL(total)}</td>
+                <td>—</td>
+              </tr>
+            ))}
+            {resumo.linhas.length === 0 && resumoAssinaturas.totalCent === 0 && viagensNoMes.length === 0 && <tr><td colSpan={3}>Sem movimentos no mês.</td></tr>}
           </tbody>
         </table>
+      </div>
+
+      <div className="card rolavel">
+        <h2>Viagens</h2>
+        <div className="lista">
+          {viagensComTotal.map(({ viagem, total }) => (
+            <div className="item" key={viagem.id} style={{ cursor: 'pointer' }} onClick={() => setViagemAberta(viagem)}>
+              <div className="cresce">
+                {viagem.nome}
+                <div className="sub">{formatarDataBR(viagem.dataInicio)} – {formatarDataBR(viagem.dataFim)}</div>
+              </div>
+              <span className="valor-gasto">{formatarBRL(total)}</span>
+            </div>
+          ))}
+          {viagensComTotal.length === 0 && <p className="sub">Nenhuma viagem cadastrada — crie em Ajustes.</p>}
+        </div>
       </div>
 
       <div className="card rolavel">
@@ -153,6 +200,16 @@ export default function TelaAnalises() {
         itens={resumoAssinaturas.itens}
         totalCent={resumoAssinaturas.totalCent}
         onFechar={() => setAssinaturasAberto(false)}
+      />
+      <ViagemSheet
+        aberto={viagemAberta !== null}
+        viagem={viagemAberta}
+        boxIds={ids}
+        lancamentos={dados.lancamentos}
+        comprasCartao={dados.comprasCartao}
+        cartoes={dados.cartoes}
+        incluirPrevistos={incluirPrevistos}
+        onFechar={() => setViagemAberta(null)}
       />
     </div>
   );

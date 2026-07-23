@@ -233,6 +233,7 @@ it('substituirTudo troca completamente os dados e reseta mudancasDesdeBackup', a
     comprasCartao: [],
     recorrenciasCartao: [],
     conferenciasFatura: [],
+    viagens: [],
     config: {
       id: 'config', boxPadraoId: 'nb1', ultimoBackupEm: agora,
       mudancasDesdeBackup: true, horizonteProjecao: `${new Date().getFullYear() + 1}-12-31`,
@@ -431,6 +432,78 @@ it('carregarTudo devolve categorias na ordem canônica (ganho→gasto, ordem, no
   await repo.salvarCategoria({ boxId: box.id, nome: 'salário', tipo: 'ganho', ordem: 5 });
   const dados = await repo.carregarTudo();
   expect(dados.categorias.map((c) => c.nome)).toEqual(['salário', 'aluguel', 'pix', 'mercado']);
+});
+
+describe('viagem', () => {
+  it('salvarViagem persiste e carregarTudo devolve a viagem', async () => {
+    const v = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05' });
+    const dados = await repo.carregarTudo();
+    expect(dados.viagens).toHaveLength(1);
+    expect(dados.viagens[0]).toMatchObject({ id: v.id, nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05' });
+  });
+
+  it('atualizarViagem altera nome e datas', async () => {
+    const v = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05' });
+    await repo.atualizarViagem(v.id, { nome: 'Praia em família', dataFim: '2026-02-06' });
+    const dados = await repo.carregarTudo();
+    expect(dados.viagens[0]).toMatchObject({ nome: 'Praia em família', dataInicio: '2026-01-31', dataFim: '2026-02-06' });
+  });
+
+  it('excluirViagem apaga a viagem e desvincula lançamentos e compras marcados, sem apagá-los', async () => {
+    const { box, gasto } = await boxECategoria();
+    const v = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05' });
+    const l = await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2026-02-01', valor: 5000, status: 'efetivo', viagemId: v.id,
+    });
+    const cartao = await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+    const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'hotel', ordem: 0 });
+    const compra = await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-02-01', valorTotal: 20000, parcelas: 1, viagemId: v.id,
+    }, '2027-12-31');
+
+    await repo.excluirViagem(v.id);
+
+    const dados = await repo.carregarTudo();
+    expect(dados.viagens).toHaveLength(0);
+    expect(dados.lancamentos.find((x) => x.id === l.id)?.viagemId).toBeUndefined();
+    expect(dados.comprasCartao.find((x) => x.id === compra.id)?.viagemId).toBeUndefined();
+  });
+
+  it('atualizarLancamento remove a marcação de viagem quando o patch passa viagemId undefined', async () => {
+    const { box, gasto } = await boxECategoria();
+    const v = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05' });
+    const l = await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2026-02-01', valor: 5000, status: 'efetivo', viagemId: v.id,
+    });
+    await repo.atualizarLancamento(l.id, { viagemId: undefined });
+    const dados = await repo.carregarTudo();
+    expect(dados.lancamentos.find((x) => x.id === l.id)?.viagemId).toBeUndefined();
+  });
+
+  it('atualizarCompraCartao remove a marcação de viagem quando o patch passa viagemId undefined', async () => {
+    const { box } = await boxECategoria();
+    const v = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05' });
+    const cartao = await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+    const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'hotel', ordem: 0 });
+    const compra = await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-02-01', valorTotal: 20000, parcelas: 1, viagemId: v.id,
+    }, '2027-12-31');
+    await repo.atualizarCompraCartao(compra.id, { viagemId: undefined }, '2027-12-31');
+    const dados = await repo.carregarTudo();
+    expect(dados.comprasCartao.find((x) => x.id === compra.id)?.viagemId).toBeUndefined();
+  });
+
+  it('substituirTudo inclui viagens no roundtrip', async () => {
+    await repo.salvarViagem({ nome: 'Velha', dataInicio: '2026-01-01', dataFim: '2026-01-05' });
+    const dados = await repo.carregarTudo();
+    const agora = agoraISO();
+    await repo.substituirTudo({
+      ...dados,
+      viagens: [{ id: 'nv1', nome: 'Nova', dataInicio: '2026-03-01', dataFim: '2026-03-05', criadoEm: agora, alteradoEm: agora }],
+    });
+    const depois = await repo.carregarTudo();
+    expect(depois.viagens.map((v) => v.id)).toEqual(['nv1']);
+  });
 });
 
 it('carregarTudo devolve categorias de cartão ordenadas por ordem e nome', async () => {

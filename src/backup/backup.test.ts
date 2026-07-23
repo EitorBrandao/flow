@@ -6,6 +6,7 @@ function dados(): Dados {
     boxes: [{ id: 'b1', nome: 'eitor', saldoInicial: 100, dataSaldoInicial: '2026-01-01', criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' }],
     categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
     cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [], conferenciasFatura: [],
+    viagens: [],
     config: { id: 'config', boxPadraoId: null, ultimoBackupEm: null, mudancasDesdeBackup: false, horizonteProjecao: '2027-12-31' },
   };
 }
@@ -14,7 +15,7 @@ it('round-trip: gerar → serializar → validar', () => {
   const b = gerarBackup(dados());
   const volta = validarBackup(JSON.parse(JSON.stringify(b)));
   expect(volta.dados.boxes).toHaveLength(1);
-  expect(volta.schema).toBe(2);
+  expect(volta.schema).toBe(3);
 });
 
 it('validarBackup rejeita arquivo de outro app ou schema', () => {
@@ -43,12 +44,12 @@ it('mesclar une registros de ids diferentes', () => {
   expect(mesclar(atual, backup).boxes).toHaveLength(2);
 });
 
-it('gerarBackup emite schema 2', () => {
+it('gerarBackup emite schema 3', () => {
   const b = gerarBackup(dados());
-  expect(b.schema).toBe(2);
+  expect(b.schema).toBe(3);
 });
 
-it('aceita backup schema 1 preenchendo as tabelas do cartão vazias', () => {
+it('aceita backup schema 1 preenchendo as tabelas do cartão e viagens vazias', () => {
   const v1 = {
     app: 'flow', schema: 1, exportadoEm: '2026-01-01T00:00:00Z',
     dados: {
@@ -57,13 +58,28 @@ it('aceita backup schema 1 preenchendo as tabelas do cartão vazias', () => {
     },
   };
   const b = validarBackup(v1);
-  expect(b.schema).toBe(2);
+  expect(b.schema).toBe(3);
   expect(b.dados.cartoes).toEqual([]);
   expect(b.dados.conferenciasFatura).toEqual([]);
+  expect(b.dados.viagens).toEqual([]);
+});
+
+it('aceita backup schema 2 preenchendo viagens vazia', () => {
+  const v2 = {
+    app: 'flow', schema: 2, exportadoEm: '2026-01-01T00:00:00Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [], conferenciasFatura: [],
+      config: { id: 'config' },
+    },
+  };
+  const b = validarBackup(v2);
+  expect(b.schema).toBe(3);
+  expect(b.dados.viagens).toEqual([]);
 });
 
 it('rejeita schema desconhecido', () => {
-  expect(() => validarBackup({ app: 'flow', schema: 3, dados: {} }))
+  expect(() => validarBackup({ app: 'flow', schema: 99, dados: {} }))
     .toThrow(/versão incompatível/);
 });
 
@@ -74,4 +90,13 @@ it('mescla cartões e compras pelo alteradoEm mais recente', () => {
   a.cartoes = [{ ...base, id: 'k1', nome: 'Velho', alteradoEm: '2026-01-01' }];
   b.cartoes = [{ ...base, id: 'k1', nome: 'Novo', alteradoEm: '2026-02-01' }];
   expect(mesclar(a, b).cartoes[0].nome).toBe('Novo');
+});
+
+it('mescla viagens pelo alteradoEm mais recente', () => {
+  const a = dados();
+  const b = dados();
+  const base = { nome: 'Praia', dataInicio: '2026-01-01', dataFim: '2026-01-05', criadoEm: '2026-01-01' };
+  a.viagens = [{ ...base, id: 'v1', nome: 'Velho nome', alteradoEm: '2026-01-01' }];
+  b.viagens = [{ ...base, id: 'v1', nome: 'Novo nome', alteradoEm: '2026-02-01' }];
+  expect(mesclar(a, b).viagens[0].nome).toBe('Novo nome');
 });
