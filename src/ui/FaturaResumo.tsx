@@ -1,8 +1,23 @@
-import { calcularFaturas } from '../domain/fatura';
+import { calcularFaturas, type Fatura } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
 import Sheet from './Sheet';
+
+function LinhaFatura({ item, nomeCat }: { item: Fatura['itens'][number]; nomeCat: (id: string) => string }) {
+  return (
+    <div className="item">
+      <div className="cresce">
+        <div>{item.descricao ?? nomeCat(item.categoriaCartaoId)}</div>
+        <div className="sub">
+          {item.data.split('-').reverse().join('/')} · {nomeCat(item.categoriaCartaoId)}
+          {item.totalParcelas > 1 ? ` · ${item.parcela}/${item.totalParcelas}` : ''}
+        </div>
+      </div>
+      <span className="valor-gasto">{formatarBRL(item.valorCent)}</span>
+    </div>
+  );
+}
 
 export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onFechar: () => void }) {
   const { dados, setAba } = useApp();
@@ -16,7 +31,11 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
   const nomeCatCartao = (id: string) => dados.categoriasCartao.find((c) => c.id === id)?.nome ?? '?';
   const mesBonito = (lanc.faturaMes ?? '').split('-').reverse().join('/');
 
-  function editar() {
+  const aVista = itens.filter((i) => i.totalParcelas === 1).sort((a, b) => b.data.localeCompare(a.data));
+  const parceladas = itens.filter((i) => i.totalParcelas > 1).sort((a, b) => b.data.localeCompare(a.data));
+  const mostrarGrupos = aVista.length > 0 && parceladas.length > 0;
+
+  function abrirCartao() {
     setAba('cartao');
     onFechar();
   }
@@ -32,24 +51,15 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
       )}
     >
       <div className="lista" style={{ marginTop: 8 }}>
-        {itens.map((i) => (
-          <div className="item" key={`${i.compraId}:${i.parcela}`}>
-            <div className="cresce">
-              <div>{i.descricao ?? nomeCatCartao(i.categoriaCartaoId)}</div>
-              <div className="sub">
-                {i.data.split('-').reverse().join('/')} · {nomeCatCartao(i.categoriaCartaoId)}
-                {i.totalParcelas > 1 ? ` · ${i.parcela}/${i.totalParcelas}` : ''}
-              </div>
-            </div>
-            <span className="valor-gasto">{formatarBRL(i.valorCent)}</span>
-          </div>
-        ))}
+        {mostrarGrupos && <p className="rotulo-grupo">À vista</p>}
+        {aVista.map((i) => <LinhaFatura key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCatCartao} />)}
+        {mostrarGrupos && <p className="rotulo-grupo" style={{ marginTop: 6 }}>Parceladas</p>}
+        {parceladas.map((i) => <LinhaFatura key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCatCartao} />)}
         {itens.length === 0 && <p className="sub">Nenhum lançamento nesta fatura.</p>}
       </div>
-      <div className="linha" style={{ marginTop: 12 }}>
-        <button className="botao botao-primario" onClick={editar}>Editar</button>
-        <button className="botao" onClick={onFechar}>Fechar</button>
-      </div>
+      <button className="botao-ver-mais" style={{ marginTop: 10 }} onClick={abrirCartao}>
+        Ver fatura completa na aba Cartão →
+      </button>
     </Sheet>
   );
 }

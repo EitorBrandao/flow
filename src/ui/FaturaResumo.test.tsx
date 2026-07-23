@@ -12,7 +12,7 @@ beforeEach(async () => {
   await db.open();
 });
 
-it('mostra os itens e o total da fatura, e "Editar" navega para a aba Cartão', async () => {
+it('mostra os itens e o total da fatura, e o link navega para a aba Cartão', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
     vi.setSystemTime(new Date('2026-07-01T12:00:00'));
@@ -38,7 +38,7 @@ it('mostra os itens e o total da fatura, e "Editar" navega para a aba Cartão', 
     expect(screen.getByText('Mercado')).toBeInTheDocument();
     expect(screen.getByText((_, el) => el?.tagName === 'P' && /Total:\s*R\$\s*50,00/.test(el.textContent ?? ''))).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    await userEvent.click(screen.getByRole('button', { name: /Ver fatura completa na aba Cartão/ }));
     expect(useApp.getState().aba).toBe('cartao');
     expect(onFechar).toHaveBeenCalledOnce();
   } finally { vi.useRealTimers(); }
