@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "release": "node scripts/release.mjs",
-    "predeploy": "npm run build",
+    "predeploy": "node scripts/predeploy.mjs && npm run build",
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
