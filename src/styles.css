@@ -7,6 +7,7 @@
   --total-pos: #008000; --total-neg: #ff4d4d;
   --aviso-bg: #423306; --aviso-fg: #fcd34d;
   --hoje-bg: #0d4a32;
+  --alca: #ffffff;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -202,7 +203,7 @@ table.tabela tr:last-child td { border-bottom: none; }
 }
 .sheet-alca::before {
   content: ''; width: 40px; height: 4px; border-radius: 2px;
-  background: var(--surface2);
+  background: var(--alca);
 }
 .sheet-cabecalho {
   flex: 0 0 auto; padding: 0 20px 8px;
