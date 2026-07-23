@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
+import { limparDb } from '../test-setup';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { db } from '../db/database';
 import * as repo from '../db/repo';
 import { addDias } from '../domain/dates';
 import { agoraISO, novoId } from '../domain/types';
@@ -9,8 +9,7 @@ import { useApp } from '../state/store';
 import TelaFluxo from './TelaFluxo';
 
 beforeEach(async () => {
-  await db.delete();
-  await db.open();
+  await limparDb();
 });
 
 async function seedBoxComCategoria() {

@@ -1,15 +1,14 @@
 import 'fake-indexeddb/auto';
+import { limparDb } from '../test-setup';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { db } from '../db/database';
 import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import AdicionarSheet from './AdicionarSheet';
 
 beforeEach(async () => {
-  await db.delete();
-  await db.open();
+  await limparDb();
 });
 
 async function montarBox() {
