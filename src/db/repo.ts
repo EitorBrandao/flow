@@ -49,6 +49,10 @@ export async function carregarTudo(): Promise<Dados> {
   // ordem canônica na fonte: todo consumidor do snapshot herda a ordem de Ajustes
   categorias.sort(compararCategorias);
   categoriasCartao.sort(compararCategoriasCartao);
+  // mais recente primeiro: id (UUID) não reflete ordem de criação, então listas que
+  // dependem da ordem de inserção (ex.: lançamentos do mesmo dia no Fluxo) precisam
+  // disso na fonte, não em cada tela.
+  lancamentos.sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
   return {
     boxes, categorias, lancamentos, recorrencias, cenarios,
     cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, config,
