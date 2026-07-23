@@ -1,14 +1,16 @@
-import { motion } from 'framer-motion';
+import { motion, useDragControls } from 'framer-motion';
 import type { ReactNode } from 'react';
 
 interface Props {
   aberto: boolean;
   onFechar: () => void;
   rotulo?: string;
+  cabecalho?: ReactNode;
   children: ReactNode;
 }
 
-export default function Sheet({ aberto, onFechar, rotulo, children }: Props) {
+export default function Sheet({ aberto, onFechar, rotulo, cabecalho, children }: Props) {
+  const dragControls = useDragControls();
   if (!aberto) return null;
   return (
     <motion.div
@@ -20,14 +22,20 @@ export default function Sheet({ aberto, onFechar, rotulo, children }: Props) {
         className="sheet" role="dialog" aria-modal="true" aria-label={rotulo}
         initial={{ y: '100%' }} animate={{ y: 0 }}
         transition={{ type: 'spring', damping: 32, stiffness: 340 }}
-        drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 0.6 }}
+        drag="y" dragListener={false} dragControls={dragControls}
+        dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 0.6 }}
         onDragEnd={(_e, info) => {
           if (info.offset.y > 80 || info.velocity.y > 500) onFechar();
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sheet-alca" aria-hidden="true" />
-        {children}
+        <div
+          className="sheet-alca" aria-hidden="true"
+          onPointerDown={(e) => dragControls.start(e)}
+          style={{ touchAction: 'none' }}
+        />
+        {cabecalho && <div className="sheet-cabecalho">{cabecalho}</div>}
+        <div className="sheet-conteudo">{children}</div>
       </motion.div>
     </motion.div>
   );
