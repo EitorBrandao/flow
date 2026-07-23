@@ -7,20 +7,28 @@ com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado
 
 ### Adicionado
 
-- **Viagem**: agrupamento de gastos (compras de cartão e lançamentos de débito) feitos
-  num período de viagem.
-  - Ajustes → Viagens: cadastro de viagens (nome + data inicial + data final), sem
-    permitir sobreposição de período entre viagens.
-  - Lançar e Nova compra (cartão): checkbox "Viagem: {nome}" aparece só quando a data do
-    lançamento/compra cai dentro do período de uma viagem cadastrada, já vem marcado.
-  - Análises: linha "viagem - dd/mm/aaaa ~ dd/mm/aaaa" no resumo "Por categoria" (soma
-    informativa, não substitui os totais das categorias) e novo card "Viagens" com o
-    total histórico de cada uma; clicar em qualquer um abre o detalhamento por
-    descrição/nota, com subtotal de cada grupo e total geral.
-  - Compras parceladas marcadas numa viagem continuam aparecendo no mês certo da fatura
-    enquanto houver parcela pendente, mesmo depois do fim da viagem.
-  - Excluir uma viagem em Ajustes desvincula os lançamentos e compras marcados (eles
-    continuam existindo normalmente) em vez de apagá-los.
+- Viagem: agrupamento de gastos de cartão e débito feitos num período de viagem, com
+  cadastro em Ajustes → Viagens (nome, data inicial e final).
+- Lançar e Nova compra (cartão): checkbox "Viagem: {nome}" aparece quando a data cai
+  dentro do período de uma viagem cadastrada, já vem marcado.
+- Análises: linha "viagem - dd/mm/aaaa ~ dd/mm/aaaa" no resumo por categoria e novo card
+  "Viagens" com o total de cada uma; ambos abrem o detalhamento por descrição/nota, com
+  subtotal de cada grupo e total geral.
+
+### Alterado
+
+- Compras parceladas marcadas numa viagem continuam aparecendo no mês certo da fatura
+  enquanto houver parcela pendente, mesmo depois do fim da viagem.
+- Excluir uma viagem em Ajustes desvincula os lançamentos e compras marcados, em vez de
+  apagá-los.
+
+## [0.9.1] - 2026-07-20
+
+### Corrigido
+
+- Nova compra (Cartão): o campo Categoria tinha uma opção fantasma ("categoria…", depois
+  deixada em branco) que aparecia na lista ao abrir o seletor; agora a lista mostra só as
+  categorias reais, e o campo começa sem nada selecionado.
 
 ## [0.9.0] - 2026-07-19
 
