@@ -1,1 +1,0 @@
-- Alcinha de arrastar dos sheets fica branca, em vez do cinza azulado anterior — melhora a visibilidade sobre o fundo do sheet.
