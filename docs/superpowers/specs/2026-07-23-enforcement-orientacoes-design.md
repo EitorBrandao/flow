@@ -1,6 +1,6 @@
 # Enforcement automático das orientações — design
 
-Status: rascunho (aguardando aprovação do usuário)
+Status: aprovada em 2026-07-23 (usuário mandou executar; pacotes D e CI continuam pendentes de decisão)
 Data: 2026-07-23
 Origem: `docs/auditoria-orientacoes-2026-07-23.md` (IDs citados abaixo)
 
