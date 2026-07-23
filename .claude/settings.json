@@ -1,5 +1,54 @@
 {
   "enabledPlugins": {
     "superpowers@superpowers-marketplace": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "once": true,
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/lembrete-ui.mjs"],
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/lembrete-deps.mjs"],
+            "timeout": 30,
+            "if": "Bash(npm install*)"
+          },
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/lembrete-deps.mjs"],
+            "timeout": 30,
+            "if": "Bash(npm i *)"
+          },
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/lembrete-deps.mjs"],
+            "timeout": 30,
+            "if": "Bash(npm add*)"
+          },
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/scan-dados-reais.mjs"],
+            "timeout": 30,
+            "if": "Bash(git commit*)"
+          }
+        ]
+      }
+    ]
   }
 }
