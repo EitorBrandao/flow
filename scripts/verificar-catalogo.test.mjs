@@ -25,10 +25,12 @@ describe('verificar-catalogo', () => {
     }
   }
 
-  function runVerificador(rootDir) {
+  function runVerificador(rootDir, excecoes = null) {
     // Roda o script e captura saída + exit code
     try {
-      const output = execFileSync('node', ['scripts/verificar-catalogo.mjs', rootDir], {
+      const args = [rootDir];
+      if (excecoes) args.push(excecoes);
+      const output = execFileSync('node', ['scripts/verificar-catalogo.mjs', ...args], {
         cwd: process.cwd(),
         encoding: 'utf8',
       });
@@ -104,22 +106,64 @@ describe('verificar-catalogo', () => {
     expect(output).toContain('✓');
   });
 
-  it('exceção listada em EXCECOES não é reportada', () => {
-    setupFixture('with-exception', {
+  it('exceção via argumento CLI oculta a divergência', () => {
+    setupFixture('with-exception-cli', {
       'src/styles.css': '.tela { display: flex; }\n.temporaria { color: red; }',
       'docs/estilo/catalogo.md':
         '# Catálogo\n## Classes (em `src/styles.css`)\n| Classe | Para quê |\n|---|---|\n| `.tela` | wrapper |',
     });
 
-    // Modificar EXCECOES via variável de ambiente ou segundo argumento
-    // Por simplicidade, o script permitirá parametrização
+    // Sem argumento: divergência reportada
+    let { output, exitCode } = runVerificador(tmpDir);
+    expect(exitCode).toBe(0);
+    expect(output).toContain('temporaria');
+    expect(output).toContain('CSS, fora do catálogo');
+
+    // Com argumento (exceção): divergência oculta
+    ({ output, exitCode } = runVerificador(tmpDir, 'temporaria'));
+    expect(exitCode).toBe(0);
+    expect(output).not.toContain('temporaria');
+    expect(output).toContain('✓');
+  });
+
+  it('captura múltiplas classes por linha (separadas por / ou vírgula)', () => {
+    setupFixture('multiple-classes', {
+      'src/styles.css': '.botao { padding: 10px; }\n.botao-primario { color: blue; }\n.botao-perigo { color: red; }',
+      'docs/estilo/catalogo.md':
+        '# Catálogo\n## Classes (em `src/styles.css`)\n| Classe | Para quê |\n|---|---|\n| `.botao`, `.botao-primario`, `.botao-perigo` | botões |',
+    });
+
     const { output, exitCode } = runVerificador(tmpDir);
     expect(exitCode).toBe(0);
-    // Sem exceção, temporaria deve aparecer
-    expect(output).toContain('temporaria');
+    expect(output).toContain('✓');
+    expect(output).not.toContain('botao');
+  });
 
-    // Agora com exceção (simulando uma chamada do script com exceção)
-    // Isso requer ajuste no script para aceitar EXCECOES como param
+  it('wildcard `.prefixo-*` cobre `.prefixo-xxx`', () => {
+    setupFixture('wildcard-classes', {
+      'src/styles.css': '.grafico-expandido-linha { width: 100%; }\n.grafico-expandido-area { fill: blue; }',
+      'docs/estilo/catalogo.md':
+        '# Catálogo\n## Classes (em `src/styles.css`)\n| Classe | Para quê |\n|---|---|\n| `.grafico-expandido-*` | classes internas do gráfico |',
+    });
+
+    const { output, exitCode } = runVerificador(tmpDir);
+    expect(exitCode).toBe(0);
+    expect(output).toContain('✓');
+  });
+
+  it('menção em prosa de componente NÃO é reportada como catalogado', () => {
+    setupFixture('prose-mention-not-cataloged', {
+      'src/ui/LancEditor.tsx': 'export default function LancEditor() {}',
+      'src/ui/Sheet.tsx': 'export default function Sheet() {}',
+      'docs/estilo/catalogo.md':
+        '# Catálogo\n## Componentes compartilhados (em `src/ui/`)\n- **`Sheet.tsx`** — bottom sheet. Usado em editores modais como `LancEditor`. Não confundir com TelaXxx.tsx.',
+    });
+
+    const { output, exitCode } = runVerificador(tmpDir);
+    expect(exitCode).toBe(0);
+    // LancEditor e TelaXxx não devem ser capturados da prosa
+    expect(output).toContain('LancEditor');
+    expect(output).toContain('componente, fora do catálogo');
   });
 
   it('ignora Tela*.tsx e *.test.tsx', () => {
