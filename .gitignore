@@ -6,6 +6,9 @@
 .claude/settings.local.json
 deploy.bat
 
+# Backlog local (não versionado — pedido do usuário em 2026-07-23)
+TODO.md
+
 # Node
 node_modules/
 dist/
