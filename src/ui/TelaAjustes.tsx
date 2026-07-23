@@ -7,11 +7,12 @@ import Cartoes from './ajustes/Cartoes';
 import Categorias from './ajustes/Categorias';
 import CategoriasCartao from './ajustes/CategoriasCartao';
 import Recorrencias from './ajustes/Recorrencias';
+import Viagens from './ajustes/Viagens';
 import Wiki from './ajustes/Wiki';
 import Versao from './ajustes/Versao';
 
 type Secao = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'cartoes'
-  | 'categoriasCartao' | 'assinaturas' | 'backup' | 'wiki' | 'versao';
+  | 'categoriasCartao' | 'assinaturas' | 'viagens' | 'backup' | 'wiki' | 'versao';
 
 const ITENS: { id: Secao; rotulo: string }[] = [
   { id: 'categorias', rotulo: 'Categorias' },
@@ -20,6 +21,7 @@ const ITENS: { id: Secao; rotulo: string }[] = [
   { id: 'cartoes', rotulo: 'Cartões' },
   { id: 'categoriasCartao', rotulo: 'Categorias do cartão' },
   { id: 'assinaturas', rotulo: 'Assinaturas do cartão' },
+  { id: 'viagens', rotulo: 'Viagens' },
   { id: 'backup', rotulo: 'Backup e restauração' },
   { id: 'wiki', rotulo: 'Wiki' },
   { id: 'versao', rotulo: 'Versão' },
@@ -51,6 +53,7 @@ export default function TelaAjustes() {
       {secao === 'cartoes' && <Cartoes />}
       {secao === 'categoriasCartao' && <CategoriasCartao />}
       {secao === 'assinaturas' && <Assinaturas />}
+      {secao === 'viagens' && <Viagens />}
       {secao === 'backup' && <Backup />}
       {secao === 'wiki' && <Wiki />}
       {secao === 'versao' && <Versao />}

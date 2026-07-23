@@ -3,6 +3,25 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.10.0] - 2026-07-22
+
+### Adicionado
+
+- **Viagem**: agrupamento de gastos (compras de cartão e lançamentos de débito) feitos
+  num período de viagem.
+  - Ajustes → Viagens: cadastro de viagens (nome + data inicial + data final), sem
+    permitir sobreposição de período entre viagens.
+  - Lançar e Nova compra (cartão): checkbox "Viagem: {nome}" aparece só quando a data do
+    lançamento/compra cai dentro do período de uma viagem cadastrada, já vem marcado.
+  - Análises: linha "viagem - dd/mm/aaaa ~ dd/mm/aaaa" no resumo "Por categoria" (soma
+    informativa, não substitui os totais das categorias) e novo card "Viagens" com o
+    total histórico de cada uma; clicar em qualquer um abre o detalhamento por
+    descrição/nota, com subtotal de cada grupo e total geral.
+  - Compras parceladas marcadas numa viagem continuam aparecendo no mês certo da fatura
+    enquanto houver parcela pendente, mesmo depois do fim da viagem.
+  - Excluir uma viagem em Ajustes desvincula os lançamentos e compras marcados (eles
+    continuam existindo normalmente) em vez de apagá-los.
+
 ## [0.9.0] - 2026-07-19
 
 ### Adicionado

@@ -6,7 +6,7 @@ import {
   agoraISO, novoId,
   type Box, type Cartao, type Categoria, type CategoriaCartao, type Cenario, type CompraCartao,
   type Config, type Dados, type ID, type ISODate, type Lancamento, type Recorrencia,
-  type RecorrenciaCartao, type StatusLancamento, type TipoCategoria,
+  type RecorrenciaCartao, type StatusLancamento, type TipoCategoria, type Viagem,
 } from '../domain/types';
 import { db } from './database';
 
@@ -39,25 +39,25 @@ export async function carregarTudo(): Promise<Dados> {
   }
   const [
     boxes, categorias, lancamentos, recorrencias, cenarios,
-    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura,
+    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens,
   ] = await Promise.all([
     db.boxes.toArray(), db.categorias.toArray(), db.lancamentos.toArray(),
     db.recorrencias.toArray(), db.cenarios.toArray(),
     db.cartoes.toArray(), db.categoriasCartao.toArray(), db.comprasCartao.toArray(),
-    db.recorrenciasCartao.toArray(), db.conferenciasFatura.toArray(),
+    db.recorrenciasCartao.toArray(), db.conferenciasFatura.toArray(), db.viagens.toArray(),
   ]);
   // ordem canônica na fonte: todo consumidor do snapshot herda a ordem de Ajustes
   categorias.sort(compararCategorias);
   categoriasCartao.sort(compararCategoriasCartao);
   return {
     boxes, categorias, lancamentos, recorrencias, cenarios,
-    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, config,
+    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, config,
   };
 }
 
 export interface NovoLancamento {
   boxId: ID; categoriaId: ID; data: ISODate; valor: number;
-  nota?: string; status: StatusLancamento; cenarioId?: ID;
+  nota?: string; status: StatusLancamento; cenarioId?: ID; viagemId?: ID;
 }
 
 export async function salvarLancamento(n: NovoLancamento): Promise<Lancamento> {
@@ -72,7 +72,7 @@ export async function salvarLancamento(n: NovoLancamento): Promise<Lancamento> {
 
 export async function atualizarLancamento(
   id: ID,
-  patch: Partial<Pick<Lancamento, 'valor' | 'data' | 'nota' | 'categoriaId' | 'status'>>,
+  patch: Partial<Pick<Lancamento, 'valor' | 'data' | 'nota' | 'categoriaId' | 'status' | 'viagemId'>>,
 ): Promise<void> {
   await db.transaction('rw', db.lancamentos, db.config, async () => {
     await db.lancamentos.update(id, { ...patch, alteradoEm: agoraISO() });
@@ -226,7 +226,7 @@ export async function substituirTudo(d: Dados): Promise<void> {
   const tabelas = [
     db.boxes, db.categorias, db.lancamentos, db.recorrencias, db.cenarios,
     db.cartoes, db.categoriasCartao, db.comprasCartao, db.recorrenciasCartao,
-    db.conferenciasFatura, db.config,
+    db.conferenciasFatura, db.viagens, db.config,
   ];
   await db.transaction('rw', tabelas, async () => {
     await Promise.all(tabelas.map((t) => t.clear()));
@@ -240,7 +240,41 @@ export async function substituirTudo(d: Dados): Promise<void> {
     await db.comprasCartao.bulkAdd(d.comprasCartao);
     await db.recorrenciasCartao.bulkAdd(d.recorrenciasCartao);
     await db.conferenciasFatura.bulkAdd(d.conferenciasFatura);
+    await db.viagens.bulkAdd(d.viagens);
     await db.config.put({ ...d.config, mudancasDesdeBackup: false });
+  });
+}
+
+// ---------- Viagem ----------
+
+export interface NovaViagem { nome: string; dataInicio: ISODate; dataFim: ISODate }
+
+export async function salvarViagem(n: NovaViagem): Promise<Viagem> {
+  const agora = agoraISO();
+  const v: Viagem = { id: novoId(), criadoEm: agora, alteradoEm: agora, ...n };
+  await db.transaction('rw', db.viagens, db.config, async () => {
+    await db.viagens.add(v);
+    await marcarMudanca();
+  });
+  return v;
+}
+
+export async function atualizarViagem(
+  id: ID,
+  patch: Partial<Pick<Viagem, 'nome' | 'dataInicio' | 'dataFim'>>,
+): Promise<void> {
+  await db.transaction('rw', db.viagens, db.config, async () => {
+    await db.viagens.update(id, { ...patch, alteradoEm: agoraISO() });
+    await marcarMudanca();
+  });
+}
+
+export async function excluirViagem(id: ID): Promise<void> {
+  await db.transaction('rw', db.viagens, db.lancamentos, db.comprasCartao, db.config, async () => {
+    await db.lancamentos.where('viagemId').equals(id).modify({ viagemId: undefined });
+    await db.comprasCartao.where('viagemId').equals(id).modify({ viagemId: undefined });
+    await db.viagens.delete(id);
+    await marcarMudanca();
   });
 }
 
@@ -300,7 +334,7 @@ export async function atualizarCategoriaCartao(
 
 export interface NovaCompraCartao {
   cartaoId: ID; categoriaCartaoId: ID; data: ISODate; valorTotal: number;
-  parcelas: number; descricao?: string;
+  parcelas: number; descricao?: string; viagemId?: ID;
 }
 
 export async function salvarCompraCartao(n: NovaCompraCartao, horizonte: ISODate): Promise<CompraCartao> {
@@ -316,7 +350,7 @@ export async function salvarCompraCartao(n: NovaCompraCartao, horizonte: ISODate
 
 export async function atualizarCompraCartao(
   id: ID,
-  patch: Partial<Pick<CompraCartao, 'data' | 'valorTotal' | 'parcelas' | 'descricao' | 'categoriaCartaoId'>>,
+  patch: Partial<Pick<CompraCartao, 'data' | 'valorTotal' | 'parcelas' | 'descricao' | 'categoriaCartaoId' | 'viagemId'>>,
   horizonte: ISODate,
 ): Promise<void> {
   await db.transaction('rw', db.comprasCartao, db.config, async () => {

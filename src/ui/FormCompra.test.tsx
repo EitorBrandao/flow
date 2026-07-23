@@ -118,6 +118,115 @@ it('editar uma compra existente mostra o valor atual formatado e permite trocá-
   } finally { vi.useRealTimers(); }
 });
 
+it('checkbox de viagem aparece marcado quando a data cai no período de uma viagem e marca a compra', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao } = await montarCartao();
+    const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+    const onFechar = vi.fn();
+    render(<FormCompra cartao={cartao} onFechar={onFechar} />);
+    const checkbox = screen.getByLabelText(`Viagem: ${viagem.nome}`) as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+
+    await userEvent.type(screen.getByLabelText('Valor'), '100,00');
+    await userEvent.selectOptions(screen.getByLabelText('Categoria'), screen.getByRole('option', { name: 'mercado' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
+    const compras = await db.comprasCartao.toArray();
+    expect(compras[0].viagemId).toBe(viagem.id);
+  } finally { vi.useRealTimers(); }
+});
+
+it('checkbox de viagem some quando a data está fora do período', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao } = await montarCartao();
+    const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+    render(<FormCompra cartao={cartao} onFechar={() => {}} />);
+    expect(screen.getByLabelText(`Viagem: ${viagem.nome}`)).toBeInTheDocument();
+
+    const inputData = screen.getByLabelText('Data') as HTMLInputElement;
+    await userEvent.clear(inputData);
+    await userEvent.type(inputData, '2026-08-01');
+    expect(screen.queryByLabelText(`Viagem: ${viagem.nome}`)).not.toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});
+
+it('desmarcar o checkbox de viagem não marca a compra', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao } = await montarCartao();
+    const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+    const onFechar = vi.fn();
+    render(<FormCompra cartao={cartao} onFechar={onFechar} />);
+    await userEvent.click(screen.getByLabelText(`Viagem: ${viagem.nome}`));
+
+    await userEvent.type(screen.getByLabelText('Valor'), '100,00');
+    await userEvent.selectOptions(screen.getByLabelText('Categoria'), screen.getByRole('option', { name: 'mercado' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
+    const compras = await db.comprasCartao.toArray();
+    expect(compras[0].viagemId).toBeUndefined();
+  } finally { vi.useRealTimers(); }
+});
+
+it('editar uma compra já marcada com viagem preserva o checkbox marcado ao abrir o form', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao, catCartao } = await montarCartao();
+    const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+    const compra = await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-02',
+      valorTotal: 8000, parcelas: 1, viagemId: viagem.id,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+    render(<FormCompra cartao={cartao} compra={compra} onFechar={() => {}} />);
+    const checkbox = screen.getByLabelText(`Viagem: ${viagem.nome}`) as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+  } finally { vi.useRealTimers(); }
+});
+
+it('desmarcar o checkbox ao editar uma compra já marcada remove a tag de viagem', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao, catCartao } = await montarCartao();
+    const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+    const compra = await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-02',
+      valorTotal: 8000, parcelas: 1, viagemId: viagem.id,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+    const onFechar = vi.fn();
+    render(<FormCompra cartao={cartao} compra={compra} onFechar={onFechar} />);
+    await userEvent.click(screen.getByLabelText(`Viagem: ${viagem.nome}`));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
+    const atualizada = await db.comprasCartao.get(compra.id);
+    expect(atualizada?.viagemId).toBeUndefined();
+  } finally { vi.useRealTimers(); }
+});
+
 it('digitar Parcelas já pagas recalcula Data para trás em meses', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
