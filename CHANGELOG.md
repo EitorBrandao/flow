@@ -29,6 +29,25 @@ com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado
 - Campo de categoria manual no formulário de Assinaturas.
 - Bloqueio que impedia mais de um cartão ativo por box.
 
+## [0.10.0] - 2026-07-22
+
+### Adicionado
+
+- Viagem: agrupamento de gastos de cartão e débito feitos num período de viagem, com
+  cadastro em Ajustes → Viagens (nome, data inicial e final).
+- Lançar e Nova compra (cartão): checkbox "Viagem: {nome}" aparece quando a data cai
+  dentro do período de uma viagem cadastrada, já vem marcado.
+- Análises: linha "viagem - dd/mm/aaaa ~ dd/mm/aaaa" no resumo por categoria e novo card
+  "Viagens" com o total de cada uma; ambos abrem o detalhamento por descrição/nota, com
+  subtotal de cada grupo e total geral.
+
+### Alterado
+
+- Compras parceladas marcadas numa viagem continuam aparecendo no mês certo da fatura
+  enquanto houver parcela pendente, mesmo depois do fim da viagem.
+- Excluir uma viagem em Ajustes desvincula os lançamentos e compras marcados, em vez de
+  apagá-los.
+
 ## [0.9.1] - 2026-07-20
 
 ### Corrigido

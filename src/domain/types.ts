@@ -39,6 +39,7 @@ export interface Lancamento extends Entidade {
   cenarioId?: ID; // lançamento hipotético; nunca 'efetivo'
   cartaoId?: ID;     // lançamento de fatura: cartão dono
   faturaMes?: string; // 'AAAA-MM' do vencimento — chave estável da fatura
+  viagemId?: ID; // lançamento marcado como gasto de uma viagem
 }
 
 export interface Recorrencia extends Entidade {
@@ -79,6 +80,7 @@ export interface CompraCartao extends Entidade {
   parcelas: number;   // >= 1; 1 = à vista
   descricao?: string;
   recorrenciaCartaoId?: ID; // se gerada por assinatura
+  viagemId?: ID; // compra marcada como gasto de uma viagem
 }
 
 export interface RecorrenciaCartao extends Entidade {
@@ -105,6 +107,13 @@ export interface Cenario extends Entidade {
   ligado: boolean;
 }
 
+/** Agrupa gastos (compras de cartão e lançamentos de débito) feitos num período de viagem. */
+export interface Viagem extends Entidade {
+  nome: string;
+  dataInicio: ISODate;
+  dataFim: ISODate;
+}
+
 export interface Config {
   id: 'config';
   boxPadraoId: ID | null;
@@ -126,6 +135,7 @@ export interface Dados {
   comprasCartao: CompraCartao[];
   recorrenciasCartao: RecorrenciaCartao[];
   conferenciasFatura: ConferenciaFatura[];
+  viagens: Viagem[];
   config: Config;
 }
 

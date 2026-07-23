@@ -5,6 +5,7 @@ import CampoValor from './CampoValor';
 import SeletorCategoria from './SeletorCategoria';
 import { categoriasFaturaIds } from '../domain/fatura';
 import type { TipoCategoria } from '../domain/types';
+import { viagemAtivaEm } from '../domain/viagem';
 import { useApp } from '../state/store';
 
 export default function TelaLancar() {
@@ -15,8 +16,14 @@ export default function TelaLancar() {
   const [data, setData] = useState(hoje);
   const [nota, setNota] = useState('');
   const [previsto, setPrevisto] = useState(false);
+  const [viagemMarcada, setViagemMarcada] = useState(true);
   const [salvo, setSalvo] = useState(false);
   const salvoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const viagemAtiva = viagemAtivaEm(dados?.viagens ?? [], data);
+
+  useEffect(() => {
+    setViagemMarcada(true);
+  }, [viagemAtiva?.id ?? null]);
 
   useEffect(() => () => {
     if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
@@ -41,9 +48,11 @@ export default function TelaLancar() {
       boxId: boxId!, categoriaId: categoriaId!, data, valor: cents,
       ...(nota ? { nota } : {}),
       status: previsto ? 'previsto' : (data > hoje ? 'previsto' : 'efetivo'),
+      ...(viagemAtiva && viagemMarcada ? { viagemId: viagemAtiva.id } : {}),
     });
     await recarregar();
-    setCents(0); setCategoriaId(null); setNota(''); setData(hoje); setPrevisto(false); setSalvo(true);
+    setCents(0); setCategoriaId(null); setNota(''); setData(hoje);
+    setPrevisto(false); setViagemMarcada(true); setSalvo(true);
     if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
     salvoTimeoutRef.current = setTimeout(() => setSalvo(false), 2500);
   }
@@ -85,6 +94,17 @@ export default function TelaLancar() {
           {' '}Marcar como previsto
         </label>
       </div>
+      {viagemAtiva && (
+        <div className="campo">
+          <label htmlFor="viagem">
+            <input
+              id="viagem" type="checkbox"
+              checked={viagemMarcada} onChange={(e) => setViagemMarcada(e.target.checked)}
+            />
+            {' '}Viagem: {viagemAtiva.nome}
+          </label>
+        </div>
+      )}
       <button className="botao botao-primario" disabled={!valido} onClick={lancar} style={{ padding: 14 }}>
         Lançar
       </button>
