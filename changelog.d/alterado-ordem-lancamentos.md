@@ -1,1 +1,0 @@
-- Lançamentos passam a ser ordenados por data e hora de criação (com precisão de milissegundos), mais recente primeiro — antes, lançamentos do mesmo dia podiam aparecer em ordem arbitrária.

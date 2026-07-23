@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.11.7] - 2026-07-23
+
+### Alterado
+
+- Lançamentos passam a ser ordenados por data e hora de criação (com precisão de milissegundos), mais recente primeiro — antes, lançamentos do mesmo dia podiam aparecer em ordem arbitrária.
+
 ## [0.11.6] - 2026-07-23
 
 ### Removido
