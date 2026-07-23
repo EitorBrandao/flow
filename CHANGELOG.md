@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.11.5] - 2026-07-23
+
+### Alterado
+
+- Nome da aba atual aparece no cabeçalho fixo do topo, entre a box selecionada e a engrenagem de Ajustes.
+- Engrenagem de Ajustes sempre volta ao menu inicial, mesmo clicada de dentro de uma seção (ex.: Boxes, Categorias) já aberta.
+
 ## [0.11.4] - 2026-07-23
 
 ### Alterado

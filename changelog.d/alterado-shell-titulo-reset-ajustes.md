@@ -1,2 +1,0 @@
-- Nome da aba atual aparece no cabeçalho fixo do topo, entre a box selecionada e a engrenagem de Ajustes.
-- Engrenagem de Ajustes sempre volta ao menu inicial, mesmo clicada de dentro de uma seção (ex.: Boxes, Categorias) já aberta.
