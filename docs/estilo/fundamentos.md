@@ -42,6 +42,7 @@ Token novo → `nivel-3-novo-token.md`. Mudar valor de token existente → níve
 | `--total-pos` / `--total-neg` | `#008000` / `#ff4d4d` | totalizador do dia no Fluxo (cabeçalho, fora da pílula de transação) |
 | `--aviso-bg` / `--aviso-fg` | `#423306` / `#fcd34d` | aviso âmbar (ex.: backup atrasado) |
 | `--hoje-bg` | `#0d4a32` | fundo de destaque da linha "hoje" na lista do Fluxo |
+| `--alca` | `#ffffff` | alcinha de arrastar dos sheets (`.sheet-alca`) — exceção ao padrão de superfície azulada, por legibilidade; ver `docs/superpowers/specs/2026-07-23-alcinha-branca-design.md` |
 
 ## Escalas
 
