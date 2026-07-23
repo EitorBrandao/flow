@@ -78,7 +78,6 @@ export default function TelaFluxo() {
 
   return (
     <div className="tela">
-      <h2>Fluxo</h2>
       {serie.length >= 2 ? (
         <button
           type="button" className="card grafico-expandido-abrir" aria-label="Expandir gráfico de saldo"
