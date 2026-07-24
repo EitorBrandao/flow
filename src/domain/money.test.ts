@@ -1,4 +1,4 @@
-import { formatarBRL, empurrarDigito, apagarUltimoDigito, digitosParaCentavos } from './money';
+import { formatarBRL, formatarSobraCompacta, empurrarDigito, apagarUltimoDigito, digitosParaCentavos } from './money';
 
 describe('formatarBRL', () => {
   it('formata centavos como moeda pt-BR', () => {
@@ -54,5 +54,20 @@ describe('digitosParaCentavos', () => {
   });
   it('extrai dígitos de texto formatado com pontos e vírgulas', () => {
     expect(digitosParaCentavos('R$ 1.234,56')).toBe(123456);
+  });
+});
+
+describe('formatarSobraCompacta', () => {
+  it('formata positivo com sinal + e sem casas decimais', () => {
+    expect(formatarSobraCompacta(187000)).toBe('+1.870');
+  });
+  it('formata negativo com sinal − (menos Unicode) e valor absoluto', () => {
+    expect(formatarSobraCompacta(-41000)).toBe('−410');
+  });
+  it('arredonda centavos ao real mais próximo', () => {
+    expect(formatarSobraCompacta(93050)).toBe('+931'); // 930,50 arredonda pra 931
+  });
+  it('zero é positivo (sinal +)', () => {
+    expect(formatarSobraCompacta(0)).toBe('+0');
   });
 });
