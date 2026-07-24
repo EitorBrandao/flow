@@ -20,6 +20,14 @@ async function prepararCartao() {
   return cartao;
 }
 
+async function prepararBoxComCartao(nomeBox: string, nomeCartao: string) {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: nomeBox, saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cartao = await repo.salvarCartao({ boxId: box.id, nome: nomeCartao, diaFechamento: 10, diaVencimento: 20 }, '2027-12-31');
+  return { box, cartao };
+}
+
 it('renomeia uma categoria de cartão existente via edição inline', async () => {
   const cartao = await prepararCartao();
   const cat = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
@@ -75,4 +83,21 @@ it('categoria automática de assinaturas não aparece na lista de categorias do 
   render(<CategoriasCartao />);
 
   expect(screen.queryByText('Assinaturas')).not.toBeInTheDocument();
+});
+
+it('trocar de box na tela de Categorias do cartão mostra só os cartões daquela box no seletor', async () => {
+  await prepararBoxComCartao('eitor', 'Nubank');
+  await prepararBoxComCartao('ju', 'Santander');
+  await useApp.getState().iniciar();
+
+  render(<CategoriasCartao />);
+  await userEvent.click(screen.getByRole('button', { name: 'eitor' }));
+
+  expect(screen.getByRole('button', { name: 'Nubank' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Santander' })).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'ju' }));
+
+  expect(screen.getByRole('button', { name: 'Santander' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Nubank' })).not.toBeInTheDocument();
 });

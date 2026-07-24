@@ -77,8 +77,9 @@ tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
   categoria por toque, sem abrir o picker nativo do `<select>`. Usado em `TelaLancar.tsx`,
   `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `TelaSimulador.tsx`.
 - **`SeletorPills.tsx`** — pílulas em linha (`.pills`) pra escolher entre poucas opções sem
-  abrir o picker nativo do `<select>`. Usado em `Recorrencias.tsx` (Box),
-  `CategoriasCartao.tsx` e `Assinaturas.tsx` (Cartão).
+  abrir o picker nativo do `<select>`. Usado em `Recorrencias.tsx`, `CategoriasCartao.tsx`
+  e `Assinaturas.tsx` (Box e Cartão nas três — cada tela isola por box antes de listar seus
+  cartões, categorias ou recorrências).
 - **`AssinaturasResumoSheet.tsx`** — sheet de Análises com o total de assinaturas do mês,
   agrupado por cartão (`.rotulo-grupo` + `.recuo-1`, mesmo padrão do `LancamentosSheet`).
 - **`ComposicaoBarChart.tsx`** — barras horizontais de composição por categoria na aba

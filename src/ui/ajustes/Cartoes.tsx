@@ -12,7 +12,7 @@ export default function Cartoes() {
   const uid = useId();
   if (!dados) return null;
   const horizonte = dados.config.horizonteProjecao;
-  const nomeBox = (id: string) => dados.boxes.find((b) => b.id === id)?.nome ?? '?';
+  const cartoesDaBox = dados.cartoes.filter((c) => c.boxId === boxId);
 
   function clampDia(t: string): number {
     return Math.min(31, Math.max(1, Math.round(Number(t) || 1)));
@@ -80,12 +80,12 @@ export default function Cartoes() {
         </button>
       </div>
 
-      <p className="rotulo-grupo">Cadastrados</p>
+      <p className="rotulo-grupo">Cadastrados nesta box</p>
       <div className="lista">
-        {dados.cartoes.map((c) => (
+        {cartoesDaBox.map((c) => (
           <div className="item" key={c.id} style={{ opacity: c.ativo ? 1 : 0.5 }}>
             <div className="cresce">
-              {c.nome} <span className="badge">{nomeBox(c.boxId)}</span>
+              {c.nome}
               <div className="sub">fecha dia {c.diaFechamento} · vence dia {c.diaVencimento}</div>
             </div>
             <button className="botao" onClick={() => editar(c.id)}>Editar</button>
@@ -94,7 +94,7 @@ export default function Cartoes() {
             </button>
           </div>
         ))}
-        {dados.cartoes.length === 0 && <p className="sub">Nenhum cartão cadastrado.</p>}
+        {cartoesDaBox.length === 0 && <p className="sub">Nenhum cartão cadastrado nesta box.</p>}
       </div>
     </div>
   );

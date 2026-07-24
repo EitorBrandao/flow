@@ -56,7 +56,8 @@ function ItemCategoriaCartao({
 
 export default function CategoriasCartao() {
   const { dados, recarregar } = useApp();
-  const [cartaoId, setCartaoId] = useState(dados?.cartoes[0]?.id ?? '');
+  const [boxId, setBoxId] = useState(dados?.boxes.find((b) => b.saldoInicial != null)?.id ?? '');
+  const [cartaoId, setCartaoId] = useState(dados?.cartoes.find((c) => c.boxId === boxId)?.id ?? '');
   const [nome, setNome] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nomeEdit, setNomeEdit] = useState('');
@@ -66,9 +67,19 @@ export default function CategoriasCartao() {
     return <div className="tela"><h2>Categorias do cartão</h2><p className="sub">Cadastre um cartão primeiro.</p></div>;
   }
   const ocultas = categoriasAssinaturasIds(dados.cartoes);
+  const cartoesDaBox = dados.cartoes.filter((c) => c.boxId === boxId);
   const cats = dados.categoriasCartao.filter((c) => c.cartaoId === cartaoId && !ocultas.has(c.id));
   const ativas = cats.filter((c) => !c.arquivada);
   const arquivadas = cats.filter((c) => c.arquivada);
+
+  function trocarBox(novoBoxId: string) {
+    setBoxId(novoBoxId);
+    const primeiroCartao = dados!.cartoes.find((c) => c.boxId === novoBoxId);
+    setCartaoId(primeiroCartao?.id ?? '');
+    setEditandoId(null);
+    setNomeEdit('');
+    setNome('');
+  }
 
   async function criar() {
     if (!nome.trim() || !cartaoId) return;
@@ -124,32 +135,47 @@ export default function CategoriasCartao() {
     <div className="tela">
       <h2>Categorias do cartão</h2>
       <div className="campo">
-        <label>Cartão</label>
+        <label>Box</label>
         <SeletorPills
-          opcoes={dados.cartoes.map((c) => ({ id: c.id, nome: c.nome }))}
-          selecionadaId={cartaoId}
-          onSelecionar={setCartaoId}
+          opcoes={dados.boxes.filter((b) => b.saldoInicial != null).map((b) => ({ id: b.id, nome: b.nome }))}
+          selecionadaId={boxId}
+          onSelecionar={trocarBox}
         />
       </div>
 
-      <div className="linha">
-        <div className="campo" style={{ flex: 1 }}>
-          <label htmlFor={`${uid}-nova`}>Nova categoria do cartão</label>
-          <input id={`${uid}-nova`} placeholder="nome" value={nome} onChange={(e) => setNome(e.target.value)} />
-        </div>
-        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={criar}>Criar</button>
-      </div>
-
-      <Reorder.Group as="div" className="lista" axis="y" values={ativas} onReorder={reordenar}>
-        {ativas.map((c) => <ItemCategoriaCartao key={c.id} {...props(c)} />)}
-      </Reorder.Group>
-
-      {arquivadas.length > 0 && (
+      {cartoesDaBox.length === 0 ? (
+        <p className="sub">Nenhum cartão nesta box.</p>
+      ) : (
         <>
-          <p className="rotulo-grupo">Arquivados</p>
-          <Reorder.Group as="div" className="lista" axis="y" values={arquivadas} onReorder={reordenar}>
-            {arquivadas.map((c) => <ItemCategoriaCartao key={c.id} {...props(c)} />)}
+          <div className="campo">
+            <label>Cartão</label>
+            <SeletorPills
+              opcoes={cartoesDaBox.map((c) => ({ id: c.id, nome: c.nome }))}
+              selecionadaId={cartaoId}
+              onSelecionar={setCartaoId}
+            />
+          </div>
+
+          <div className="linha">
+            <div className="campo" style={{ flex: 1 }}>
+              <label htmlFor={`${uid}-nova`}>Nova categoria do cartão</label>
+              <input id={`${uid}-nova`} placeholder="nome" value={nome} onChange={(e) => setNome(e.target.value)} />
+            </div>
+            <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={criar}>Criar</button>
+          </div>
+
+          <Reorder.Group as="div" className="lista" axis="y" values={ativas} onReorder={reordenar}>
+            {ativas.map((c) => <ItemCategoriaCartao key={c.id} {...props(c)} />)}
           </Reorder.Group>
+
+          {arquivadas.length > 0 && (
+            <>
+              <p className="rotulo-grupo">Arquivados</p>
+              <Reorder.Group as="div" className="lista" axis="y" values={arquivadas} onReorder={reordenar}>
+                {arquivadas.map((c) => <ItemCategoriaCartao key={c.id} {...props(c)} />)}
+              </Reorder.Group>
+            </>
+          )}
         </>
       )}
     </div>
