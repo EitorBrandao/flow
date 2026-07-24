@@ -77,3 +77,10 @@ tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
   `CategoriasCartao.tsx` e `Assinaturas.tsx` (Cartão).
 - **`AssinaturasResumoSheet.tsx`** — sheet de Análises com o total de assinaturas do mês,
   agrupado por cartão (`.rotulo-grupo` + `.recuo-1`, mesmo padrão do `LancamentosSheet`).
+- **`ComposicaoBarChart.tsx`** — barras horizontais de composição por categoria na aba
+  Análises (substitui a antiga tabela "Por categoria"); escala compartilhada com as
+  barrinhas do card resumo (`base = max(totalGanhos, totalGastos)`), mesmo contrato de
+  acessibilidade (`role="button"` por linha) que a tabela anterior usava.
+- **`EvolucaoMensalChart.tsx`** — evolução de ganho/gasto/sobra dos últimos 6 meses na aba
+  Análises: barras agrupadas + linha de tendência tracejada, via `recharts` carregado sob
+  demanda (`React.lazy`), mesmo padrão do `FluxoChartModal`.
