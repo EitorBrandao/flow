@@ -31,6 +31,7 @@ export default function TelaAnalises() {
   const cartaoDaCategoria = dados.cartoes.find((c) => c.categoriaFaturaId === categoriaAberta) ?? null;
   const ids = boxIdsSelecionadas(dados, boxSel);
   const resumo = resumoMensal(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
+  const base = Math.max(resumo.totalGanhos, resumo.totalGastos, 1);
   const comparativo = compararMeses(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
   const resumoAssinaturas = resumoAssinaturasDoMes(mes, ids, dados.cartoes, dados.comprasCartao, dados.recorrenciasCartao);
   // tendência: média móvel de 3 meses terminando no mês selecionado
@@ -67,6 +68,14 @@ export default function TelaAnalises() {
           <span>Ganhos <strong className="valor-ganho">{formatarBRL(resumo.totalGanhos)}</strong></span>
           <span>Gastos <strong className="valor-gasto">{formatarBRL(resumo.totalGastos)}</strong></span>
           <span>Sobra <strong className={resumo.sobra >= 0 ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(resumo.sobra)}</strong></span>
+        </div>
+        <div className="resumo-barras">
+          <div className="resumo-barra-trilho">
+            <div className="resumo-barra-preenchimento ganho" style={{ width: `${Math.round((resumo.totalGanhos / base) * 10000) / 100}%` }} />
+          </div>
+          <div className="resumo-barra-trilho">
+            <div className="resumo-barra-preenchimento gasto" style={{ width: `${Math.round((resumo.totalGastos / base) * 10000) / 100}%` }} />
+          </div>
         </div>
       </div>
 
