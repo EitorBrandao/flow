@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { compararMeses, mediaMovel3, resumoMensal, serieMensal } from '../domain/aggregations';
 import { addMeses, formatarDataBR, mesDe } from '../domain/dates';
 import { resumoAssinaturasDoMes } from '../domain/fatura';
@@ -7,16 +7,13 @@ import type { ID, Viagem } from '../domain/types';
 import { itensDaViagem, totalViagemNoMes } from '../domain/viagem';
 import { boxIdsSelecionadas, useApp } from '../state/store';
 import AssinaturasResumoSheet from './AssinaturasResumoSheet';
+import ComposicaoBarChart, { type LinhaComposicao } from './ComposicaoBarChart';
 import FaturaCategoriaSheet from './FaturaCategoriaSheet';
 import LancamentosSheet from './LancamentosSheet';
 import ViagemSheet from './ViagemSheet';
 
 function nomeMes(mes: string): string {
   return new Date(`${mes}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-}
-
-function pct(x: number | null): string {
-  return x == null ? '—' : `${(x * 100).toFixed(1)}%`;
 }
 
 export default function TelaAnalises() {
@@ -44,6 +41,32 @@ export default function TelaAnalises() {
       total: totalViagemNoMes(v, mes, ids, dados.lancamentos, dados.comprasCartao, dados.cartoes, incluirPrevistos),
     }))
     .filter((x) => x.total !== 0);
+  const linhasComposicao: LinhaComposicao[] = [
+    ...resumo.linhas.map((l) => ({
+      chave: l.categoriaId, nome: l.nome, tipo: l.tipo, total: l.total, pctDaRenda: l.pctDaRenda,
+    })),
+    ...(resumoAssinaturas.totalCent > 0
+      ? [{
+        chave: 'assinaturas', nome: 'Assinaturas', badge: 'todos os cartões',
+        tipo: 'gasto' as const, total: resumoAssinaturas.totalCent, pctDaRenda: null,
+      }]
+      : []),
+    ...viagensNoMes.map(({ viagem, total }) => ({
+      chave: `viagem:${viagem.id}`,
+      nome: `viagem - ${formatarDataBR(viagem.dataInicio)} ~ ${formatarDataBR(viagem.dataFim)}`,
+      tipo: 'gasto' as const, total, pctDaRenda: null,
+    })),
+  ];
+
+  const abrirComposicao = (chave: string) => {
+    if (chave === 'assinaturas') { setAssinaturasAberto(true); return; }
+    if (chave.startsWith('viagem:')) {
+      const viagem = dados.viagens.find((v) => v.id === chave.slice('viagem:'.length));
+      if (viagem) setViagemAberta(viagem);
+      return;
+    }
+    setCategoriaAberta(chave);
+  };
   const viagensComTotal = [...dados.viagens]
     .sort((a, b) => (a.dataInicio < b.dataInicio ? 1 : -1))
     .map((v) => ({
@@ -79,63 +102,12 @@ export default function TelaAnalises() {
         </div>
       </div>
 
-      <div className="card rolavel">
+      <div className="card">
         <h2>Por categoria</h2>
-        <table className="tabela">
-          <thead>
-            <tr><th>Categoria</th><th>Total</th><th>% da renda</th></tr>
-          </thead>
-          <tbody>
-            {resumo.linhas.map((l) => (
-              <tr
-                key={l.categoriaId}
-                onClick={() => setCategoriaAberta(l.categoriaId)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCategoriaAberta(l.categoriaId); }
-                }}
-                role="button"
-                tabIndex={0}
-                style={{ cursor: 'pointer' }}
-              >
-                <td>{l.nome}</td>
-                <td className={l.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(l.total)}</td>
-                <td>{pct(l.pctDaRenda)}</td>
-              </tr>
-            ))}
-            {resumoAssinaturas.totalCent > 0 && (
-              <tr
-                onClick={() => setAssinaturasAberto(true)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAssinaturasAberto(true); }
-                }}
-                role="button"
-                tabIndex={0}
-                style={{ cursor: 'pointer' }}
-              >
-                <td>Assinaturas <span className="badge">todos os cartões</span></td>
-                <td className="valor-gasto">{formatarBRL(resumoAssinaturas.totalCent)}</td>
-                <td>—</td>
-              </tr>
-            )}
-            {viagensNoMes.map(({ viagem, total }) => (
-              <tr
-                key={`viagem-${viagem.id}`}
-                onClick={() => setViagemAberta(viagem)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setViagemAberta(viagem); }
-                }}
-                role="button"
-                tabIndex={0}
-                style={{ cursor: 'pointer' }}
-              >
-                <td>viagem - {formatarDataBR(viagem.dataInicio)} ~ {formatarDataBR(viagem.dataFim)}</td>
-                <td className="valor-gasto">{formatarBRL(total)}</td>
-                <td>—</td>
-              </tr>
-            ))}
-            {resumo.linhas.length === 0 && resumoAssinaturas.totalCent === 0 && viagensNoMes.length === 0 && <tr><td colSpan={3}>Sem movimentos no mês.</td></tr>}
-          </tbody>
-        </table>
+        <p className="sub" style={{ margin: '-4px 0 0' }}>
+          barras na mesma escala do card acima (100% = maior entre ganhos e gastos do mês)
+        </p>
+        <ComposicaoBarChart linhas={linhasComposicao} base={base} onClicarLinha={abrirComposicao} />
       </div>
 
       <div className="card rolavel">
