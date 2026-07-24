@@ -147,6 +147,37 @@ it('linha da viagem não aparece em mês sem nenhum gasto marcado', async () => 
   expect(screen.queryByRole('button', { name: /viagem - /i })).not.toBeInTheDocument();
 });
 
+it('mostra barrinhas de ganho/gasto no card resumo, na mesma escala (maior = 100%)', async () => {
+  const { box } = await seedBoxComCategoria();
+  const catSalario = await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  const catAluguel = await repo.salvarCategoria({ boxId: box.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-05', valor: 200000, status: 'efetivo' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catAluguel.id, data: '2026-07-10', valor: 100000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  const { container } = render(<TelaAnalises />);
+  const barras = container.querySelectorAll('.resumo-barra-preenchimento');
+  expect(barras).toHaveLength(2);
+  expect((barras[0] as HTMLElement).style.width).toBe('100%'); // ganho é o maior -> base
+  expect((barras[1] as HTMLElement).style.width).toBe('50%'); // gasto é metade do ganho
+});
+
+it('barra da composição usa a mesma escala do card resumo (maior entre ganhos e gastos)', async () => {
+  const { box } = await seedBoxComCategoria();
+  const catSalario = await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  const catAluguel = await repo.salvarCategoria({ boxId: box.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-05', valor: 400000, status: 'efetivo' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catAluguel.id, data: '2026-07-10', valor: 100000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  const { container } = render(<TelaAnalises />);
+  const barras = container.querySelectorAll('.composicao-preenchimento');
+  expect((barras[0] as HTMLElement).style.width).toBe('100%'); // salario: 400000/400000 (base = maior dos dois)
+  expect((barras[1] as HTMLElement).style.width).toBe('25%'); // aluguel: 100000/400000
+});
+
 it('card Viagens lista o total histórico da viagem, e continua mostrando a parcela em meses futuros', async () => {
   const { box } = await seedBoxComCategoria();
   const cartao = await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
@@ -168,4 +199,29 @@ it('card Viagens lista o total histórico da viagem, e continua mostrando a parc
   await userEvent.click(screen.getByRole('button', { name: 'Próximo mês' }));
   await userEvent.click(screen.getByRole('button', { name: 'Próximo mês' }));
   expect(screen.getByRole('button', { name: /viagem - /i })).toBeInTheDocument();
+});
+
+it('mostra o card Evolução mensal com a sobra do mês selecionado', async () => {
+  const { box, catPix } = await seedBoxComCategoria();
+  const catSalario = await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-05', valor: 500000, status: 'efetivo' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2026-07-10', valor: 100000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  render(<TelaAnalises />);
+  expect(await screen.findByText('Evolução mensal')).toBeInTheDocument();
+  expect(await screen.findByText('+4.000')).toBeInTheDocument(); // sobra de julho: 500000-100000 centavos = R$4.000,00
+});
+
+it('título Comparativo fica fora do container que rola horizontalmente', async () => {
+  const { box, catPix } = await seedBoxComCategoria();
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2026-07-05', valor: 30000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  render(<TelaAnalises />);
+  const titulo = screen.getByText('Comparativo');
+  expect(titulo.closest('.rolavel')).toBeNull();
+  expect(screen.getByRole('table').closest('.rolavel')).not.toBeNull();
 });
