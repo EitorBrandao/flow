@@ -85,9 +85,13 @@ export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenario
           />
         )}
       </svg>
-      <div className="linha" style={{ justifyContent: 'space-between', fontSize: 12, color: 'var(--muted)' }}>
+      <div className="grafico-rodape">
         <span>{serie[0].data.slice(8, 10)}/{serie[0].data.slice(5, 7)}</span>
-        <span>mín {formatarBRL(min)} · máx {formatarBRL(max)}</span>
+        <span>
+          mín <b className={min >= 0 ? 'pos' : 'neg'}>{formatarBRL(min)}</b>
+          {' · máx '}
+          <b className={max >= 0 ? 'pos' : 'neg'}>{formatarBRL(max)}</b>
+        </span>
         <span>{serie.at(-1)!.data.slice(8, 10)}/{serie.at(-1)!.data.slice(5, 7)}</span>
       </div>
     </div>
