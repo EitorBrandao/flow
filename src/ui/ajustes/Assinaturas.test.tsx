@@ -19,6 +19,23 @@ async function prepararCartao(nome = 'Nubank') {
   return repo.salvarCartao({ boxId: box.id, nome, diaFechamento: 10, diaVencimento: 20 }, '2027-12-31');
 }
 
+async function prepararDoisCartoesNaMesmaBox() {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const nubank = await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31');
+  const inter = await repo.salvarCartao({ boxId: box.id, nome: 'Inter', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31');
+  return { nubank, inter };
+}
+
+async function prepararBoxComCartao(nomeBox: string, nomeCartao: string) {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: nomeBox, saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cartao = await repo.salvarCartao({ boxId: box.id, nome: nomeCartao, diaFechamento: 10, diaVencimento: 20 }, '2027-12-31');
+  return { box, cartao };
+}
+
 it('cria uma assinatura sem pedir categoria, usando a categoria Assinaturas automática', async () => {
   const cartao = await prepararCartao();
   await useApp.getState().iniciar();
@@ -40,8 +57,7 @@ it('cria uma assinatura sem pedir categoria, usando a categoria Assinaturas auto
 });
 
 it('trocar de cartão mostra só as assinaturas daquele cartão', async () => {
-  const nubank = await prepararCartao('Nubank');
-  const inter = await prepararCartao('Inter');
+  const { nubank, inter } = await prepararDoisCartoesNaMesmaBox();
   await repo.salvarAssinatura({
     cartaoId: nubank.id, categoriaCartaoId: await repo.categoriaAssinaturasDe(nubank.id),
     valor: 3990, dataInicio: '2026-07-01', diaDoMes: 8, parcelas: null, descricao: 'Netflix',
@@ -63,4 +79,22 @@ it('trocar de cartão mostra só as assinaturas daquele cartão', async () => {
 
   expect(await screen.findByText('iCloud')).toBeInTheDocument();
   expect(screen.queryByText('Netflix')).not.toBeInTheDocument();
+});
+
+it('trocar de box na tela de Assinaturas mostra só os cartões daquela box no seletor', async () => {
+  await prepararBoxComCartao('eitor', 'Nubank');
+  await prepararBoxComCartao('ju', 'Santander');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+
+  render(<Assinaturas />);
+  await userEvent.click(screen.getByRole('button', { name: 'eitor' }));
+
+  expect(screen.getByRole('button', { name: 'Nubank' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Santander' })).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'ju' }));
+
+  expect(screen.getByRole('button', { name: 'Santander' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Nubank' })).not.toBeInTheDocument();
 });

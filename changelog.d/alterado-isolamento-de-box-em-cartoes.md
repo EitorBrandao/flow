@@ -1,0 +1,2 @@
+- Ajustes → Cartões: a lista de cartões cadastrados agora mostra só os da box selecionada, em vez de todos os cartões de todas as boxes juntos.
+- Ajustes → Assinaturas e Categorias do cartão: adicionado um seletor de box antes do seletor de cartão, para nenhum cartão de outra box aparecer como opção.

@@ -57,3 +57,26 @@ it('permite dois cartões ativos na mesma box', async () => {
   expect(cartoes).toHaveLength(2);
   expect(cartoes.every((c) => c.ativo)).toBe(true);
 });
+
+it('trocar de box na tela de Cartões mostra só os cartões daquela box', async () => {
+  const agora = agoraISO();
+  const eitor = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  const ju = { id: novoId(), nome: 'ju', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(eitor);
+  await repo.salvarBox(ju);
+  await repo.salvarCartao({ boxId: eitor.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+  await repo.salvarCartao({ boxId: ju.id, nome: 'Santander', diaFechamento: 29, diaVencimento: 5 }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+
+  render(<Cartoes />);
+  await userEvent.selectOptions(screen.getByLabelText('Box do cartão'), 'eitor');
+
+  expect(screen.getByText('Nubank', { exact: false })).toBeInTheDocument();
+  expect(screen.queryByText('Santander', { exact: false })).not.toBeInTheDocument();
+
+  await userEvent.selectOptions(screen.getByLabelText('Box do cartão'), 'ju');
+
+  expect(screen.getByText('Santander', { exact: false })).toBeInTheDocument();
+  expect(screen.queryByText('Nubank', { exact: false })).not.toBeInTheDocument();
+});
