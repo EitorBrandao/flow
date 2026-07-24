@@ -132,6 +132,15 @@ strong.valor-ganho, strong.valor-gasto {
   background: none; padding: 0; border-radius: 0;
 }
 
+/* rodapé "mín · máx" sob o gráfico de saldo (BalanceChart, aba Hoje/Fluxo); os
+   modificadores .pos/.neg também valem para .grafico-expandido-rodape (modal) */
+.grafico-rodape {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.grafico-rodape .pos, .grafico-expandido-rodape .pos { color: var(--pos); }
+.grafico-rodape .neg, .grafico-expandido-rodape .neg { color: var(--neg); }
+
 .resumo-barras { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
 .resumo-barra-trilho { height: 8px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
 .resumo-barra-preenchimento { height: 100%; border-radius: 999px; }
