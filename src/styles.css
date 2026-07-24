@@ -132,6 +132,12 @@ strong.valor-ganho, strong.valor-gasto {
   background: none; padding: 0; border-radius: 0;
 }
 
+.resumo-barras { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.resumo-barra-trilho { height: 8px; border-radius: 999px; background: var(--surface2); overflow: hidden; }
+.resumo-barra-preenchimento { height: 100%; border-radius: 999px; }
+.resumo-barra-preenchimento.ganho { background: var(--pos); }
+.resumo-barra-preenchimento.gasto { background: var(--neg); }
+
 .badge {
   font-size: 11px; padding: 3px 9px; border-radius: 999px;
   background: var(--surface2); color: var(--muted);

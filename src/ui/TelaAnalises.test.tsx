@@ -148,6 +148,22 @@ it('linha da viagem não aparece em mês sem nenhum gasto marcado', async () => 
   expect(screen.queryByRole('button', { name: /viagem - /i })).not.toBeInTheDocument();
 });
 
+it('mostra barrinhas de ganho/gasto no card resumo, na mesma escala (maior = 100%)', async () => {
+  const { box } = await seedBoxComCategoria();
+  const catSalario = await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  const catAluguel = await repo.salvarCategoria({ boxId: box.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-05', valor: 200000, status: 'efetivo' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catAluguel.id, data: '2026-07-10', valor: 100000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  const { container } = render(<TelaAnalises />);
+  const barras = container.querySelectorAll('.resumo-barra-preenchimento');
+  expect(barras).toHaveLength(2);
+  expect((barras[0] as HTMLElement).style.width).toBe('100%'); // ganho é o maior -> base
+  expect((barras[1] as HTMLElement).style.width).toBe('50%'); // gasto é metade do ganho
+});
+
 it('card Viagens lista o total histórico da viagem, e continua mostrando a parcela em meses futuros', async () => {
   const { box } = await seedBoxComCategoria();
   const cartao = await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
