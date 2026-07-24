@@ -64,6 +64,29 @@ it('arquivar move a categoria para a seção Arquivados, com badge de tipo', asy
   expect(screen.getByText('gasto', { selector: '.badge' })).toBeInTheDocument();
 });
 
+it('trocar a box no chip do topo troca as categorias mostradas em Ajustes', async () => {
+  const agora = agoraISO();
+  const eitor = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  const ju = { id: novoId(), nome: 'ju', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(eitor);
+  await repo.salvarBox(ju);
+  await repo.salvarCategoria({ boxId: eitor.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+  await repo.salvarCategoria({ boxId: ju.id, nome: 'faculdade', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+
+  useApp.setState({ boxSel: eitor.id });
+  const { rerender } = render(<Categorias />);
+
+  expect(screen.getByText('aluguel')).toBeInTheDocument();
+  expect(screen.queryByText('faculdade')).not.toBeInTheDocument();
+
+  useApp.setState({ boxSel: ju.id });
+  rerender(<Categorias />);
+
+  expect(screen.getByText('faculdade')).toBeInTheDocument();
+  expect(screen.queryByText('aluguel')).not.toBeInTheDocument();
+});
+
 it('restaurar devolve a categoria para a seção do seu tipo', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };

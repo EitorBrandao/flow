@@ -1,17 +1,15 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { categoriasFaturaIds } from '../../domain/fatura';
 import { formatarBRL } from '../../domain/money';
 import type { TipoCategoria } from '../../domain/types';
-import { useApp } from '../../state/store';
+import { boxIdEfetivo, useApp } from '../../state/store';
 import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 import SeletorCategoria from '../SeletorCategoria';
-import SeletorPills from '../SeletorPills';
 
 export default function Recorrencias() {
-  const { dados, hoje, recarregar } = useApp();
-  const [boxId, setBoxId] = useState(dados?.boxes.find((b) => b.saldoInicial != null)?.id ?? '');
+  const { dados, boxSel, hoje, recarregar } = useApp();
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
   const [valor, setValor] = useState(0);
   const [categoriaId, setCategoriaId] = useState<string | null>(null);
@@ -20,7 +18,22 @@ export default function Recorrencias() {
   const [parcelas, setParcelas] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const uid = useId();
+  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+
+  useEffect(() => {
+    setEditandoId(null);
+    limparForm();
+  }, [boxId]);
+
   if (!dados) return null;
+  if (boxId == null) {
+    return (
+      <div className="tela">
+        <h2>Recorrências</h2>
+        <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+      </div>
+    );
+  }
   const recs = dados.recorrencias.filter((r) => !r.cenarioId && r.boxId === boxId);
   const nomeCat = (id: string) => dados.categorias.find((c) => c.id === id)?.nome ?? '?';
   const tipoCat = (id: string) => dados.categorias.find((c) => c.id === id)?.tipo;
@@ -30,12 +43,6 @@ export default function Recorrencias() {
 
   function limparForm() {
     setValor(0); setCategoriaId(null); setDataInicio(hoje); setDiaDoMes('1'); setParcelas('');
-  }
-
-  function trocarBox(novoBoxId: string) {
-    setBoxId(novoBoxId);
-    setEditandoId(null);
-    limparForm();
   }
 
   function trocarTipo(novoTipo: TipoCategoria) {
@@ -66,14 +73,14 @@ export default function Recorrencias() {
     if (editandoId) {
       const original = recs.find((r) => r.id === editandoId)!;
       await repo.salvarRecorrencia({
-        ...original, boxId, categoriaId, valor, dataInicio,
+        ...original, boxId: boxId!, categoriaId, valor, dataInicio,
         diaDoMes: diaDoMesNum, parcelas: parcelasNum,
       }, dados!.config.horizonteProjecao);
       setEditandoId(null);
       limparForm();
     } else {
       await repo.salvarRecorrencia({
-        boxId, categoriaId, valor, dataInicio,
+        boxId: boxId!, categoriaId, valor, dataInicio,
         diaDoMes: diaDoMesNum, parcelas: parcelasNum,
       }, dados!.config.horizonteProjecao);
       setValor(0); setParcelas('');
@@ -96,15 +103,6 @@ export default function Recorrencias() {
   return (
     <div className="tela">
       <h2>Recorrências</h2>
-
-      <div className="campo">
-        <label>Box</label>
-        <SeletorPills
-          opcoes={dados.boxes.filter((b) => b.saldoInicial != null).map((b) => ({ id: b.id, nome: b.nome }))}
-          selecionadaId={boxId}
-          onSelecionar={trocarBox}
-        />
-      </div>
 
       <h2>{editandoId ? 'Editar recorrência' : 'Nova recorrência'}</h2>
       <div className="campo">

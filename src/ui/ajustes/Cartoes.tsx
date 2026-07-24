@@ -1,16 +1,29 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import * as repo from '../../db/repo';
-import { useApp } from '../../state/store';
+import { boxIdEfetivo, useApp } from '../../state/store';
 
 export default function Cartoes() {
-  const { dados, recarregar } = useApp();
-  const [boxId, setBoxId] = useState(dados?.boxes.find((b) => b.saldoInicial != null)?.id ?? '');
+  const { dados, boxSel, recarregar } = useApp();
   const [nome, setNome] = useState('');
   const [diaFechamento, setDiaFechamento] = useState('28');
   const [diaVencimento, setDiaVencimento] = useState('5');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const uid = useId();
+  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+
+  useEffect(() => {
+    setEditandoId(null); setNome('');
+  }, [boxId]);
+
   if (!dados) return null;
+  if (boxId == null) {
+    return (
+      <div className="tela">
+        <h2>Cartões</h2>
+        <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+      </div>
+    );
+  }
   const horizonte = dados.config.horizonteProjecao;
   const cartoesDaBox = dados.cartoes.filter((c) => c.boxId === boxId);
 
@@ -20,14 +33,14 @@ export default function Cartoes() {
 
   function editar(id: string) {
     const c = dados!.cartoes.find((x) => x.id === id)!;
-    setEditandoId(id); setBoxId(c.boxId); setNome(c.nome);
+    setEditandoId(id); setNome(c.nome);
     setDiaFechamento(String(c.diaFechamento)); setDiaVencimento(String(c.diaVencimento));
   }
 
   async function salvar() {
-    if (!nome.trim() || !boxId) return;
+    if (!nome.trim()) return;
     const campos = {
-      boxId, nome: nome.trim(), diaFechamento: clampDia(diaFechamento),
+      boxId: boxId!, nome: nome.trim(), diaFechamento: clampDia(diaFechamento),
       diaVencimento: clampDia(diaVencimento),
     };
     if (editandoId) {
@@ -50,15 +63,6 @@ export default function Cartoes() {
     <div className="tela">
       <h2>{editandoId ? 'Editar cartão' : 'Novo cartão'}</h2>
       <div className="linha">
-        <div className="campo">
-          <label htmlFor={`${uid}-box`}>Box do cartão</label>
-          <select id={`${uid}-box`} value={boxId}
-            onChange={(e) => setBoxId(e.target.value)}>
-            {dados.boxes.filter((b) => b.saldoInicial != null).map((b) => (
-              <option key={b.id} value={b.id}>{b.nome}</option>
-            ))}
-          </select>
-        </div>
         <div className="campo cresce">
           <label htmlFor={`${uid}-nome`}>Nome do cartão</label>
           <input id={`${uid}-nome`} placeholder="ex.: Nubank" value={nome} onChange={(e) => setNome(e.target.value)} />

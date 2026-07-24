@@ -85,18 +85,19 @@ it('categoria automática de assinaturas não aparece na lista de categorias do 
   expect(screen.queryByText('Assinaturas')).not.toBeInTheDocument();
 });
 
-it('trocar de box na tela de Categorias do cartão mostra só os cartões daquela box no seletor', async () => {
-  await prepararBoxComCartao('eitor', 'Nubank');
-  await prepararBoxComCartao('ju', 'Santander');
+it('trocar a box no chip do topo troca os cartões oferecidos no seletor de Categorias do cartão', async () => {
+  const { box: eitor } = await prepararBoxComCartao('eitor', 'Nubank');
+  const { box: ju } = await prepararBoxComCartao('ju', 'Santander');
   await useApp.getState().iniciar();
+  useApp.setState({ boxSel: eitor.id });
 
-  render(<CategoriasCartao />);
-  await userEvent.click(screen.getByRole('button', { name: 'eitor' }));
+  const { rerender } = render(<CategoriasCartao />);
 
   expect(screen.getByRole('button', { name: 'Nubank' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Santander' })).not.toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole('button', { name: 'ju' }));
+  useApp.setState({ boxSel: ju.id });
+  rerender(<CategoriasCartao />);
 
   expect(screen.getByRole('button', { name: 'Santander' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Nubank' })).not.toBeInTheDocument();

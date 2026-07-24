@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
@@ -19,13 +19,14 @@ it('salva saldo inicial "0,00" como zero, não como sem-saldo-próprio', async (
   await useApp.getState().iniciar();
 
   render(<Boxes />);
-  const checkbox = screen.getByLabelText('Esta box tem saldo próprio');
+  const cardEitor = within(screen.getByText('eitor').closest('.card') as HTMLElement);
+  const checkbox = cardEitor.getByLabelText('Esta box tem saldo próprio');
   await userEvent.click(checkbox);
-  const saldoInput = screen.getByLabelText('Saldo inicial');
+  const saldoInput = cardEitor.getByLabelText('Saldo inicial');
   await userEvent.click(saldoInput);
-  const dataInput = screen.getByLabelText('Data do saldo');
+  const dataInput = cardEitor.getByLabelText('Data do saldo');
   await userEvent.type(dataInput, '2026-01-01');
-  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  await userEvent.click(cardEitor.getByRole('button', { name: 'Salvar' }));
 
   const atualizado = await db.boxes.get(box.id);
   expect(atualizado?.saldoInicial).toBe(0);
@@ -39,10 +40,11 @@ it('desmarcar "tem saldo próprio" salva null', async () => {
   await useApp.getState().iniciar();
 
   render(<Boxes />);
-  const checkbox = screen.getByLabelText('Esta box tem saldo próprio');
+  const cardEitor = within(screen.getByText('eitor').closest('.card') as HTMLElement);
+  const checkbox = cardEitor.getByLabelText('Esta box tem saldo próprio');
   expect(checkbox).toBeChecked();
   await userEvent.click(checkbox);
-  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  await userEvent.click(cardEitor.getByRole('button', { name: 'Salvar' }));
 
   const atualizado = await db.boxes.get(box.id);
   expect(atualizado?.saldoInicial).toBe(null);

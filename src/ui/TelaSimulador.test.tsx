@@ -28,3 +28,23 @@ it('categoria da fatura de um cartão não aparece no select de categoria do cen
   expect(screen.getByRole('button', { name: 'mercado' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Nubank/ })).not.toBeInTheDocument();
 });
+
+it('categoria de outra box não aparece no select de categoria do cenário hipotético', async () => {
+  const agora = agoraISO();
+  const eitor = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  const ju = { id: novoId(), nome: 'ju', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(eitor);
+  await repo.salvarBox(ju);
+  await repo.salvarCategoria({ boxId: eitor.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await repo.salvarCategoria({ boxId: ju.id, nome: 'faculdade', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-02', boxSel: eitor.id });
+
+  render(<TelaSimulador />);
+  await userEvent.type(screen.getByPlaceholderText(/novo cenário/), 'teste');
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Detalhar' }));
+
+  expect(screen.getByRole('button', { name: 'mercado' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'faculdade' })).not.toBeInTheDocument();
+});

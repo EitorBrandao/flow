@@ -3,7 +3,7 @@ import { limparDb } from '../test-setup';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
-import { boxIdsSelecionadas, useApp } from './store';
+import { boxIdEfetivo, boxIdsSelecionadas, useApp } from './store';
 
 beforeEach(async () => {
   await limparDb();
@@ -74,7 +74,47 @@ it('boot sincroniza faturas de cartão montado direto no banco', async () => {
 it('boxIdsSelecionadas: casa = todas as boxes', async () => {
   await useApp.getState().iniciar();
   const s = useApp.getState();
-  expect(boxIdsSelecionadas(s.dados!, 'casa')).toEqual([]);
+  expect(boxIdsSelecionadas(s.dados!, 'casa')).toEqual([s.dados!.boxes[0].id]); // só a "casa" autocriada
   expect(boxIdsSelecionadas({ ...s.dados!, boxes: [{ id: 'a' } as never, { id: 'b' } as never] }, 'casa')).toEqual(['a', 'b']);
   expect(boxIdsSelecionadas(s.dados!, 'xyz')).toEqual(['xyz']);
+});
+
+it('iniciar cria a box "casa" automaticamente quando ela ainda não existe', async () => {
+  await useApp.getState().iniciar();
+  const s = useApp.getState();
+  const casa = s.dados!.boxes.find((b) => b.nome === 'casa');
+  expect(casa).toBeDefined();
+  expect(casa!.saldoInicial).toBeNull();
+});
+
+it('iniciar não duplica a box "casa" se ela já existir', async () => {
+  const agora = agoraISO();
+  const casaExistente = { id: novoId(), nome: 'casa', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(casaExistente);
+
+  await useApp.getState().iniciar();
+  const s = useApp.getState();
+  const boxesCasa = s.dados!.boxes.filter((b) => b.nome === 'casa');
+  expect(boxesCasa).toHaveLength(1);
+  expect(boxesCasa[0].id).toBe(casaExistente.id);
+});
+
+describe('boxIdEfetivo', () => {
+  it('retorna o próprio id quando a seleção não é "casa"', async () => {
+    await useApp.getState().iniciar();
+    const s = useApp.getState();
+    expect(boxIdEfetivo(s.dados!, 'algum-id')).toBe('algum-id');
+  });
+
+  it('resolve o sentinela "casa" pro id da box de nome "casa"', async () => {
+    await useApp.getState().iniciar();
+    const s = useApp.getState();
+    const casa = s.dados!.boxes.find((b) => b.nome === 'casa')!;
+    expect(boxIdEfetivo(s.dados!, 'casa')).toBe(casa.id);
+  });
+
+  it('retorna null se a box "casa" não existir (ex.: foi renomeada)', () => {
+    const dadosSemCasa = { boxes: [{ id: 'x', nome: 'eitor' } as never] } as never;
+    expect(boxIdEfetivo(dadosSemCasa, 'casa')).toBeNull();
+  });
 });

@@ -3,35 +3,37 @@ import * as repo from '../db/repo';
 import { categoriasFaturaIds } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import { agoraISO, novoId, type Cenario } from '../domain/types';
-import { useApp } from '../state/store';
+import { boxIdEfetivo, useApp } from '../state/store';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import SeletorCategoria from './SeletorCategoria';
 
 function FormHipotetico({ cenario }: { cenario: Cenario }) {
-  const { dados, hoje, recarregar } = useApp();
+  const { dados, boxSel, hoje, recarregar } = useApp();
   const [valor, setValor] = useState(0);
   const [categoriaId, setCategoriaId] = useState<string | null>(null);
   const [data, setData] = useState(hoje);
   const [parcelas, setParcelas] = useState('1');
   const uid = useId();
   if (!dados) return null;
+  const boxId = boxIdEfetivo(dados, boxSel);
+  if (boxId == null) {
+    return <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>;
+  }
   const ocultas = categoriasFaturaIds(dados.cartoes);
-  const categorias = dados.categorias.filter((c) => !c.arquivada && !ocultas.has(c.id));
-  const boxDe = (catId: string | null) => dados.categorias.find((c) => c.id === catId)?.boxId;
+  const categorias = dados.categorias.filter((c) => c.boxId === boxId && !c.arquivada && !ocultas.has(c.id));
 
   async function adicionar() {
     const cents = valor;
     const nParcelas = Math.max(1, Number(parcelas) || 1);
-    const boxId = boxDe(categoriaId);
-    if (cents <= 0 || !boxId || categoriaId == null) return;
+    if (cents <= 0 || categoriaId == null) return;
     if (nParcelas === 1) {
       await repo.salvarLancamento({
-        boxId, categoriaId, data, valor: cents, status: 'previsto', cenarioId: cenario.id,
+        boxId: boxId!, categoriaId, data, valor: cents, status: 'previsto', cenarioId: cenario.id,
       });
     } else {
       await repo.salvarRecorrencia({
-        boxId, categoriaId, valor: Math.round(cents / nParcelas),
+        boxId: boxId!, categoriaId, valor: Math.round(cents / nParcelas),
         dataInicio: data, diaDoMes: Number(data.slice(8, 10)), parcelas: nParcelas,
         nota: cenario.nome, cenarioId: cenario.id,
       }, dados!.config.horizonteProjecao);

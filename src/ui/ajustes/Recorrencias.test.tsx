@@ -74,17 +74,17 @@ it('trocar de box na tela de Recorrências mostra só as recorrências e categor
     '2027-12-31',
   );
   await useApp.getState().iniciar();
-  useApp.setState({ hoje: '2026-07-02' });
+  useApp.setState({ hoje: '2026-07-02', boxSel: eitor.id });
 
-  render(<Recorrencias />);
-  await userEvent.click(screen.getByRole('button', { name: 'eitor' }));
+  const { rerender } = render(<Recorrencias />);
 
   expect(screen.getByText('aluguel', { selector: 'div' })).toBeInTheDocument();
   expect(screen.queryByText('contas da casa', { selector: 'div' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'aluguel' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'contas da casa' })).not.toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole('button', { name: 'conjunta' }));
+  useApp.setState({ boxSel: conjunta.id });
+  rerender(<Recorrencias />);
 
   expect(screen.getByText('contas da casa', { selector: 'div' })).toBeInTheDocument();
   expect(screen.queryByText('aluguel', { selector: 'div' })).not.toBeInTheDocument();

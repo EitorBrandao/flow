@@ -81,19 +81,19 @@ it('trocar de cartão mostra só as assinaturas daquele cartão', async () => {
   expect(screen.queryByText('Netflix')).not.toBeInTheDocument();
 });
 
-it('trocar de box na tela de Assinaturas mostra só os cartões daquela box no seletor', async () => {
-  await prepararBoxComCartao('eitor', 'Nubank');
-  await prepararBoxComCartao('ju', 'Santander');
+it('trocar a box no chip do topo troca os cartões oferecidos no seletor de Assinaturas', async () => {
+  const { box: eitor } = await prepararBoxComCartao('eitor', 'Nubank');
+  const { box: ju } = await prepararBoxComCartao('ju', 'Santander');
   await useApp.getState().iniciar();
-  useApp.setState({ hoje: '2026-07-01' });
+  useApp.setState({ hoje: '2026-07-01', boxSel: eitor.id });
 
-  render(<Assinaturas />);
-  await userEvent.click(screen.getByRole('button', { name: 'eitor' }));
+  const { rerender } = render(<Assinaturas />);
 
   expect(screen.getByRole('button', { name: 'Nubank' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Santander' })).not.toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole('button', { name: 'ju' }));
+  useApp.setState({ boxSel: ju.id });
+  rerender(<Assinaturas />);
 
   expect(screen.getByRole('button', { name: 'Santander' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Nubank' })).not.toBeInTheDocument();

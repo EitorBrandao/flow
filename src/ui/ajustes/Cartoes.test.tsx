@@ -69,13 +69,14 @@ it('trocar de box na tela de Cartões mostra só os cartões daquela box', async
   await useApp.getState().iniciar();
   useApp.setState({ hoje: '2026-07-01' });
 
-  render(<Cartoes />);
-  await userEvent.selectOptions(screen.getByLabelText('Box do cartão'), 'eitor');
+  useApp.setState({ boxSel: eitor.id });
+  const { rerender } = render(<Cartoes />);
 
   expect(screen.getByText('Nubank', { exact: false })).toBeInTheDocument();
   expect(screen.queryByText('Santander', { exact: false })).not.toBeInTheDocument();
 
-  await userEvent.selectOptions(screen.getByLabelText('Box do cartão'), 'ju');
+  useApp.setState({ boxSel: ju.id });
+  rerender(<Cartoes />);
 
   expect(screen.getByText('Santander', { exact: false })).toBeInTheDocument();
   expect(screen.queryByText('Nubank', { exact: false })).not.toBeInTheDocument();

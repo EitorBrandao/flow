@@ -6,7 +6,7 @@ import SeletorCategoria from './SeletorCategoria';
 import { categoriasFaturaIds } from '../domain/fatura';
 import type { TipoCategoria } from '../domain/types';
 import { viagemAtivaEm } from '../domain/viagem';
-import { useApp } from '../state/store';
+import { boxIdEfetivo, useApp } from '../state/store';
 
 export default function TelaLancar() {
   const { dados, boxSel, hoje, recarregar } = useApp();
@@ -29,9 +29,7 @@ export default function TelaLancar() {
     if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
   }, []);
 
-  const boxId = boxSel === 'casa'
-    ? dados?.boxes.find((b) => b.nome === 'casa')?.id
-    : boxSel;
+  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
 
   const ocultas = useMemo(() => categoriasFaturaIds(dados?.cartoes ?? []), [dados]);
   const categorias = useMemo(

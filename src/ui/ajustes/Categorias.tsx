@@ -5,7 +5,7 @@ import * as repo from '../../db/repo';
 import { diffOrdem, proximaOrdem } from '../../domain/categorias';
 import { categoriasFaturaIds } from '../../domain/fatura';
 import type { Categoria, TipoCategoria } from '../../domain/types';
-import { useApp } from '../../state/store';
+import { boxIdEfetivo, useApp } from '../../state/store';
 
 interface ItemProps {
   cat: Categoria;
@@ -58,14 +58,22 @@ function ItemCategoria({
 }
 
 export default function Categorias() {
-  const { dados, recarregar } = useApp();
-  const [boxId, setBoxId] = useState<string>(dados?.boxes[0]?.id ?? '');
+  const { dados, boxSel, recarregar } = useApp();
   const [nome, setNome] = useState('');
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nomeEdit, setNomeEdit] = useState('');
   const uid = useId();
   if (!dados) return null;
+  const boxId = boxIdEfetivo(dados, boxSel);
+  if (boxId == null) {
+    return (
+      <div className="tela">
+        <h2>Categorias</h2>
+        <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+      </div>
+    );
+  }
   const ocultas = categoriasFaturaIds(dados.cartoes);
   const cats = dados.categorias.filter((c) => c.boxId === boxId && !ocultas.has(c.id));
   const ganhos = cats.filter((c) => c.tipo === 'ganho' && !c.arquivada);
@@ -127,12 +135,6 @@ export default function Categorias() {
   return (
     <div className="tela">
       <h2>Categorias</h2>
-      <div className="campo">
-        <label htmlFor={`${uid}-box`}>Box</label>
-        <select id={`${uid}-box`} value={boxId} onChange={(e) => setBoxId(e.target.value)}>
-          {dados.boxes.map((b) => <option key={b.id} value={b.id}>{b.nome}</option>)}
-        </select>
-      </div>
 
       <div className="linha">
         <div className="campo" style={{ flex: 1 }}>

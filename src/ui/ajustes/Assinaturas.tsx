@@ -1,15 +1,14 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { formatarBRL } from '../../domain/money';
-import { useApp } from '../../state/store';
+import { boxIdEfetivo, useApp } from '../../state/store';
 import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 import SeletorPills from '../SeletorPills';
 
 export default function Assinaturas() {
-  const { dados, hoje, recarregar } = useApp();
-  const [boxId, setBoxId] = useState(dados?.boxes.find((b) => b.saldoInicial != null)?.id ?? '');
-  const [cartaoId, setCartaoId] = useState(dados?.cartoes.find((c) => c.boxId === boxId && c.ativo)?.id ?? '');
+  const { dados, boxSel, hoje, recarregar } = useApp();
+  const [cartaoId, setCartaoId] = useState('');
   const [valor, setValor] = useState<number>(0);
   const [dataInicio, setDataInicio] = useState(hoje);
   const [diaDoMes, setDiaDoMes] = useState('1');
@@ -17,7 +16,25 @@ export default function Assinaturas() {
   const [descricao, setDescricao] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const uid = useId();
+  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+
+  useEffect(() => {
+    const primeiroCartao = dados?.cartoes.find((c) => c.boxId === boxId && c.ativo);
+    setCartaoId(primeiroCartao?.id ?? '');
+    setValor(0); setDataInicio(hoje); setDiaDoMes('1');
+    setParcelas(''); setDescricao(''); setEditandoId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boxId]);
+
   if (!dados) return null;
+  if (boxId == null) {
+    return (
+      <div className="tela">
+        <h2>Assinaturas</h2>
+        <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+      </div>
+    );
+  }
   if (dados.cartoes.length === 0) {
     return <div className="tela"><h2>Assinaturas</h2><p className="sub">Cadastre um cartão primeiro.</p></div>;
   }
@@ -28,13 +45,6 @@ export default function Assinaturas() {
   function limparForm() {
     setValor(0); setDataInicio(hoje); setDiaDoMes('1');
     setParcelas(''); setDescricao(''); setEditandoId(null);
-  }
-
-  function trocarBox(novoBoxId: string) {
-    setBoxId(novoBoxId);
-    const primeiroCartao = dados!.cartoes.find((c) => c.boxId === novoBoxId && c.ativo);
-    setCartaoId(primeiroCartao?.id ?? '');
-    limparForm();
   }
 
   function trocarCartao(novoCartaoId: string) {
@@ -87,15 +97,6 @@ export default function Assinaturas() {
   return (
     <div className="tela">
       <h2>Assinaturas</h2>
-
-      <div className="campo">
-        <label>Box</label>
-        <SeletorPills
-          opcoes={dados.boxes.filter((b) => b.saldoInicial != null).map((b) => ({ id: b.id, nome: b.nome }))}
-          selecionadaId={boxId}
-          onSelecionar={trocarBox}
-        />
-      </div>
 
       {cartoesDaBox.length === 0 ? (
         <p className="sub">Nenhum cartão ativo nesta box.</p>

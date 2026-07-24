@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import * as repo from '../db/repo';
 import { hojeISO } from '../domain/dates';
-import type { Dados, ID, ISODate } from '../domain/types';
+import { agoraISO, novoId, type Dados, type ID, type ISODate } from '../domain/types';
 
 export type Aba = 'hoje' | 'fluxo' | 'lancar' | 'cartao' | 'analises' | 'simulador' | 'ajustes';
 export type BoxSelecionada = ID | 'casa';
@@ -26,6 +26,13 @@ export const useApp = create<AppState>((set) => ({
   boxSel: 'casa',
   async iniciar() {
     const inicial = await repo.carregarTudo();
+    if (!inicial.boxes.some((b) => b.nome === 'casa')) {
+      const agora = agoraISO();
+      await repo.salvarBox({
+        id: novoId(), nome: 'casa', saldoInicial: null, dataSaldoInicial: null,
+        criadoEm: agora, alteradoEm: agora,
+      });
+    }
     await repo.materializarTodas(inicial.config.horizonteProjecao);
     await repo.sincronizarCartoes(inicial.config.horizonteProjecao);
     const dados = await repo.carregarTudo();
@@ -51,6 +58,17 @@ export const useApp = create<AppState>((set) => ({
 export function boxIdsSelecionadas(dados: Dados, boxSel: BoxSelecionada): ID[] {
   if (boxSel !== 'casa') return [boxSel];
   return dados.boxes.map((b) => b.id);
+}
+
+/**
+ * Resolve a seleção atual pro id de uma única box concreta — usado nas telas de
+ * Ajustes e no Simulador, que operam sobre uma box por vez (nunca consolidam).
+ * O sentinela 'casa' vira o id da box de nome "casa" (autocriada em iniciar());
+ * `null` só ocorre se essa box tiver sido renomeada/removida depois.
+ */
+export function boxIdEfetivo(dados: Dados, boxSel: BoxSelecionada): ID | null {
+  if (boxSel !== 'casa') return boxSel;
+  return dados.boxes.find((b) => b.nome === 'casa')?.id ?? null;
 }
 
 /** Ids dos cenários ligados (mostrados na projeção). */

@@ -1,10 +1,10 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Reorder, useDragControls } from 'framer-motion';
 import { GripVertical, Pencil } from 'lucide-react';
 import * as repo from '../../db/repo';
 import { categoriasAssinaturasIds, diffOrdem, proximaOrdem } from '../../domain/categorias';
 import type { CategoriaCartao } from '../../domain/types';
-import { useApp } from '../../state/store';
+import { boxIdEfetivo, useApp } from '../../state/store';
 import SeletorPills from '../SeletorPills';
 
 interface ItemProps {
@@ -55,14 +55,32 @@ function ItemCategoriaCartao({
 }
 
 export default function CategoriasCartao() {
-  const { dados, recarregar } = useApp();
-  const [boxId, setBoxId] = useState(dados?.boxes.find((b) => b.saldoInicial != null)?.id ?? '');
-  const [cartaoId, setCartaoId] = useState(dados?.cartoes.find((c) => c.boxId === boxId)?.id ?? '');
+  const { dados, boxSel, recarregar } = useApp();
+  const [cartaoId, setCartaoId] = useState('');
   const [nome, setNome] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nomeEdit, setNomeEdit] = useState('');
   const uid = useId();
+  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+
+  useEffect(() => {
+    const primeiroCartao = dados?.cartoes.find((c) => c.boxId === boxId);
+    setCartaoId(primeiroCartao?.id ?? '');
+    setEditandoId(null);
+    setNomeEdit('');
+    setNome('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boxId]);
+
   if (!dados) return null;
+  if (boxId == null) {
+    return (
+      <div className="tela">
+        <h2>Categorias do cartão</h2>
+        <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+      </div>
+    );
+  }
   if (dados.cartoes.length === 0) {
     return <div className="tela"><h2>Categorias do cartão</h2><p className="sub">Cadastre um cartão primeiro.</p></div>;
   }
@@ -71,15 +89,6 @@ export default function CategoriasCartao() {
   const cats = dados.categoriasCartao.filter((c) => c.cartaoId === cartaoId && !ocultas.has(c.id));
   const ativas = cats.filter((c) => !c.arquivada);
   const arquivadas = cats.filter((c) => c.arquivada);
-
-  function trocarBox(novoBoxId: string) {
-    setBoxId(novoBoxId);
-    const primeiroCartao = dados!.cartoes.find((c) => c.boxId === novoBoxId);
-    setCartaoId(primeiroCartao?.id ?? '');
-    setEditandoId(null);
-    setNomeEdit('');
-    setNome('');
-  }
 
   async function criar() {
     if (!nome.trim() || !cartaoId) return;
@@ -134,14 +143,6 @@ export default function CategoriasCartao() {
   return (
     <div className="tela">
       <h2>Categorias do cartão</h2>
-      <div className="campo">
-        <label>Box</label>
-        <SeletorPills
-          opcoes={dados.boxes.filter((b) => b.saldoInicial != null).map((b) => ({ id: b.id, nome: b.nome }))}
-          selecionadaId={boxId}
-          onSelecionar={trocarBox}
-        />
-      </div>
 
       {cartoesDaBox.length === 0 ? (
         <p className="sub">Nenhum cartão nesta box.</p>
