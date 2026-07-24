@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.12.2] - 2026-07-24
+
+### Alterado
+
+- Ajustes → Cartões: a lista de cartões cadastrados agora mostra só os da box selecionada, em vez de todos os cartões de todas as boxes juntos.
+- Ajustes → Assinaturas e Categorias do cartão: adicionado um seletor de box antes do seletor de cartão, para nenhum cartão de outra box aparecer como opção.
+
 ## [0.12.1] - 2026-07-23
 
 ### Alterado
