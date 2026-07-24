@@ -1,5 +1,5 @@
 import type { Categoria, Lancamento } from './types';
-import { compararMeses, lancamentosDaCategoria, mediaMovel3, resumoMensal, serieMensal } from './aggregations';
+import { compararMeses, lancamentosDaCategoria, mediaMovel3, resumoMensal, serieMensal, serieMensalResumo } from './aggregations';
 
 const ts = { criadoEm: '2026-01-01T00:00:00Z', alteradoEm: '2026-01-01T00:00:00Z' };
 const cats: Categoria[] = [
@@ -86,4 +86,17 @@ it('lancamentosDaCategoria respeita o filtro de box/mês/status/cenário', () =>
 
   const comPrevistos = lancamentosDaCategoria('2026-07', 'car', ['be'], lancsPix, true);
   expect(comPrevistos[0].subtotal).toBe(60000); // p1 + p4, cenário fora
+});
+
+it('serieMensalResumo soma ganho/gasto/sobra por mês', () => {
+  const serie = serieMensalResumo(['2026-06', '2026-07'], ['be'], cats, lancs, false);
+  expect(serie).toEqual([
+    { mes: '2026-06', ganhos: 0, gastos: 90000, sobra: -90000 },
+    { mes: '2026-07', ganhos: 550000, gastos: 190000, sobra: 360000 },
+  ]);
+});
+
+it('serieMensalResumo com incluirPrevistos soma o previsto mas nunca o cenário', () => {
+  const serie = serieMensalResumo(['2026-07'], ['be'], cats, lancs, true);
+  expect(serie[0]).toEqual({ mes: '2026-07', ganhos: 550000, gastos: 240000, sobra: 310000 });
 });
