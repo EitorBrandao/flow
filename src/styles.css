@@ -183,15 +183,38 @@ strong.valor-ganho, strong.valor-gasto {
 }
 input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: .7; }
 
-table.tabela { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+/* width:max-content + min-width:100% (não width:100% fixo) — com width:100%, assim que a
+   1ª coluna passou a aceitar quebra de linha (coluna fixa, ver abaixo), o motor de auto-layout
+   comprime as colunas de valor (nowrap, alinhadas à direita) abaixo do conteúdo delas; texto
+   alinhado à direita que não cabe vaza para a ESQUERDA, ou seja, por trás da coluna fixa.
+   border-collapse:separate (não collapse) evita outro bug conhecido: position:sticky numa
+   <td> com border-collapse:collapse não cobre direito o conteúdo que rola por baixo. */
+table.tabela {
+  width: max-content; min-width: 100%;
+  border-collapse: separate; border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
 table.tabela th {
   color: var(--muted); font-size: 12px; font-weight: 600;
   text-transform: uppercase; letter-spacing: .04em;
 }
-table.tabela th, table.tabela td { text-align: right; padding: 8px; border-bottom: 1px solid var(--line); }
+table.tabela th, table.tabela td {
+  text-align: right; padding: 8px 13px; border-bottom: 1px solid var(--line); white-space: nowrap;
+}
 table.tabela th:first-child, table.tabela td:first-child { text-align: left; }
 table.tabela tr:last-child td { border-bottom: none; }
-.rolavel { overflow-x: auto; }
+/* coluna fixa: largura própria fixa (não automática) — mantém o cálculo de largura das
+   outras colunas previsível. Sombra sutil na borda direita sinaliza que ela "flutua na
+   frente" do conteúdo que rola por baixo. */
+table.tabela th:first-child, table.tabela td:first-child {
+  position: sticky; left: 0; z-index: 2; background: var(--surface);
+  white-space: normal; width: 112px; max-width: 112px;
+  box-shadow: 4px 0 6px -4px rgba(0, 0, 0, .45);
+}
+/* min-width:0 evita que a tabela force o card (flex item) a crescer além do container;
+   overflow-anchor:none evita que o navegador ajuste sozinho a rolagem quando a altura de
+   uma célula muda (nome de categoria quebrando em linhas) depois do layout inicial. */
+.rolavel { overflow-x: auto; min-width: 0; overflow-anchor: none; }
 
 .sheet-backdrop {
   position: fixed; inset: 0; background: rgba(0, 0, 0, .55); z-index: 50;

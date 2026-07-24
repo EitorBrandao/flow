@@ -214,3 +214,15 @@ it('mostra o card Evolução mensal com a sobra do mês selecionado', async () =
   expect(await screen.findByText('Evolução mensal')).toBeInTheDocument();
   expect(await screen.findByText('+4.000')).toBeInTheDocument(); // sobra de julho: 500000-100000 centavos = R$4.000,00
 });
+
+it('título Comparativo fica fora do container que rola horizontalmente', async () => {
+  const { box, catPix } = await seedBoxComCategoria();
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2026-07-05', valor: 30000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  render(<TelaAnalises />);
+  const titulo = screen.getByText('Comparativo');
+  expect(titulo.closest('.rolavel')).toBeNull();
+  expect(screen.getByRole('table').closest('.rolavel')).not.toBeNull();
+});
