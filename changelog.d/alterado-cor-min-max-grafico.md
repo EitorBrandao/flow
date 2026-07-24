@@ -1,0 +1,1 @@
+- Os valores de mínimo e máximo abaixo do gráfico de saldo (abas Hoje e Fluxo, e no gráfico expandido do Fluxo) agora aparecem em verde ou vermelho conforme o próprio sinal.
