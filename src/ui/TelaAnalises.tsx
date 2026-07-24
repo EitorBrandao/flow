@@ -1,5 +1,7 @@
 import { Suspense, lazy, useState } from 'react';
-import { compararMeses, mediaMovel3, resumoMensal, serieMensal } from '../domain/aggregations';
+import {
+  compararMeses, mediaMovel3, resumoMensal, serieMensal, serieMensalResumo,
+} from '../domain/aggregations';
 import { addMeses, formatarDataBR, mesDe } from '../domain/dates';
 import { resumoAssinaturasDoMes } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
@@ -11,6 +13,8 @@ import ComposicaoBarChart, { type LinhaComposicao } from './ComposicaoBarChart';
 import FaturaCategoriaSheet from './FaturaCategoriaSheet';
 import LancamentosSheet from './LancamentosSheet';
 import ViagemSheet from './ViagemSheet';
+
+const EvolucaoMensalChart = lazy(() => import('./EvolucaoMensalChart'));
 
 function nomeMes(mes: string): string {
   return new Date(`${mes}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
@@ -33,6 +37,7 @@ export default function TelaAnalises() {
   const resumoAssinaturas = resumoAssinaturasDoMes(mes, ids, dados.cartoes, dados.comprasCartao, dados.recorrenciasCartao);
   // tendência: média móvel de 3 meses terminando no mês selecionado
   const meses = [-5, -4, -3, -2, -1, 0].map((n) => addMeses(mes, n));
+  const serieEvolucao = serieMensalResumo(meses, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
   const media3m = (categoriaId: string) =>
     mediaMovel3(serieMensal(categoriaId, meses, ids, dados.lancamentos, incluirPrevistos)).at(-1);
   const viagensNoMes = dados.viagens
@@ -108,6 +113,13 @@ export default function TelaAnalises() {
           barras na mesma escala do card acima (100% = maior entre ganhos e gastos do mês)
         </p>
         <ComposicaoBarChart linhas={linhasComposicao} base={base} onClicarLinha={abrirComposicao} />
+      </div>
+
+      <div className="card">
+        <h2>Evolução mensal</h2>
+        <Suspense fallback={null}>
+          <EvolucaoMensalChart serie={serieEvolucao} mesAtual={mes} />
+        </Suspense>
       </div>
 
       <div className="card rolavel">
