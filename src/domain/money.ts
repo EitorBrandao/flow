@@ -17,3 +17,11 @@ export function digitosParaCentavos(texto: string): number {
   const digitos = texto.replace(/\D/g, '');
   return digitos === '' ? 0 : Number(digitos);
 }
+
+/** Sobra do mês em formato compacto (sem "R$", arredondado ao real) — rótulo curto para
+ *  caber acima de barras de gráfico (ex.: "+1.870", "−410"). */
+export function formatarSobraCompacta(centavos: number): string {
+  const sinal = centavos < 0 ? '−' : '+';
+  const reais = Math.round(Math.abs(centavos) / 100);
+  return `${sinal}${reais.toLocaleString('pt-BR')}`;
+}
