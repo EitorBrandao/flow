@@ -118,6 +118,32 @@ export function mediaMovel3(valores: number[]): (number | null)[] {
   );
 }
 
+export interface ResumoMesSimples {
+  mes: string;
+  ganhos: number;
+  gastos: number;
+  sobra: number;
+}
+
+export function serieMensalResumo(
+  meses: string[],
+  boxIds: readonly ID[],
+  categorias: Categoria[],
+  lancamentos: Lancamento[],
+  incluirPrevistos: boolean,
+): ResumoMesSimples[] {
+  return meses.map((mes) => {
+    const totais = totaisPorCategoria(filtrar(mes, boxIds, lancamentos, incluirPrevistos));
+    let ganhos = 0;
+    let gastos = 0;
+    for (const c of categorias) {
+      const t = totais.get(c.id) ?? 0;
+      if (c.tipo === 'ganho') ganhos += t; else gastos += t;
+    }
+    return { mes, ganhos, gastos, sobra: ganhos - gastos };
+  });
+}
+
 export interface ItemLancamento {
   data: ISODate;
   valor: number;
