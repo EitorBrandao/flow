@@ -201,3 +201,16 @@ it('card Viagens lista o total histórico da viagem, e continua mostrando a parc
   await userEvent.click(screen.getByRole('button', { name: 'Próximo mês' }));
   expect(screen.getByRole('button', { name: /viagem - /i })).toBeInTheDocument();
 });
+
+it('mostra o card Evolução mensal com a sobra do mês selecionado', async () => {
+  const { box, catPix } = await seedBoxComCategoria();
+  const catSalario = await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-05', valor: 500000, status: 'efetivo' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2026-07-10', valor: 100000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  render(<TelaAnalises />);
+  expect(await screen.findByText('Evolução mensal')).toBeInTheDocument();
+  expect(await screen.findByText('+4.000')).toBeInTheDocument(); // sobra de julho: 500000-100000 centavos = R$4.000,00
+});
