@@ -243,7 +243,11 @@ export default function FluxoChartModal({ serie, hoje, mostrarCenarios, onFechar
         </div>
       )}
 
-      <div className="grafico-expandido-rodape">mín {formatarBRL(min)} · máx {formatarBRL(max)}</div>
+      <div className="grafico-expandido-rodape">
+        mín <b className={min >= 0 ? 'pos' : 'neg'}>{formatarBRL(min)}</b>
+        {' · máx '}
+        <b className={max >= 0 ? 'pos' : 'neg'}>{formatarBRL(max)}</b>
+      </div>
     </div>
   );
 }

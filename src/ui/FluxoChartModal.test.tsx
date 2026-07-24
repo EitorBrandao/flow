@@ -67,10 +67,14 @@ describe('FluxoChartModal', () => {
   });
 
   it('o rodapé mostra mín/máx da janela visível, não da série inteira', () => {
-    render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} onFechar={() => {}} />);
+    const { container } = render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} onFechar={() => {}} />);
     const min = serie[HOJE_IDX - 30].saldoProjetado;
     const max = serie[HOJE_IDX + 30].saldoProjetado;
-    expect(screen.getByText(semNbsp(`mín ${formatarBRL(min)} · máx ${formatarBRL(max)}`))).toBeInTheDocument();
+    // o valor de mín/máx agora tem elemento próprio (cor pelo sinal), então o texto do
+    // rodapé se divide em nós de texto + <b>; toHaveTextContent recursa no textContent
+    // completo do elemento, diferente de getByText (que só concatena texto direto).
+    expect(container.querySelector('.grafico-expandido-rodape'))
+      .toHaveTextContent(semNbsp(`mín ${formatarBRL(min)} · máx ${formatarBRL(max)}`));
   });
 
   it('clicar no X chama onFechar', () => {
@@ -104,6 +108,41 @@ describe('FluxoChartModal', () => {
     expect(screen.getByText('Cenário')).toBeInTheDocument();
     expect(screen.getByText('Real')).toBeInTheDocument();
     expect(screen.getByText('Projetado')).toBeInTheDocument();
+  });
+});
+
+// série monotônica ancorada em "hoje": a janela padrão vai de hoje-30 a hoje+30 dias, então
+// o mín/máx da janela cai exatamente nas bordas, com valor previsível a partir da base.
+function serieComBaseNoHoje(baseNoHoje: number): DiaSaldo[] {
+  const dias: DiaSaldo[] = [];
+  for (let i = 0; i < N; i++) {
+    const data = addDias(BASE, i);
+    const saldo = baseNoHoje + (i - HOJE_IDX) * 1000;
+    dias.push({ data, saldoEfetivo: saldo, saldoProjetado: saldo, saldoComCenarios: saldo });
+  }
+  return dias;
+}
+
+describe('FluxoChartModal — cor do rodapé mín/máx', () => {
+  it('mín negativo e máx positivo: mín em vermelho, máx em verde', () => {
+    const serieCenario = serieComBaseNoHoje(0);
+    render(<FluxoChartModal serie={serieCenario} hoje={serieCenario[HOJE_IDX].data} mostrarCenarios={false} onFechar={() => {}} />);
+    expect(screen.getByText(semNbsp(formatarBRL(-30000)))).toHaveClass('neg');
+    expect(screen.getByText(semNbsp(formatarBRL(30000)))).toHaveClass('pos');
+  });
+
+  it('mín e máx positivos: os dois em verde', () => {
+    const serieCenario = serieComBaseNoHoje(100000);
+    render(<FluxoChartModal serie={serieCenario} hoje={serieCenario[HOJE_IDX].data} mostrarCenarios={false} onFechar={() => {}} />);
+    expect(screen.getByText(semNbsp(formatarBRL(70000)))).toHaveClass('pos');
+    expect(screen.getByText(semNbsp(formatarBRL(130000)))).toHaveClass('pos');
+  });
+
+  it('mín e máx negativos: os dois em vermelho', () => {
+    const serieCenario = serieComBaseNoHoje(-100000);
+    render(<FluxoChartModal serie={serieCenario} hoje={serieCenario[HOJE_IDX].data} mostrarCenarios={false} onFechar={() => {}} />);
+    expect(screen.getByText(semNbsp(formatarBRL(-130000)))).toHaveClass('neg');
+    expect(screen.getByText(semNbsp(formatarBRL(-70000)))).toHaveClass('neg');
   });
 });
 
