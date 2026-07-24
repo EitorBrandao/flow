@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.12.1] - 2026-07-23
+
+### Alterado
+
+- Os valores de mínimo e máximo abaixo do gráfico de saldo (abas Hoje e Fluxo, e no gráfico expandido do Fluxo) agora aparecem em verde ou vermelho conforme o próprio sinal.
+
 ## [0.12.0] - 2026-07-23
 
 ### Adicionado
