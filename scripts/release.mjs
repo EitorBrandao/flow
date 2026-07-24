@@ -17,6 +17,8 @@
 //   - working tree: apenas CHANGELOG.md, package.json e changelog.d/ podem estar modificados
 //     (exceto em dry-run).
 //   - tag: versão calculada não pode já ter tag (exceto em dry-run).
+//   - catálogo de estilo: docs/estilo/catalogo.md não pode divergir de src/styles.css e
+//     src/ui/ (roda sempre, inclusive em dry-run — ver scripts/verificar-catalogo.mjs).
 //   - fragmento vazio: nenhum fragmento pode estar vazio.
 //   - formato de bullet: cada linha deve começar com "- ", sem "**" ou indentação.
 //   - items resultante: após coleta, deve haver pelo menos um item.
@@ -96,6 +98,22 @@ function validarTag(versao) {
     }
   } catch (e) {
     abortar(`erro ao verificar tag: ${e.message}`);
+  }
+}
+
+function validarCatalogo() {
+  try {
+    const verificadorPath = fileURLToPath(new URL('./verificar-catalogo.mjs', import.meta.url));
+    const saida = execFileSync('node', [verificadorPath, raiz], { cwd: raiz, encoding: 'utf8' });
+    console.log(saida.trimEnd());
+    if (saida.includes('Divergências entre catálogo e código')) {
+      abortar(
+        'catálogo de estilo divergente do código — rode node scripts/verificar-catalogo.mjs, ' +
+        'reconcilie docs/estilo/catalogo.md (ou EXCECOES no script) antes do release.'
+      );
+    }
+  } catch (e) {
+    abortar(`erro ao rodar o verificador de catálogo: ${e.message}`);
   }
 }
 
@@ -221,10 +239,11 @@ if (!temItens) {
   abortar('nenhum item útil após coletar fragmentos.');
 }
 
-// 5. executar guards de git (pulam em dry-run)
+// 5. executar guards de git (pulam em dry-run) + catálogo de estilo (sempre)
 validarBranch();
 validarWorkingTree();
 validarTag(versao);
+validarCatalogo();
 
 // 6. montar a seção (sem side effects)
 const data = new Date().toLocaleDateString('sv-SE'); // AAAA-MM-DD local
@@ -246,18 +265,6 @@ fs.writeFileSync(pkgPath, pkgNovo);
 for (const nome of arquivos) fs.rmSync(path.join(raiz, 'changelog.d', nome));
 
 console.log(`  release: ${versaoAtual} → ${versao}  (${arquivos.length} fragmento(s))`);
-
-// 8. VERIFICAÇÃO DO CATÁLOGO (não-bloqueante, para aviso)
-try {
-  const verificadorPath = fileURLToPath(new URL('./verificar-catalogo.mjs', import.meta.url));
-  execFileSync('node', [verificadorPath, raiz], {
-    cwd: raiz,
-    stdio: 'inherit',
-  });
-} catch (e) {
-  // Falha do verificador não aborta o release
-  console.error(`  release: aviso ao rodar verificador: ${e.message}`);
-}
 
 if (dryRun) {
   console.log('  release: RELEASE_DRY_RUN=1 — pulando git commit/tag.');
