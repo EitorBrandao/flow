@@ -22,7 +22,13 @@ import process from 'node:process';
 
 // EXCECOES: classes/componentes deliberadamente fora do catálogo.
 // A constante pode ser estendida via argumento CLI.
-const EXCECOES = [];
+//
+// Estes 7 são modificadores documentados só entre parênteses no catálogo
+// (ex.: "`.secao` (+ `.acao`)") e no CSS só existem como seletor composto
+// (ex.: `.saldo-grande.positivo`, `.total-dia.neg`) — o extrator de classes CSS
+// só reconhece seletores que começam a linha com `.nome`, então essas classes
+// nunca vão bater e sempre apareceriam como "sumiu do CSS" mesmo existindo.
+const EXCECOES = ['acao', 'cresce', 'dia-hoje', 'neg', 'negativo', 'pos', 'positivo'];
 
 const raiz = process.argv[2] || process.cwd();
 const excecoesCLI = process.argv[3]
