@@ -1,2 +1,0 @@
-- Gráficos na aba Análises: composição por categoria em barras, evolução dos últimos 6 meses (ganho, gasto e sobra) com linha de tendência, e barrinhas de ganho/gasto no card resumo.
-- Primeira coluna da tabela Comparativo fica fixa ao rolar horizontalmente no celular, sem cortar nomes de categoria longos.

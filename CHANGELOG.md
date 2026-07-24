@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.12.0] - 2026-07-23
+
+### Adicionado
+
+- Gráficos na aba Análises: composição por categoria em barras, evolução dos últimos 6 meses (ganho, gasto e sobra) com linha de tendência, e barrinhas de ganho/gasto no card resumo.
+- Primeira coluna da tabela Comparativo fica fixa ao rolar horizontalmente no celular, sem cortar nomes de categoria longos.
+
 ## [0.11.7] - 2026-07-23
 
 ### Alterado
