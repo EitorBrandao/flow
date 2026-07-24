@@ -259,3 +259,15 @@ table.tabela tr:last-child td { border-bottom: none; }
 .grafico-expandido-rodape { text-align: center; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .grafico-expandido-abrir { border: none; width: 100%; text-align: left; position: relative; }
 .grafico-expandido-icone { position: absolute; top: 16px; right: 16px; color: var(--muted); }
+
+/* ---- Composição por categoria (ComposicaoBarChart.tsx) ---- */
+.composicao-lista { display: flex; flex-direction: column; gap: 10px; }
+.composicao-linha { display: flex; flex-direction: column; gap: 4px; cursor: pointer; }
+.composicao-rotulo { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; }
+.composicao-nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composicao-valores { display: flex; gap: 8px; align-items: baseline; flex-shrink: 0; }
+.composicao-pct { color: var(--muted); font-size: 12px; }
+.composicao-trilho { height: 14px; border-radius: 7px; background: var(--surface2); overflow: hidden; }
+.composicao-preenchimento { height: 100%; border-radius: 7px; }
+.composicao-preenchimento.ganho { background: var(--pos); }
+.composicao-preenchimento.gasto { background: var(--neg); }
