@@ -10,7 +10,7 @@ tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
 |---|---|
 | `.tela` | wrapper de toda tela (`display: flex; flex-direction: column; gap: 14px`) |
 | `.card` | bloco de destaque (ex.: card herói do saldo) — `--surface`, raio 20px, padding 20px |
-| `.lista` / `.item` | lista vertical de itens-card; `.item-coluna` quando o item precisa de uma segunda linha (ex.: ações abaixo); `.linha-topo` para a linha principal dentro de um item-coluna; `.linha-topo-2-1` (junto com `.linha-topo`) quando a linha principal precisa de proporção fixa 2:1 entre descrição e valor (evita word-wrap com valor/botões espremendo o texto) |
+| `.lista` / `.item` / `.item-coluna` / `.linha-topo` / `.linha-topo-2-1` | lista vertical de itens-card; `.item-coluna` quando o item precisa de uma segunda linha (ex.: ações abaixo); `.linha-topo` para a linha principal dentro de um item-coluna; `.linha-topo-2-1` (junto com `.linha-topo`) quando a linha principal precisa de proporção fixa 2:1 entre descrição e valor (evita word-wrap com valor/botões espremendo o texto) |
 | `.cresce` | filho flex que ocupa o espaço restante (`flex: 1; min-width: 0`) |
 | `.acoes` | linha de botões de ação dentro de um item (ex.: Confirmar/Descartar) |
 | `.botao`, `.botao-primario`, `.botao-perigo` | botão padrão / ação principal (azul) / ação destrutiva (texto vermelho) |
@@ -31,18 +31,21 @@ tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
 | `.grafico-rodape` (+ `.pos`/`.neg` no valor) | rodapé "mín · máx" sob o gráfico de saldo (`BalanceChart.tsx`, abas Hoje/Fluxo) — 12px, sem pílula, `--pos`/`--neg` pelo sinal do próprio valor; os mesmos modificadores `.pos`/`.neg` valem também dentro de `.grafico-expandido-rodape` (modal expandido do Fluxo) |
 | `.botao-ver-mais` | link azul de mostrar/ocultar uma lista longa (ex.: lançamentos da fatura, escondidos por padrão) |
 | `.secao` (+ `.acao`) | cabeçalho de seção: título à esquerda, ação/contagem em azul à direita |
-| `.campo` | wrapper label+input; `.linha` para agrupar campos lado a lado |
+| `.campo` / `.linha` | `.campo` é wrapper label+input; `.linha` agrupa campos (ou outros elementos) lado a lado |
 | `.campo-busca` | input de busca avulso (fora de `.campo`) |
 | `.sub` | subtítulo/texto secundário 13px em `--muted` |
 | `.grade-categorias` | grade 3 colunas de seleção de categoria; `.selecionada` marca o item ativo |
 | `.pills` | pílulas em linha pra escolher entre poucas opções (Box, Cartão); `button.ativo` marca a opção atual |
-| `table.tabela` | tabela numérica (Fluxo, Análises) — alinhado à direita exceto 1ª coluna, sem linhas verticais |
+| `.tabela` (elemento `table`) | tabela numérica (Fluxo, Análises) — alinhado à direita exceto 1ª coluna, sem linhas verticais |
 | `.rolavel` | wrapper com `overflow-x: auto` para conteúdo largo (tabelas) |
 | `.recuo-1` / `.recuo-2` | recuo horizontal (ambos os lados) pra indicar nível de hierarquia numa lista aninhada — ex.: grupo/data em `LancamentosSheet` |
-| `.sheet-backdrop` / `.sheet` / `.sheet-alca` | bottom sheet (ver componente `Sheet`) |
+| `.sheet-backdrop` / `.sheet` / `.sheet-alca` / `.sheet-cabecalho` / `.sheet-conteudo` | bottom sheet (ver componente `Sheet`) |
 | `.navegacao` | tab bar mobile / sidebar desktop (breakpoint 900px) |
 | `.shell` / `.shell-corpo` / `.topo` / `.conteudo` | casco do app (ver componente `Shell`) |
-| `.grafico-expandido-*` | classes internas do `FluxoChartModal` (exemplo do padrão de prefixo por componente) |
+| `.grafico-expandido` / `.grafico-expandido-*` | modal expandido do `FluxoChartModal` (exemplo do padrão de prefixo por componente) |
+| `.resumo-barras` / `.resumo-barra-trilho` / `.resumo-barra-preenchimento` | barras de composição ganho/gasto do card resumo em `TelaAnalises.tsx` |
+| `.composicao-*` | classes internas do `ComposicaoBarChart.tsx` (mesmo padrão de prefixo por componente) |
+| `.evolucao-*` | classes internas do `EvolucaoMensalChart.tsx` (mesmo padrão de prefixo por componente) |
 
 ## Componentes compartilhados (em `src/ui/`)
 
@@ -85,3 +88,17 @@ tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
 - **`EvolucaoMensalChart.tsx`** — evolução de ganho/gasto/sobra dos últimos 6 meses na aba
   Análises: barras agrupadas + linha de tendência tracejada, via `recharts` carregado sob
   demanda (`React.lazy`), mesmo padrão do `FluxoChartModal`.
+- **`AdicionarSheet.tsx`** — sheet do botão flutuante "+": menu com passos (lançamento manual,
+  compra no cartão) que troca de tela via `passo`; escolhe o cartão automaticamente quando só
+  há um ativo, senão mostra `.pills` pra escolher; renderiza `FormCompra` no passo final.
+- **`FormCompra.tsx`** — formulário de compra no cartão (valor, data, categoria, parcelas,
+  parcelas já pagas, descrição, viagem). Usado por `AdicionarSheet` (nova) e `TelaCartao`
+  (edição).
+- **`LancEditor.tsx`** — sheet de edição de um lançamento existente (valor, data, categoria,
+  nota, sinal ganho/gasto); usa `Sheet`, `CampoData`, `CampoValor`, `SeletorCategoria`.
+- **`LancamentosSheet.tsx`** — sheet somente leitura com os lançamentos de uma categoria no
+  mês, agrupados por nota (`lancamentosDaCategoria`); usado no drill-down de Análises.
+- **`FaturaCategoriaSheet.tsx`** — sheet somente leitura com o resumo por categoria de uma
+  fatura de cartão (drill-down a partir de `FaturaResumo`/`TelaCartao`).
+- **`ViagemSheet.tsx`** — sheet somente leitura com os lançamentos/compras de uma viagem,
+  agrupados (`itensDaViagem`); mesmo padrão visual do `LancamentosSheet`.
