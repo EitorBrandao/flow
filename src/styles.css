@@ -271,3 +271,15 @@ table.tabela tr:last-child td { border-bottom: none; }
 .composicao-preenchimento { height: 100%; border-radius: 7px; }
 .composicao-preenchimento.ganho { background: var(--pos); }
 .composicao-preenchimento.gasto { background: var(--neg); }
+
+/* ---- Evolução mensal (EvolucaoMensalChart.tsx) ---- */
+.evolucao-rotulos-sobra { display: flex; padding: 0 4px; }
+.evolucao-sobra { flex: 1; text-align: center; font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.evolucao-sobra.pos { color: var(--pos); }
+.evolucao-sobra.neg { color: var(--neg); }
+.evolucao-area { height: 140px; }
+.evolucao-legenda { display: flex; gap: 16px; justify-content: center; margin-top: 10px; font-size: 12px; color: var(--muted); }
+.evolucao-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.evolucao-legenda-cor { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+.evolucao-legenda-cor.ganho { background: var(--pos); }
+.evolucao-legenda-cor.gasto { background: var(--neg); }
