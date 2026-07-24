@@ -91,10 +91,13 @@ por `.grafico-expandido-rodape` (modal).
 ## Testes
 
 - `FluxoChartModal.test.tsx` já tem um teste (linha 69-74) que faz `getByText` no texto
-  inteiro do rodapé como string única. Isso continua funcionando porque `textContent` do
-  container concatena os nós filhos (`<b>` inclusos) — mas exige atenção ao espaçamento na
-  JSX para não introduzir/remover espaços (por isso `{' · máx '}` explícito acima, em vez de
-  quebra de linha entre elementos).
+  inteiro do rodapé como string única. **Isso quebra** com o `<b>` novo: `getByText` só
+  concatena os nós de texto **diretos** do elemento (não desce em filhos-elemento), então o
+  texto some do match assim que o valor vira filho de um `<b>`. Ajustar esse teste para
+  `toHaveTextContent` (que recursa no `textContent` completo, incluindo descendentes) em vez
+  de `getByText` na string inteira. Atenção ao espaçamento na JSX de qualquer forma (por
+  isso `{' · máx '}` explícito acima, em vez de quebra de linha entre elementos) — afeta o
+  texto renderizado independentemente de qual matcher o teste usa.
 - Adicionar casos cobrindo os 3 cenários de sinal do mockup (mín neg/máx pos, ambos pos,
   ambos neg) em `BalanceChart.test.tsx` e `FluxoChartModal.test.tsx`, verificando que o
   elemento do valor tem a classe `pos` ou `neg` esperada.
