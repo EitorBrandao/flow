@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
+import { limparDb } from '../../test-setup';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { db } from '../../db/database';
 import * as repo from '../../db/repo';
 import { useApp } from '../../state/store';
 import Backup from './Backup';
@@ -14,8 +14,7 @@ if (typeof URL.createObjectURL !== 'function') {
 }
 
 beforeEach(async () => {
-  await db.delete();
-  await db.open();
+  await limparDb();
 });
 
 describe('Backup (exportar)', () => {

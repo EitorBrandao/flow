@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import { limparDb } from '../test-setup';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
@@ -8,8 +9,7 @@ import { useApp } from '../state/store';
 import FormCompra from './FormCompra';
 
 beforeEach(async () => {
-  await db.delete();
-  await db.open();
+  await limparDb();
 });
 
 async function montarCartao() {

@@ -1,12 +1,12 @@
 import 'fake-indexeddb/auto';
+import { limparDb } from '../test-setup';
 import { db } from './database';
 import * as repo from './repo';
 import type { Box, Categoria, Dados } from '../domain/types';
 import { agoraISO, novoId } from '../domain/types';
 
 beforeEach(async () => {
-  await db.delete();
-  await db.open();
+  await limparDb();
 });
 
 async function boxECategoria(): Promise<{ box: Box; ganho: Categoria; gasto: Categoria }> {

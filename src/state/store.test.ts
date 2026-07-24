@@ -1,12 +1,12 @@
 import 'fake-indexeddb/auto';
+import { limparDb } from '../test-setup';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
 import { boxIdsSelecionadas, useApp } from './store';
 
 beforeEach(async () => {
-  await db.delete();
-  await db.open();
+  await limparDb();
   useApp.setState({ carregado: false, dados: null, aba: 'hoje', boxSel: 'casa' });
 });
 
