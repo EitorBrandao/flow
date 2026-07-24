@@ -138,28 +138,30 @@ export default function TelaAnalises() {
         </div>
       </div>
 
-      <div className="card rolavel">
+      <div className="card">
         <h2>Comparativo</h2>
-        <table className="tabela">
-          <thead>
-            <tr><th>Categoria</th><th>{mes}</th><th>mês anterior</th><th>ano passado</th><th>média 3m</th></tr>
-          </thead>
-          <tbody>
-            {comparativo.map((c) => {
-              const media = media3m(c.categoriaId);
-              return (
-                <tr key={c.categoriaId}>
-                  <td>{c.nome}</td>
-                  <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.atual)}</td>
-                  <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.mesAnterior)}</td>
-                  <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.anoAnterior)}</td>
-                  <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{media == null ? '—' : formatarBRL(media)}</td>
-                </tr>
-              );
-            })}
-            {comparativo.length === 0 && <tr><td colSpan={5}>Sem dados para comparar.</td></tr>}
-          </tbody>
-        </table>
+        <div className="rolavel">
+          <table className="tabela">
+            <thead>
+              <tr><th>Categoria</th><th>{mes}</th><th>mês anterior</th><th>ano passado</th><th>média 3m</th></tr>
+            </thead>
+            <tbody>
+              {comparativo.map((c) => {
+                const media = media3m(c.categoriaId);
+                return (
+                  <tr key={c.categoriaId}>
+                    <td>{c.nome}</td>
+                    <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.atual)}</td>
+                    <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.mesAnterior)}</td>
+                    <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.anoAnterior)}</td>
+                    <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{media == null ? '—' : formatarBRL(media)}</td>
+                  </tr>
+                );
+              })}
+              {comparativo.length === 0 && <tr><td colSpan={5}>Sem dados para comparar.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {cartaoDaCategoria ? (
