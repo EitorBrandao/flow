@@ -9,7 +9,7 @@
 >
 > **Situação dos achados:** as correções de redação (1.1–1.8, 2.1, 2.2, 2.4–2.6, 3.4, 3.5,
 > 5.1, 5.2) estão aplicadas no `CLAUDE.md` e no guia de estilo; as correções de memória
-> (4.1–4.6) foram aplicadas fora do repositório; a automação (1.3, 1.8, 2.3, 3.1–3.3) foi
+> (4.1–4.6) foram aplicadas fora do repositório; a automação (guards: 1.3, 1.8, 2.3, 3.1–3.3; hooks de aviso: 1.1, 1.2, 1.6) foi
 > implementada pela spec
 > [`2026-07-23-enforcement-orientacoes-design.md`](superpowers/specs/2026-07-23-enforcement-orientacoes-design.md).
 >

@@ -3,8 +3,10 @@
 Referência do que **já existe**. Reaproveite antes de criar qualquer coisa.
 **Quem cria, cataloga:** classe compartilhada nova (nível 2) e componente novo (nível 4)
 entram aqui **no mesmo commit** que os criam. Telas não entram: `Tela*.tsx` e
-`src/ui/ajustes/*.tsx` se registram na navegação (`Shell.tsx`, `TelaAjustes.tsx`), e o
-verificador de catálogo as ignora de propósito.
+`src/ui/ajustes/*.tsx` se registram na navegação (`Shell.tsx`, `TelaAjustes.tsx`). O
+verificador de catálogo não cobre nenhuma das duas, por motivos diferentes: `Tela*.tsx` tem
+exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a varredura lê
+`src/ui` sem descer em subpastas.
 
 ## Classes (em `src/styles.css`)
 

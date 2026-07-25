@@ -42,9 +42,10 @@ Duas consequências que valem por escrito:
 - **`DEPLOY_FORCE=1` pula todos os guards do deploy.** Existe para o caso de o repositório
   estar num estado que os checks não sabem julgar; usar exige pedido explícito do usuário,
   nunca como atalho para um check que incomodou.
-- **O prefixo `chore(release):` é reservado** aos commits gerados por `npm run release`: o
-  guard do deploy identifica releases por esse prefixo, e um commit comum com ele num branch
-  lateral provoca aborto falso do deploy.
+- **O texto `chore(release)` é reservado** às mensagens de commit geradas por
+  `npm run release`: o guard do deploy procura essa string com `git log --grep`, que casa em
+  **qualquer posição** da mensagem — não só no começo. Um commit comum que a contenha, num
+  branch lateral, provoca aborto falso do deploy.
 
 ## Arquitetura
 

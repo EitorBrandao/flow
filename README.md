@@ -12,7 +12,7 @@ local-first — **não existe servidor**, todos os dados vivem no IndexedDB do s
 - **Lançar** — ganhos e gastos manuais, e compras no cartão (à vista ou parceladas).
 - **Cartão** — faturas por ciclo de fechamento/vencimento, assinaturas e conferência.
 - **Análises** — composição por categoria, evolução mensal, comparativo e viagens.
-- **Ajustes** — boxes, categorias, recorrências, cartões, viagens, backup, wiki e versão.
+- **Ajustes** — boxes, categorias, recorrências, cartões, categorias do cartão, assinaturas do cartão, viagens, backup, wiki e versão.
 
 Boxes são contas ou perfis separados; o chip do topo escolhe qual box o app inteiro enxerga.
 
