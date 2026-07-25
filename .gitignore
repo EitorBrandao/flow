@@ -7,7 +7,10 @@
 deploy.bat
 
 # Backlog local (não versionado — pedido do usuário em 2026-07-23)
-TODO.md
+# Glob desde 2026-07-25: o histórico de itens concluídos saiu do TODO.md para
+# TODO-CONCLUIDOS.md, e arquivo local não ignorado suja a working tree — o que aborta o
+# guard do release (validarWorkingTree em scripts/release.mjs).
+TODO*.md
 
 # Node
 node_modules/
