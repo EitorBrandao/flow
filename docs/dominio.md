@@ -53,7 +53,10 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
 - **Viagem** — período `[dataInicio, dataFim]` que agrupa gastos (lançamentos de débito e
   compras de cartão) marcados com `viagemId`, para relatório consolidado
   (`itensDaViagem`, `totalViagemNoMes`, `src/domain/viagem.ts`). Viagens não se sobrepõem
-  (`viagensSobrepoem`), inclusive nas bordas.
+  (`viagensSobrepoem`), inclusive nas bordas — mas isso é garantido só pelo formulário de
+  Ajustes → Viagens (`ajustes/Viagens.tsx`); nem o repo (`salvarViagem`, `atualizarViagem`)
+  nem o import de backup (`substituirTudo`) checam sobreposição. Ver nota na seção de
+  invariantes.
 - **Config** — singleton (`id: 'config'`) com o horizonte da projeção
   (`horizonteProjecao`), a box padrão do seletor (`boxPadraoId`) e o estado do lembrete de
   backup (`mudancasDesdeBackup`, `ultimoBackupEm`).
@@ -69,7 +72,8 @@ nessa área:
 2. **O sentinela `BoxSelecionada = ID | 'casa'`** (`src/state/store.ts`), usado no estado
    de seleção da UI. Esse sentinela tem **comportamento diferente conforme quem o lê**:
    - `boxIdsSelecionadas(dados, 'casa')` devolve **todas as boxes** (visão consolidada) —
-     usado por telas que somam várias boxes (Fluxo, Cartão, Análises, Hoje).
+     usado por telas que somam várias boxes (Fluxo, Cartão, Análises, Hoje) e pelo
+     `AdicionarSheet`.
    - `boxIdEfetivo(dados, 'casa')` devolve o **id da única box chamada `"casa"`** — usado
      por telas que operam sobre exatamente uma box (Ajustes, Lançar, Simulador). Se essa
      box tiver sido renomeada ou removida, `boxIdEfetivo` devolve `null`.
@@ -80,14 +84,30 @@ Combinações que o código realmente produz, hoje:
 
 | `origem` | `cenarioId`? | `status` ao nascer | quem cria | transição para `efetivo` |
 |---|---|---|---|---|
-| `manual` | não | `previsto` se `data` é futura, senão `efetivo` | `TelaLancar.tsx` → `repo.salvarLancamento` | livre via `LancEditor` ("Salvar"/"Confirmar", `repo.atualizarLancamento`) |
+| `manual` | não | `previsto` se marcou "Marcar como previsto" ou `data` é futura, senão `efetivo` | `TelaLancar.tsx` → `repo.salvarLancamento` | via `LancEditor` (`repo.atualizarLancamento`): só "Confirmar" (`aplicar(true)`) grava `efetivo` — "Salvar" (`aplicar(false)`) não mexe em `status` |
 | `manual` | sim | sempre `previsto` | `TelaSimulador.tsx` (`FormHipotetico`, parcela única) → `repo.salvarLancamento` | ver ressalva abaixo |
 | `recorrencia` | não | sempre `previsto` | `materializarRecorrencia` (`src/db/repo.ts`) | "Confirmar" em `LancEditor.tsx` (ajusta valor e status juntos); depois de `efetivo`, `materializar` (`src/domain/recurrence.ts`) nunca mais toca o registro |
 | `recorrencia` | sim | sempre `previsto` | `TelaSimulador.tsx` (`FormHipotetico`, ≥2 parcelas) → `repo.salvarRecorrencia` com `cenarioId`, materializado do mesmo jeito | ver ressalva abaixo |
 | `cartao` | não | sempre `previsto` | `sincronizarCartoes` (`src/db/repo.ts`) | fila de pendentes da `TelaHoje` (`pendentes`, `src/domain/projection.ts`) não filtra por `origem`, então uma fatura vencida cai na mesma fila manual/recorrência e é confirmada por `repo.confirmarPendente`; depois de `efetivo`, `diffSincronizacao` (`src/domain/fatura.ts`) nunca mais toca o registro |
 
+O checkbox "Marcar como previsto" (`TelaLancar.tsx`) força `status: 'previsto'` mesmo com
+`data` de hoje ou passada. É o único caminho, para lançamento manual, que alimenta a fila de
+Pendentes da `TelaHoje`: `pendentes` (`src/domain/projection.ts`) só enxerga `previsto` com
+`data <= hoje`, e sem o checkbox um lançamento manual com data passada nasceria `efetivo`
+direto.
+
 `cartao` + `cenarioId` não existe: `CompraCartao` não tem campo `cenarioId`
 (`src/domain/types.ts`) e nada em `sincronizarCartoes` o define.
+
+As duas linhas com `cenarioId` só são produzidas por `TelaSimulador.tsx`, que hoje não é
+alcançável na navegação (`ABAS`, `Shell.tsx`); lançamentos de cenário existentes em uma base
+real são dado legado ou vindos de um backup importado.
+
+Existe um **quarto** escritor de lançamentos que a matriz acima não lista:
+`substituirTudo` (`src/db/repo.ts`, import de backup em modo "substituir"). Como
+`validarBackup` não valida o conteúdo dos registros (ver seção de Backup, abaixo), o import
+pode gravar combinações `status`×`origem` que o app nunca produz sozinho — inclusive as que
+este documento afirma não existir, como `cartao` + `cenarioId`.
 
 **Expectativa não garantida — cenário virando `efetivo`.** O comentário em
 `Lancamento.cenarioId` (`src/domain/types.ts`) diz "nunca `efetivo`", e a rota oficial de
@@ -95,10 +115,13 @@ Combinações que o código realmente produz, hoje:
 `cenarioId` do lançamento (e da recorrência, se houver) antes de ele poder virar `efetivo`
 pelo fluxo normal. Mas `LancEditor.tsx` não verifica `cenarioId` antes de oferecer o botão
 "Confirmar": qualquer lançamento `previsto` aberto por ele — inclusive um de cenário —
-pode receber `status: 'efetivo'` via `aplicar(true)`. Isso é alcançável na prática porque
-`TelaFluxo.tsx` só desvia para outra tela quando `l.origem === 'cartao'`; um item de
-cenário abre `LancEditor` normalmente. **Nenhum teste cobre esse caminho.** Tratar como
-regra desejada, não como algo que o código impede — ver relatório para o item de backlog.
+pode receber `status: 'efetivo'` via `aplicar(true)`. Isso é alcançável só de forma
+**latente** hoje, não na prática: exige dado de cenário pré-existente, já que
+`TelaSimulador.tsx` (a única tela que cria lançamento de cenário) não é alcançável pela
+navegação atual; `TelaFluxo.tsx` só desvia para outra tela quando `l.origem === 'cartao'`,
+então um item de cenário que já exista na base abre `LancEditor` normalmente.
+**Nenhum teste cobre esse caminho.** Tratar como regra desejada, não como algo que o código
+impede.
 
 `origem: 'import'` não existe mais: `OrigemLancamento` (`src/domain/types.ts`) só tem
 `'manual' | 'recorrencia' | 'cartao'` desde que o importador de planilha saiu do app.
@@ -134,7 +157,11 @@ disciplina de `materializar` (recorrências) vale aqui, por comentário explíci
 `diffSincronizacao`: `efetivo` nunca é tocado; um lançamento de fatura novo só é criado se
 o vencimento for **estritamente posterior** a hoje (não dá para distinguir "nunca criado"
 de "descartado no passado"); um `previsto` existente é atualizado para seguir
-valor/data do alvo calculado; e se o alvo some ou zera, o `previsto` é excluído.
+valor/data do alvo calculado; e se o alvo some ou zera, o `previsto` é excluído. A mesma
+borda descrita para recorrências (seção abaixo) vale aqui: apagar manualmente um lançamento
+de fatura `previsto` cujo vencimento ainda não passou faz ele reaparecer na próxima
+`sincronizarCartoes`, pela mesma lógica (`!vistos.has(faturaMes) && a.data > hoje` em
+`diffSincronizacao`).
 
 ## A projeção (`projetarBoxes`, `src/domain/projection.ts`)
 
@@ -145,10 +172,14 @@ com `cenarioId` só entra em `saldoComCenarios`, e só se o cenário estiver no 
 `cenariosLigados` — nunca soma em `saldoEfetivo`/`saldoProjetado` independentemente do seu
 `status`.
 
-O início da série é a menor `dataSaldoInicial` entre as boxes selecionadas (ou a menor data
-de lançamento, se nenhuma box tiver saldo inicial próprio — caso da box `"casa"`). Um
-lançamento com `data <= dataSaldoInicial` da sua box é ignorado: já está contido no saldo
-inicial informado.
+O saldo-base da série é a soma dos `saldoInicial` (centavos) de todas as boxes
+selecionadas — uma box sem saldo próprio (`saldoInicial: null`, caso da `"casa"`) contribui
+`0`. O início da série é a menor `dataSaldoInicial` entre as boxes selecionadas (ou a menor
+data de lançamento, se nenhuma box tiver saldo inicial próprio). Um lançamento com
+`data <= dataSaldoInicial` da **sua própria** box é ignorado: já está contido no saldo
+inicial informado. Além disso, todo lançamento com `data` anterior a esse início global é
+descartado, mesmo pertencendo a uma box sem `dataSaldoInicial` próprio (`projection.ts`) —
+o corte pela data mínima vale para a série toda, não só por box.
 
 `config.horizonteProjecao` é o teto até onde a projeção (e a materialização de
 recorrências/fatura) é calculada. `carregarTudo` (`src/db/repo.ts`) empurra esse valor para
@@ -183,8 +214,13 @@ lançamentos já vinculados a ela e devolve um diff: datas que faltam criar, ids
   existentes vinculados a ela.
 
 `materializarAssinatura` (`src/db/repo.ts`) reaproveita a mesma função `materializar` para
-gerar `CompraCartao` a partir de `RecorrenciaCartao` — mesmas regras acima, trocando
-"lançamento" por "compra".
+gerar `CompraCartao` a partir de `RecorrenciaCartao`, mas **não** segue as mesmas regras à
+risca: `CompraCartao` não tem campo de status próprio, então para montar o diff o status de
+cada compra existente é derivado comparando `data` com `hoje`
+(`c.data <= hoje ? 'efetivo' : 'previsto'`) em vez de lido de um registro — não há
+"histórico" preservado por edição manual como há para `Lancamento.status`. E
+`excluirAssinatura` só apaga as compras **futuras** vinculadas à regra (`c.data > hoje`);
+compras passadas ficam como histórico mesmo depois de a assinatura ser excluída.
 
 ## Backup e merge (`src/backup/backup.ts`)
 
@@ -208,7 +244,7 @@ isso; aqui é a leitura precisa do código):
   vai direto para `repo.substituirTudo`, que faz `db.config.put({ ...d.config,
   mudancasDesdeBackup: false })` — com `config: null`, o spread produz um objeto **sem
   `id: 'config'`**, o que é inconsistente com a chave primária da tabela `config` em
-  `src/db/database.ts`. Não testado. Ver relatório.
+  `src/db/database.ts`. Não testado — candidato a item de `TODO.md`.
 - Não impõe unicidade de `id` dentro de um mesmo array, nem consistência referencial
   (`boxId`, `categoriaId`, `cartaoId` etc. apontando para algo que existe).
 
@@ -235,14 +271,15 @@ Confirmadas no código:
 - **`money.ts` é o único lugar que formata centavos como reais** (`formatarBRL`) — não há
   outro `toLocaleString('pt-BR', { style: 'currency', ... })` nem literal `'R$'` fora dele
   no código de produção (buscado em `src/ui/**`).
-- **`dates.ts` não é o único lugar que formata datas para exibição.** Só `formatarDataBR`
-  (formato `DD/MM/AAAA`) vive lá. Vários componentes chamam `toLocaleDateString('pt-BR',
-  ...)` diretamente para nomes de mês/dia da semana: `src/ui/TelaFluxo.tsx`,
-  `src/ui/TelaAnalises.tsx`, `src/ui/FluxoChartModal.tsx`,
-  `src/ui/EvolucaoMensalChart.tsx`. Nenhum deles faz aritmética de data — só formatação de
-  rótulo — mas a afirmação "único lugar de formatação de data" do brief desta tarefa **não
-  se sustenta** como estava; o que se sustenta é que `dates.ts` é o único lugar que faz
-  aritmética/parse de `ISODate`.
+- **`dates.ts` é o único lugar que faz aritmética de calendário sobre `ISODate`** — somar
+  dias/meses, clampar o dia ao fim do mês (`dataComDia`), enumerar intervalos
+  (`diasEntre`). Ele **não** é o único lugar que faz parse nem formatação: `fatura.ts` e
+  `recurrence.ts` quebram a string com `split('-')` para chamar `dataComDia`, e ~10
+  componentes de UI reformatam `AAAA-MM-DD` → `DD/MM/AAAA` inline em vez de chamar
+  `formatarDataBR` (`TelaHoje.tsx`, `TelaCartao.tsx`, `FaturaResumo.tsx`,
+  `LancamentosSheet.tsx`, `ajustes/Versao.tsx`, entre outros), além dos quatro que chamam
+  `toLocaleDateString('pt-BR', ...)` para nomes de mês/dia da semana (`TelaFluxo.tsx`,
+  `TelaAnalises.tsx`, `FluxoChartModal.tsx`, `EvolucaoMensalChart.tsx`).
 - **Cenário nunca é `efetivo`** — expectativa documentada em `types.ts`, não garantida pelo
   código: ver ressalva na matriz `status` × `origem` acima (`LancEditor.tsx` permite).
 - **`efetivo` é imutável por materialização/sincronização automática** — garantido: nem
@@ -255,5 +292,13 @@ Confirmadas no código:
   declarado único (sem prefixo `&` no schema Dexie); a unicidade só é mantida pelo único
   caminho de escrita manual, `salvarConferenciaFatura` (`src/db/repo.ts`, busca-então-
   grava). Um backup com dois registros de `cartaoId`+`mes` iguais e ids diferentes passa
-  por `validarBackup` e `mesclar` sem ser deduplicado — `valorSincronizado` usaria
-  arbitrariamente o último da lista (`Map` construída por `mes`, em `diffSincronizacao`).
+  por `validarBackup` e `mesclar` sem ser deduplicado — `valorSincronizado` usaria o último
+  registro da lista, escolha **arbitrária porém determinística**: a ordem vem do índice do
+  Dexie, e a `Map` construída por `mes` em `diffSincronizacao` sempre faz o último elemento
+  da iteração vencer.
+- **Viagens não se sobrepõem** — expectativa, não garantida pelo schema nem pelo repo: só
+  `ajustes/Viagens.tsx` chama `viagensSobrepoem` antes de salvar. `repo.salvarViagem`,
+  `repo.atualizarViagem` e `substituirTudo` (import de backup) não checam nada; havendo
+  sobreposição, `viagemAtivaEm` devolve a primeira viagem do array cujo intervalo contém a
+  data, e `TelaLancar.tsx` usa esse valor para marcar `viagemId` automaticamente no
+  lançamento.
