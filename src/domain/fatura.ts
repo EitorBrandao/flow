@@ -105,6 +105,27 @@ export function valorSincronizado(fatura: Fatura, conf: ConferenciaFatura | unde
   return conf?.usarValorApp ? conf.valorAppCent : fatura.totalCent;
 }
 
+/**
+ * Conferência é única por cartão e mês, mas o índice `[cartaoId+mes]` do Dexie não é unique:
+ * duas conferências do mesmo mês com ids diferentes entram pelo import de backup e ficam.
+ * O estrago é silencioso — `salvarConferenciaFatura` lê com `.first()` e passa a editar
+ * sempre a mesma, deixando a outra órfã e mudando o valor da fatura conforme a ordem do
+ * índice. Vence a mais recente; empate desempata pelo id, para o resultado não depender da
+ * ordem de entrada. Aplicado em todo caminho que grava o snapshot inteiro.
+ */
+export function dedupConferencias(cs: ConferenciaFatura[]): ConferenciaFatura[] {
+  const porCartaoMes = new Map<string, ConferenciaFatura>();
+  for (const c of cs) {
+    const chave = `${c.cartaoId}|${c.mes}`;
+    const atual = porCartaoMes.get(chave);
+    const vence = !atual
+      || c.alteradoEm > atual.alteradoEm
+      || (c.alteradoEm === atual.alteradoEm && c.id > atual.id);
+    if (vence) porCartaoMes.set(chave, c);
+  }
+  return [...porCartaoMes.values()];
+}
+
 export interface DiffSincronizacao {
   criar: { faturaMes: string; data: ISODate; valor: number }[];
   atualizar: { id: ID; valor: number; data: ISODate }[];

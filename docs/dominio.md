@@ -227,8 +227,10 @@ compras passadas ficam como histórico mesmo depois de a assinatura ser excluíd
 **O que `validarBackup` garante:** `app === 'flow'`; `schema` é `1`, `2` ou `3`; para cada
 schema, as tabelas correspondentes existem e são arrays (`TABELAS_V1` sempre;
 `TABELAS_CARTAO` a partir do schema 2; `TABELAS_VIAGEM` a partir do schema 3); backups de
-schema antigo recebem as tabelas novas como array vazio. `mesclar` sempre mantém a `config`
-local (`atual.config`), nunca a do backup.
+schema antigo recebem as tabelas novas como array vazio; `dados.config` é um objeto de
+verdade — `null`, array e primitivo são rejeitados com mensagem própria — e sai de
+`validarBackup` sempre com `id: 'config'`, a chave primária do registro único. `mesclar`
+sempre mantém a `config` local (`atual.config`), nunca a do backup.
 
 **O que `validarBackup` não garante** (validação rasa, por desenho — CLAUDE.md já registra
 isso; aqui é a leitura precisa do código):
@@ -238,13 +240,11 @@ isso; aqui é a leitura precisa do código):
 - Não valida forma nem futuro de `alteradoEm` — a comparação de desempate em `mesclar` é
   string (`x.alteradoEm > existente.alteradoEm`), então um `alteradoEm` futuro ou um
   formato de data diferente altera o resultado do desempate sem erro.
-- `typeof d.config !== 'object'` não rejeita `config: null`, porque `typeof null` é
-  `'object'` em JavaScript. Um backup com `dados.config: null` passa em `validarBackup`.
-  Isso importa de verdade no modo "substituir" da UI (`Backup.tsx`): `finais = backup.dados`
-  vai direto para `repo.substituirTudo`, que faz `db.config.put({ ...d.config,
-  mudancasDesdeBackup: false })` — com `config: null`, o spread produz um objeto **sem
-  `id: 'config'`**, o que é inconsistente com a chave primária da tabela `config` em
-  `src/db/database.ts`. Não testado — candidato a item de `TODO.md`.
+- Não valida os **campos** de `config` além de ela ser um objeto: um `config: {}` passa. A
+  forma é checada, o conteúdo não — e `carregarTudo` não conserta, porque só repõe a config
+  quando ela **não existe** (`!config`); com `horizonteProjecao` ausente, a comparação
+  `undefined < horizonteMinimo` é `false` e a virada de ano automática não dispara. Só
+  acontece com backup editado à mão: todo backup gerado pelo app carrega a config inteira.
 - Não impõe unicidade de `id` dentro de um mesmo array, nem consistência referencial
   (`boxId`, `categoriaId`, `cartaoId` etc. apontando para algo que existe).
 
@@ -287,15 +287,15 @@ Confirmadas no código:
   (`src/domain/fatura.ts`) tocam um lançamento com `status: 'efetivo'`. A única forma de um
   `efetivo` mudar é edição manual explícita (`LancEditor` → `repo.atualizarLancamento`) ou
   exclusão manual (`repo.excluirLancamento`).
-- **No máximo uma `ConferenciaFatura` por `cartaoId`+`mes`** — expectativa, não garantida
-  pelo schema: o índice composto `[cartaoId+mes]` em `src/db/database.ts` **não** é
-  declarado único (sem prefixo `&` no schema Dexie); a unicidade só é mantida pelo único
-  caminho de escrita manual, `salvarConferenciaFatura` (`src/db/repo.ts`, busca-então-
-  grava). Um backup com dois registros de `cartaoId`+`mes` iguais e ids diferentes passa
-  por `validarBackup` e `mesclar` sem ser deduplicado — `valorSincronizado` usaria o último
-  registro da lista, escolha **arbitrária porém determinística**: a ordem vem do índice do
-  Dexie, e a `Map` construída por `mes` em `diffSincronizacao` sempre faz o último elemento
-  da iteração vencer.
+- **No máximo uma `ConferenciaFatura` por `cartaoId`+`mes`** — mantida por código nos dois
+  caminhos de escrita, não pelo schema: o índice composto `[cartaoId+mes]` em
+  `src/db/database.ts` **não** é declarado único (sem prefixo `&` no schema Dexie). A
+  escrita manual passa por `salvarConferenciaFatura` (`src/db/repo.ts`, busca-então-grava),
+  e o import de backup passa por `dedupConferencias` (`src/domain/fatura.ts`) nos **dois**
+  modos: dentro de `mesclar` no modo "mesclar", e dentro de `substituirTudo` no modo
+  "substituir", que não passa por `mesclar`. A regra é a mesma nos dois: vence o
+  `alteradoEm` mais recente, empate desempata pelo `id` maior — resultado independente da
+  ordem de entrada.
 - **Viagens não se sobrepõem** — expectativa, não garantida pelo schema nem pelo repo: só
   `ajustes/Viagens.tsx` chama `viagensSobrepoem` antes de salvar. `repo.salvarViagem`,
   `repo.atualizarViagem` e `substituirTudo` (import de backup) não checam nada; havendo

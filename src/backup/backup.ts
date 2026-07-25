@@ -1,3 +1,4 @@
+import { dedupConferencias } from '../domain/fatura';
 import type { Dados } from '../domain/types';
 
 export interface Backup {
@@ -26,8 +27,14 @@ export function validarBackup(json: unknown): Backup {
     throw new Error(`Backup de versão incompatível (${String(b.schema)}). Atualize o app e tente de novo.`);
   }
   const d = b.dados;
-  if (!d || TABELAS_V1.some((t) => !Array.isArray(d[t])) || typeof d.config !== 'object') {
+  if (!d || TABELAS_V1.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
+  }
+  // `typeof null === 'object'` e `typeof [] === 'object'`: sem estes dois testes um config
+  // nulo atravessa a validação inteira e só quebra no `db.config.put` do repo, com mensagem
+  // obscura (o import cai fora por rollback da transação, sem perder dados, mas sem explicar).
+  if (!d.config || typeof d.config !== 'object' || Array.isArray(d.config)) {
+    throw new Error('Backup corrompido: configuração ausente ou inválida.');
   }
   if (b.schema >= 2 && TABELAS_CARTAO.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
@@ -36,6 +43,9 @@ export function validarBackup(json: unknown): Backup {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
   const dados = { ...d } as unknown as Dados;
+  // 'config' é a chave primária do registro único; um backup sem ela faz o `put` do repo
+  // gravar sem chave e falhar. O id é constante por definição — impor aqui é barato.
+  dados.config = { ...dados.config, id: 'config' };
   if (b.schema === 1) {
     // backup antigo: tabelas do cartão nasceram depois
     const md = dados as unknown as Record<string, unknown[]>;
@@ -73,7 +83,9 @@ export function mesclar(atual: Dados, doBackup: Dados): Dados {
     categoriasCartao: mesclarTabela(atual.categoriasCartao, doBackup.categoriasCartao),
     comprasCartao: mesclarTabela(atual.comprasCartao, doBackup.comprasCartao),
     recorrenciasCartao: mesclarTabela(atual.recorrenciasCartao, doBackup.recorrenciasCartao),
-    conferenciasFatura: mesclarTabela(atual.conferenciasFatura, doBackup.conferenciasFatura),
+    conferenciasFatura: dedupConferencias(
+      mesclarTabela(atual.conferenciasFatura, doBackup.conferenciasFatura),
+    ),
     viagens: mesclarTabela(atual.viagens, doBackup.viagens),
     config: atual.config,
   };
