@@ -67,11 +67,11 @@ it('consolida casa: soma boxes + gastos compartilhados', () => {
   const serie = projetarBoxes(['be', 'bj', 'bc'], entrada([
     lanc({ id: '1', data: '2026-01-02', valor: 100000 }),                                  // eitor +1000
     lanc({ id: '2', data: '2026-01-02', valor: 20000, boxId: 'bj', categoriaId: 'cjg' }),  // ju +200
-    lanc({ id: '3', data: '2026-01-03', valor: 17325, boxId: 'bc', categoriaId: 'cca' }),  // casa -173,25
+    lanc({ id: '3', data: '2026-01-03', valor: 17300, boxId: 'bc', categoriaId: 'cca' }),  // casa -173,00
   ]));
   expect(serie[0].saldoEfetivo).toBe(150000);            // 100000 + 50000
   expect(serie[1].saldoEfetivo).toBe(150000 + 120000);
-  expect(serie[2].saldoEfetivo).toBe(150000 + 120000 - 17325);
+  expect(serie[2].saldoEfetivo).toBe(150000 + 120000 - 17300);
 });
 
 it('pendentes: previstos sem cenário com data <= hoje, ordenados', () => {

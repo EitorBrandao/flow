@@ -3,7 +3,7 @@ import { materializar, ocorrencias } from './recurrence';
 
 function rec(sobrescrever: Partial<Recorrencia> = {}): Recorrencia {
   return {
-    id: 'r1', boxId: 'b1', categoriaId: 'c1', valor: 12684,
+    id: 'r1', boxId: 'b1', categoriaId: 'c1', valor: 12300,
     dataInicio: '2025-07-03', diaDoMes: 3, parcelas: 8,
     ativa: true, origem: 'manual',
     criadoEm: '2026-01-01T00:00:00Z', alteradoEm: '2026-01-01T00:00:00Z',
@@ -13,7 +13,7 @@ function rec(sobrescrever: Partial<Recorrencia> = {}): Recorrencia {
 
 function lanc(data: string, status: 'efetivo' | 'previsto', id = `l-${data}`): Lancamento {
   return {
-    id, boxId: 'b1', categoriaId: 'c1', data, valor: 12684, status,
+    id, boxId: 'b1', categoriaId: 'c1', data, valor: 12300, status,
     origem: 'recorrencia', recorrenciaId: 'r1',
     criadoEm: '2026-01-01T00:00:00Z', alteradoEm: '2026-01-01T00:00:00Z',
   };

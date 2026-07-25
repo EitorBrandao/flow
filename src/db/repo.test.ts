@@ -60,7 +60,7 @@ it('salvarRecorrencia materializa previstos até o horizonte', async () => {
     vi.setSystemTime(new Date('2026-07-01T12:00:00'));
     const { box, gasto } = await boxECategoria();
     await repo.salvarRecorrencia(
-      { boxId: box.id, categoriaId: gasto.id, valor: 12684, dataInicio: '2026-08-03', diaDoMes: 3, parcelas: 8 },
+      { boxId: box.id, categoriaId: gasto.id, valor: 12300, dataInicio: '2026-08-03', diaDoMes: 3, parcelas: 8 },
       '2027-12-31',
     );
     const dados = await repo.carregarTudo();

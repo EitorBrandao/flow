@@ -33,15 +33,20 @@ Ele varre `git diff --cached`: a mudança que está entrando agora, nunca o que 
 repositório. Para o histórico existe `scripts/verificar-dados-reais.mjs`, que varre todos os
 arquivos versionados — os dois lêem a mesma lista privada.
 
-## O `scan-dados-reais.mjs` está inerte por padrão
+## O `scan-dados-reais.mjs` depende de um arquivo local
 
 Ele lê os termos a procurar de `~/.claude/flow-dados-reais.txt` — um arquivo **fora do
 repositório**, porque a lista em si é dado sensível (nomes de estabelecimentos, descrições,
-valores reais). Sem esse arquivo o hook sai em silêncio: hoje, nesta máquina, **ele não está
-procurando nada**.
+valores reais). Sem esse arquivo o hook sai em silêncio, procurando nada.
 
-Para ativar, crie o arquivo com um termo por linha; linhas vazias e linhas começando com `#`
-são ignoradas. Ele nunca é lido por nada além do hook local e nunca entra no repositório.
+O arquivo foi criado nesta máquina em 2026-07-25, a partir da planilha local do usuário e
+calibrado contra o repositório inteiro até zerar os falsos positivos. Ele **não** viaja com o
+repositório: num clone novo, noutra máquina ou no CI, o hook volta a ficar inerte e a regra
+"nunca commitar dados financeiros reais" do `CLAUDE.md` vale só por disciplina.
 
-Enquanto o arquivo não existir, a regra "nunca commitar dados financeiros reais" do
-`CLAUDE.md` continua valendo por disciplina, sem rede de segurança.
+Formato: um termo (ou regex JS) por linha; linhas vazias e linhas começando com `#` são
+ignoradas; regex inválida é ignorada em silêncio. Ao acrescentar um termo, rode
+`node scripts/verificar-dados-reais.mjs` no repositório: termo genérico demais (uma palavra
+comum, um cabeçalho de planilha) casa com conteúdo sintético legítimo e vira falso positivo
+que **bloqueia o release** — desde 2026-07-25 o `release.mjs` chama o verificador com
+`--strict`.
