@@ -49,6 +49,10 @@ Duas consequências que valem por escrito:
 
 ## Arquitetura
 
+Modelo conceitual e invariantes de `src/domain/`, `src/db/` e `src/backup/` (o que é a box
+`'casa'`, a matriz `status` × `origem` do lançamento, o ciclo da fatura, o que
+`validarBackup` garante e o que não garante): `docs/dominio.md`.
+
 Camadas, de baixo para cima:
 
 - **`src/domain/`** — lógica pura, sem IO. `types.ts` define as entidades (Box, Categoria, Lancamento, Recorrencia, Cartao, CategoriaCartao, CompraCartao, RecorrenciaCartao, ConferenciaFatura, Cenario, Viagem, Config) e o snapshot `Dados`, que agrega todas elas. `projection.ts` (`projetarBoxes`) calcula o saldo dia a dia até `config.horizonteProjecao`. `recurrence.ts` materializa recorrências em lançamentos `previsto`. `fatura.ts` calcula ciclos de fechamento/vencimento do cartão e gera as faturas. `aggregations.ts` alimenta a aba Análises. `categorias.ts` guarda a ordenação e a numeração de ordem das categorias (`compararCategorias`, `diffOrdem`, `proximaOrdem`); `viagem.ts` resolve a viagem ativa numa data e agrega os itens de uma viagem (`viagemAtivaEm`, `itensDaViagem`). `money.ts`/`dates.ts` são os únicos lugares de parse/format.
@@ -73,7 +77,9 @@ Convenções do domínio: valores monetários são **centavos inteiros**; datas 
 
 ## Regras de dados (`src/db/`, `src/backup/`)
 
-Erro aqui custa dados financeiros do usuário — que não têm servidor nem cópia automática:
+Erro aqui custa dados financeiros do usuário — que não têm servidor nem cópia automática.
+Modelo conceitual e invariantes (o que cada entidade significa, o que é garantido pelo
+código e o que é só expectativa): `docs/dominio.md`.
 
 - Nova `this.version(n)` no Dexie exige, no mesmo commit, teste do caminho de upgrade: popular dados no schema n−1 e abrir no schema n.
 - Mudança em `src/backup/` exige testes adversariais (JSON malformado, campos ausentes, `config` nulo, `alteradoEm` no futuro). **Nunca relaxe `validarBackup`** — a validação de import só endurece, nunca afrouxa.
