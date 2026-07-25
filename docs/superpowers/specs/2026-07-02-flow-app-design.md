@@ -8,23 +8,21 @@ Status: aprovada em 2026-07-02 — implementada
 Eitor controla suas finanças desde 2024 numa planilha Excel ("flow of the box"), uma por ano.
 A planilha é um **fluxo de caixa diário com saldo projetado**: colunas = dias do ano, linhas =
 categorias de ganhos/gastos, e `Saldo(d) = Saldo(d−1) + Ganhos(d) − Gastos(d)`. O saldo de
-01/01 vem do arquivo do ano anterior (link externo). Empréstimos cadastrados na aba
-`Simulacoes` (data início, dia de pagamento, nº de parcelas, valor mensal) são projetados
+01/01 vem do arquivo do ano anterior (link externo). Empréstimos cadastrados na aba de
+simulações (data início, dia de pagamento, nº de parcelas, valor mensal) são projetados
 automaticamente nos dias futuros. Abas `Resumos`/`Pivot` agregam por mês: total por categoria,
 sobra e gasto como % da renda.
 
 Estrutura do arquivo de 2026 (fonte de verdade para o import):
 
-- `box (pessoa-a)` — fluxo diário do Eitor. Ganhos: salário/férias, pix, ajuste cents, rendimento
-  nubank. Gastos: cartão, previdência, saúde, pix, guardado, aluguel, condomínio, energia,
-  água, Empréstimo A, Empréstimo B. Saldo inicial 2026: R$ 1.000,00.
-- `box (pessoa-b)` — mesma estrutura para a Ju. Gastos: internet, educação, academia, aluguel,
-  condomínio, pix, internet.
-- `box (casa)` — consolidação: ganhos/gastos de eitor + Ju + categorias compartilhadas
-  (Energia, Água, Ajustes).
-- `Simulacoes` — empréstimos com cronograma de parcelas.
-- `Salarios` — rateio do aluguel entre as pessoas da casa por percentuais.
-- `Acertos` — acerto de contas mensal com a Ju.
+- Uma aba por **box pessoal** — fluxo diário de uma pessoa, com categorias próprias de ganho
+  (salário, transferências, rendimento) e de gasto (moradia, contas, cartão, empréstimos,
+  serviços recorrentes) e um saldo inicial de 1º de janeiro.
+- Uma aba de **box compartilhada** — consolidação dos ganhos/gastos das boxes pessoais mais as
+  categorias comuns da casa (energia, água, ajustes).
+- Uma aba de **simulações** — empréstimos com cronograma de parcelas.
+- Uma aba de **rateio** — divisão de uma despesa comum entre as pessoas, por percentuais.
+- Uma aba de **acerto de contas** mensal entre as pessoas.
 - `Resumos`/`Pivot` + abas ocultas `transposed(...)` — agregações mensais.
 
 ### Dores que o app elimina
