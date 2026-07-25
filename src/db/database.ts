@@ -18,8 +18,8 @@ export class FlowDB extends Dexie {
   conferenciasFatura!: Table<ConferenciaFatura, string>;
   viagens!: Table<Viagem, string>;
 
-  constructor() {
-    super('flow');
+  constructor(nome = 'flow') {
+    super(nome);
     this.version(1).stores({
       boxes: 'id',
       categorias: 'id, boxId',
