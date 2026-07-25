@@ -10,8 +10,8 @@ A auditoria de 2026-07-23 mostrou que quase todas as regras do repositório depe
 disciplina do agente. Os pontos de custo mais alto — release, deploy, catálogo de estilo —
 já falharam na prática (três incidentes de deploy regredindo o site; dois branches
 cunhando `v0.10.0` independentemente). Esta spec define os guards automáticos, em ordem de
-retorno por esforço. Implementação em sessão futura (não-Fable), cada pacote como um
-branch/fragmento próprio.
+retorno por esforço. Implementação prevista para sessão futura (não-Fable), cada pacote como um
+branch/fragmento próprio — *feita em 2026-07-23; ver a linha `Status:` no topo*.
 
 Restrição transversal: **nenhum guard novo pode ser afrouxado ou removido sem pedido
 explícito do usuário** (regra já registrada no CLAUDE.md — os scripts desta spec são

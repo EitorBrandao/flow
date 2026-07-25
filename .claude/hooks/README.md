@@ -9,7 +9,7 @@ esquecimento, não guarda — o que bloqueia de verdade está em `scripts/` e no
 |---|---|---|
 | `lembrete-ui.mjs` | `Edit`/`Write` em `src/ui/`, `src/styles.css` ou `index.html` | lembra de consultar `docs/estilo-visual.md`; dedupe por sessão (marcador no tmpdir), uma vez por sessão |
 | `lembrete-deps.mjs` | `Bash` com `npm install`, `npm i ` ou `npm add` (não `uninstall`) | lembra que dependência nova é decisão de produto: confirmar com o usuário, justificar por que código próprio não basta, `npm audit`, lockfile no mesmo commit |
-| `scan-dados-reais.mjs` | `Bash` com `git commit` | varre `git diff --cached` procurando dados financeiros reais e avisa **sem nunca ecoar o trecho encontrado** |
+| `scan-dados-reais.mjs` | `Bash` com `git commit` | varre `git diff --cached -U0` procurando dados financeiros reais; avisa citando o arquivo e **o termo da lista** que casou, nunca o trecho do diff — ou seja, os termos da lista aparecem no contexto da sessão |
 
 O comportamento dos três é coberto por testes em `scripts/hooks.test.mjs`, que roda junto com
 `npm test`.

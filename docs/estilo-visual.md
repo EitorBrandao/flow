@@ -6,8 +6,8 @@ código.
 
 Achou o guia divergindo do código? A regra de precedência é **única** e vive no `CLAUDE.md`
 (primeiro bullet de "Regras do repositório") — leia lá antes de "corrigir" o guia. Em uma
-linha: ela vale para divergências que você **encontrou**, nunca para legitimar uma que a
-sua própria mudança criaria.
+linha: ela vale para divergências que você **encontrou** (o código manda; o guia é que se
+atualiza), nunca para legitimar uma que a sua própria mudança criaria.
 
 ## Que mudança você vai fazer?
 

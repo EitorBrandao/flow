@@ -9,8 +9,8 @@ local-first — **não existe servidor**, todos os dados vivem no IndexedDB do s
 
 - **Hoje** — saldo atual, entradas e saídas do dia, projeção dos próximos dias.
 - **Fluxo** — lançamentos dia a dia com saldo projetado até o horizonte configurado, em lista e em gráfico.
-- **Lançar** — ganhos e gastos manuais, e compras no cartão (à vista ou parceladas).
-- **Cartão** — faturas por ciclo de fechamento/vencimento, assinaturas e conferência.
+- **Lançar** — ganhos e gastos manuais; o botão **+** também lança compra no cartão, à vista ou parcelada.
+- **Cartão** — faturas por ciclo de fechamento/vencimento, com as assinaturas embutidas, e conferência da fatura.
 - **Análises** — composição por categoria, evolução mensal, comparativo e viagens.
 - **Ajustes** — boxes, categorias, recorrências, cartões, categorias do cartão, assinaturas do cartão, viagens, backup, wiki e versão.
 
