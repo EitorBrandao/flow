@@ -173,10 +173,10 @@ describe('Hook Scripts', () => {
         });
         expect(output1).toContain('additionalContext');
 
-        // Different session_id should emit even after first emission
+        // MESMO arquivo, sessão diferente: é a dimensão "sessão" que este teste isola
         const input2 = {
           tool_name: 'Edit',
-          tool_input: { file_path: 'index.html' },
+          tool_input: { file_path: 'src/ui/Button.tsx' },
           cwd: PROJECT_DIR,
           session_id: sessionId2
         };
@@ -187,6 +187,50 @@ describe('Hook Scripts', () => {
           env: { ...process.env, TMPDIR: tempTestDir, TMP: tempTestDir }
         });
         expect(output2).toContain('additionalContext');
+      } finally {
+        rmSync(tempTestDir, { recursive: true, force: true });
+      }
+    });
+
+    it('deve ficar em silêncio em arquivo de teste dentro de src/ui/', () => {
+      for (const arquivo of ['src/ui/TelaFluxo.test.tsx', 'src/ui/ajustes/Backup.test.tsx', 'src/ui/util.test.ts']) {
+        const input = {
+          tool_name: 'Edit',
+          tool_input: { file_path: arquivo },
+          cwd: PROJECT_DIR
+        };
+
+        const output = execFileSync('node', [join(PROJECT_DIR, '.claude/hooks/lembrete-ui.mjs')], {
+          input: JSON.stringify(input),
+          encoding: 'utf-8'
+        });
+
+        expect(output.trim(), `esperava silêncio para ${arquivo}`).toBe('');
+      }
+    });
+
+    it('dedupe é por arquivo: dois arquivos de UI na mesma sessão avisam os dois', () => {
+      const sessionId = `test-session-arquivo-${Date.now()}`;
+      const tempTestDir = mkdtempSync(join(tmpdir(), 'hooks-session-test-'));
+
+      try {
+        const chamar = (filePath) => execFileSync('node', [join(PROJECT_DIR, '.claude/hooks/lembrete-ui.mjs')], {
+          input: JSON.stringify({
+            tool_name: 'Edit',
+            tool_input: { file_path: filePath },
+            cwd: PROJECT_DIR,
+            session_id: sessionId
+          }),
+          encoding: 'utf-8',
+          env: { ...process.env, TMPDIR: tempTestDir, TMP: tempTestDir }
+        });
+
+        // o primeiro arquivo avisa
+        expect(chamar('src/ui/Sheet.tsx')).toContain('additionalContext');
+        // um arquivo DIFERENTE na mesma sessão também avisa — antes o aviso era queimado
+        expect(chamar('src/ui/TelaHoje.tsx')).toContain('additionalContext');
+        // repetir o mesmo arquivo continua silencioso
+        expect(chamar('src/ui/Sheet.tsx').trim()).toBe('');
       } finally {
         rmSync(tempTestDir, { recursive: true, force: true });
       }
@@ -396,6 +440,35 @@ describe('Hook Scripts', () => {
       }
     });
 
+    it('deve ficar em silêncio quando o comando não é git commit', () => {
+      // o filtro `if` do settings.json é otimização; a proteção é a guarda de comando do script
+      const patternsDir = join(tempHome, '.claude');
+      mkdirSync(patternsDir, { recursive: true });
+      writeFileSync(join(patternsDir, 'flow-dados-reais.txt'), '\\d{3}\\.\\d{3}\\.\\d{3}');
+
+      const testRepoDir = join(tempDir, 'repo-sem-commit');
+      mkdirSync(testRepoDir, { recursive: true });
+      execFileSync('git', ['init'], { cwd: testRepoDir });
+      execFileSync('git', ['config', 'user.email', 'test@test.com'], { cwd: testRepoDir });
+      execFileSync('git', ['config', 'user.name', 'Test User'], { cwd: testRepoDir });
+      writeFileSync(join(testRepoDir, 'data.txt'), 'valor: 123.456.789');
+      execFileSync('git', ['add', 'data.txt'], { cwd: testRepoDir });
+
+      // mesmo índice que dispararia o aviso, mas o comando é outro
+      for (const comando of ['git status', 'git diff --cached', 'npm test']) {
+        const output = execFileSync(
+          'node',
+          [join(PROJECT_DIR, '.claude/hooks/scan-dados-reais.mjs')],
+          {
+            input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: comando }, cwd: testRepoDir }),
+            encoding: 'utf-8',
+            env: { ...process.env, HOME: tempHome, USERPROFILE: tempHome }
+          }
+        );
+        expect(output.trim(), `esperava silêncio para "${comando}"`).toBe('');
+      }
+    });
+
     it('should not crash on invalid regex pattern', () => {
       const patternsDir = join(tempHome, '.claude');
       mkdirSync(patternsDir, { recursive: true });
@@ -419,6 +492,81 @@ describe('Hook Scripts', () => {
 
       // Should exit gracefully (exit 0)
       expect(output.trim()).toBe('');
+    });
+  });
+
+  describe('lembrete-main.mjs', () => {
+    const HOOK = join(PROJECT_DIR, '.claude/hooks/lembrete-main.mjs');
+    let repos;
+
+    function criarRepo(branch) {
+      const dir = mkdtempSync(join(tmpdir(), 'hooks-main-'));
+      execFileSync('git', ['init', '-b', 'main'], { cwd: dir, stdio: 'ignore' });
+      execFileSync('git', ['config', 'user.email', 'test@test.com'], { cwd: dir });
+      execFileSync('git', ['config', 'user.name', 'Test User'], { cwd: dir });
+      writeFileSync(join(dir, '.gitignore'), 'LOCAL.md\n');
+      writeFileSync(join(dir, 'versionado.txt'), 'conteudo\n');
+      writeFileSync(join(dir, 'LOCAL.md'), 'backlog local\n');
+      execFileSync('git', ['add', '.gitignore', 'versionado.txt'], { cwd: dir });
+      execFileSync('git', ['commit', '-m', 'inicial'], { cwd: dir, stdio: 'ignore' });
+      if (branch !== 'main') {
+        execFileSync('git', ['checkout', '-b', branch], { cwd: dir, stdio: 'ignore' });
+      }
+      repos.push(dir);
+      return dir;
+    }
+
+    function chamar(dir, arquivo, sessionId = null, tmpEnv = null) {
+      const input = {
+        tool_name: 'Edit',
+        tool_input: { file_path: join(dir, arquivo) },
+        cwd: dir,
+      };
+      if (sessionId) input.session_id = sessionId;
+      const env = { ...process.env };
+      if (tmpEnv) { env.TMPDIR = tmpEnv; env.TMP = tmpEnv; }
+      return execFileSync('node', [HOOK], { input: JSON.stringify(input), encoding: 'utf-8', env });
+    }
+
+    beforeAll(() => { repos = []; });
+    afterAll(() => { for (const d of repos) rmSync(d, { recursive: true, force: true }); });
+
+    it('avisa ao editar arquivo versionado com HEAD na main', () => {
+      const dir = criarRepo('main');
+      const saida = chamar(dir, 'versionado.txt');
+      expect(saida).toContain('additionalContext');
+      expect(JSON.parse(saida).hookSpecificOutput.additionalContext).toContain('worktree');
+    });
+
+    it('fica em silêncio num branch de feature', () => {
+      const dir = criarRepo('feature-x');
+      expect(chamar(dir, 'versionado.txt').trim()).toBe('');
+    });
+
+    it('fica em silêncio em arquivo gitignored, mesmo na main', () => {
+      const dir = criarRepo('main');
+      expect(chamar(dir, 'LOCAL.md').trim()).toBe('');
+    });
+
+    it('avisa também em arquivo novo, dentro de pasta que ainda não existe', () => {
+      const dir = criarRepo('main');
+      expect(chamar(dir, 'nova/pasta/arquivo.ts')).toContain('additionalContext');
+    });
+
+    it('fica em silêncio fora de um repositório git', () => {
+      const dir = mkdtempSync(join(tmpdir(), 'hooks-sem-git-'));
+      repos.push(dir);
+      writeFileSync(join(dir, 'solto.txt'), 'x\n');
+      expect(chamar(dir, 'solto.txt').trim()).toBe('');
+    });
+
+    it('dedupe por sessão: avisa uma vez, mesmo em arquivos diferentes', () => {
+      const dir = criarRepo('main');
+      const tmpTeste = mkdtempSync(join(tmpdir(), 'hooks-main-tmp-'));
+      repos.push(tmpTeste);
+      const sessao = `sessao-main-${Date.now()}`;
+      expect(chamar(dir, 'versionado.txt', sessao, tmpTeste)).toContain('additionalContext');
+      expect(chamar(dir, 'outro.txt', sessao, tmpTeste).trim()).toBe('');
     });
   });
 

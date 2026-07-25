@@ -11,6 +11,11 @@ cada coisa — não repete o que ela diz.
   `catalogo.md` (classes e componentes existentes), `transversais.md` (movimento e
   acessibilidade), e os seis níveis de edição (`nivel-1-editar-tela.md` até
   `nivel-6-mudanca-de-linguagem.md`).
+- **[`dominio.md`](dominio.md)** — modelo conceitual e invariantes de `src/domain/`, `src/db/`
+  e `src/backup/`: o que cada entidade significa, a matriz `status` × `origem` do lançamento, o
+  ciclo da fatura, o que `validarBackup` garante e o que não garante. Separa **invariante
+  garantido pelo código** de **expectativa não garantida** — leitura obrigatória antes de mexer
+  em dados.
 - **[`superpowers/specs/`](superpowers/specs/)** e **[`superpowers/plans/`](superpowers/plans/)**
   — decisões de produto (o quê e por quê, aprovado com o usuário) e planos de execução (como
   implementar). Índice com data, tema, situação de implementação e o par spec↔plano de cada

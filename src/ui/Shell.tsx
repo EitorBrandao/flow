@@ -17,7 +17,8 @@ const ABAS: { id: Aba; rotulo: string; central?: boolean }[] = [
   { id: 'lancar', rotulo: '+', central: true },
   { id: 'cartao', rotulo: 'Cartão' },
   { id: 'analises', rotulo: 'Análises' },
-  // aba 'simulador' ocultada temporariamente — ver TODO.md
+  // aba 'simulador' ocultada da barra a pedido do usuário em 2026-07-17; TelaSimulador e a
+  // lógica de cenários seguem inteiras, só o botão de navegação saiu daqui
 ];
 
 const NOMES_ABA: Record<Aba, string> = {
