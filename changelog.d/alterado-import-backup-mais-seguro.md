@@ -1,0 +1,2 @@
+- Importar um backup com a configuração ausente ou corrompida agora avisa com uma mensagem clara, em vez de falhar sem explicar.
+- Importar um backup não deixa mais duas conferências de fatura do mesmo cartão e mês conviverem: fica valendo a mais recente, tanto ao substituir quanto ao mesclar.

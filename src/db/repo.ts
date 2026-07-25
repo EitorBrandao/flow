@@ -1,6 +1,6 @@
 import { compararCategorias, compararCategoriasCartao } from '../domain/categorias';
 import { hojeISO } from '../domain/dates';
-import { calcularFaturas, diffSincronizacao } from '../domain/fatura';
+import { calcularFaturas, dedupConferencias, diffSincronizacao } from '../domain/fatura';
 import { materializar } from '../domain/recurrence';
 import {
   agoraISO, novoId,
@@ -243,7 +243,9 @@ export async function substituirTudo(d: Dados): Promise<void> {
     await db.categoriasCartao.bulkAdd(d.categoriasCartao);
     await db.comprasCartao.bulkAdd(d.comprasCartao);
     await db.recorrenciasCartao.bulkAdd(d.recorrenciasCartao);
-    await db.conferenciasFatura.bulkAdd(d.conferenciasFatura);
+    // o modo "substituir" do import não passa por `mesclar`: sem isto, um backup com duas
+    // conferências do mesmo cartão e mês grava as duas e uma fica órfã (ver dedupConferencias)
+    await db.conferenciasFatura.bulkAdd(dedupConferencias(d.conferenciasFatura));
     await db.viagens.bulkAdd(d.viagens);
     await db.config.put({ ...d.config, mudancasDesdeBackup: false });
   });

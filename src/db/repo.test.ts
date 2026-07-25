@@ -293,6 +293,21 @@ describe('tabelas do cartão', () => {
     const depois = await db.cartoes.toArray();
     expect(depois.map((c) => c.id)).toEqual(['novo']);
   });
+
+  it('substituirTudo deduplica conferências do mesmo cartão e mês', async () => {
+    const dados = await repo.carregarTudo();
+    const base = { cartaoId: 'k1', mes: '2026-03', usarValorApp: true, criadoEm: '2026-03-01' };
+    await repo.substituirTudo({
+      ...dados,
+      conferenciasFatura: [
+        { ...base, id: 'cf1', valorAppCent: 10_000, alteradoEm: '2026-03-01' },
+        { ...base, id: 'cf2', valorAppCent: 25_000, alteradoEm: '2026-03-10' },
+        { ...base, id: 'cf3', mes: '2026-04', valorAppCent: 30_000, alteradoEm: '2026-04-01' },
+      ],
+    });
+    const depois = await db.conferenciasFatura.toArray();
+    expect(depois.map((c) => c.id).sort()).toEqual(['cf2', 'cf3']);
+  });
 });
 
 describe('cartão de crédito', () => {

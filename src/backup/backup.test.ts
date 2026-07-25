@@ -100,3 +100,78 @@ it('mescla viagens pelo alteradoEm mais recente', () => {
   b.viagens = [{ ...base, id: 'v1', nome: 'Novo nome', alteradoEm: '2026-02-01' }];
   expect(mesclar(a, b).viagens[0].nome).toBe('Novo nome');
 });
+
+// ---------- validação adversarial ----------
+
+function backupCom(config: unknown) {
+  return { app: 'flow', schema: 3, exportadoEm: '2026-01-01T00:00:00Z', dados: { ...dados(), config } };
+}
+
+it('validarBackup rejeita config nulo, ausente ou que não é objeto', () => {
+  // typeof null === 'object': é o caso que passava batido e só quebrava no repo
+  expect(() => validarBackup(backupCom(null))).toThrow(/configuração ausente ou inválida/);
+  expect(() => validarBackup(backupCom(undefined))).toThrow(/configuração ausente ou inválida/);
+  expect(() => validarBackup(backupCom([]))).toThrow(/configuração ausente ou inválida/);
+  expect(() => validarBackup(backupCom('config'))).toThrow(/configuração ausente ou inválida/);
+  expect(() => validarBackup(backupCom(0))).toThrow(/configuração ausente ou inválida/);
+});
+
+it('validarBackup impõe o id do registro único de config', () => {
+  const semId = validarBackup(backupCom({ horizonteProjecao: '2027-12-31' }));
+  expect(semId.dados.config.id).toBe('config');
+  const idErrado = validarBackup(backupCom({ id: 'outro', horizonteProjecao: '2027-12-31' }));
+  expect(idErrado.dados.config.id).toBe('config');
+});
+
+it('validarBackup rejeita json que não é objeto e tabela faltando', () => {
+  expect(() => validarBackup(null)).toThrow(/não é um backup do Flow/);
+  expect(() => validarBackup('{}')).toThrow(/não é um backup do Flow/);
+  expect(() => validarBackup([])).toThrow(/não é um backup do Flow/);
+  const semRecorrencias = { app: 'flow', schema: 3, dados: { ...dados(), recorrencias: undefined } };
+  expect(() => validarBackup(semRecorrencias)).toThrow(/corrompido/);
+});
+
+it('mesclar: alteradoEm no futuro vence — o backup manda, sem juízo sobre o relógio', () => {
+  const a = dados();
+  const b = dados();
+  a.boxes[0] = { ...a.boxes[0], nome: 'local', alteradoEm: '2026-07-25T00:00:00Z' };
+  b.boxes[0] = { ...b.boxes[0], nome: 'do futuro', alteradoEm: '2099-01-01T00:00:00Z' };
+  expect(mesclar(a, b).boxes[0].nome).toBe('do futuro');
+});
+
+// ---------- conferência de fatura: uma por cartão e mês ----------
+
+function conferencia(id: string, mes: string, valorAppCent: number, alteradoEm: string) {
+  return { id, cartaoId: 'k1', mes, valorAppCent, usarValorApp: true, criadoEm: '2026-01-01', alteradoEm };
+}
+
+it('mesclar deixa uma só conferência por cartão e mês, a mais recente', () => {
+  const a = dados();
+  const b = dados();
+  a.conferenciasFatura = [conferencia('cf1', '2026-03', 10_000, '2026-03-01')];
+  b.conferenciasFatura = [conferencia('cf2', '2026-03', 25_000, '2026-03-10')];
+  const m = mesclar(a, b).conferenciasFatura;
+  expect(m).toHaveLength(1);
+  expect(m[0].id).toBe('cf2');
+  expect(m[0].valorAppCent).toBe(25_000);
+});
+
+it('mesclar desempata conferência do mesmo mês pelo id, sem depender da ordem', () => {
+  const a = dados();
+  const b = dados();
+  a.conferenciasFatura = [conferencia('cf1', '2026-03', 10_000, '2026-03-01')];
+  b.conferenciasFatura = [conferencia('cf2', '2026-03', 25_000, '2026-03-01')];
+  expect(mesclar(a, b).conferenciasFatura[0].id).toBe('cf2');
+  expect(mesclar(b, a).conferenciasFatura[0].id).toBe('cf2');
+});
+
+it('mesclar preserva conferências de meses e cartões diferentes', () => {
+  const a = dados();
+  const b = dados();
+  a.conferenciasFatura = [conferencia('cf1', '2026-03', 10_000, '2026-03-01')];
+  b.conferenciasFatura = [
+    conferencia('cf2', '2026-04', 20_000, '2026-04-01'),
+    { ...conferencia('cf3', '2026-03', 30_000, '2026-03-01'), cartaoId: 'k2' },
+  ];
+  expect(mesclar(a, b).conferenciasFatura.map((c) => c.id).sort()).toEqual(['cf1', 'cf2', 'cf3']);
+});
