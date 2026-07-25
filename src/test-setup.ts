@@ -1,8 +1,16 @@
 import 'fake-indexeddb/auto';
 import '@testing-library/jest-dom/vitest';
 
+import { configure } from '@testing-library/react';
 import { MotionGlobalConfig } from 'framer-motion';
 import { db } from './db/database';
+
+// `findBy*`/`waitFor` têm um relógio próprio, separado do `testTimeout` do Vitest: subir só o
+// do Vitest não resolve um `findBy*` que estoura. O padrão de 1 s não cobre uma tela que faz
+// import dinâmico do Recharts numa máquina ocupada — e a prova é que o teste do modal do
+// gráfico já tinha um `{ timeout: 5000 }` na chamada e mesmo assim falhava. Isto só corre por
+// inteiro quando o teste vai falhar de qualquer jeito; em teste que passa, não custa nada.
+configure({ asyncUtilTimeout: 10_000 });
 
 // Limpa as tabelas sem fechar a conexão: db.delete()+open() derruba promises de
 // handlers de clique ainda em voo (onClick assíncrono não aguardado) com DatabaseClosedError.

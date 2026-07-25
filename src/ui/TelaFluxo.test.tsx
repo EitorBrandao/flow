@@ -262,8 +262,10 @@ it('clicar no card do gráfico abre o modal expandido', async () => {
   render(<TelaFluxo />);
   await userEvent.click(screen.getByRole('button', { name: 'Expandir gráfico de saldo' }));
 
-  // primeiro import dinâmico do FluxoChartModal (carrega recharts) é lento no ambiente de teste
-  expect(await screen.findByRole('dialog', { name: 'Gráfico de saldo expandido' }, { timeout: 5000 })).toBeInTheDocument();
+  // o primeiro import dinâmico do FluxoChartModal (carrega recharts) é lento no ambiente de
+  // teste; a folga vem do asyncUtilTimeout global em test-setup.ts — um timeout local aqui
+  // seria menor que ele e voltaria a ser o teto que falha
+  expect(await screen.findByRole('dialog', { name: 'Gráfico de saldo expandido' })).toBeInTheDocument();
 });
 
 it('sem ao menos 2 dias na série projetada, o gráfico não fica clicável', async () => {

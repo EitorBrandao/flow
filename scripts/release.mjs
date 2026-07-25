@@ -29,7 +29,7 @@
 // Variáveis de ambiente:
 //   RELEASE_DRY_RUN=1  → faz tudo menos os passos de git (para testes).
 
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -101,19 +101,21 @@ function validarTag(versao) {
   }
 }
 
+// Bloqueia pelo CÓDIGO DE SAÍDA do verificador, não pelo texto do relatório: procurar uma
+// frase no stdout fazia com que reescrever o relatório desligasse este guard em silêncio.
 function validarCatalogo() {
-  try {
-    const verificadorPath = fileURLToPath(new URL('./verificar-catalogo.mjs', import.meta.url));
-    const saida = execFileSync('node', [verificadorPath, raiz], { cwd: raiz, encoding: 'utf8' });
-    console.log(saida.trimEnd());
-    if (saida.includes('Divergências entre catálogo e código')) {
-      abortar(
-        'catálogo de estilo divergente do código — rode node scripts/verificar-catalogo.mjs, ' +
-        'reconcilie docs/estilo/catalogo.md (ou EXCECOES no script) antes do release.'
-      );
-    }
-  } catch (e) {
-    abortar(`erro ao rodar o verificador de catálogo: ${e.message}`);
+  const verificadorPath = fileURLToPath(new URL('./verificar-catalogo.mjs', import.meta.url));
+  const r = spawnSync('node', [verificadorPath, '--strict', raiz], { cwd: raiz, encoding: 'utf8' });
+  if (r.error) abortar(`erro ao rodar o verificador de catálogo: ${r.error.message}`);
+  if (r.stdout) console.log(r.stdout.trimEnd());
+  if (r.stderr) console.error(r.stderr.trimEnd());
+  // status null = morreu por sinal; qualquer coisa != 0 (inclusive crash do verificador)
+  // é motivo para parar — guard que não consegue rodar não vira "passou".
+  if (r.status !== 0) {
+    abortar(
+      'catálogo de estilo divergente do código — rode node scripts/verificar-catalogo.mjs, ' +
+      'reconcilie docs/estilo/catalogo.md (ou EXCECOES no script) antes do release.'
+    );
   }
 }
 

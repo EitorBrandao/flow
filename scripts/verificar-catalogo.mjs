@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Verifica que classes CSS e componentes compartilhados estão catalogados.
 //
-// Uso:  node scripts/verificar-catalogo.mjs [raiz] [excecoes]
+// Uso:  node scripts/verificar-catalogo.mjs [raiz] [excecoes] [--strict]
 //
 // O que faz:
 //   1. extrai seletores de classe de primeiro nível de src/styles.css;
@@ -9,12 +9,18 @@
 //   3. extrai classes e componentes catalogados em docs/estilo/catalogo.md;
 //   4. reporta: "no CSS, fora do catálogo" e "no catálogo, sumiu do CSS";
 //   5. reporta: "no src/ui, fora do catálogo" e "no catálogo, sumiu de src/ui";
-//   6. saída: relatório legível em português; exit 0 sempre.
+//   6. reporta o próprio catálogo ausente quando existe src/styles.css para catalogar;
+//   7. saída: relatório legível em português.
+//
+// EXIT CODE: 0 sempre, EXCETO com --strict, que devolve 1 havendo divergência. Rodar à mão
+// é aviso; quem bloqueia é o release (scripts/release.mjs), e ele chama com --strict e lê o
+// código de saída. O texto do relatório é, portanto, livre para mudar sem desligar o guard.
 //
 // PARAMETROS:
 //   raiz      - raiz do projeto (default: cwd)
 //   excecoes  - nomes separados por vírgula que se SOMAM à constante EXCECOES
 //               (ex.: "classe1,Componente2,classe3")
+//   --strict  - exit 1 quando houver divergência (posição livre entre os argumentos)
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -30,9 +36,15 @@ import process from 'node:process';
 // nunca vão bater e sempre apareceriam como "sumiu do CSS" mesmo existindo.
 const EXCECOES = ['acao', 'cresce', 'dia-hoje', 'neg', 'negativo', 'pos', 'positivo'];
 
-const raiz = process.argv[2] || process.cwd();
-const excecoesCLI = process.argv[3]
-  ? process.argv[3].split(',').map(e => e.trim()).filter(e => e)
+// flags saem da conta antes dos posicionais: assim --strict pode vir em qualquer posição
+// sem empurrar `raiz` e `excecoes` de lugar
+const argumentos = process.argv.slice(2);
+const strict = argumentos.includes('--strict');
+const posicionais = argumentos.filter(a => !a.startsWith('--'));
+
+const raiz = posicionais[0] || process.cwd();
+const excecoesCLI = posicionais[1]
+  ? posicionais[1].split(',').map(e => e.trim()).filter(e => e)
   : [];
 const todasExcecoes = new Set([...EXCECOES, ...excecoesCLI]);
 
@@ -172,6 +184,18 @@ function relatorio(raizProjeto) {
 
   const divergencias = [];
 
+  // === O PRÓPRIO CATÁLOGO ===
+  // Sem isto, apagar docs/estilo/catalogo.md faz o verificador pular todos os blocos abaixo
+  // e anunciar "em dia": o guard desligaria exatamente quando o catálogo deixou de existir.
+  // O gatilho é haver src/styles.css — havendo CSS para catalogar, o catálogo é obrigatório.
+  if (cssConteudo !== null && catalogoConteudo === null) {
+    divergencias.push({
+      tipo: 'arquivo',
+      nome: 'docs/estilo/catalogo.md',
+      direcao: 'catálogo não encontrado, mas existe src/styles.css para catalogar',
+    });
+  }
+
   // === CLASSES ===
   if (cssConteudo !== null && catalogoConteudo !== null) {
     const classesCSS = extrairClassesCSS(cssConteudo);
@@ -236,16 +260,20 @@ function relatorio(raizProjeto) {
   // === SAÍDA ===
   if (divergencias.length === 0) {
     console.log('✓ Catálogo e código em dia.');
-  } else {
-    console.log('⚠  Divergências entre catálogo e código:\n');
-    divergencias.sort((a, b) => a.nome.localeCompare(b.nome));
-    for (const div of divergencias) {
-      console.log(`  - ${div.tipo} ".${div.nome}": ${div.direcao}`);
-    }
+    process.exit(0);
   }
 
-  // Sempre exit 0 (aviso, não bloqueio)
-  process.exit(0);
+  console.log('⚠  Divergências entre catálogo e código:\n');
+  divergencias.sort((a, b) => a.nome.localeCompare(b.nome));
+  for (const div of divergencias) {
+    // só classe leva ponto na frente; componente e arquivo têm nome próprio
+    const rotulo = div.tipo === 'classe' ? `".${div.nome}"` : `"${div.nome}"`;
+    console.log(`  - ${div.tipo} ${rotulo}: ${div.direcao}`);
+  }
+
+  // Sem --strict, exit 0: rodar à mão é aviso. Quem bloqueia é o release, que chama com
+  // --strict e lê ESTE número — não o texto acima.
+  process.exit(strict ? 1 : 0);
 }
 
 // Executa
