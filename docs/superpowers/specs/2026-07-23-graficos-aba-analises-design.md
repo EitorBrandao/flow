@@ -1,5 +1,7 @@
 # Gráficos e responsividade na aba Análises
 
+Status: aprovada em 2026-07-23 — implementada
+
 ## Contexto
 
 A aba Análises (`TelaAnalises.tsx`) hoje é só texto/tabela: card resumo (Ganhos/Gastos/Sobra),

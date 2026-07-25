@@ -1,5 +1,7 @@
 # Ajustes: Recorrências, Cartões, Categorias do cartão e Assinaturas
 
+Status: aprovada em 2026-07-22 — implementada
+
 Data: 2026-07-22
 
 ## Contexto

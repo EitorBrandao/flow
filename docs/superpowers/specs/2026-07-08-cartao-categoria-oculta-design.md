@@ -1,7 +1,11 @@
 # Categoria da fatura vira automática e oculta
 
 **Data:** 2026-07-08
-**Status:** aprovado em brainstorming (implementação adiada — "vou implementar em outro momento")
+Status: aprovada em 2026-07-08 — implementada
+Nota: a redação original desta linha dizia "implementação adiada — vou implementar em outro
+momento"; a feature acabou implementada no próprio dia 2026-07-08 (`CHANGELOG.md` v0.4.0:
+"Categoria de fatura do cartão criada e renomeada automaticamente, oculta em toda a UI";
+confirmado em `src/db/repo.ts`, função `salvarCartao`).
 
 ## Objetivo
 

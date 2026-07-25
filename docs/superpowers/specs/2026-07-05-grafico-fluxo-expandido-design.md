@@ -1,7 +1,7 @@
 # Flow — Gráfico de saldo expandido (aba Fluxo)
 
 **Data:** 2026-07-05
-**Status:** Aprovado pelo usuário (brainstorming concluído)
+Status: aprovada em 2026-07-05 — implementada
 
 ## Contexto e objetivo
 

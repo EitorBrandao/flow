@@ -1,7 +1,7 @@
 # Guia de estilo por níveis de edição — design
 
 **Data:** 2026-07-10
-**Status:** aprovado em brainstorming, aguardando implementação
+Status: aprovada em 2026-07-10 — implementada
 
 ## Objetivo
 

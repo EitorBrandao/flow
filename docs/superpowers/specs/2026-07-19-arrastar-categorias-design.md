@@ -1,7 +1,7 @@
 # Spec: arrastar para reordenar categorias
 
 **Data:** 2026-07-19
-**Status:** aprovada em brainstorm (mockup validado), aguardando plano de implementação
+Status: aprovada em 2026-07-19 — implementada
 
 ## Problema
 

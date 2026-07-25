@@ -1,7 +1,7 @@
 # Flow — Drill-down de lançamentos por categoria (aba Análises)
 
 **Data:** 2026-07-08
-**Status:** Aprovado pelo usuário (brainstorming concluído)
+Status: aprovada em 2026-07-08 — implementada
 
 ## Contexto e objetivo
 

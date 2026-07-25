@@ -1,7 +1,7 @@
 # Linha de "hoje" fixa na aba Fluxo
 
 **Data:** 2026-07-10
-**Status:** aprovado em brainstorming
+Status: aprovada em 2026-07-10 — implementada
 
 ## Objetivo
 

@@ -1,7 +1,10 @@
 # Cor própria pro totalizador do dia (Fluxo)
 
 **Data:** 2026-07-18
-**Status:** aprovado em brainstorming (mockup interativo com sliders HSV)
+Status: aprovada em 2026-07-18 — implementada
+Nota: decisão validada com o usuário via mockup interativo com sliders HSV (matiz,
+saturação, valor) — o `<input type="color">` nativo se mostrou pouco confiável no Android
+do usuário.
 
 ## Objetivo
 

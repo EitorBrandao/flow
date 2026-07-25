@@ -1,7 +1,9 @@
 # Cor no mín/máx do rodapé dos gráficos (Hoje, Fluxo, modal expandido)
 
 **Data:** 2026-07-23
-**Status:** aprovado em brainstorming (mockup HTML com 3 cenários de sinal)
+Status: aprovada em 2026-07-23 — implementada
+Nota: decisão validada com o usuário via mockup HTML comparando 3 cenários de sinal (mín
+negativo/máx positivo, ambos positivos, ambos negativos).
 
 ## Objetivo
 

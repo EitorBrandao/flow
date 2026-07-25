@@ -1,7 +1,7 @@
 # Spec: ordenação de categorias na fonte
 
 **Data:** 2026-07-10
-**Status:** aprovada em brainstorm, aguardando plano de implementação
+Status: aprovada em 2026-07-10 — implementada
 
 ## Problema
 

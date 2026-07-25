@@ -1,7 +1,7 @@
 # Ponto de entrada único "+" — popup Lançamento / Compra no cartão
 
 **Data:** 2026-07-08
-**Status:** aprovado em brainstorming (mockup interativo validado pelo usuário)
+Status: aprovada em 2026-07-08 — implementada
 **Mockup de referência:** `mockup-cartao.html` (scratchpad da sessão; Artifact publicado durante o brainstorming)
 
 ## Objetivo

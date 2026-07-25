@@ -1,7 +1,7 @@
 # Flow — App de controle financeiro pessoal
 
 **Data:** 2026-07-02
-**Status:** Aprovado pelo usuário (brainstorming concluído)
+Status: aprovada em 2026-07-02 — implementada
 
 ## Contexto e problema
 

@@ -1,5 +1,7 @@
 # Sensação de "perfil": box do topo manda em tudo
 
+Status: aprovada em 2026-07-24 — implementada
+
 Data: 2026-07-24
 
 ## Contexto

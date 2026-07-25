@@ -1,5 +1,7 @@
 # Alcinha do sheet em branco — decisão de linguagem visual
 
+Status: aprovada em 2026-07-23 — implementada
+
 ## O quê
 
 A alcinha de arrastar-para-fechar dos sheets (`.sheet-alca`, em `Sheet.tsx`) passa a usar

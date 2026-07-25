@@ -1,7 +1,9 @@
 # Contraste dos cards/itens contra o fundo
 
 **Data:** 2026-07-17
-**Status:** aprovado em brainstorming (mockup interativo com 3 opções + escolha personalizada)
+Status: aprovada em 2026-07-17 — implementada
+Nota: decisão validada com o usuário via mockup interativo com 3 opções lado a lado
+(moderado, forte, personalizado com color-picker ao vivo); o usuário escolheu "moderado".
 
 ## Objetivo
 

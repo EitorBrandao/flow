@@ -1,7 +1,7 @@
 # Redesign visual do Flow — dark-first minimalista
 
 **Data:** 2026-07-05
-**Status:** aprovado em brainstorming (mockup interativo validado pelo usuário)
+Status: aprovada em 2026-07-05 — implementada
 **Mockup de referência:** `flow-conceito.html` (scratchpad da sessão; valores de cor transcritos abaixo)
 
 ## Objetivo

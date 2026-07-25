@@ -1,7 +1,7 @@
 # Flow — Aba Cartão de Crédito
 
 **Data:** 2026-07-04
-**Status:** Aprovado pelo usuário (brainstorming concluído)
+Status: aprovada em 2026-07-04 — implementada
 
 ## Contexto e objetivo
 

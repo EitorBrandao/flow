@@ -1,7 +1,7 @@
 # Flow — Pan/zoom no gráfico de saldo expandido (aba Fluxo)
 
 **Data:** 2026-07-08
-**Status:** Aprovado pelo usuário (brainstorming concluído)
+Status: aprovada em 2026-07-08 — implementada
 
 ## Contexto
 
