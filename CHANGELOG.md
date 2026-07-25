@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.13.0] - 2026-07-25
+
+### Alterado
+
+- Importar um backup com a configuração ausente ou corrompida agora avisa com uma mensagem clara, em vez de falhar sem explicar.
+- Importar um backup não deixa mais duas conferências de fatura do mesmo cartão e mês conviverem: fica valendo a mais recente, tanto ao substituir quanto ao mesclar.
+- Ajustes → Categorias, Recorrências, Cartões, Assinaturas e Categorias do cartão: o seletor de box próprio de cada tela foi removido — agora todas seguem a box escolhida no chip do topo do app, como um "perfil". Pra mexer nas categorias, cartões ou recorrências de outra pessoa, troca o chip do topo primeiro.
+- A box "casa" (compartilhada, sem saldo próprio) passa a ser criada automaticamente na primeira vez que o app abre, se ainda não existir.
+- Simulador: o seletor de categoria de um lançamento hipotético não mostra mais categorias de outras boxes.
+
 ## [0.12.2] - 2026-07-24
 
 ### Alterado

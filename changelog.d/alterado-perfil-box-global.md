@@ -1,3 +1,0 @@
-- Ajustes → Categorias, Recorrências, Cartões, Assinaturas e Categorias do cartão: o seletor de box próprio de cada tela foi removido — agora todas seguem a box escolhida no chip do topo do app, como um "perfil". Pra mexer nas categorias, cartões ou recorrências de outra pessoa, troca o chip do topo primeiro.
-- A box "casa" (compartilhada, sem saldo próprio) passa a ser criada automaticamente na primeira vez que o app abre, se ainda não existir.
-- Simulador: o seletor de categoria de um lançamento hipotético não mostra mais categorias de outras boxes.
