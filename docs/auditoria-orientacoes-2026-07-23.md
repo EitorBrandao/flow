@@ -1,5 +1,22 @@
 # Auditoria de loopholes nos documentos de orientação — 2026-07-23
 
+> **Documento histórico — fechado em 2026-07-25.** Descreve o repositório como ele estava
+> em 2026-07-23. **O diagnóstico estrutural abaixo está vencido:** onde ele diz "não existem
+> hooks, CI, eslint, prettier nem husky", hoje existem CI (`.github/workflows/ci.yml`),
+> guards bloqueantes em `scripts/release.mjs` e `scripts/predeploy.mjs`, o verificador de
+> catálogo e três hooks em `.claude/hooks/` (ver a seção "Guardas automáticas" do
+> `CLAUDE.md`).
+>
+> **Situação dos achados:** as correções de redação (1.1–1.8, 2.1, 2.2, 2.4–2.6, 3.4, 3.5,
+> 5.1, 5.2) estão aplicadas no `CLAUDE.md` e no guia de estilo; as correções de memória
+> (4.1–4.6) foram aplicadas fora do repositório; a automação (1.3, 1.8, 2.3, 3.1–3.3) foi
+> implementada pela spec
+> [`2026-07-23-enforcement-orientacoes-design.md`](superpowers/specs/2026-07-23-enforcement-orientacoes-design.md).
+>
+> **Continua aberto:** o achado 1.2 depende do hook `scan-dados-reais.mjs`, que só age se
+> existir `~/.claude/flow-dados-reais.txt` na máquina do usuário. O arquivo não existe — a
+> varredura de dados reais está **inerte**. Ver [`.claude/hooks/README.md`](../.claude/hooks/README.md).
+
 Leitura adversarial de todos os documentos que orientam agentes de IA neste repositório
 (CLAUDE.md, guia de estilo, convenções de changelog, script de release, memórias
 persistentes do Claude), procurando onde um agente **obediente à letra, mas não ao

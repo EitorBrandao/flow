@@ -1,6 +1,6 @@
 # Enforcement automático das orientações — design
 
-Status: aprovada em 2026-07-23 — implementada por completo no mesmo dia (B1/B2/B3 no branch enforcement-orientacoes; D e CI no branch enforcement-fase2, aprovados pelo usuário). Pendência de acompanhamento: sanear o catálogo e promover verificar-catalogo.mjs a bloqueio (item 2 do TODO local).
+Status: aprovada em 2026-07-23 — implementada por completo no mesmo dia (B1/B2/B3 no branch enforcement-orientacoes; D e CI no branch enforcement-fase2, aprovados pelo usuário). Pendência de acompanhamento **resolvida em 2026-07-23**: catálogo saneado (`c8b990e`) e `verificar-catalogo.mjs` promovido a guard bloqueante do release (`b1ed6a7`). Nenhuma pendência aberta.
 Data: 2026-07-23
 Origem: `docs/auditoria-orientacoes-2026-07-23.md` (IDs citados abaixo)
 
