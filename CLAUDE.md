@@ -49,9 +49,13 @@ Duas consequências que valem por escrito:
 
 ## Arquitetura
 
+Modelo conceitual e invariantes de `src/domain/`, `src/db/` e `src/backup/` (o que é a box
+`'casa'`, a matriz `status` × `origem` do lançamento, o ciclo da fatura, o que
+`validarBackup` garante e o que não garante): `docs/dominio.md`.
+
 Camadas, de baixo para cima:
 
-- **`src/domain/`** — lógica pura, sem IO. `types.ts` define as entidades (Box, Categoria, Lancamento, Recorrencia, Cartao, CategoriaCartao, CompraCartao, RecorrenciaCartao, ConferenciaFatura, Cenario, Viagem, Config) e o snapshot `Dados`, que agrega todas elas. `projection.ts` (`projetarBoxes`) calcula o saldo dia a dia até `config.horizonteProjecao`. `recurrence.ts` materializa recorrências em lançamentos `previsto`. `fatura.ts` calcula ciclos de fechamento/vencimento do cartão e gera as faturas. `aggregations.ts` alimenta a aba Análises. `categorias.ts` guarda a ordenação e a numeração de ordem das categorias (`compararCategorias`, `diffOrdem`, `proximaOrdem`); `viagem.ts` resolve a viagem ativa numa data e agrega os itens de uma viagem (`viagemAtivaEm`, `itensDaViagem`). `money.ts`/`dates.ts` são os únicos lugares de parse/format.
+- **`src/domain/`** — lógica pura, sem IO. `types.ts` define as entidades (Box, Categoria, Lancamento, Recorrencia, Cartao, CategoriaCartao, CompraCartao, RecorrenciaCartao, ConferenciaFatura, Cenario, Viagem, Config) e o snapshot `Dados`, que agrega todas elas. `projection.ts` (`projetarBoxes`) calcula o saldo dia a dia até `config.horizonteProjecao`. `recurrence.ts` materializa recorrências em lançamentos `previsto`. `fatura.ts` calcula ciclos de fechamento/vencimento do cartão e gera as faturas. `aggregations.ts` alimenta a aba Análises. `categorias.ts` guarda a ordenação e a numeração de ordem das categorias (`compararCategorias`, `diffOrdem`, `proximaOrdem`); `viagem.ts` resolve a viagem ativa numa data e agrega os itens de uma viagem (`viagemAtivaEm`, `itensDaViagem`). `money.ts` é o único lugar de parse/format de dinheiro; `dates.ts` concentra a aritmética de calendário sobre `ISODate` (ver `docs/dominio.md` para as exceções de formatação de data na UI).
 - **`src/db/`** — `database.ts` é o schema Dexie (versionado; nova tabela/índice = nova `this.version(n)`). `repo.ts` concentra TODA a persistência. Mutations que afetam recorrências ou cartões recebem `horizonte` e re-materializam/sincronizam (`materializarTodas`, `sincronizarCartoes`) — faturas viram lançamentos com `origem: 'cartao'` na categoria de fatura do cartão.
 - **`src/state/store.ts`** — um único store Zustand. `iniciar()` carrega tudo (`repo.carregarTudo()`), materializa e sincroniza; depois de qualquer mutation a UI chama `recarregar()`, que recarrega o snapshot inteiro (`dados: Dados`). `boxSel` aceita um ID de box ou o sentinela `'casa'` (todas as boxes consolidadas). `aba` define a tela ativa.
 - **`src/ui/`** — uma `Tela*.tsx` por tela: `TelaHoje`, `TelaFluxo`, `TelaLancar`, `TelaCartao`, `TelaAnalises`, `TelaAjustes` e `TelaSimulador` (esta última existe mas não é alcançável por nenhum `setAba`). `Shell.tsx` é a navegação: `ABAS` lista só as abas da barra — Ajustes entra pelo botão do topo, e Lançar, pelo `AdicionarSheet`. Ajustes é uma tela-menu com dez subtelas em `src/ui/ajustes/`. Sheets/modais compartilhados (`Sheet.tsx`, `AdicionarSheet.tsx`, `LancamentosSheet.tsx`).
@@ -73,7 +77,9 @@ Convenções do domínio: valores monetários são **centavos inteiros**; datas 
 
 ## Regras de dados (`src/db/`, `src/backup/`)
 
-Erro aqui custa dados financeiros do usuário — que não têm servidor nem cópia automática:
+Erro aqui custa dados financeiros do usuário — que não têm servidor nem cópia automática.
+Modelo conceitual e invariantes (o que cada entidade significa, o que é garantido pelo
+código e o que é só expectativa): `docs/dominio.md`.
 
 - Nova `this.version(n)` no Dexie exige, no mesmo commit, teste do caminho de upgrade: popular dados no schema n−1 e abrir no schema n.
 - Mudança em `src/backup/` exige testes adversariais (JSON malformado, campos ausentes, `config` nulo, `alteradoEm` no futuro). **Nunca relaxe `validarBackup`** — a validação de import só endurece, nunca afrouxa.
