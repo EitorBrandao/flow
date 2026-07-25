@@ -2,10 +2,12 @@
 
 **Consulte este índice antes de QUALQUER edição de UI.** Ele leva ao capítulo do seu nível
 de edição em `docs/estilo/` — leia o capítulo indicado (são curtos) antes de escrever
-código. Se código e guia divergirem, o código manda **apenas quando a divergência já
-existia antes de você chegar** — atualize o guia junto com a mudança. Divergência que a
-sua própria edição criaria não é divergência: é uma mudança do nível correspondente
-(valor de token ou princípio = nível 6). Esta regra nunca legitima uma mudança sua.
+código.
+
+Achou o guia divergindo do código? A regra de precedência é **única** e vive no `CLAUDE.md`
+(primeiro bullet de "Regras do repositório") — leia lá antes de "corrigir" o guia. Em uma
+linha: ela vale para divergências que você **encontrou**, nunca para legitimar uma que a
+sua própria mudança criaria.
 
 ## Que mudança você vai fazer?
 

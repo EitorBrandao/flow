@@ -1,8 +1,10 @@
 # Catálogo — classes e componentes existentes
 
 Referência do que **já existe**. Reaproveite antes de criar qualquer coisa.
-**Quem cria, cataloga:** classe compartilhada nova (nível 2), componente novo (nível 4) ou
-tela nova (nível 5) entram aqui **no mesmo commit** que os cria.
+**Quem cria, cataloga:** classe compartilhada nova (nível 2) e componente novo (nível 4)
+entram aqui **no mesmo commit** que os criam. Telas não entram: `Tela*.tsx` e
+`src/ui/ajustes/*.tsx` se registram na navegação (`Shell.tsx`, `TelaAjustes.tsx`), e o
+verificador de catálogo as ignora de propósito.
 
 ## Classes (em `src/styles.css`)
 
