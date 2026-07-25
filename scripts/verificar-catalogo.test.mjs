@@ -25,11 +25,12 @@ describe('verificar-catalogo', () => {
     }
   }
 
-  function runVerificador(rootDir, excecoes = null) {
+  function runVerificador(rootDir, excecoes = null, flags = []) {
     // Roda o script e captura saída + exit code
     try {
       const args = [rootDir];
       if (excecoes) args.push(excecoes);
+      args.push(...flags);
       const output = execFileSync('node', ['scripts/verificar-catalogo.mjs', ...args], {
         cwd: process.cwd(),
         encoding: 'utf8',
@@ -189,5 +190,56 @@ describe('verificar-catalogo', () => {
     const { output, exitCode } = runVerificador(tmpDir);
     expect(exitCode).toBe(0);
     // Deve rodar sem erro mesmo sem os arquivos
+  });
+
+  describe('--strict (é como o release bloqueia)', () => {
+    const CSS_DIVERGENTE = {
+      'src/styles.css': '.tela { display: flex; }\n.nao-catalogada { color: red; }',
+      'docs/estilo/catalogo.md':
+        '# Catálogo\n## Classes (em `src/styles.css`)\n| Classe | Para quê |\n|---|---|\n| `.tela` | wrapper |',
+    };
+    const CSS_EM_DIA = {
+      'src/styles.css': '.tela { display: flex; }',
+      'docs/estilo/catalogo.md':
+        '# Catálogo\n## Classes (em `src/styles.css`)\n| Classe | Para quê |\n|---|---|\n| `.tela` | wrapper |',
+    };
+
+    it('divergência sem --strict continua saindo 0 (rodar à mão é aviso)', () => {
+      setupFixture('strict-off', CSS_DIVERGENTE);
+      const { output, exitCode } = runVerificador(tmpDir);
+      expect(exitCode).toBe(0);
+      expect(output).toContain('nao-catalogada');
+    });
+
+    it('divergência com --strict sai 1', () => {
+      setupFixture('strict-on', CSS_DIVERGENTE);
+      const { output, exitCode } = runVerificador(tmpDir, null, ['--strict']);
+      expect(exitCode).toBe(1);
+      expect(output).toContain('nao-catalogada');
+    });
+
+    it('sem divergência, --strict sai 0', () => {
+      setupFixture('strict-ok', CSS_EM_DIA);
+      const { output, exitCode } = runVerificador(tmpDir, null, ['--strict']);
+      expect(exitCode).toBe(0);
+      expect(output).toContain('✓');
+    });
+
+    it('--strict não atrapalha o argumento de exceções', () => {
+      setupFixture('strict-excecao', CSS_DIVERGENTE);
+      const { output, exitCode } = runVerificador(tmpDir, 'nao-catalogada', ['--strict']);
+      expect(exitCode).toBe(0);
+      expect(output).toContain('✓');
+    });
+
+    it('catálogo apagado é divergência, não "em dia"', () => {
+      setupFixture('catalogo-apagado', {
+        'src/styles.css': '.tela { display: flex; }',
+      });
+      const { output, exitCode } = runVerificador(tmpDir, null, ['--strict']);
+      expect(exitCode).toBe(1);
+      expect(output).toContain('docs/estilo/catalogo.md');
+      expect(output).not.toContain('✓');
+    });
   });
 });

@@ -32,6 +32,14 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test-setup.ts',
+    // O padrão de 5 s falhava sozinho numa máquina de desenvolvimento ocupada, com um teste
+    // diferente a cada rodada — medido em 2026-07-25: com timeout alto e a suíte inteira em
+    // paralelo, 3 testes passaram de 5 s (pico de 5,8 s) e 2 ficaram entre 3 e 5 s. São os
+    // testes que sobem tela cheia com Recharts e os de scripts/, que sobem repositórios git
+    // de verdade. Timeout generoso não custa nada em teste que passa — só limita o quanto um
+    // teste travado segura a suíte —, e vermelho intermitente treina a ignorar vermelho.
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
     // .worktrees/ e .claude/worktrees/ contêm checkouts paralelos completos (node_modules incluso)
     // usados por sessões de implementação isoladas — sem excluir, o Vitest coleta os testes de lá
     // também e carrega uma segunda cópia do React, quebrando hooks ("Invalid hook call").

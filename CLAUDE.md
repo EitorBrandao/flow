@@ -24,6 +24,8 @@ npm run release -- <patch|minor|major>
 
 Testes usam jsdom + fake-indexeddb (`src/test-setup.ts`) e são colocados ao lado do código (`*.test.ts(x)`). O Vitest exclui `.worktrees/` de propósito — worktrees paralelos têm node_modules próprio e coletar testes de lá quebra os hooks do React.
 
+Os timeouts são **deliberadamente generosos** e vivem em dois lugares independentes: `testTimeout`/`hookTimeout` (20 s, `vite.config.ts`) para o Vitest, e `asyncUtilTimeout` (10 s, `src/test-setup.ts`) para os `findBy*`/`waitFor` do Testing Library — subir um não afeta o outro. Não os aperte nem ponha `{ timeout: n }` numa chamada de `findBy*`: um timeout local é sempre teto e volta a fazer a suíte piscar vermelho numa máquina ocupada. Timeout alto não custa tempo em teste que passa, só limita o quanto um teste travado segura a suíte.
+
 ## Guardas automáticas
 
 Parte das regras deste arquivo já é bloqueio de máquina, não disciplina. Saber o que é
@@ -33,7 +35,7 @@ automático evita tanto refazer a checagem à mão quanto tratar um abort como d
 |---|---|---|
 | CI | `.github/workflows/ci.yml` | `npm ci` + `npm test` + `npm run build` em push/PR para `main` |
 | Release | `scripts/release.mjs` | branch ≠ `main`, working tree suja fora de `CHANGELOG.md`/`package.json`/`changelog.d/`, tag da versão já existente, fragmento vazio ou com bullet fora do formato, nenhum item resultante |
-| Catálogo | `scripts/verificar-catalogo.mjs`, chamado pelo release | classe de `src/styles.css` ou componente de `src/ui/` fora de `docs/estilo/catalogo.md` (e o inverso). Rode sozinho quando quiser: `node scripts/verificar-catalogo.mjs` |
+| Catálogo | `scripts/verificar-catalogo.mjs --strict`, chamado pelo release | classe de `src/styles.css` ou componente de `src/ui/` fora de `docs/estilo/catalogo.md` (e o inverso), e o próprio `catalogo.md` ausente havendo `src/styles.css`. Rode sozinho quando quiser: `node scripts/verificar-catalogo.mjs` — sem `--strict` ele só avisa (exit 0) |
 | Deploy | `scripts/predeploy.mjs` | branch ≠ `main`, working tree suja, commit `chore(release)` de outro branch fora da ancestralidade do HEAD, HEAD ≠ `origin/main` (este último é pulado com aviso se o `git fetch` falhar; a checagem de ancestralidade só enxerga refs já presentes localmente) |
 | Lembretes | `.claude/hooks/` (ver `.claude/hooks/README.md`) | **nada** — só avisam, ao editar UI, ao instalar dependência e ao commitar |
 
@@ -45,7 +47,9 @@ Duas consequências que valem por escrito:
 - **O texto `chore(release)` é reservado** às mensagens de commit geradas por
   `npm run release`: o guard do deploy procura essa string com `git log --grep`, que casa em
   **qualquer posição** da mensagem — não só no começo. Um commit comum que a contenha, num
-  branch lateral, provoca aborto falso do deploy.
+  branch lateral, provoca aborto falso do deploy. É o **único** guard que ainda depende de
+  casar texto: o do catálogo passou a bloquear pelo código de saída (`--strict`), justamente
+  porque reescrever o relatório o desligava em silêncio.
 
 ## Arquitetura
 

@@ -549,4 +549,72 @@ describe('release.mjs', () => {
     });
   });
 
+  // O guard do catálogo bloqueia pelo código de saída do verificador (--strict). Antes ele
+  // procurava uma frase no stdout: mudar o texto do relatório o desligava em silêncio, e
+  // nenhum teste cobria este caminho.
+  describe('guard do catálogo', () => {
+    function fixtureBase(tmp) {
+      fs.writeFileSync(path.join(tmp, 'package.json'), JSON.stringify({ version: '1.0.0' }, null, 2));
+      fs.writeFileSync(path.join(tmp, 'CHANGELOG.md'), '# Changelog\n\nHistórico de versões.\n');
+      fs.mkdirSync(path.join(tmp, 'changelog.d'));
+      fs.writeFileSync(path.join(tmp, 'changelog.d', 'adicionado-x.md'), '- Item sintético.\n');
+      fs.mkdirSync(path.join(tmp, 'docs', 'estilo'), { recursive: true });
+      fs.mkdirSync(path.join(tmp, 'src'), { recursive: true });
+    }
+
+    const CATALOGO_COM_TELA =
+      '# Catálogo\n## Classes (em `src/styles.css`)\n| Classe | Para quê |\n|---|---|\n| `.tela` | wrapper |';
+
+    it('deve abortar quando o catálogo diverge do CSS', () => {
+      const tmp = criarFixture();
+      try {
+        fixtureBase(tmp);
+        fs.writeFileSync(path.join(tmp, 'src', 'styles.css'), '.tela { display: flex; }\n.orfa { color: red; }');
+        fs.writeFileSync(path.join(tmp, 'docs', 'estilo', 'catalogo.md'), CATALOGO_COM_TELA);
+
+        const result = executarRelease(tmp, 'patch');
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain('catálogo de estilo divergente');
+        // abortou ANTES de escrever: nada de versão nova nem fragmento consumido
+        const pkg = JSON.parse(fs.readFileSync(path.join(tmp, 'package.json'), 'utf8'));
+        expect(pkg.version).toBe('1.0.0');
+        expect(fs.existsSync(path.join(tmp, 'changelog.d', 'adicionado-x.md'))).toBe(true);
+      } finally {
+        fs.rmSync(tmp, { recursive: true });
+      }
+    });
+
+    it('deve abortar quando o catálogo foi apagado mas o CSS existe', () => {
+      const tmp = criarFixture();
+      try {
+        fixtureBase(tmp);
+        fs.writeFileSync(path.join(tmp, 'src', 'styles.css'), '.tela { display: flex; }');
+
+        const result = executarRelease(tmp, 'patch');
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain('catálogo de estilo divergente');
+      } finally {
+        fs.rmSync(tmp, { recursive: true });
+      }
+    });
+
+    it('deve seguir quando o catálogo está em dia', () => {
+      const tmp = criarFixture();
+      try {
+        fixtureBase(tmp);
+        fs.writeFileSync(path.join(tmp, 'src', 'styles.css'), '.tela { display: flex; }');
+        fs.writeFileSync(path.join(tmp, 'docs', 'estilo', 'catalogo.md'), CATALOGO_COM_TELA);
+
+        const result = executarRelease(tmp, 'patch');
+
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain('1.0.0 → 1.0.1');
+      } finally {
+        fs.rmSync(tmp, { recursive: true });
+      }
+    });
+  });
+
 });
