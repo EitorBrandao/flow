@@ -24,6 +24,28 @@ npm run release -- <patch|minor|major>
 
 Testes usam jsdom + fake-indexeddb (`src/test-setup.ts`) e são colocados ao lado do código (`*.test.ts(x)`). O Vitest exclui `.worktrees/` de propósito — worktrees paralelos têm node_modules próprio e coletar testes de lá quebra os hooks do React.
 
+## Guardas automáticas
+
+Parte das regras deste arquivo já é bloqueio de máquina, não disciplina. Saber o que é
+automático evita tanto refazer a checagem à mão quanto tratar um abort como defeito:
+
+| Guarda | Onde | O que bloqueia |
+|---|---|---|
+| CI | `.github/workflows/ci.yml` | `npm ci` + `npm test` + `npm run build` em push/PR para `main` |
+| Release | `scripts/release.mjs` | branch ≠ `main`, working tree suja, tag da versão já existente, fragmento vazio ou com bullet fora do formato, nenhum item resultante |
+| Catálogo | `scripts/verificar-catalogo.mjs`, chamado pelo release | classe de `src/styles.css` ou componente de `src/ui/` fora de `docs/estilo/catalogo.md` (e o inverso). Rode sozinho quando quiser: `node scripts/verificar-catalogo.mjs` |
+| Deploy | `scripts/predeploy.mjs` | branch ≠ `main`, working tree suja, commit `chore(release)` de outro branch fora da ancestralidade do HEAD, HEAD ≠ `origin/main` |
+| Lembretes | `.claude/hooks/` (ver `.claude/hooks/README.md`) | **nada** — só avisam, ao editar UI, ao instalar dependência e ao commitar |
+
+Duas consequências que valem por escrito:
+
+- **`DEPLOY_FORCE=1` pula todos os guards do deploy.** Existe para o caso de o repositório
+  estar num estado que os checks não sabem julgar; usar exige pedido explícito do usuário,
+  nunca como atalho para um check que incomodou.
+- **O prefixo `chore(release):` é reservado** aos commits gerados por `npm run release`: o
+  guard do deploy identifica releases por esse prefixo, e um commit comum com ele num branch
+  lateral provoca aborto falso do deploy.
+
 ## Arquitetura
 
 Camadas, de baixo para cima:
@@ -46,7 +68,7 @@ Convenções do domínio: valores monetários são **centavos inteiros**; datas 
 - **`public/` vai literal para o site público** (entra em `dist/` e é publicado): arquivo novo ali é decisão explícita, nunca depósito de trabalho. Mudança em config de PWA/service worker: confirme com o usuário — erro de cache pode prender usuários numa versão velha do app.
 - **Topologia de branches:** `main` é o branch **fonte** canônico (código). O site publicado (o build `dist/`) vive num branch separado, **`gh-pages`**, gerado por `npm run deploy` — nunca edite `gh-pages` à mão. Nunca trabalhar direto na `main`: criar branch antes de alterar arquivos. Sessões concorrentes rodam no mesmo checkout — trabalho com commits deve ir para um git worktree próprio (`.worktrees/`).
 - **Versão e changelog só na integração (isto evita colisão entre sessões paralelas):** branches de feature **nunca** editam `"version"` em `package.json` nem o topo do `CHANGELOG.md`. Toda mudança visível ao usuário vira um **fragmento** em `changelog.d/` — arquivo `<tipo>-<slug>.md` (`tipo` = `adicionado`/`alterado`/`removido`, bullets planos; ver `changelog.d/README.md`). O número da versão é decidido **uma única vez**, na integração, por `npm run release`.
-- **Ciclo de entrega:** (1) fazer as alterações de código no worktree da feature; (2) se envolver UI, mockup HTML **aprovado** antes de implementar — aprovado = o usuário respondeu confirmando o mockup nesta sessão; silêncio não é aprovação, e só mudança trivial (texto, reordenar elementos existentes com classes do catálogo) dispensa mockup; (3) rodar a suíte completa (`npm test`) e só seguir com tudo verde; (4) criar/atualizar o(s) fragmento(s) em `changelog.d/` e mostrar ao usuário essa revisão (Adicionado/Alterado/Removido) — a integração fica **bloqueada até a confirmação literal do usuário**; subagentes param aqui e reportam ao orquestrador; (5) **integração no branch `main`** (uma vez): merge da feature em `main`, depois `npm run release -- <patch|minor|major>` — que monta a seção no `CHANGELOG.md`, apaga os fragmentos, bumpa `package.json` e cria commit + tag; (6) `git push origin main`; (7) **imediatamente antes do deploy, rode `git log --all --oneline --grep="chore(release)"`** — release commit fora da ancestralidade do seu HEAD = pare e reconcilie (merge + renumeração) antes de publicar; deploy de branch desatualizado já regrediu o site publicado três vezes; (8) só então `npm run deploy`. O `CHANGELOG.md` já sai atualizado pelo release **antes** do deploy — a tela de Ajustes (`src/ui/ajustes/Versao.tsx`) lê o `CHANGELOG.md` do build, então a versão exibida fica sempre em dia.
+- **Ciclo de entrega:** (1) fazer as alterações de código no worktree da feature; (2) se envolver UI, mockup HTML **aprovado** antes de implementar — aprovado = o usuário respondeu confirmando o mockup nesta sessão; silêncio não é aprovação, e só mudança trivial (texto, reordenar elementos existentes com classes do catálogo) dispensa mockup; (3) rodar a suíte completa (`npm test`) e só seguir com tudo verde; (4) criar/atualizar o(s) fragmento(s) em `changelog.d/` e mostrar ao usuário essa revisão (Adicionado/Alterado/Removido) — a integração fica **bloqueada até a confirmação literal do usuário**; subagentes param aqui e reportam ao orquestrador; (5) **integração no branch `main`** (uma vez): merge da feature em `main`, depois `npm run release -- <patch|minor|major>` — que monta a seção no `CHANGELOG.md`, apaga os fragmentos, bumpa `package.json` e cria commit + tag; (6) `git push origin main`; (7) `npm run deploy` — o guard `predeploy` checa sozinho branch, working tree, ancestralidade dos commits `chore(release)` de outros branches e HEAD = `origin/main`. Se ele abortar, **pare e reconcilie** (merge + renumeração) em vez de forçar: deploy de branch desatualizado já regrediu o site publicado três vezes. O `CHANGELOG.md` já sai atualizado pelo release **antes** do deploy — a tela de Ajustes (`src/ui/ajustes/Versao.tsx`) lê o `CHANGELOG.md` do build, então a versão exibida fica sempre em dia.
 
 ## Regras de dados (`src/db/`, `src/backup/`)
 
