@@ -4,10 +4,16 @@
  * Detecta edições em UI (src/ui/, src/styles.css, index.html)
  * e emite lembrete sobre consultar docs/estilo-visual.md
  *
- * Dedupe por session_id: uma vez por sessão usando marcador em tmpdir
+ * Arquivo de teste (*.test.tsx / *.test.ts) NÃO conta: não tem markup, classe nem
+ * componente, então nenhum dos seis níveis do guia se aplica.
+ *
+ * Dedupe por session_id + arquivo: cada arquivo de UI avisa uma vez por sessão. Era uma vez
+ * por SESSÃO, e aí a primeira edição qualquer em src/ui/ queimava o aviso — inclusive um
+ * arquivo de teste, deixando a edição de componente seguinte sem nenhum lembrete.
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { createHash } from 'crypto';
 import { join } from 'path';
 import { tmpdir } from 'os';
 
@@ -38,13 +44,17 @@ const isUIEdit =
   normalizedPath === 'index.html' ||
   normalizedPath.endsWith('/index.html');
 
-if (!isUIEdit) {
+// Arquivo de teste não é edição de UI para efeito do guia de estilo
+const isTeste = /\.test\.tsx?$/.test(normalizedPath);
+
+if (!isUIEdit || isTeste) {
   process.exit(0);
 }
 
-// Dedupe logic: if session_id exists, use marker file
+// Dedupe logic: if session_id exists, use marker file (por sessão E por arquivo)
 if (sessionId) {
-  const markerPath = join(tmpdir(), `flow-lembrete-ui-${sessionId}`);
+  const hashArquivo = createHash('sha1').update(normalizedPath).digest('hex').slice(0, 12);
+  const markerPath = join(tmpdir(), `flow-lembrete-ui-${sessionId}-${hashArquivo}`);
 
   try {
     if (existsSync(markerPath)) {

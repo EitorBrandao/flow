@@ -5,7 +5,7 @@ describe('formatarBRL', () => {
     // toLocaleString pt-BR usa espaço não separável (U+00A0) após R$
     expect(formatarBRL(123456)).toBe('R$ 1.234,56');
     expect(formatarBRL(0)).toBe('R$ 0,00');
-    expect(formatarBRL(-9100)).toBe('-R$ 91,00');
+    expect(formatarBRL(-4500)).toBe('-R$ 45,00');
   });
 });
 

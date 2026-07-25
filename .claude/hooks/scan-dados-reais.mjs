@@ -4,6 +4,11 @@
  * Scans git diff --cached for real financial data matching patterns in ~/.claude/flow-dados-reais.txt
  * Emits warning (non-blocking) if matches found, never echoing the matched text (data leak prevention)
  * Fail-open: any internal error → exit 0 silently
+ *
+ * O filtro `if: "Bash(git commit*)"` do settings.json é OTIMIZAÇÃO (evita subir um node à toa),
+ * não proteção: quem decide se este hook age é a guarda de comando abaixo. Sem ela, uma
+ * mudança no settings.json ou um hook registrado noutro lugar faria o script varrer o index
+ * em qualquer chamada de Bash. Mesma disciplina do lembrete-deps.mjs.
  */
 
 import { readFileSync, existsSync } from 'fs';
@@ -21,6 +26,12 @@ try {
 }
 
 try {
+  // Guarda de comando: só age em git commit (ver comentário do topo)
+  const comando = hookInput.tool_input?.command || '';
+  if (!/\bgit\s+commit\b/.test(comando)) {
+    process.exit(0);
+  }
+
   const cwd = hookInput.cwd || process.env.CLAUDE_PROJECT_DIR || process.cwd();
   const patternsFilePath = join(homedir(), '.claude', 'flow-dados-reais.txt');
 

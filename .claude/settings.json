@@ -12,6 +12,12 @@
             "command": "node",
             "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/lembrete-ui.mjs"],
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/lembrete-main.mjs"],
+            "timeout": 30
           }
         ]
       },
