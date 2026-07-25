@@ -129,7 +129,7 @@ Todos os campos gravados em versões antigas aparecem intactos nas versões nova
 ## Hash do commit
 
 ```
-[A ser preenchido após commit]
+a1fa898
 ```
 
 ## Contagem final de testes
