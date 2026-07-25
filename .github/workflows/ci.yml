@@ -15,8 +15,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # v5: as v4 rodam sobre o runtime Node 20 das Actions, que o GitHub está aposentando —
+      # o runner as forçava para o Node 24 e avisava a cada execução.
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm

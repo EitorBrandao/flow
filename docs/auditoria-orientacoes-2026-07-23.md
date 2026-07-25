@@ -13,9 +13,11 @@
 > implementada pela spec
 > [`2026-07-23-enforcement-orientacoes-design.md`](superpowers/specs/2026-07-23-enforcement-orientacoes-design.md).
 >
-> **Continua aberto:** o achado 1.2 depende do hook `scan-dados-reais.mjs`, que só age se
-> existir `~/.claude/flow-dados-reais.txt` na máquina do usuário. O arquivo não existe — a
-> varredura de dados reais está **inerte**. Ver [`.claude/hooks/README.md`](../.claude/hooks/README.md).
+> **Fechado em 2026-07-25:** o achado 1.2 dependia de `~/.claude/flow-dados-reais.txt`, que não
+> existia — a varredura de dados reais estava inerte. O arquivo foi criado (fora do
+> repositório, como manda o desenho) e `scripts/verificar-dados-reais.mjs` virou guard
+> bloqueante do release. Continua valendo que ele é **local**: noutra máquina ou no CI, só os
+> padrões genéricos de moeda agem. Ver [`.claude/hooks/README.md`](../.claude/hooks/README.md).
 
 Leitura adversarial de todos os documentos que orientam agentes de IA neste repositório
 (CLAUDE.md, guia de estilo, convenções de changelog, script de release, memórias

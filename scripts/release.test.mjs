@@ -617,4 +617,79 @@ describe('release.mjs', () => {
     });
   });
 
+  // Mesmo desenho do guard do catálogo: bloqueia pelo código de saída de
+  // verificar-dados-reais.mjs --strict. O fixture precisa ser um repositório git de verdade
+  // porque o verificador varre `git ls-files` — fora de um repo ele não acha nada e sai 0,
+  // o que faria estes testes passarem sem testar coisa alguma.
+  describe('guard de dados reais', () => {
+    // Montado em partes de propósito: escrito por extenso, este literal casaria com o padrão
+    // de moeda quando o próprio verificador varresse ESTE arquivo (.test.mjs não é tratado
+    // como teste por ele — RE_ARQUIVO_TESTE só casa .ts/.tsx). Pô-lo em EXCECOES_VALOR
+    // resolveria a varredura e desligaria o teste no mesmo movimento: o valor precisa estar
+    // FORA das exceções para provar que o release aborta.
+    const VALOR_FORA_DAS_EXCECOES = ['R$ 9', '876,54'].join('.');
+
+    function fixtureGit(tmp) {
+      execFileSync('git', ['init'], { cwd: tmp });
+      execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: tmp });
+      execFileSync('git', ['config', 'user.name', 'Test User'], { cwd: tmp });
+      fs.writeFileSync(path.join(tmp, 'package.json'), JSON.stringify({ version: '1.0.0' }, null, 2));
+      fs.writeFileSync(path.join(tmp, 'CHANGELOG.md'), '# Changelog\n\nHistórico de versões.\n');
+      fs.mkdirSync(path.join(tmp, 'changelog.d'));
+      fs.writeFileSync(path.join(tmp, 'changelog.d', 'adicionado-x.md'), '- Item sintético.\n');
+    }
+
+    it('deve abortar quando um arquivo versionado tem valor em real fora das exceções', () => {
+      const tmp = criarFixture();
+      try {
+        fixtureGit(tmp);
+        fs.writeFileSync(path.join(tmp, 'nota.md'), `Conta de luz: ${VALOR_FORA_DAS_EXCECOES} no mês.\n`);
+        execFileSync('git', ['add', '.'], { cwd: tmp });
+
+        const result = executarRelease(tmp, 'patch');
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain('dados financeiros reais');
+        // abortou ANTES de escrever: versão intacta e fragmento não consumido
+        const pkg = JSON.parse(fs.readFileSync(path.join(tmp, 'package.json'), 'utf8'));
+        expect(pkg.version).toBe('1.0.0');
+        expect(fs.existsSync(path.join(tmp, 'changelog.d', 'adicionado-x.md'))).toBe(true);
+      } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      }
+    });
+
+    it('deve seguir quando só há valores sintéticos aprovados', () => {
+      const tmp = criarFixture();
+      try {
+        fixtureGit(tmp);
+        fs.writeFileSync(path.join(tmp, 'nota.md'), 'Exemplo canônico de teste: R$ 1.234,56.\n');
+        execFileSync('git', ['add', '.'], { cwd: tmp });
+
+        const result = executarRelease(tmp, 'patch');
+
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain('1.0.0 → 1.0.1');
+      } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      }
+    });
+
+    it('deve ignorar arquivo não versionado (o guard olha só o que está no git)', () => {
+      const tmp = criarFixture();
+      try {
+        fixtureGit(tmp);
+        execFileSync('git', ['add', '.'], { cwd: tmp });
+        // escrito depois do add: existe no disco, não no índice
+        fs.writeFileSync(path.join(tmp, 'rascunho.md'), `Saldo real: ${VALOR_FORA_DAS_EXCECOES}.\n`);
+
+        const result = executarRelease(tmp, 'patch');
+
+        expect(result.exitCode).toBe(0);
+      } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      }
+    });
+  });
+
 });

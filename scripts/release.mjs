@@ -19,6 +19,9 @@
 //   - tag: versão calculada não pode já ter tag (exceto em dry-run).
 //   - catálogo de estilo: docs/estilo/catalogo.md não pode divergir de src/styles.css e
 //     src/ui/ (roda sempre, inclusive em dry-run — ver scripts/verificar-catalogo.mjs).
+//   - dados reais: nenhum arquivo versionado pode ter valor em real fora das exceções
+//     sintéticas, nem termo da lista privada (roda sempre — ver
+//     scripts/verificar-dados-reais.mjs).
 //   - fragmento vazio: nenhum fragmento pode estar vazio.
 //   - formato de bullet: cada linha deve começar com "- ", sem "**" ou indentação.
 //   - items resultante: após coleta, deve haver pelo menos um item.
@@ -115,6 +118,25 @@ function validarCatalogo() {
     abortar(
       'catálogo de estilo divergente do código — rode node scripts/verificar-catalogo.mjs, ' +
       'reconcilie docs/estilo/catalogo.md (ou EXCECOES no script) antes do release.'
+    );
+  }
+}
+
+// Mesmo desenho do guard do catálogo, e pelo mesmo motivo: código de saída, nunca texto.
+// Promovido de relatório a guard em 2026-07-25, depois de calibrado contra o repositório
+// inteiro (as exceções sintéticas vivem em EXCECOES_VALOR, dentro do verificador).
+// O verificador varre `git ls-files` — fora de um repositório git ele não acha nada e sai 0.
+function validarDadosReais() {
+  const verificadorPath = fileURLToPath(new URL('./verificar-dados-reais.mjs', import.meta.url));
+  const r = spawnSync('node', [verificadorPath, '--strict', raiz], { cwd: raiz, encoding: 'utf8' });
+  if (r.error) abortar(`erro ao rodar o verificador de dados reais: ${r.error.message}`);
+  if (r.stdout) console.log(r.stdout.trimEnd());
+  if (r.stderr) console.error(r.stderr.trimEnd());
+  if (r.status !== 0) {
+    abortar(
+      'possíveis dados financeiros reais em arquivo versionado — confira cada arquivo:linha ' +
+      'do relatório acima. Sintético aprovado vai para EXCECOES_VALOR em ' +
+      'scripts/verificar-dados-reais.mjs; real precisa sair antes do release.'
     );
   }
 }
@@ -246,6 +268,7 @@ validarBranch();
 validarWorkingTree();
 validarTag(versao);
 validarCatalogo();
+validarDadosReais();
 
 // 6. montar a seção (sem side effects)
 const data = new Date().toLocaleDateString('sv-SE'); // AAAA-MM-DD local

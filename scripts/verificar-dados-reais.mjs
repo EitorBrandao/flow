@@ -18,10 +18,11 @@
 // Os dois primeiros funcionam sem nenhum arquivo privado: dão uma rede mínima em qualquer
 // máquina, inclusive no CI.
 //
-// EXIT CODE: 0 por padrão, 1 com --strict havendo achado. Hoje NÃO é chamado pelo release: é
-// relatório para calibrar as exceções primeiro. O verificador de catálogo seguiu exatamente
-// esse caminho (aviso → guard bloqueante depois de calibrado), e promover antes da calibragem
-// é o jeito mais rápido de ensinar todo mundo a afrouxar guard.
+// EXIT CODE: 0 por padrão, 1 com --strict havendo achado. Desde 2026-07-25 o
+// scripts/release.mjs chama com --strict e bloqueia pelo código de saída — mesmo caminho do
+// verificador de catálogo (aviso → guard bloqueante DEPOIS de calibrado; promover antes da
+// calibragem é o jeito mais rápido de ensinar todo mundo a afrouxar guard). Rodar à mão,
+// sem a flag, continua sendo aviso: exit 0.
 //
 // PARAMETROS:
 //   raiz      - raiz do repositório (default: cwd)
