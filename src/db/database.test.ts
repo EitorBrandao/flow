@@ -222,8 +222,8 @@ describe('caminho de upgrade do schema Dexie (FlowDB real)', () => {
 
     const antigo = new Dexie(nome);
     antigo.version(1).stores(SCHEMA_V1);
-    await antigo.open();
     try {
+      await antigo.open();
       await antigo.table('boxes').add(box);
       await antigo.table('categorias').bulkAdd([categoriaGanho, categoriaGasto]);
       await antigo.table('lancamentos').bulkAdd([lancamentoEfetivo, lancamentoPrevisto]);
@@ -268,8 +268,8 @@ describe('caminho de upgrade do schema Dexie (FlowDB real)', () => {
     const antigo = new Dexie(nome);
     antigo.version(1).stores(SCHEMA_V1);
     antigo.version(2).stores(SCHEMA_V2);
-    await antigo.open();
     try {
+      await antigo.open();
       await antigo.table('boxes').add(box);
       await antigo.table('categorias').bulkAdd([categoriaGanho, categoriaGasto]);
       await antigo.table('lancamentos').bulkAdd([lancamentoEfetivo, lancamentoPrevisto]);
