@@ -1,0 +1,21 @@
+# Dados financeiros reais — nunca versionar
+*.xlsx
+*.json.backup
+
+# Configuração local
+.claude/settings.local.json
+deploy.bat
+
+# Backlog local (não versionado — pedido do usuário em 2026-07-23)
+TODO.md
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Worktrees isolados (superpowers:using-git-worktrees)
+.worktrees/
+
+# Scratch de execução do superpowers:subagent-driven-development (briefs, reports, ledger)
+.superpowers/
