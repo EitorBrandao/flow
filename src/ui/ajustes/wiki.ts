@@ -75,7 +75,7 @@ export function idDoTopico(titulo: string): string {
     .replace(/^-|-$/g, '');
 }
 
-const NAO_SUPORTADA = /^(#{3,}\s|\||\d+\.\s|\*\s|!\[|\t)/;
+const NAO_SUPORTADA = /^(#{3,}\s|\||\d+\.\s|\*(?!\*)|!\[|\t)/;
 
 export function parseCapitulo(id: string, raw: string, nomes: Nomes): Capitulo {
   const linhas = aplicarNomes(raw, nomes).split(/\r?\n/).map((l) => l.replace(/\s+$/, ''));
@@ -96,6 +96,9 @@ export function parseCapitulo(id: string, raw: string, nomes: Nomes): Capitulo {
     }
     if (linha.startsWith('# ')) {
       fecharParagrafo();
+      if (titulo) {
+        throw new Error(`wiki: capítulo "${id}" tem mais de um título (primeira linha "# ...")`);
+      }
       titulo = linha.slice(2).trim();
       continue;
     }
@@ -120,7 +123,11 @@ export function parseCapitulo(id: string, raw: string, nomes: Nomes): Capitulo {
     }
     if (linha.startsWith(': ')) {
       fecharParagrafo();
-      const [termo, ...resto] = linha.slice(2).split('|');
+      const partes = linha.slice(2).split('|');
+      if (partes.length < 2) {
+        throw new Error(`wiki: sintaxe não suportada no capítulo "${id}": ${linha.slice(0, 40)}`);
+      }
+      const [termo, ...resto] = partes;
       const item = { termo: parseInline(termo.trim()), definicao: parseInline(resto.join('|').trim()) };
       const ultimo = blocos[blocos.length - 1];
       if (ultimo && ultimo.tipo === 'campos') ultimo.itens.push(item);

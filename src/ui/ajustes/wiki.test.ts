@@ -74,4 +74,36 @@ describe('parseCapitulo', () => {
   it('recusa capítulo sem título', () => {
     expect(() => parseCapitulo('t', 'sem título\n', NOMES_FIXOS)).toThrow(/título/);
   });
+
+  // Achado 1: *item colado (sem espaço) deve lançar
+  it('lança quando asterisco colado sem espaço (*item)', () => {
+    expect(() => parseCapitulo('t', '# T\n\n*item\n', NOMES_FIXOS)).toThrow(/não suportada/);
+  });
+
+  // Achado 1: **negrito** no início deve ser parágrafo, não lançar
+  it('aceita **negrito** no início de linha como parágrafo', () => {
+    const cap = parseCapitulo('t', '# T\n\n**Obrigatórios:** valor, categoria.\n', NOMES_FIXOS);
+    expect(cap.blocos).toHaveLength(1);
+    expect(cap.blocos[0].tipo).toBe('paragrafo');
+  });
+
+  // Cobertura: tabulação no início deve lançar
+  it('lança quando linha começa com tabulação', () => {
+    expect(() => parseCapitulo('t', '# T\n\n\tindentado\n', NOMES_FIXOS)).toThrow(/não suportada/);
+  });
+
+  // Cobertura: ![imagem] no início deve lançar
+  it('lança quando linha começa com ![imagem]', () => {
+    expect(() => parseCapitulo('t', '# T\n\n![alt](url)\n', NOMES_FIXOS)).toThrow(/não suportada/);
+  });
+
+  // Achado 2: linha de campos sem pipe deve lançar
+  it('lança quando linha de campos não tem pipe', () => {
+    expect(() => parseCapitulo('t', '# T\n\n: sem pipe aqui\n', NOMES_FIXOS)).toThrow(/não suportada/);
+  });
+
+  // Achado 3: segundo # deve lançar
+  it('lança quando há segundo título (# ) no capítulo', () => {
+    expect(() => parseCapitulo('t', '# Primeiro\n\nparágrafo\n\n# Segundo\n', NOMES_FIXOS)).toThrow(/título/);
+  });
 });
