@@ -172,4 +172,5 @@ aqui?") e dois caminhos — criar a box com o saldo do banco, ou importar backup
 aparelho. Sem passos numerados e sem botão desabilitado; o segundo passo (categorias) aparece
 como frase, não como item de lista.
 
-Mockup aprovado: `C:\Usersitor\Claudelow-mockup-primeiro-uso.html` (fora do repositório).
+Mockup aprovado: `flow-mockup-primeiro-uso.html`, na pasta Claude do usuário — fora do
+repositório, porque é material de trabalho e não faz parte do produto.
