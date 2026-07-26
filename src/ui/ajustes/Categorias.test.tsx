@@ -105,3 +105,104 @@ it('restaurar devolve a categoria para a seção do seu tipo', async () => {
   const atualizado = await db.categorias.get(cat.id);
   expect(atualizado?.arquivada).toBe(false);
 });
+
+it('box sem categorias mostra o bloco de sugestões', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+
+  render(<Categorias />);
+
+  expect(screen.getByText('Sugestões')).toBeInTheDocument();
+  expect(screen.getByText('Ganhos')).toBeInTheDocument();
+  expect(screen.getByText('Gastos')).toBeInTheDocument();
+  expect(screen.getByText('salário')).toBeInTheDocument();
+  expect(screen.getByText('mercado')).toBeInTheDocument();
+});
+
+it('box com pelo menos uma categoria não mostra o bloco de sugestões', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+
+  render(<Categorias />);
+
+  expect(screen.queryByText('Sugestões')).not.toBeInTheDocument();
+});
+
+it('criar as sugestões marcadas grava exatamente as marcadas com tipo certo', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+
+  render(<Categorias />);
+
+  // verificar que o bloco aparece
+  expect(screen.getByText('Sugestões')).toBeInTheDocument();
+
+  // clicar em criar (usa a contagem padrão de 7)
+  const botaoCriar = screen.getByRole('button', { name: /Criar as \d+ marcadas/ });
+  await userEvent.click(botaoCriar);
+
+  // verificar que as categorias foram criadas
+  await waitFor(() => expect(screen.queryByText('Sugestões')).not.toBeInTheDocument());
+  expect(screen.getByText('salário')).toBeInTheDocument();
+  // verificar que ambos "pix" estão na lista
+  const pixElements = screen.getAllByText('pix');
+  expect(pixElements.length).toBeGreaterThan(0);
+  expect(screen.getByText('mercado')).toBeInTheDocument();
+  expect(screen.getByText('transporte')).toBeInTheDocument();
+  expect(screen.getByText('moradia')).toBeInTheDocument();
+  expect(screen.getByText('contas')).toBeInTheDocument();
+  // saúde e lazer não devem estar, pois não foram marcadas por padrão
+  expect(screen.queryByText('saúde')).not.toBeInTheDocument();
+  expect(screen.queryByText('lazer')).not.toBeInTheDocument();
+  expect(screen.queryByText('outros')).not.toBeInTheDocument();
+});
+
+it('desmarcar uma sugestão e criar não inclui a desmarcada', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+
+  render(<Categorias />);
+
+  // encontrar e clicar no checkbox de 'saúde' para desmarcar
+  const checkboxes = screen.getAllByRole('checkbox');
+  let saudeCheck: HTMLElement | undefined;
+  for (const c of checkboxes) {
+    if ((c.parentElement as HTMLElement)?.textContent?.includes('saúde')) {
+      saudeCheck = c;
+      break;
+    }
+  }
+
+  expect(saudeCheck).toBeDefined();
+  if (saudeCheck) {
+    expect((saudeCheck as HTMLInputElement).checked).toBe(false); // saúde começa desmarcada
+    await userEvent.click(saudeCheck);
+    // após marcar, deve estar marcado
+    expect((saudeCheck as HTMLInputElement).checked).toBe(true);
+    // desmarcar novamente
+    await userEvent.click(saudeCheck);
+    expect((saudeCheck as HTMLInputElement).checked).toBe(false);
+  }
+
+  // criar com saúde desmarcada
+  const botaoCriar = screen.getByRole('button', { name: /Criar as/ });
+  await userEvent.click(botaoCriar);
+
+  // verificar que saúde não foi criada
+  await waitFor(() => expect(screen.queryByText('Sugestões')).not.toBeInTheDocument());
+  expect(screen.queryByText('saúde')).not.toBeInTheDocument();
+  expect(screen.getByText('salário')).toBeInTheDocument();
+});
