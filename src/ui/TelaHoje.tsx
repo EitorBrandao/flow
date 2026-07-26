@@ -65,7 +65,7 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
 }
 
 export default function TelaHoje() {
-  const { dados, boxSel, hoje, recarregar, setAba } = useApp();
+  const { dados, boxSel, hoje, recarregar, abrirAjustes } = useApp();
   const ids = dados ? boxIdsSelecionadas(dados, boxSel) : [];
   const ligados = dados ? cenariosLigados(dados) : new Set<string>();
 
@@ -113,7 +113,7 @@ export default function TelaHoje() {
   return (
     <div className="tela">
       {backupVelho && (
-        <button className="aviso" style={{ border: 'none', textAlign: 'left', cursor: 'pointer' }} onClick={() => setAba('ajustes')}>
+        <button className="aviso" style={{ border: 'none', textAlign: 'left', cursor: 'pointer' }} onClick={() => abrirAjustes('backup')}>
           Há mudanças sem backup há mais de 7 dias — toque para exportar.
         </button>
       )}

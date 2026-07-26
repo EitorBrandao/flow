@@ -96,11 +96,11 @@ const primeiroUso = semBoxPropria || semCategorias;
 ```
 
 Conteúdo: uma linha dizendo onde a pessoa está, e **dois caminhos**, na ordem:
-- **"Já usa o Flow em outro aparelho?" → importar backup**, que leva a Ajustes → Backup. Vem
-  primeiro porque troca de celular é o caso em que refazer tudo à mão seria perda pura.
-- **Criar a primeira box** (Ajustes → Boxes) e, quando já houver box mas não categorias,
+- **Criar a primeira box** (Ajustes → Boxes), que é o fluxo padrão. Quando já houver box mas não categorias,
   **criar categorias** (Ajustes → Categorias). Os dois passos aparecem com o feito riscado,
   para a pessoa ver que avançou.
+- **"Já usa o Flow em outro aparelho?" → importar backup**, que leva a Ajustes → Backup, atalho
+  disponível em ambas as fases (com ou sem box).
 
 O card some sozinho quando os dois critérios caem. Não inventar estado persistido para
 "onboarding concluído": o próprio dado responde, e um flag a mais é uma migração a mais.

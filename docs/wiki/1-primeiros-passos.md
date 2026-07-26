@@ -16,7 +16,7 @@ Uma box é um fluxo de caixa com saldo próprio — normalmente uma conta de ban
 
 ## A primeira categoria
 
-Sem categoria não dá para lançar — a tela Lançar fica sem nada para escolher. Crie poucas para começar: uma de ganho (salário) e três ou quatro de gasto que você reconheça no extrato. Fica em Ajustes, Categorias, com a box certa selecionada no topo.
+Sem categoria não dá para lançar — a tela Lançar fica sem nada para escolher. Comece pelas sugeridas (salário, pix, mercado...) que aparecem na tela Categorias quando a box não tem nenhuma — dá para ajustar depois. Ou crie do zero: uma de ganho e três ou quatro de gasto que você reconheça no extrato. Fica em Ajustes, Categorias, com a box certa selecionada no topo.
 
 - Categorias pertencem a **uma box**: criar em uma não cria na outra.
 - O **tipo** (ganho ou gasto) decide se o valor soma ou subtrai — o mesmo nome pode existir nos dois tipos, como "pix".
@@ -37,7 +37,7 @@ O botão **+** no meio da barra de baixo. Valor → gasto ou ganho → categoria
 
 ## A primeira recorrência
 
-Aqui o app deixa de ser um caderno e vira uma projeção. Uma recorrência é uma regra — salário, aluguel, parcela — que gera sozinha os lançamentos `previsto` dos próximos meses. Fica em Ajustes, Recorrências.
+Aqui o app deixa de ser um caderno e vira uma projeção. Uma recorrência é uma regra — salário, aluguel, parcela — que gera sozinha os lançamentos `previsto` dos próximos meses. Fica em Ajustes, Recorrências. A tela vazia mostra o que é e por que vale a pena.
 
 - Comece pelas duas ou três que mais pesam: o salário e as contas fixas grandes.
 - **Parcelas** em branco = sem fim (salário, aluguel); com número = acaba sozinho (um empréstimo em 12x).

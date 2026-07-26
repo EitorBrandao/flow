@@ -4,6 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
+import { CATEGORIAS_SUGERIDAS } from '../../domain/categoriasSugeridas';
 import { agoraISO, novoId } from '../../domain/types';
 import { useApp } from '../../state/store';
 import Categorias from './Categorias';
@@ -153,18 +154,19 @@ it('criar as sugestões marcadas grava exatamente as marcadas com tipo certo', a
 
   // verificar que as categorias foram criadas
   await waitFor(() => expect(screen.queryByText('Sugestões')).not.toBeInTheDocument());
-  expect(screen.getByText('salário')).toBeInTheDocument();
-  // verificar que ambos "pix" estão na lista
-  const pixElements = screen.getAllByText('pix');
-  expect(pixElements.length).toBeGreaterThan(0);
-  expect(screen.getByText('mercado')).toBeInTheDocument();
-  expect(screen.getByText('transporte')).toBeInTheDocument();
-  expect(screen.getByText('moradia')).toBeInTheDocument();
-  expect(screen.getByText('contas')).toBeInTheDocument();
-  // saúde e lazer não devem estar, pois não foram marcadas por padrão
-  expect(screen.queryByText('saúde')).not.toBeInTheDocument();
-  expect(screen.queryByText('lazer')).not.toBeInTheDocument();
-  expect(screen.queryByText('outros')).not.toBeInTheDocument();
+
+  // ler do banco e verificar nome + tipo contra as sugeridas
+  const todas = await db.categorias.toArray();
+  const sugeridasMarcadas = CATEGORIAS_SUGERIDAS.filter((c) => c.marcadaPorPadrao);
+
+  expect(todas.length).toBe(sugeridasMarcadas.length);
+
+  for (const sugerida of sugeridasMarcadas) {
+    const gravada = todas.find((c) => c.nome === sugerida.nome && c.tipo === sugerida.tipo);
+    expect(gravada).toBeDefined();
+    expect(gravada?.nome).toBe(sugerida.nome);
+    expect(gravada?.tipo).toBe(sugerida.tipo);
+  }
 });
 
 it('desmarcar uma sugestão e criar não inclui a desmarcada', async () => {

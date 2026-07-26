@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as repo from '../db/repo';
 import { hojeISO } from '../domain/dates';
+import { categoriasFaturaIds } from '../domain/fatura';
 import { agoraISO, novoId, type Dados, type ID, type ISODate } from '../domain/types';
 
 export type Aba = 'hoje' | 'fluxo' | 'lancar' | 'cartao' | 'analises' | 'simulador' | 'ajustes';
@@ -87,6 +88,7 @@ export function cenariosLigados(dados: Dados): Set<ID> {
 /** Estado do cartão de primeiro uso: se precisa e por quê. */
 export function estadoPrimeiroUso(dados: Dados): { semBoxPropria: boolean; semCategorias: boolean; precisa: boolean } {
   const semBoxPropria = !dados.boxes.some((b) => b.saldoInicial != null);
-  const semCategorias = dados.categorias.length === 0;
+  const categoriasVisiveis = dados.categorias.filter((c) => !categoriasFaturaIds(dados.cartoes).has(c.id));
+  const semCategorias = categoriasVisiveis.length === 0;
   return { semBoxPropria, semCategorias, precisa: semBoxPropria || semCategorias };
 }

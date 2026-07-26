@@ -10,6 +10,7 @@ import TelaHoje from './TelaHoje';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ aba: 'hoje', ajustesSecao: null });
 });
 
 it('mostra saldo e confirma um pendente', async () => {
@@ -123,4 +124,30 @@ it('com box com saldo próprio e ao menos uma categoria, mostra o saldo e não o
   render(<TelaHoje />);
   expect(screen.getByText(/Saldo hoje/)).toBeInTheDocument();
   expect(screen.queryByText('Primeira vez por aqui?')).not.toBeInTheDocument();
+});
+
+it('clicar no aviso de backup atrasado abre a subtela de backup', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  await useApp.getState().iniciar();
+
+  // Marca que há mudanças desde o último backup, e o último backup foi há mais de 7 dias
+  await repo.salvarConfig({
+    mudancasDesdeBackup: true,
+    ultimoBackupEm: '2026-07-01T00:00:00Z', // 25 dias atrás (hoje é 26/07)
+  });
+  await useApp.getState().recarregar();
+
+  useApp.setState({ boxSel: box.id, aba: 'hoje', ajustesSecao: null });
+  render(<TelaHoje />);
+
+  expect(screen.getByText(/Há mudanças sem backup/)).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: /Há mudanças sem backup/ }));
+
+  const estado = useApp.getState();
+  expect(estado.aba).toBe('ajustes');
+  expect(estado.ajustesSecao).toBe('backup');
 });

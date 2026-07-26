@@ -65,7 +65,7 @@ export default function Categorias() {
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nomeEdit, setNomeEdit] = useState('');
   const [sugestoesMarcadas, setSugestoesMarcadas] = useState<Set<string>>(
-    new Set(CATEGORIAS_SUGERIDAS.filter((c) => c.marcadaPorPadrao).map((c) => c.nome)),
+    new Set(CATEGORIAS_SUGERIDAS.filter((c) => c.marcadaPorPadrao).map((c) => `${c.nome}:${c.tipo}`)),
   );
   const uid = useId();
   if (!dados) return null;
@@ -98,7 +98,8 @@ export default function Categorias() {
       const irmas = cats.filter((c) => c.tipo === tipo && !c.arquivada);
       const sugeridos = CATEGORIAS_SUGERIDAS.filter((c) => c.tipo === tipo);
       for (const sugerido of sugeridos) {
-        if (sugestoesMarcadas.has(sugerido.nome)) {
+        const chave = `${sugerido.nome}:${sugerido.tipo}`;
+        if (sugestoesMarcadas.has(chave)) {
           await repo.salvarCategoria({
             boxId,
             nome: sugerido.nome,
@@ -111,15 +112,16 @@ export default function Categorias() {
       }
     }
     await recarregar();
-    setSugestoesMarcadas(new Set(CATEGORIAS_SUGERIDAS.filter((c) => c.marcadaPorPadrao).map((c) => c.nome)));
+    setSugestoesMarcadas(new Set(CATEGORIAS_SUGERIDAS.filter((c) => c.marcadaPorPadrao).map((c) => `${c.nome}:${c.tipo}`)));
   }
 
-  function toggleSugestao(nome: string) {
+  function toggleSugestao(nome: string, tipo: string) {
+    const chave = `${nome}:${tipo}`;
     const nova = new Set(sugestoesMarcadas);
-    if (nova.has(nome)) {
-      nova.delete(nome);
+    if (nova.has(chave)) {
+      nova.delete(chave);
     } else {
-      nova.add(nome);
+      nova.add(chave);
     }
     setSugestoesMarcadas(nova);
   }
@@ -179,33 +181,40 @@ export default function Categorias() {
       {cats.length === 0 && (
         <div className="card">
           <p className="rotulo">Sugestões</p>
+          <p>Comece pelas sugeridas — dá para ajustar depois.</p>
           <p className="rotulo-grupo">Ganhos</p>
           <div className="sugestoes">
-            {sugeridosGanho.map((cat) => (
-              <label key={cat.nome} className={`sugestao ${sugestoesMarcadas.has(cat.nome) ? 'marcada' : ''}`}>
-                <input
-                  type="checkbox"
-                  checked={sugestoesMarcadas.has(cat.nome)}
-                  onChange={() => toggleSugestao(cat.nome)}
-                />
-                {cat.nome}
-              </label>
-            ))}
+            {sugeridosGanho.map((cat) => {
+              const chave = `${cat.nome}:${cat.tipo}`;
+              return (
+                <label key={chave} className={`sugestao ${sugestoesMarcadas.has(chave) ? 'marcada' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={sugestoesMarcadas.has(chave)}
+                    onChange={() => toggleSugestao(cat.nome, cat.tipo)}
+                  />
+                  {cat.nome}
+                </label>
+              );
+            })}
           </div>
           <p className="rotulo-grupo">Gastos</p>
           <div className="sugestoes">
-            {sugeridosGasto.map((cat) => (
-              <label key={cat.nome} className={`sugestao ${sugestoesMarcadas.has(cat.nome) ? 'marcada' : ''}`}>
-                <input
-                  type="checkbox"
-                  checked={sugestoesMarcadas.has(cat.nome)}
-                  onChange={() => toggleSugestao(cat.nome)}
-                />
-                {cat.nome}
-              </label>
-            ))}
+            {sugeridosGasto.map((cat) => {
+              const chave = `${cat.nome}:${cat.tipo}`;
+              return (
+                <label key={chave} className={`sugestao ${sugestoesMarcadas.has(chave) ? 'marcada' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={sugestoesMarcadas.has(chave)}
+                    onChange={() => toggleSugestao(cat.nome, cat.tipo)}
+                  />
+                  {cat.nome}
+                </label>
+              );
+            })}
           </div>
-          <button className="botao botao-primario" onClick={criarSugeridas}>
+          <button className="botao botao-primario" onClick={criarSugeridas} disabled={contagem === 0}>
             Criar as {contagem} marcadas
           </button>
         </div>

@@ -372,9 +372,6 @@ table.tabela th:first-child, table.tabela td:first-child {
 .primeiro-uso .botao {
   width: 100%;
 }
-.primeiro-uso .botao + .botao {
-  margin-top: 8px;
-}
 
 /* ---- Categorias (Categorias.tsx) ---- */
 .sugestoes {

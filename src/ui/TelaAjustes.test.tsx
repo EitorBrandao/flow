@@ -10,6 +10,7 @@ import TelaAjustes from './TelaAjustes';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ aba: 'hoje', ajustesSecao: null });
 });
 
 async function setup() {
