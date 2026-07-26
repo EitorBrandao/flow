@@ -115,3 +115,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   fatura de cartão (drill-down a partir de `FaturaResumo`/`TelaCartao`).
 - **`ViagemSheet.tsx`** — sheet somente leitura com os lançamentos/compras de uma viagem,
   agrupados (`itensDaViagem`); mesmo padrão visual do `LancamentosSheet`.
+- **`PrimeiroUso.tsx`** — cartão de onboarding renderizado em `TelaHoje` quando o app está sem
+  box com saldo próprio ou sem categorias. Guia o usuário pelos primeiros passos: criar box,
+  importar backup ou escolher categorias. Desaparece automaticamente quando os dados
+  correspondem (sem flag persistido de conclusão).

@@ -9,6 +9,7 @@ import { boxIdsSelecionadas, cenariosLigados, useApp } from '../state/store';
 import BalanceChart from './BalanceChart';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
+import PrimeiroUso from './PrimeiroUso';
 
 const SETE_DIAS_MS = 7 * 86_400_000;
 
@@ -107,6 +108,10 @@ export default function TelaHoje() {
     await recarregar();
   }
 
+  const semBoxPropria = !dados.boxes.some((b) => b.saldoInicial != null);
+  const semCategorias = dados.categorias.length === 0;
+  const primeiroUso = semBoxPropria || semCategorias;
+
   return (
     <div className="tela">
       {backupVelho && (
@@ -114,40 +119,44 @@ export default function TelaHoje() {
           Há mudanças sem backup há mais de 7 dias — toque para exportar.
         </button>
       )}
-      <div className="card">
-        <p className="rotulo" style={{ margin: 0 }}>
-          Saldo hoje · {boxSel === 'casa' ? 'casa' : dados.boxes.find((b) => b.id === boxSel)?.nome}
-        </p>
-        {(() => {
-          const saldoHoje = deHoje?.saldoEfetivo ?? 0;
-          const [reais, centavos] = formatarBRL(saldoHoje).split(',');
-          return (
-            <p className={`saldo-grande${saldoHoje < 0 ? ' negativo' : ''}`} style={{ margin: '4px 0' }}>
-              {reais}<b>,{centavos}</b>
-            </p>
-          );
-        })()}
-        {(() => {
-          const fim = janela.at(-1);
-          const delta = fim && deHoje ? fim.saldoProjetado - deHoje.saldoEfetivo : null;
-          if (delta == null || delta === 0) return null;
-          return (
-            <span className={`delta ${delta > 0 ? 'pos' : 'neg'}`}>
-              {delta > 0 ? '▲' : '▼'} {formatarBRL(Math.abs(delta))} nos próximos 28 dias
-            </span>
-          );
-        })()}
-        {deHoje && deHoje.saldoProjetado !== deHoje.saldoEfetivo && (
-          <p className="sub" style={{ margin: 0 }}>
-            projetado: <strong className={deHoje.saldoProjetado >= 0 ? 'valor-ganho' : 'valor-gasto'}>
-              {formatarBRL(deHoje.saldoProjetado)}
-            </strong>
+      {primeiroUso ? (
+        <PrimeiroUso />
+      ) : (
+        <div className="card">
+          <p className="rotulo" style={{ margin: 0 }}>
+            Saldo hoje · {boxSel === 'casa' ? 'casa' : dados.boxes.find((b) => b.id === boxSel)?.nome}
           </p>
-        )}
-        <ConferenciaSaldo key={boxSel} saldoApp={deHoje?.saldoEfetivo ?? 0} declaradoCent={declaradoCent}
-          dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} />
-        <BalanceChart serie={janela} hoje={hoje} altura={120} mostrarCenarios={ligados.size > 0} />
-      </div>
+          {(() => {
+            const saldoHoje = deHoje?.saldoEfetivo ?? 0;
+            const [reais, centavos] = formatarBRL(saldoHoje).split(',');
+            return (
+              <p className={`saldo-grande${saldoHoje < 0 ? ' negativo' : ''}`} style={{ margin: '4px 0' }}>
+                {reais}<b>,{centavos}</b>
+              </p>
+            );
+          })()}
+          {(() => {
+            const fim = janela.at(-1);
+            const delta = fim && deHoje ? fim.saldoProjetado - deHoje.saldoEfetivo : null;
+            if (delta == null || delta === 0) return null;
+            return (
+              <span className={`delta ${delta > 0 ? 'pos' : 'neg'}`}>
+                {delta > 0 ? '▲' : '▼'} {formatarBRL(Math.abs(delta))} nos próximos 28 dias
+              </span>
+            );
+          })()}
+          {deHoje && deHoje.saldoProjetado !== deHoje.saldoEfetivo && (
+            <p className="sub" style={{ margin: 0 }}>
+              projetado: <strong className={deHoje.saldoProjetado >= 0 ? 'valor-ganho' : 'valor-gasto'}>
+                {formatarBRL(deHoje.saldoProjetado)}
+              </strong>
+            </p>
+          )}
+          <ConferenciaSaldo key={boxSel} saldoApp={deHoje?.saldoEfetivo ?? 0} declaradoCent={declaradoCent}
+            dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} />
+          <BalanceChart serie={janela} hoje={hoje} altura={120} mostrarCenarios={ligados.size > 0} />
+        </div>
+      )}
       <h2>Pendentes ({fila.length})</h2>
       <div className="lista">
         <AnimatePresence initial={false}>
