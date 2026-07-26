@@ -91,3 +91,35 @@ it('trocar de box na tela de Recorrências mostra só as recorrências e categor
   expect(screen.getByRole('button', { name: 'contas da casa' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'aluguel' })).not.toBeInTheDocument();
 });
+
+it('box sem recorrência mostra cartão explicativo', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-02' });
+
+  render(<Recorrencias />);
+
+  expect(screen.getByText('Recorrências geram previstos')).toBeInTheDocument();
+  expect(screen.getByText(/Cada recorrência cria lançamentos automaticamente/)).toBeInTheDocument();
+});
+
+it('box com recorrência não mostra cartão explicativo', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
+  await repo.salvarRecorrencia({
+    boxId: box.id, categoriaId: cat.id, valor: 5000, dataInicio: '2026-07-01',
+    diaDoMes: 5, parcelas: 3,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-02' });
+
+  render(<Recorrencias />);
+
+  expect(screen.queryByText('Recorrências geram previstos')).not.toBeInTheDocument();
+  expect(screen.getByText('assinatura', { selector: 'div' })).toBeInTheDocument();
+});

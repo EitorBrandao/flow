@@ -104,6 +104,14 @@ export default function Recorrencias() {
     <div className="tela">
       <h2>Recorrências</h2>
 
+      {recs.length === 0 && (
+        <div className="card">
+          <p className="rotulo">Recorrências geram previstos</p>
+          <p>Cada recorrência cria lançamentos automaticamente para os próximos meses — é o que enche a projeção do Fluxo. Sem elas, o gráfico fica uma linha reta.</p>
+          <p>Comece pelas que mais pesam: salário, aluguel e as contas fixas grandes.</p>
+        </div>
+      )}
+
       <h2>{editandoId ? 'Editar recorrência' : 'Nova recorrência'}</h2>
       <div className="campo">
         <label htmlFor={`${uid}-valor`}>Valor</label>
