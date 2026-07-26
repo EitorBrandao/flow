@@ -4,6 +4,7 @@ import { GripVertical, Pencil } from 'lucide-react';
 import * as repo from '../../db/repo';
 import { diffOrdem, proximaOrdem } from '../../domain/categorias';
 import { categoriasFaturaIds } from '../../domain/fatura';
+import { CATEGORIAS_SUGERIDAS } from '../../domain/categoriasSugeridas';
 import type { Categoria, TipoCategoria } from '../../domain/types';
 import { boxIdEfetivo, useApp } from '../../state/store';
 
@@ -63,6 +64,9 @@ export default function Categorias() {
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nomeEdit, setNomeEdit] = useState('');
+  const [sugestoesMarcadas, setSugestoesMarcadas] = useState<Set<string>>(
+    new Set(CATEGORIAS_SUGERIDAS.filter((c) => c.marcadaPorPadrao).map((c) => c.nome)),
+  );
   const uid = useId();
   if (!dados) return null;
   const boxId = boxIdEfetivo(dados, boxSel);
@@ -86,6 +90,42 @@ export default function Categorias() {
     await repo.salvarCategoria({ boxId, nome: nome.trim(), tipo, ordem: proximaOrdem(irmas) });
     await recarregar();
     setNome('');
+  }
+
+  async function criarSugeridas() {
+    if (!boxId) return;
+    const sugeridosPorTipo = {
+      ganho: CATEGORIAS_SUGERIDAS.filter((c) => c.tipo === 'ganho'),
+      gasto: CATEGORIAS_SUGERIDAS.filter((c) => c.tipo === 'gasto'),
+    };
+    for (const tipo of ['ganho', 'gasto'] as const) {
+      const sugeridos = sugeridosPorTipo[tipo];
+      const irmas = cats.filter((c) => c.tipo === tipo && !c.arquivada);
+      for (const sugerido of sugeridos) {
+        if (sugestoesMarcadas.has(sugerido.nome)) {
+          await repo.salvarCategoria({
+            boxId,
+            nome: sugerido.nome,
+            tipo,
+            ordem: proximaOrdem([...irmas, { ordem: proximaOrdem(irmas) }]),
+          });
+          // atualiza irmas para o próximo
+          irmas.push({ id: '', nome: sugerido.nome, tipo, ordem: proximaOrdem(irmas), boxId, arquivada: false, criadoEm: '', alteradoEm: '' });
+        }
+      }
+    }
+    await recarregar();
+    setSugestoesMarcadas(new Set(CATEGORIAS_SUGERIDAS.filter((c) => c.marcadaPorPadrao).map((c) => c.nome)));
+  }
+
+  function toggleSugestao(nome: string) {
+    const nova = new Set(sugestoesMarcadas);
+    if (nova.has(nome)) {
+      nova.delete(nome);
+    } else {
+      nova.add(nome);
+    }
+    setSugestoesMarcadas(nova);
   }
 
   async function reordenar(novaOrdem: Categoria[]) {
@@ -132,9 +172,48 @@ export default function Categorias() {
     };
   }
 
+  const sugeridosGanho = CATEGORIAS_SUGERIDAS.filter((c) => c.tipo === 'ganho');
+  const sugeridosGasto = CATEGORIAS_SUGERIDAS.filter((c) => c.tipo === 'gasto');
+  const contagem = Array.from(sugestoesMarcadas).length;
+
   return (
     <div className="tela">
       <h2>Categorias</h2>
+
+      {cats.length === 0 && (
+        <div className="card">
+          <p className="rotulo">Sugestões</p>
+          <p className="rotulo-grupo">Ganhos</p>
+          <div className="sugestoes">
+            {sugeridosGanho.map((cat) => (
+              <label key={cat.nome} className={`sugestao ${sugestoesMarcadas.has(cat.nome) ? 'marcada' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={sugestoesMarcadas.has(cat.nome)}
+                  onChange={() => toggleSugestao(cat.nome)}
+                />
+                {cat.nome}
+              </label>
+            ))}
+          </div>
+          <p className="rotulo-grupo">Gastos</p>
+          <div className="sugestoes">
+            {sugeridosGasto.map((cat) => (
+              <label key={cat.nome} className={`sugestao ${sugestoesMarcadas.has(cat.nome) ? 'marcada' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={sugestoesMarcadas.has(cat.nome)}
+                  onChange={() => toggleSugestao(cat.nome)}
+                />
+                {cat.nome}
+              </label>
+            ))}
+          </div>
+          <button className="botao botao-primario" onClick={criarSugeridas}>
+            Criar as {contagem} marcadas
+          </button>
+        </div>
+      )}
 
       <div className="linha">
         <div className="campo" style={{ flex: 1 }}>
