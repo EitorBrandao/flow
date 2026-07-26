@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { normalizar, parseCapitulo, sortearNomes, type Bloco, type Capitulo, type Inline } from './wiki';
+import { normalizar, parseCapitulo, sortearNomes, type Bloco, type Capitulo, type Inline } from './capitulos';
 
 // Carrega capítulos (exclui README que não é um capítulo)
 const BRUTOS_TODOS = import.meta.glob('../../../docs/wiki/*.md', {

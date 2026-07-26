@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { NOMES, parseCapitulo, sortearNomes } from './wiki';
+import { NOMES, parseCapitulo, sortearNomes } from './capitulos';
 
 const NOMES_FIXOS = { a: 'Ana', b: 'Bruno' };
 
