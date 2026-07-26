@@ -94,22 +94,18 @@ export default function Categorias() {
 
   async function criarSugeridas() {
     if (!boxId) return;
-    const sugeridosPorTipo = {
-      ganho: CATEGORIAS_SUGERIDAS.filter((c) => c.tipo === 'ganho'),
-      gasto: CATEGORIAS_SUGERIDAS.filter((c) => c.tipo === 'gasto'),
-    };
     for (const tipo of ['ganho', 'gasto'] as const) {
-      const sugeridos = sugeridosPorTipo[tipo];
       const irmas = cats.filter((c) => c.tipo === tipo && !c.arquivada);
+      const sugeridos = CATEGORIAS_SUGERIDAS.filter((c) => c.tipo === tipo);
       for (const sugerido of sugeridos) {
         if (sugestoesMarcadas.has(sugerido.nome)) {
           await repo.salvarCategoria({
             boxId,
             nome: sugerido.nome,
             tipo,
-            ordem: proximaOrdem([...irmas, { ordem: proximaOrdem(irmas) }]),
+            ordem: proximaOrdem(irmas),
           });
-          // atualiza irmas para o próximo
+          // Atualiza irmas para o próximo cálculo
           irmas.push({ id: '', nome: sugerido.nome, tipo, ordem: proximaOrdem(irmas), boxId, arquivada: false, criadoEm: '', alteradoEm: '' });
         }
       }

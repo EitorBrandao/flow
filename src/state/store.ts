@@ -2,10 +2,11 @@ import { create } from 'zustand';
 import * as repo from '../db/repo';
 import { hojeISO } from '../domain/dates';
 import { agoraISO, novoId, type Dados, type ID, type ISODate } from '../domain/types';
-import type { Secao } from '../ui/TelaAjustes';
 
 export type Aba = 'hoje' | 'fluxo' | 'lancar' | 'cartao' | 'analises' | 'simulador' | 'ajustes';
 export type BoxSelecionada = ID | 'casa';
+export type SecaoAjustes = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'cartoes'
+  | 'categoriasCartao' | 'assinaturas' | 'viagens' | 'backup' | 'wiki' | 'versao';
 
 interface AppState {
   carregado: boolean;
@@ -13,12 +14,12 @@ interface AppState {
   hoje: ISODate;
   aba: Aba;
   boxSel: BoxSelecionada;
-  ajustesSecao: Secao | null;
+  ajustesSecao: SecaoAjustes | null;
   iniciar(): Promise<void>;
   recarregar(): Promise<void>;
   setAba(aba: Aba): void;
   setBoxSel(boxSel: BoxSelecionada): void;
-  abrirAjustes(secao: Secao): void;
+  abrirAjustes(secao: SecaoAjustes): void;
   limparAjustesSecao(): void;
 }
 

@@ -206,3 +206,62 @@ it('desmarcar uma sugestão e criar não inclui a desmarcada', async () => {
   expect(screen.queryByText('saúde')).not.toBeInTheDocument();
   expect(screen.getByText('salário')).toBeInTheDocument();
 });
+
+it('box cuja única categoria é a de fatura de um cartão mostra sugestões', async () => {
+  // Caso: uma box tem um cartão (que cria categoria de fatura oculta), mas nenhuma
+  // categoria visível. Deve mostrar sugestões, sem erro.
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  // Criar um cartão, que automaticamente cria uma categoria de fatura oculta
+  await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+
+  render(<Categorias />);
+
+  // Deve mostrar sugestões (nenhuma categoria visível)
+  expect(screen.getByText('Sugestões')).toBeInTheDocument();
+  // Categoria de fatura do cartão não deve aparecer
+  expect(screen.queryByText('Nubank')).not.toBeInTheDocument();
+});
+
+it('criar as sugestões grava ordem começando em 0, não 1', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+
+  render(<Categorias />);
+
+  // criar as sugestões padrão
+  const botaoCriar = screen.getByRole('button', { name: /Criar as \d+ marcadas/ });
+  await userEvent.click(botaoCriar);
+
+  // aguardar a renderização
+  await waitFor(() => expect(screen.queryByText('Sugestões')).not.toBeInTheDocument());
+
+  // verificar as ordens: ganho deve ter 0, 1, ... e gasto também 0, 1, ...
+  const todas = await db.categorias.toArray();
+  const ganhos = todas.filter((c) => c.tipo === 'ganho');
+  const gastos = todas.filter((c) => c.tipo === 'gasto');
+
+  // garantir que temos dados
+  expect(ganhos.length).toBeGreaterThan(0);
+  expect(gastos.length).toBeGreaterThan(0);
+
+  // verificar que as ordens começam em 0
+  ganhos.sort((a, b) => a.ordem - b.ordem);
+  gastos.sort((a, b) => a.ordem - b.ordem);
+
+  expect(ganhos[0].ordem).toBe(0);
+  for (let i = 1; i < ganhos.length; i++) {
+    expect(ganhos[i].ordem).toBe(i);
+  }
+
+  expect(gastos[0].ordem).toBe(0);
+  for (let i = 1; i < gastos.length; i++) {
+    expect(gastos[i].ordem).toBe(i);
+  }
+});

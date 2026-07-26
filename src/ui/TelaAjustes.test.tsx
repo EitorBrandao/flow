@@ -70,7 +70,7 @@ it('estando numa subtela, o botão "‹ Ajustes" volta ao menu', async () => {
 it('depois de usar abrirAjustes, uma remontagem (simulando a engrenagem) cai no menu', async () => {
   await setup();
 
-  const { abrirAjustes, limparAjustesSecao } = useApp.getState();
+  const { abrirAjustes } = useApp.getState();
 
   // Abre a seção Boxes
   act(() => {
@@ -82,17 +82,38 @@ it('depois de usar abrirAjustes, uma remontagem (simulando a engrenagem) cai no 
   // A seção Boxes deve estar visível
   expect(screen.getByText('Boxes', { selector: 'h2' })).toBeInTheDocument();
 
-  // Simula remontagem (como se a engrenagem tivesse sido clicada)
-  act(() => {
-    limparAjustesSecao();
-  });
-
-  // Remonta o componente com uma nova key (como a engrenagem faz)
+  // Simula remontagem (como se a engrenagem tivesse sido clicada) — nova key, sem chamar
+  // limparAjustesSecao manualmente. O componente deve automaticamente voltar ao menu.
   rerender(<TelaAjustes key="2" />);
 
   // O menu deve aparecer
   expect(screen.getAllByRole('button', { name: /Categorias/i }).length).toBeGreaterThan(0);
   expect(screen.queryByText('Boxes', { selector: 'h2' })).not.toBeInTheDocument();
+});
+
+it('estando numa subtela, abrirAjustes leva para outra subtela sem remontagem', async () => {
+  await setup();
+
+  const { abrirAjustes } = useApp.getState();
+
+  // Abre a seção Boxes
+  act(() => {
+    abrirAjustes('boxes');
+  });
+
+  render(<TelaAjustes />);
+
+  // A seção Boxes deve estar visível
+  expect(screen.getByText('Boxes', { selector: 'h2' })).toBeInTheDocument();
+
+  // Sem remontagem, chama abrirAjustes para outra seção
+  act(() => {
+    abrirAjustes('backup');
+  });
+
+  // Deve ir direto para Backup, sem passar pelo menu
+  expect(screen.getByText('Backup', { selector: 'h2' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Categorias/i })).not.toBeInTheDocument();
 });
 
 it('o caminho antigo setAba("ajustes") continua caindo no menu', async () => {

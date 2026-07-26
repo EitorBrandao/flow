@@ -1,12 +1,12 @@
 import type { TipoCategoria } from './types';
 
-export interface CategoriasSugeridas {
+export interface CategoriaSugerida {
   nome: string;
   tipo: TipoCategoria;
   marcadaPorPadrao: boolean;
 }
 
-export const CATEGORIAS_SUGERIDAS: readonly CategoriasSugeridas[] = [
+export const CATEGORIAS_SUGERIDAS: readonly CategoriaSugerida[] = [
   // Ganhos
   { nome: 'salário', tipo: 'ganho', marcadaPorPadrao: true },
   { nome: 'pix', tipo: 'ganho', marcadaPorPadrao: true },
