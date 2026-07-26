@@ -70,7 +70,7 @@ export function parseInline(texto: string): Inline[] {
 export function idDoTopico(titulo: string): string {
   return titulo
     .toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
@@ -161,5 +161,5 @@ function textoPuro(titulo: string, blocos: Bloco[]): string {
 
 /** Normaliza para busca: sem acento, sem caixa. */
 export function normalizar(s: string): string {
-  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
