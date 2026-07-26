@@ -58,7 +58,7 @@ export default function Wiki() {
   const [busca, setBusca] = useState('');
 
   const alvo = normalizar(busca.trim());
-  const filtrados = alvo ? capitulos.filter((c) => normalizar(c.titulo).includes(alvo)) : capitulos;
+  const filtrados = alvo ? capitulos.filter((c) => normalizar(c.texto).includes(alvo)) : capitulos;
   const atual = capitulos.find((c) => c.id === atualId) ?? capitulos[0];
 
   return (

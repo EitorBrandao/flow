@@ -19,8 +19,17 @@ describe('Wiki', () => {
   it('a busca filtra o índice, sem acento e sem caixa', async () => {
     render(<Wiki />);
     await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
-    await userEvent.type(screen.getByLabelText('Buscar na wiki'), 'CARTAO');
+    await userEvent.type(screen.getByLabelText('Buscar na wiki'), 'CREDITO');
     expect(await screen.findByRole('button', { name: 'Cartão de crédito' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Glossário' })).not.toBeInTheDocument();
+  });
+
+  it('a busca filtra pelo texto do capítulo, não só pelo título', async () => {
+    render(<Wiki />);
+    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+    await userEvent.type(screen.getByLabelText('Buscar na wiki'), 'teclado');
+    expect(await screen.findByRole('button', { name: 'Os primeiros passos' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Telas' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Glossário' })).not.toBeInTheDocument();
   });
 
