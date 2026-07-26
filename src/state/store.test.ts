@@ -3,7 +3,7 @@ import { limparDb } from '../test-setup';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
-import { boxIdEfetivo, boxIdsSelecionadas, useApp } from './store';
+import { boxIdEfetivo, boxIdsSelecionadas, estadoPrimeiroUso, useApp } from './store';
 
 beforeEach(async () => {
   await limparDb();
@@ -116,5 +116,35 @@ describe('boxIdEfetivo', () => {
   it('retorna null se a box "casa" não existir (ex.: foi renomeada)', () => {
     const dadosSemCasa = { boxes: [{ id: 'x', nome: 'eitor' } as never] } as never;
     expect(boxIdEfetivo(dadosSemCasa, 'casa')).toBeNull();
+  });
+});
+
+describe('estadoPrimeiroUso', () => {
+  it('sem box e sem categoria, retorna precisa=true', async () => {
+    await useApp.getState().iniciar();
+    const s = useApp.getState();
+    const resultado = estadoPrimeiroUso(s.dados!);
+    expect(resultado).toEqual({ semBoxPropria: true, semCategorias: true, precisa: true });
+  });
+
+  it('com box e sem categoria, retorna precisa=true (falta categoria)', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    await useApp.getState().iniciar();
+    const s = useApp.getState();
+    const resultado = estadoPrimeiroUso(s.dados!);
+    expect(resultado).toEqual({ semBoxPropria: false, semCategorias: true, precisa: true });
+  });
+
+  it('com box e categoria, retorna precisa=false (tudo pronto)', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+    await useApp.getState().iniciar();
+    const s = useApp.getState();
+    const resultado = estadoPrimeiroUso(s.dados!);
+    expect(resultado).toEqual({ semBoxPropria: false, semCategorias: false, precisa: false });
   });
 });

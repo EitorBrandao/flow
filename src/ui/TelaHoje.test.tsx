@@ -35,6 +35,7 @@ it('declara saldo real maior que o saldo do app e mostra que falta inserir', asy
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
   await useApp.getState().iniciar();
   useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
 
@@ -52,6 +53,7 @@ it('declara saldo real negativo (cheque especial) e persiste com o sinal', async
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
   await useApp.getState().iniciar();
   useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
 
@@ -70,6 +72,7 @@ it('declara saldo real igual ao saldo do app e mostra que bate certinho', async 
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
   await useApp.getState().iniciar();
   useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
 
@@ -86,6 +89,8 @@ it('troca de box reseta o campo de saldo real para o valor daquela box', async (
   const boxB = { id: novoId(), nome: 'b', saldoInicial: 0, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(boxA);
   await repo.salvarBox(boxB);
+  await repo.salvarCategoria({ boxId: boxA.id, nome: 'cat1', tipo: 'ganho', ordem: 0 });
+  await repo.salvarCategoria({ boxId: boxB.id, nome: 'cat2', tipo: 'ganho', ordem: 0 });
   await repo.salvarBox({ ...boxA, saldoDeclaradoCent: 105000, dataSaldoDeclarado: '2026-07-02' });
   await useApp.getState().iniciar();
   useApp.setState({ boxSel: boxA.id, hoje: '2026-07-02' });
@@ -97,4 +102,25 @@ it('troca de box reseta o campo de saldo real para o valor daquela box', async (
   act(() => useApp.setState({ boxSel: boxB.id }));
   rerender(<TelaHoje />);
   expect((screen.getByLabelText('Saldo real no banco') as HTMLInputElement).value).toMatch(/0,00/);
+});
+
+it('com banco vazio, a Hoje mostra o cartão de primeiro uso e não mostra o saldo grande', async () => {
+  await useApp.getState().iniciar();
+
+  render(<TelaHoje />);
+  expect(screen.getByText('Primeira vez por aqui?')).toBeInTheDocument();
+  expect(screen.queryByText(/Saldo hoje/)).not.toBeInTheDocument();
+});
+
+it('com box com saldo próprio e ao menos uma categoria, mostra o saldo e não o cartão de primeiro uso', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaHoje />);
+  expect(screen.getByText(/Saldo hoje/)).toBeInTheDocument();
+  expect(screen.queryByText('Primeira vez por aqui?')).not.toBeInTheDocument();
 });

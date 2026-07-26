@@ -83,3 +83,10 @@ export function boxIdEfetivo(dados: Dados, boxSel: BoxSelecionada): ID | null {
 export function cenariosLigados(dados: Dados): Set<ID> {
   return new Set(dados.cenarios.filter((c) => c.ligado).map((c) => c.id));
 }
+
+/** Estado do cartão de primeiro uso: se precisa e por quê. */
+export function estadoPrimeiroUso(dados: Dados): { semBoxPropria: boolean; semCategorias: boolean; precisa: boolean } {
+  const semBoxPropria = !dados.boxes.some((b) => b.saldoInicial != null);
+  const semCategorias = dados.categorias.length === 0;
+  return { semBoxPropria, semCategorias, precisa: semBoxPropria || semCategorias };
+}
