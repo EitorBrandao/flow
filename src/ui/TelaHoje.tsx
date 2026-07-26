@@ -5,7 +5,7 @@ import { addDias } from '../domain/dates';
 import { formatarBRL } from '../domain/money';
 import type { ISODate } from '../domain/types';
 import { pendentes, projetarBoxes } from '../domain/projection';
-import { boxIdsSelecionadas, cenariosLigados, useApp } from '../state/store';
+import { boxIdsSelecionadas, cenariosLigados, estadoPrimeiroUso, useApp } from '../state/store';
 import BalanceChart from './BalanceChart';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
@@ -108,9 +108,7 @@ export default function TelaHoje() {
     await recarregar();
   }
 
-  const semBoxPropria = !dados.boxes.some((b) => b.saldoInicial != null);
-  const semCategorias = dados.categorias.length === 0;
-  const primeiroUso = semBoxPropria || semCategorias;
+  const { precisa: primeiroUso } = estadoPrimeiroUso(dados);
 
   return (
     <div className="tela">

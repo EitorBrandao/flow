@@ -108,7 +108,7 @@ it('com banco vazio, a Hoje mostra o cartão de primeiro uso e não mostra o sal
   await useApp.getState().iniciar();
 
   render(<TelaHoje />);
-  expect(screen.getByText('PRIMEIRA VEZ POR AQUI?')).toBeInTheDocument();
+  expect(screen.getByText('Primeira vez por aqui?')).toBeInTheDocument();
   expect(screen.queryByText(/Saldo hoje/)).not.toBeInTheDocument();
 });
 
@@ -122,5 +122,5 @@ it('com box com saldo próprio e ao menos uma categoria, mostra o saldo e não o
 
   render(<TelaHoje />);
   expect(screen.getByText(/Saldo hoje/)).toBeInTheDocument();
-  expect(screen.queryByText('PRIMEIRA VEZ POR AQUI?')).not.toBeInTheDocument();
+  expect(screen.queryByText('Primeira vez por aqui?')).not.toBeInTheDocument();
 });

@@ -1,14 +1,13 @@
-import { useApp } from '../state/store';
+import { useApp, estadoPrimeiroUso } from '../state/store';
 
 export default function PrimeiroUso() {
   const { dados, abrirAjustes } = useApp();
 
   if (!dados) return null;
 
-  const semBoxPropria = !dados.boxes.some((b) => b.saldoInicial != null);
-  const semCategorias = dados.categorias.length === 0;
+  const { semBoxPropria, precisa } = estadoPrimeiroUso(dados);
 
-  if (!semBoxPropria && !semCategorias) {
+  if (!precisa) {
     return null;
   }
 
@@ -17,7 +16,7 @@ export default function PrimeiroUso() {
   return (
     <div className="card primeiro-uso">
       <p className="rotulo" style={{ margin: 0 }}>
-        PRIMEIRA VEZ POR AQUI?
+        Primeira vez por aqui?
       </p>
       <p style={{ margin: '12px 0' }}>
         O Flow projeta o seu saldo dia a dia — mas primeiro ele precisa saber de onde partir.
@@ -61,7 +60,7 @@ export default function PrimeiroUso() {
             Já uso o Flow em outro aparelho — importar backup
           </button>
           <p className="sub" style={{ margin: 0 }}>
-            Defina as categorias que você usa (Alimentação, Transporte, Diversão, etc.). Depois, o primeiro lançamento sai em três toques.
+            Escolha as categorias que você usa — pode começar pelas sugeridas. Depois, o primeiro lançamento sai em três toques.
           </p>
         </>
       )}
