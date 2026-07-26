@@ -46,7 +46,7 @@ A cada boot e após qualquer mudança, o app recalcula as ocorrências esperadas
 
 - Ocorrências futuras que faltam → são criadas como `previsto`.
 - Previstos que não correspondem mais a nenhuma ocorrência esperada (regra editada) → são apagados.
-- **Lançamentos `efetivo` nunca são tocados**, mesmo que a regra mude depois.
+- Lançamentos com status `efetivo` **nunca são tocados**, mesmo que a regra mude depois.
 - Uma ocorrência esperada no passado que o usuário já descartou **não ressuscita** — só se cria previsto para datas futuras (trade-off aceito para não reviver o que foi excluído de propósito).
 
 ## Cenário
