@@ -50,6 +50,13 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.resumo-barras` / `.resumo-barra-trilho` / `.resumo-barra-preenchimento` | barras de composição ganho/gasto do card resumo em `TelaAnalises.tsx` |
 | `.composicao-*` | classes internas do `ComposicaoBarChart.tsx` (mesmo padrão de prefixo por componente) |
 | `.evolucao-*` | classes internas do `EvolucaoMensalChart.tsx` (mesmo padrão de prefixo por componente) |
+| `.wiki-abrir-indice` | botão de abertura do índice da wiki (align-self flex-start) |
+| `.wiki-corpo` | artigo com conteúdo da wiki; `h3` (22px margem superior), `p` (10px margem inferior), `ul` (12px margem, 20px padding-left), `li` (5px margem), `code` (quebra de overflow) |
+| `.wiki-titulo` | título do capítulo (4px margem superior) |
+| `.wiki-campos` | lista de definições de campo (display list); `dt` em `--muted` 13px com 10px margem-top, `dd` com 2px margem-top |
+| `.wiki-fundo` | backdrop semifixo do índice (z-index 50, preto semi-transparente `rgba(0,0,0,.55)`) |
+| `.wiki-gaveta` | drawer do índice (z-index 51, `min(86vw, 330px)`, 16px padding, `--surface` com borda direita em `--line`, scroll contido) |
+| `.wiki-item` | botão de item do índice; `.ativo` marca o capítulo atual com `--ac-dim` fundo e `--ac` cor |
 
 ## Componentes compartilhados (em `src/ui/`)
 
