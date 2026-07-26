@@ -159,3 +159,29 @@ it('categoria da fatura de um cartão não aparece na grade de seleção', async
   expect(screen.getByRole('button', { name: 'mercado' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Nubank' })).not.toBeInTheDocument();
 });
+
+it('sem categoria na box, diz o que falta em vez de só desabilitar o botão', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+
+  expect(screen.getByRole('button', { name: 'Lançar' })).toBeDisabled();
+  expect(screen.getByText('Nenhuma categoria nesta box — crie em Ajustes, Categorias.')).toBeInTheDocument();
+});
+
+it('com categoria mas sem valor, pede o valor', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+
+  expect(screen.getByText('Digite um valor.')).toBeInTheDocument();
+});

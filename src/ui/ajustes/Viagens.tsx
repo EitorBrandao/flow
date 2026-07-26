@@ -6,10 +6,10 @@ import { useApp } from '../../state/store';
 import CampoData from '../CampoData';
 
 export default function Viagens() {
-  const { dados, recarregar } = useApp();
+  const { dados, recarregar, hoje } = useApp();
   const [nome, setNome] = useState('');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [dataInicio, setDataInicio] = useState(hoje);
+  const [dataFim, setDataFim] = useState(hoje);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [aviso, setAviso] = useState('');
   const uid = useId();
@@ -24,11 +24,15 @@ export default function Viagens() {
   }
 
   function limpar() {
-    setEditandoId(null); setNome(''); setDataInicio(''); setDataFim(''); setAviso('');
+    setEditandoId(null); setNome(''); setDataInicio(hoje); setDataFim(hoje); setAviso('');
   }
 
   async function salvar() {
-    if (!nome.trim() || !dataInicio || !dataFim) return;
+    // Este era o único guard da tela que voltava calado — os outros dois já explicavam.
+    if (!nome.trim() || !dataInicio || !dataFim) {
+      setAviso('Preencha nome, início e fim para salvar.');
+      return;
+    }
     if (dataFim < dataInicio) {
       setAviso('A data final não pode ser anterior à data inicial.');
       return;
