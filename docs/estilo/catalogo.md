@@ -57,6 +57,8 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.wiki-fundo` | backdrop semifixo do índice (z-index 50, preto semi-transparente `rgba(0,0,0,.55)`) |
 | `.wiki-gaveta` | drawer do índice (z-index 51, `min(86vw, 330px)`, 16px padding, `--surface` com borda direita em `--line`, scroll contido) |
 | `.wiki-item` | botão de item do índice; `.ativo` marca o capítulo atual com `--ac-dim` fundo e `--ac` cor |
+| `.primeiro-uso` | cartão de onboarding (`PrimeiroUso.tsx`): flex container com gap 14px, botões em largura cheia, espaçamento entre elementos |
+| `.sugestoes` / `.sugestao` | contêiner de pílulas de categoria sugerida (quebra linha, gap 8px) e cada pílula (`SeletorCategoria`-like); `.sugestao` é alvo de toque (44px altura), `.marcada` indica seleção com `--ac-dim` fundo e `--ac` cor |
 
 ## Componentes compartilhados (em `src/ui/`)
 

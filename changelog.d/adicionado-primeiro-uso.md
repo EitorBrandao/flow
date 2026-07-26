@@ -1,0 +1,3 @@
+- Cartão de primeiro uso na tela Hoje guia o usuário pelos passos iniciais: criar box, importar backup ou escolher categorias.
+- Tela de Categorias oferece categorias sugeridas marcadas por padrão quando a box não tem nenhuma, permitindo personalização rápida.
+- Atalhos no cartão de primeiro uso e na tela de Categorias levam direto à aba de Ajustes correta para cada ação.

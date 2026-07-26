@@ -15,10 +15,10 @@ export default function PrimeiroUso() {
 
   return (
     <div className="card primeiro-uso">
-      <p className="rotulo" style={{ margin: 0 }}>
+      <p className="rotulo">
         Primeira vez por aqui?
       </p>
-      <p style={{ margin: '12px 0' }}>
+      <p>
         O Flow projeta o seu saldo dia a dia — mas primeiro ele precisa saber de onde partir.
       </p>
 
@@ -26,19 +26,17 @@ export default function PrimeiroUso() {
         <>
           <button
             className="botao botao-primario"
-            style={{ width: '100%', marginBottom: 8 }}
             onClick={() => abrirAjustes('boxes')}
           >
             Criar minha box com o saldo do banco
           </button>
           <button
             className="botao"
-            style={{ width: '100%', marginBottom: 12 }}
             onClick={() => abrirAjustes('backup')}
           >
             Já uso o Flow em outro aparelho — importar backup
           </button>
-          <p className="sub" style={{ margin: 0 }}>
+          <p className="sub">
             Depois da box vêm as categorias, e aí o primeiro lançamento cabe em três toques. A box{' '}
             <strong>casa</strong>, dos gastos divididos, já está criada.
           </p>
@@ -47,19 +45,17 @@ export default function PrimeiroUso() {
         <>
           <button
             className="botao botao-primario"
-            style={{ width: '100%', marginBottom: 8 }}
             onClick={() => abrirAjustes('categorias')}
           >
             Escolher minhas categorias
           </button>
           <button
             className="botao"
-            style={{ width: '100%', marginBottom: 12 }}
             onClick={() => abrirAjustes('backup')}
           >
             Já uso o Flow em outro aparelho — importar backup
           </button>
-          <p className="sub" style={{ margin: 0 }}>
+          <p className="sub">
             Escolha as categorias que você usa — pode começar pelas sugeridas. Depois, o primeiro lançamento sai em três toques.
           </p>
         </>
