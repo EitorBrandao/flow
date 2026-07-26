@@ -321,3 +321,38 @@ table.tabela th:first-child, table.tabela td:first-child {
 .evolucao-legenda-cor { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
 .evolucao-legenda-cor.ganho { background: var(--pos); }
 .evolucao-legenda-cor.gasto { background: var(--neg); }
+
+/* --- Wiki ------------------------------------------------------------- */
+.wiki-abrir-indice { align-self: flex-start; }
+
+.wiki-corpo { max-width: 70ch; }
+.wiki-corpo h3 { margin: 22px 0 6px; font-size: 17px; }
+.wiki-corpo p { margin: 0 0 10px; }
+.wiki-corpo ul { margin: 0 0 12px; padding-left: 20px; }
+.wiki-corpo li { margin-bottom: 5px; }
+/* nome de campo longo quebra em vez de empurrar a página para o lado */
+.wiki-corpo code { overflow-wrap: anywhere; }
+.wiki-titulo { margin-top: 4px; }
+
+/* Empilhado de propósito: duas colunas numa tela de 375px viram um filete
+   ilegível — foi o defeito visto no mockup em 2026-07-25. */
+.wiki-campos { margin: 4px 0 14px; }
+.wiki-campos dt { color: var(--muted); font-size: 13px; margin-top: 10px; }
+.wiki-campos dd { margin: 2px 0 0; }
+
+.wiki-fundo {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0, 0, 0, .55); border: none; padding: 0;
+}
+.wiki-gaveta {
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 51;
+  width: min(86vw, 330px); padding: 16px 14px;
+  background: var(--surface); border-right: 1px solid var(--line);
+  overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.wiki-item {
+  background: none; border: none; border-radius: 10px;
+  padding: 10px 12px; text-align: left; min-height: 44px;
+}
+.wiki-item.ativo { background: var(--ac-dim); color: var(--ac); }
