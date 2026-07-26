@@ -1,2 +1,0 @@
-- Wiki: a documentação do app agora abre dentro do Flow, offline, sem depender de link externo.
-- Wiki: índice por capítulos com busca, e uma seção de primeiros passos para quem está começando.

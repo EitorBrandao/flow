@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.14.0] - 2026-07-26
+
+### Adicionado
+
+- Wiki: a documentação do app agora abre dentro do Flow, offline, sem depender de link externo.
+- Wiki: índice por capítulos com busca, e uma seção de primeiros passos para quem está começando.
+
 ## [0.13.0] - 2026-07-25
 
 ### Alterado
