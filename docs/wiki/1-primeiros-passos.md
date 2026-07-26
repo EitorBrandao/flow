@@ -1,6 +1,6 @@
 # Os primeiros passos
 
-O Flow começa **vazio**: sem box, sem categoria, sem cartão — nem a box "casa" vem pronta. Nada é criado para você, porque nada é enviado para lugar nenhum. Esta é a ordem que funciona, do zero até o app fazendo sentido.
+O Flow começa **quase vazio**: sem categoria, sem cartão, sem nada lançado. A única coisa que já vem pronta é a box **casa**, criada na primeira abertura para receber os gastos divididos — ela não tem saldo próprio. Falta a sua box, com o saldo da conta, e as categorias. Esta é a ordem que funciona.
 
 > Já usa o Flow em outro aparelho? Não refaça nada: vá em Ajustes, Backup, e importe o arquivo `.json` exportado do aparelho antigo. Ele traz tudo — boxes, lançamentos, cartões e configurações.
 
@@ -10,7 +10,7 @@ Uma box é um fluxo de caixa com saldo próprio — normalmente uma conta de ban
 
 - **Saldo inicial:** o saldo que o app do seu banco mostra agora. Pode ser negativo.
 - **Data:** o dia a que esse saldo se refere — normalmente hoje. Tudo que você lançar antes dessa data não muda o saldo inicial, então comece por hoje e deixe o passado para trás.
-- **Box compartilhada:** deixar o saldo em branco cria uma box sem saldo próprio. É assim que se cria a box "casa", onde entram os gastos divididos (energia, água). Ela não aparece como opção de box padrão.
+- **Box compartilhada:** a box "casa" já existe e é assim — sem saldo próprio, só para os gastos divididos (energia, água). Para transformar qualquer outra box em compartilhada, desmarque "Esta box tem saldo próprio" ao editá-la; ela sai do seletor do topo e deixa de poder ser box padrão.
 
 **Obrigatório:** nome. **Têm padrão:** saldo inicial (0), data (hoje).
 
