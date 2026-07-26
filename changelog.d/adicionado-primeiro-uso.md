@@ -1,0 +1,4 @@
+- Tela Hoje: quem abre o app sem nada cadastrado vê um cartão que leva a criar a primeira box ou a importar um backup de outro aparelho, no lugar do saldo zerado.
+- Ajustes, Categorias: box sem nenhuma categoria passa a oferecer uma lista sugerida, criando de uma vez as que você marcar.
+- Ajustes, Recorrências: sem nenhuma recorrência cadastrada, a tela explica que são elas que enchem a projeção do Fluxo.
+- Os atalhos dessas telas abrem direto a tela de Ajustes certa, em vez de parar no menu.

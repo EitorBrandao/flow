@@ -356,3 +356,47 @@ table.tabela th:first-child, table.tabela td:first-child {
   padding: 10px 12px; text-align: left; min-height: 44px;
 }
 .wiki-item.ativo { background: var(--ac-dim); color: var(--ac); }
+
+/* ---- PrimeiroUso (PrimeiroUso.tsx) ---- */
+.primeiro-uso {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.primeiro-uso > p {
+  margin: 0;
+}
+.primeiro-uso > p:nth-of-type(2) {
+  margin-top: 12px;
+}
+.primeiro-uso .botao {
+  width: 100%;
+}
+
+/* ---- Categorias (Categorias.tsx) ---- */
+.sugestoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sugestao {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  min-height: 44px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+}
+.sugestao input {
+  accent-color: var(--ac);
+}
+.sugestao.marcada {
+  background: var(--ac-dim);
+  color: var(--ac);
+  font-weight: 600;
+}

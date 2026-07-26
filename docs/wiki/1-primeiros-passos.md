@@ -1,6 +1,6 @@
 # Os primeiros passos
 
-O Flow começa **vazio**: sem box, sem categoria, sem cartão — nem a box "casa" vem pronta. Nada é criado para você, porque nada é enviado para lugar nenhum. Esta é a ordem que funciona, do zero até o app fazendo sentido.
+O Flow começa **quase vazio**: sem categoria, sem cartão, sem nada lançado. A única coisa que já vem pronta é a box **casa**, criada na primeira abertura para receber os gastos divididos — ela não tem saldo próprio. Falta a sua box, com o saldo da conta, e as categorias. Esta é a ordem que funciona.
 
 > Já usa o Flow em outro aparelho? Não refaça nada: vá em Ajustes, Backup, e importe o arquivo `.json` exportado do aparelho antigo. Ele traz tudo — boxes, lançamentos, cartões e configurações.
 
@@ -10,13 +10,13 @@ Uma box é um fluxo de caixa com saldo próprio — normalmente uma conta de ban
 
 - **Saldo inicial:** o saldo que o app do seu banco mostra agora. Pode ser negativo.
 - **Data:** o dia a que esse saldo se refere — normalmente hoje. Tudo que você lançar antes dessa data não muda o saldo inicial, então comece por hoje e deixe o passado para trás.
-- **Box compartilhada:** deixar o saldo em branco cria uma box sem saldo próprio. É assim que se cria a box "casa", onde entram os gastos divididos (energia, água). Ela não aparece como opção de box padrão.
+- **Box compartilhada:** a box "casa" já existe e é assim — sem saldo próprio, só para os gastos divididos (energia, água). Para transformar qualquer outra box em compartilhada, desmarque "Esta box tem saldo próprio" ao editá-la; ela sai do seletor do topo e deixa de poder ser box padrão.
 
 **Obrigatório:** nome. **Têm padrão:** saldo inicial (0), data (hoje).
 
 ## A primeira categoria
 
-Sem categoria não dá para lançar — a tela Lançar fica sem nada para escolher. Crie poucas para começar: uma de ganho (salário) e três ou quatro de gasto que você reconheça no extrato. Fica em Ajustes, Categorias, com a box certa selecionada no topo.
+Sem categoria não dá para lançar — a tela Lançar fica sem nada para escolher. Comece pelas sugeridas (salário, pix, mercado...) que aparecem na tela Categorias quando a box não tem nenhuma — dá para ajustar depois. Ou crie do zero: uma de ganho e três ou quatro de gasto que você reconheça no extrato. Fica em Ajustes, Categorias, com a box certa selecionada no topo.
 
 - Categorias pertencem a **uma box**: criar em uma não cria na outra.
 - O **tipo** (ganho ou gasto) decide se o valor soma ou subtrai — o mesmo nome pode existir nos dois tipos, como "pix".
@@ -37,7 +37,7 @@ O botão **+** no meio da barra de baixo. Valor → gasto ou ganho → categoria
 
 ## A primeira recorrência
 
-Aqui o app deixa de ser um caderno e vira uma projeção. Uma recorrência é uma regra — salário, aluguel, parcela — que gera sozinha os lançamentos `previsto` dos próximos meses. Fica em Ajustes, Recorrências.
+Aqui o app deixa de ser um caderno e vira uma projeção. Uma recorrência é uma regra — salário, aluguel, parcela — que gera sozinha os lançamentos `previsto` dos próximos meses. Fica em Ajustes, Recorrências. A tela vazia mostra o que é e por que vale a pena.
 
 - Comece pelas duas ou três que mais pesam: o salário e as contas fixas grandes.
 - **Parcelas** em branco = sem fim (salário, aluguel); com número = acaba sozinho (um empréstimo em 12x).

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { useApp, type SecaoAjustes } from '../state/store';
 import Assinaturas from './ajustes/Assinaturas';
 import Backup from './ajustes/Backup';
 import Boxes from './ajustes/Boxes';
@@ -11,10 +12,7 @@ import Viagens from './ajustes/Viagens';
 import Wiki from './ajustes/Wiki';
 import Versao from './ajustes/Versao';
 
-type Secao = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'cartoes'
-  | 'categoriasCartao' | 'assinaturas' | 'viagens' | 'backup' | 'wiki' | 'versao';
-
-const ITENS: { id: Secao; rotulo: string }[] = [
+const ITENS: { id: SecaoAjustes; rotulo: string }[] = [
   { id: 'boxes', rotulo: 'Boxes' },
   { id: 'categorias', rotulo: 'Categorias' },
   { id: 'recorrencias', rotulo: 'Recorrências' },
@@ -28,7 +26,21 @@ const ITENS: { id: Secao; rotulo: string }[] = [
 ];
 
 export default function TelaAjustes() {
-  const [secao, setSecao] = useState<Secao>('menu');
+  const { ajustesSecao, limparAjustesSecao } = useApp();
+
+  // Inicializa a seção: se ajustesSecao foi definido, o lê; caso contrário, menu
+  const [secao, setSecao] = useState<SecaoAjustes>(() => {
+    return (ajustesSecao && ajustesSecao !== 'menu') ? ajustesSecao : 'menu';
+  });
+
+  // Sincroniza secao com ajustesSecao: lê na montagem, reage a mudanças, limpa na próxima remontagem
+  useEffect(() => {
+    if (ajustesSecao && ajustesSecao !== 'menu') {
+      setSecao(ajustesSecao);
+      limparAjustesSecao();
+    }
+  }, [ajustesSecao, limparAjustesSecao]);
+
   if (secao === 'menu') {
     return (
       <div className="tela">
