@@ -107,3 +107,26 @@ describe('parseCapitulo', () => {
     expect(() => parseCapitulo('t', '# Primeiro\n\nparágrafo\n\n# Segundo\n', NOMES_FIXOS)).toThrow(/título/);
   });
 });
+
+describe('capítulos de docs/wiki', () => {
+  const brutos = import.meta.glob('../../../docs/wiki/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+  const arquivos = Object.entries(brutos).filter(([caminho]) => !caminho.endsWith('README.md'));
+
+  it('existem nove capítulos numerados', () => {
+    expect(arquivos).toHaveLength(9);
+  });
+
+  it.each(arquivos)('%s parseia e não deixa marcação crua', (caminho, raw) => {
+    const cap = parseCapitulo(caminho, raw, NOMES_FIXOS);
+    expect(cap.titulo.length).toBeGreaterThan(0);
+    expect(cap.blocos.length).toBeGreaterThan(0);
+    // marcação que sobrou é sinal de sintaxe que o parser não entendeu
+    expect(cap.texto).not.toMatch(/\*\*|`|\]\(|\{\{/);
+  });
+
+  it('nenhum capítulo cita nome de pessoa fixo no lugar do marcador', () => {
+    for (const [, raw] of arquivos) {
+      expect(raw).not.toMatch(/\bAna\b|\bBruno\b/);
+    }
+  });
+});
