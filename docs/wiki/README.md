@@ -17,10 +17,9 @@ A tabela abaixo lista todas as construções que o parser reconhece:
 | Link interno | `[texto](#ancora)` | `[Recorrência](#recorrencia)` |
 | Link externo | `[texto](url)` | `[github.com/flow](https://github.com/...)` |
 | Ênfase (negrito) | `**texto**` | `**Obrigatório:** nome` |
-| Ênfase (itálico) | `*texto*` | `*issues* do repositório` |
 | Código inline | `` `código` `` | `` `IndexedDB` `` ou `` `id` `` |
 
-**Nenhuma outra sintaxe é aceita.** Construções fora deste subconjunto — como títulos de nível 3 ou superior (`###`), tabelas com barras (`\|`), listas numeradas (`1.`), ou listas com `*` — fazem o parser **lançar uma exceção** em vez de ignorar silenciosamente. Isso é intencional: erros de sintaxe devem parar o pipeline de build, não passar desapercebidos.
+**Nenhuma outra sintaxe é aceita.** Construções fora deste subconjunto — como títulos de nível 3 ou superior (`###`), tabelas com barras (`\|`), listas numeradas (`1.`), ou listas com `*` — fazem o parser **lançar uma exceção** em vez de ignorar silenciosamente. Isso é intencional: erros de sintaxe devem parar o pipeline de build, não passar desapercebidos. A suíte de testes automatizados (`npm test`) roda na integração contínua (CI) e no commit local, garantindo que toda wiki publicada é sintaticamente válida.
 
 ## Notas sobre a sintaxe
 
@@ -81,8 +80,6 @@ Para listas de pares termo/definição, use `: termo | definição` em vez disso
 Um erro de sintaxe silencioso é pior que um erro ruidoso:
 - **Silencioso:** você escreve `### Título` (três hashes) e o parser ignora, deixando o texto como parágrafo. Ninguém percebe até o reader abrir a wiki.
 - **Ruidoso:** o build falha, você descobre na hora e conserta.
-
-O pipeline de release chama o parser em modo `--strict` e interrompe se houver qualquer erro. Isso garante que toda wiki publicada é sintaticamente válida.
 
 ## Estrutura esperada dos capítulos
 

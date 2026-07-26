@@ -60,6 +60,11 @@ export function parseInline(texto: string): Inline[] {
       const m = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(pedaco);
       if (m) partes.push({ tipo: 'link', texto: m[1], href: m[2] });
     } else {
+      // Texto que sobrou — não pode conter marcação não reconhecida
+      const marcacaoInvalida = pedaco.match(/\*|`|\]\(|\{\{/);
+      if (marcacaoInvalida) {
+        throw new Error(`Marcação não reconhecida no texto: "${pedaco.slice(0, 60)}..."`);
+      }
       partes.push({ tipo: 'texto', texto: pedaco });
     }
   }

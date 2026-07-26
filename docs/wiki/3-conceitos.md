@@ -10,7 +10,7 @@ Um fluxo de caixa com saldo próprio — nos exemplos desta documentação, `{{b
 : `dataSaldoInicial` | dia a partir do qual o saldo é contado
 : `saldoDeclaradoCent` / `dataSaldoDeclarado` | último saldo real do banco, informado manualmente na tela Hoje para conferência
 
-A box **casa** é especial: `saldoInicial` é sempre `null`, ela não tem saldo próprio — só guarda lançamentos compartilhados. A visão consolidada da casa é *calculada pelo motor* ({{boxA}} + {{boxB}} + lançamentos da box casa), nunca armazenada. Veja o capítulo Motor por baixo dos panos, seção Consolidação da casa.
+A box **casa** é especial: `saldoInicial` é sempre `null`, ela não tem saldo próprio — só guarda lançamentos compartilhados. A visão consolidada da casa é **calculada pelo motor** — {{boxA}} + {{boxB}} + lançamentos da box casa —, nunca armazenada. Veja o capítulo Motor por baixo dos panos, seção Consolidação da casa.
 
 ## Categoria
 

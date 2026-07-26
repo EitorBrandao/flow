@@ -28,7 +28,7 @@ Faturas passadas não ficam "congeladas": mudar o dia de fechamento reagrupa o d
 Para cada fatura com valor > 0, o app mantém um lançamento `previsto` na box do cartão, na categoria da fatura, com data = vencimento. O valor sincronizado é a soma dos itens — **a menos que** a conferência daquele mês tenha "usar valor do app" marcado, caso em que vale o valor digitado.
 
 - Lançamento já `efetivo` (fatura confirmada) nunca é tocado nem recriado.
-- Previsto descartado pelo usuário não ressuscita — por isso, um previsto *novo* só é criado se o vencimento for depois de hoje.
+- Previsto descartado pelo usuário não ressuscita — por isso, um **novo** previsto só é criado se o vencimento for depois de hoje.
 - Um previsto já existente continua sendo atualizado ao vivo mesmo com vencimento no passado (é aí que ele vira pendente).
 - Fatura que zera (ou cartão desativado) remove o previsto; lançamentos efetivos ficam intactos.
 

@@ -121,7 +121,8 @@ describe('capítulos de docs/wiki', () => {
     expect(cap.titulo.length).toBeGreaterThan(0);
     expect(cap.blocos.length).toBeGreaterThan(0);
     // marcação que sobrou é sinal de sintaxe que o parser não entendeu
-    expect(cap.texto).not.toMatch(/\*\*|`|\]\(|\{\{/);
+    // asterisco duplo **, simples *, backtick, ](, ou {{
+    expect(cap.texto).not.toMatch(/\*\*|\*|`|\]\(|\{\{/);
   });
 
   it('nenhum capítulo cita nome de pessoa fixo no lugar do marcador', () => {

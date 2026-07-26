@@ -9,4 +9,4 @@ Flow é um app de controle financeiro pessoal: troca a planilha de fluxo de caix
 
 > A barra inferior tem 5 abas: **Hoje**, **Fluxo**, o botão central **+** (Lançar), **Cartão** e **Análises**. Ajustes fica atrás do ícone ⚙️ no topo, junto do seletor de box (no exemplo: `{{boxA}}` / `{{boxB}}` / `casa`).
 
-> A aba **Simular** (cenários) foi ocultada temporariamente da navegação, a pedido do usuário — o código e a lógica de cenários continuam intactos, só falta o botão na barra. Veja o capítulo sobre Telas e a documentação interna para reativar.
+> A aba **Simulador** (cenários) foi ocultada temporariamente da navegação, a pedido do usuário — o código e a lógica de cenários continuam intactos, só falta o botão na barra. Veja o capítulo sobre Telas e a documentação interna para reativar.
