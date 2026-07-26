@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { useApp } from '../state/store';
 import Assinaturas from './ajustes/Assinaturas';
 import Backup from './ajustes/Backup';
 import Boxes from './ajustes/Boxes';
@@ -11,7 +12,7 @@ import Viagens from './ajustes/Viagens';
 import Wiki from './ajustes/Wiki';
 import Versao from './ajustes/Versao';
 
-type Secao = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'cartoes'
+export type Secao = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'cartoes'
   | 'categoriasCartao' | 'assinaturas' | 'viagens' | 'backup' | 'wiki' | 'versao';
 
 const ITENS: { id: Secao; rotulo: string }[] = [
@@ -28,7 +29,19 @@ const ITENS: { id: Secao; rotulo: string }[] = [
 ];
 
 export default function TelaAjustes() {
-  const [secao, setSecao] = useState<Secao>('menu');
+  const { ajustesSecao, limparAjustesSecao } = useApp();
+
+  // Inicializa a seção: se ajustesSecao foi definido, o consome e volta ao menu
+  // na próxima remontagem
+  const [secao, setSecao] = useState<Secao>(() => {
+    const sec = (ajustesSecao && ajustesSecao !== 'menu') ? ajustesSecao : 'menu';
+    // Se consumimos uma seção, limpa o estado para a próxima engrenagem
+    if (sec !== 'menu') {
+      limparAjustesSecao();
+    }
+    return sec;
+  });
+
   if (secao === 'menu') {
     return (
       <div className="tela">
