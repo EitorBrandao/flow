@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import * as repo from '../db/repo';
 import { hojeISO } from '../domain/dates';
 import { agoraISO, novoId, type Dados, type ID, type ISODate } from '../domain/types';
+import type { Secao } from '../ui/TelaAjustes';
 
 export type Aba = 'hoje' | 'fluxo' | 'lancar' | 'cartao' | 'analises' | 'simulador' | 'ajustes';
 export type BoxSelecionada = ID | 'casa';
@@ -12,10 +13,13 @@ interface AppState {
   hoje: ISODate;
   aba: Aba;
   boxSel: BoxSelecionada;
+  ajustesSecao: Secao | null;
   iniciar(): Promise<void>;
   recarregar(): Promise<void>;
   setAba(aba: Aba): void;
   setBoxSel(boxSel: BoxSelecionada): void;
+  abrirAjustes(secao: Secao): void;
+  limparAjustesSecao(): void;
 }
 
 export const useApp = create<AppState>((set) => ({
@@ -24,6 +28,7 @@ export const useApp = create<AppState>((set) => ({
   hoje: hojeISO(),
   aba: 'hoje',
   boxSel: 'casa',
+  ajustesSecao: null,
   async iniciar() {
     const inicial = await repo.carregarTudo();
     if (!inicial.boxes.some((b) => b.nome === 'casa')) {
@@ -52,6 +57,8 @@ export const useApp = create<AppState>((set) => ({
   },
   setAba: (aba) => set({ aba }),
   setBoxSel: (boxSel) => set({ boxSel }),
+  abrirAjustes: (secao) => set({ aba: 'ajustes', ajustesSecao: secao }),
+  limparAjustesSecao: () => set({ ajustesSecao: null }),
 }));
 
 /** Ids das boxes da seleção atual ('casa' = todas, para consolidação). */
