@@ -41,13 +41,13 @@ function EditorBox({ box }: { box: Box }) {
       {temSaldoProprio && (
         <>
           <div className="campo" style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
+            <button type="button" className="botao" aria-label="Alternar sinal (positivo/negativo)" onClick={() => setNegativo(n => !n)} style={{ padding: '8px 12px' }}>
+              {negativo ? '−' : '+'}
+            </button>
             <div>
               <label htmlFor={`${uid}-saldo`}>Saldo inicial</label>
               <CampoValor id={`${uid}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} />
             </div>
-            <button type="button" className="botao" aria-label="Alternar sinal (positivo/negativo)" onClick={() => setNegativo(n => !n)} style={{ padding: '8px 12px' }}>
-              {negativo ? '−' : '+'}
-            </button>
           </div>
           <div className="campo">
             <label htmlFor={`${uid}-data`}>Data do saldo</label>
