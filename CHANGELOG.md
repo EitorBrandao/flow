@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.15.1] - 2026-07-26
+
+### Alterado
+
+- Botão de alternar sinal (+/−) do saldo agora fica à esquerda do campo de valor, em Hoje e em Boxes.
+
 ## [0.15.0] - 2026-07-26
 
 ### Adicionado

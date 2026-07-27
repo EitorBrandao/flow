@@ -1,1 +1,0 @@
-- Botão de alternar sinal (+/−) do saldo agora fica à esquerda do campo de valor, em Hoje e em Boxes.
