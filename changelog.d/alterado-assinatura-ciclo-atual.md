@@ -1,0 +1,1 @@
+- Corrigido: criar ou editar uma assinatura de cartão cujo dia do mês já tinha passado no ciclo atual agora inclui a cobrança na fatura do mês corrente.
