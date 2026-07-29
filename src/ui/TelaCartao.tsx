@@ -88,6 +88,8 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const [mes, setMes] = useState(() => mesFaturaDaCompra(cartao, hoje));
   const [editando, setEditando] = useState<CompraCartao | null>(null);
   const [mostrarLista, setMostrarLista] = useState(false);
+  const [filtroCategoriaId, setFiltroCategoriaId] = useState<string | null>(null);
+  const [busca, setBusca] = useState('');
   if (!dados) return null;
 
   const compras = dados.comprasCartao.filter((c) => c.cartaoId === cartao.id);
@@ -99,8 +101,19 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const nomeCat = (id: string) => dados.categoriasCartao.find((c) => c.id === id)?.nome ?? '?';
   const resumo = resumoPorCategoria(fatura);
 
-  const aVista = fatura.itens.filter((i) => i.totalParcelas === 1).sort((a, b) => b.data.localeCompare(a.data));
-  const parceladas = fatura.itens.filter((i) => i.totalParcelas > 1).sort((a, b) => b.data.localeCompare(a.data));
+  const q = busca.trim().toLowerCase();
+  const buscaAtiva = q.length > 0;
+  const bate = (i: Fatura['itens'][number]) => {
+    if (i.descricao && i.descricao.toLowerCase().includes(q)) return true;
+    if (nomeCat(i.categoriaCartaoId).toLowerCase().includes(q)) return true;
+    if (i.data.split('-').reverse().join('/').includes(q)) return true;
+    return formatarBRL(i.valorCent).toLowerCase().includes(q);
+  };
+  const itensFiltrados = fatura.itens.filter((i) =>
+    (!filtroCategoriaId || i.categoriaCartaoId === filtroCategoriaId) && (!buscaAtiva || bate(i)));
+
+  const aVista = itensFiltrados.filter((i) => i.totalParcelas === 1).sort((a, b) => b.data.localeCompare(a.data));
+  const parceladas = itensFiltrados.filter((i) => i.totalParcelas > 1).sort((a, b) => b.data.localeCompare(a.data));
   const mostrarGrupos = aVista.length > 0 && parceladas.length > 0;
 
   return (
@@ -118,11 +131,21 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
       </div>
       <BlocoConferencia key={`${cartao.id}:${mes}`} cartao={cartao} mes={mes} totalCent={fatura.totalCent} />
       {resumo.length > 1 && (
-        <div style={{ marginTop: 8 }}>
+        <div className="lista" style={{ marginTop: 8 }}>
           {resumo.map(([catId, cent]) => (
-            <p className="sub" key={catId} style={{ margin: 0 }}>
-              {nomeCat(catId)}: <strong className="valor-gasto">{formatarBRL(cent)}</strong>
-            </p>
+            <button
+              key={catId}
+              className={`botao${filtroCategoriaId === catId ? ' ativo' : ''}`}
+              style={{ display: 'flex', justifyContent: 'space-between', width: '100%', textAlign: 'left' }}
+              aria-pressed={filtroCategoriaId === catId}
+              onClick={() => {
+                setFiltroCategoriaId((v) => (v === catId ? null : catId));
+                setMostrarLista(true);
+              }}
+            >
+              <span>{nomeCat(catId)}</span>
+              <strong className="valor-gasto">{formatarBRL(cent)}</strong>
+            </button>
           ))}
         </div>
       )}
@@ -130,19 +153,34 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
         {mostrarLista ? 'Ocultar lançamentos' : 'Ver lançamentos'}
       </button>
       {mostrarLista && (
-        <div className="lista" style={{ marginTop: 8 }}>
-          {mostrarGrupos && <p className="rotulo-grupo">À vista</p>}
-          {aVista.map((i) => (
-            <ItemFaturaBotao key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCat}
-              onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)} />
-          ))}
-          {mostrarGrupos && <p className="rotulo-grupo" style={{ marginTop: 6 }}>Parceladas</p>}
-          {parceladas.map((i) => (
-            <ItemFaturaBotao key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCat}
-              onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)} />
-          ))}
-          {fatura.itens.length === 0 && <p className="sub">Nenhum gasto nesta fatura.</p>}
-        </div>
+        <>
+          <div className="linha" style={{ marginTop: 8 }}>
+            <input
+              className="campo-busca"
+              placeholder="Buscar por descrição, categoria, data ou valor..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              style={{ flex: 1 }}
+            />
+          </div>
+          <div className="lista" style={{ marginTop: 8 }}>
+            {mostrarGrupos && <p className="rotulo-grupo">À vista</p>}
+            {aVista.map((i) => (
+              <ItemFaturaBotao key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCat}
+                onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)} />
+            ))}
+            {mostrarGrupos && <p className="rotulo-grupo" style={{ marginTop: 6 }}>Parceladas</p>}
+            {parceladas.map((i) => (
+              <ItemFaturaBotao key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCat}
+                onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)} />
+            ))}
+            {itensFiltrados.length === 0 && (
+              <p className="sub">
+                {fatura.itens.length === 0 ? 'Nenhum gasto nesta fatura.' : 'Nenhum lançamento encontrado.'}
+              </p>
+            )}
+          </div>
+        </>
       )}
       <Sheet aberto={editando != null} onFechar={() => setEditando(null)} rotulo="Editar compra">
         {editando && <FormCompra cartao={cartao} compra={editando} onFechar={() => setEditando(null)} />}

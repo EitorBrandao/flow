@@ -3,6 +3,17 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.16.0] - 2026-07-29
+
+### Adicionado
+
+- Clique numa categoria do resumo da fatura para filtrar os lançamentos do cartão por ela.
+- Campo de busca por texto na lista de lançamentos do cartão (descrição, categoria, data ou valor).
+
+### Alterado
+
+- Corrigido: criar ou editar uma assinatura de cartão cujo dia do mês já tinha passado no ciclo atual agora inclui a cobrança na fatura do mês corrente.
+
 ## [0.15.1] - 2026-07-26
 
 ### Alterado
