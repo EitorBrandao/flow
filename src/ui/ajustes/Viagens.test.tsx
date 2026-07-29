@@ -16,7 +16,9 @@ it('cadastra uma viagem', async () => {
   render(<Viagens />);
 
   await userEvent.type(screen.getByLabelText('Nome'), 'Praia');
+  await userEvent.clear(screen.getByLabelText('Data inicial'));
   await userEvent.type(screen.getByLabelText('Data inicial'), '2026-01-31');
+  await userEvent.clear(screen.getByLabelText('Data final'));
   await userEvent.type(screen.getByLabelText('Data final'), '2026-02-05');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
 
@@ -31,7 +33,9 @@ it('bloqueia data final anterior à data inicial', async () => {
   render(<Viagens />);
 
   await userEvent.type(screen.getByLabelText('Nome'), 'Praia');
+  await userEvent.clear(screen.getByLabelText('Data inicial'));
   await userEvent.type(screen.getByLabelText('Data inicial'), '2026-02-05');
+  await userEvent.clear(screen.getByLabelText('Data final'));
   await userEvent.type(screen.getByLabelText('Data final'), '2026-01-31');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
 
@@ -45,7 +49,9 @@ it('bloqueia viagem com período sobreposto a outra existente', async () => {
   render(<Viagens />);
 
   await userEvent.type(screen.getByLabelText('Nome'), 'Montanha');
+  await userEvent.clear(screen.getByLabelText('Data inicial'));
   await userEvent.type(screen.getByLabelText('Data inicial'), '2026-01-15');
+  await userEvent.clear(screen.getByLabelText('Data final'));
   await userEvent.type(screen.getByLabelText('Data final'), '2026-01-20');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
 

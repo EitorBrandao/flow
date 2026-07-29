@@ -40,6 +40,15 @@ export default function TelaLancar() {
 
   const valido = boxId != null && cents > 0 && categoriaId != null && data !== '';
 
+  // Uma frase por vez, na ordem em que a pessoa preenche — dizer tudo que falta de uma vez
+  // vira ruído, e o campo seguinte já vai aparecer sozinho quando o anterior for resolvido.
+  const oQueFalta = categorias.length === 0
+    ? 'Nenhuma categoria nesta box — crie em Ajustes, Categorias.'
+    : cents === 0 ? 'Digite um valor.'
+      : categoriaId == null ? 'Escolha uma categoria.'
+        : data === '' ? 'Escolha uma data.'
+          : '';
+
   async function lancar() {
     if (!valido) return;
     await repo.salvarLancamento({
@@ -106,6 +115,9 @@ export default function TelaLancar() {
       <button className="botao botao-primario" disabled={!valido} onClick={lancar} style={{ padding: 14 }}>
         Lançar
       </button>
+      {/* Botão desabilitado sem explicação deixa a pessoa sem saber o que falta — e quem
+          acabou de instalar cai justamente no caso "não há categoria nenhuma". */}
+      {!valido && !salvo && <p className="sub">{oQueFalta}</p>}
       {salvo && <p className="aviso">Lançado ✓</p>}
     </div>
   );

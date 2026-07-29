@@ -7,12 +7,14 @@ import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 
 function EditorBox({ box }: { box: Box }) {
-  const { recarregar } = useApp();
+  const { recarregar, hoje } = useApp();
   const [nome, setNome] = useState(box.nome);
   const [temSaldoProprio, setTemSaldoProprio] = useState(box.saldoInicial != null);
   const [magnitude, setMagnitude] = useState(Math.abs(box.saldoInicial ?? 0));
   const [negativo, setNegativo] = useState((box.saldoInicial ?? 0) < 0);
-  const [data, setData] = useState(box.dataSaldoInicial ?? '');
+  // Box sem data ainda cai em hoje, que é a resposta certa em quase todo caso: o saldo que
+  // a pessoa acabou de ler no app do banco é o de hoje. Quem quiser outra data, troca.
+  const [data, setData] = useState(box.dataSaldoInicial ?? hoje);
   const uid = useId();
 
   async function salvar() {
@@ -61,20 +63,31 @@ function EditorBox({ box }: { box: Box }) {
 }
 
 export default function Boxes() {
-  const { dados, recarregar } = useApp();
+  const { dados, recarregar, setBoxSel } = useApp();
   const [nomeNova, setNomeNova] = useState('');
+  const [aviso, setAviso] = useState('');
   const uid = useId();
   if (!dados) return null;
 
   async function criar() {
-    if (!nomeNova.trim()) return;
+    // Antes isto era um `return` mudo: clicar em Criar sem nome não fazia nada e não
+    // explicava nada — quem estava criando a primeira box ficava sem saber o que faltava.
+    if (!nomeNova.trim()) {
+      setAviso('Dê um nome à box para criar.');
+      return;
+    }
     const agora = agoraISO();
+    const id = novoId();
     await repo.salvarBox({
-      id: novoId(), nome: nomeNova.trim(), saldoInicial: 0, dataSaldoInicial: useApp.getState().hoje,
+      id, nome: nomeNova.trim(), saldoInicial: 0, dataSaldoInicial: useApp.getState().hoje,
       criadoEm: agora, alteradoEm: agora,
     });
     await recarregar();
+    // A box recém-criada passa a ser a selecionada: era o passo seguinte óbvio, e deixá-la
+    // fora da seleção fazia a pessoa criar e não ver nada mudar no topo.
+    setBoxSel(id);
     setNomeNova('');
+    setAviso('');
   }
 
   async function definirPadrao(id: string) {
@@ -110,6 +123,7 @@ export default function Boxes() {
         </div>
         <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={criar}>Criar</button>
       </div>
+      {aviso && <p className="aviso">{aviso}</p>}
     </div>
   );
 }
