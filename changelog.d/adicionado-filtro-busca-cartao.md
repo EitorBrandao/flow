@@ -1,0 +1,2 @@
+- Clique numa categoria do resumo da fatura para filtrar os lançamentos do cartão por ela.
+- Campo de busca por texto na lista de lançamentos do cartão (descrição, categoria, data ou valor).

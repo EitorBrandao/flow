@@ -418,6 +418,50 @@ describe('cartão de crédito', () => {
     } finally { vi.useRealTimers(); }
   });
 
+  it('assinatura criada com o dia do ciclo atual já passado inclui a cobrança do mês corrente', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-28T12:00:00'));
+      const { cartao, catCartao } = await montarCartao();
+      const ass = await repo.salvarAssinatura({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, valor: 2990,
+        dataInicio: '2026-07-17', diaDoMes: 17, parcelas: null, descricao: 'Streaming',
+      }, '2026-12-31');
+      const compras = await db.comprasCartao.where('recorrenciaCartaoId').equals(ass.id).toArray();
+      expect(compras.map((c) => c.data).sort()).toEqual([
+        '2026-07-17', '2026-08-17', '2026-09-17', '2026-10-17', '2026-11-17', '2026-12-17',
+      ]);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('editar uma assinatura cujo ciclo atual foi apagado recria só esse ciclo, sem tocar sincronização em segundo plano', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-06-01T12:00:00'));
+      const { cartao, catCartao } = await montarCartao();
+      const ass = await repo.salvarAssinatura({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, valor: 3990,
+        dataInicio: '2026-06-17', diaDoMes: 17, parcelas: null, descricao: 'Streaming',
+      }, '2026-12-31');
+
+      vi.setSystemTime(new Date('2026-07-28T12:00:00'));
+      const julho = await db.comprasCartao.where('recorrenciaCartaoId').equals(ass.id)
+        .and((c) => c.data === '2026-07-17').first();
+      await db.comprasCartao.delete(julho!.id); // simula o usuário apagando o lançamento de propósito
+
+      // sincronização em segundo plano (ex.: reabrir o app) não ressuscita o ciclo apagado
+      await repo.sincronizarCartoes('2026-12-31');
+      expect(await db.comprasCartao.where('recorrenciaCartaoId').equals(ass.id)
+        .and((c) => c.data === '2026-07-17').count()).toBe(0);
+
+      // editar essa assinatura específica recria só o ciclo atual que está faltando
+      await repo.salvarAssinatura({ ...ass, valor: 4990 }, '2026-12-31');
+      const recriada = await db.comprasCartao.where('recorrenciaCartaoId').equals(ass.id)
+        .and((c) => c.data === '2026-07-17').first();
+      expect(recriada?.valorTotal).toBe(4990);
+    } finally { vi.useRealTimers(); }
+  });
+
   it('conferência usarValorApp muda o valor do previsto; desmarcar volta à soma', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     try {

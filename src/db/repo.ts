@@ -1,7 +1,7 @@
 import { compararCategorias, compararCategoriasCartao } from '../domain/categorias';
 import { hojeISO } from '../domain/dates';
 import { calcularFaturas, dedupConferencias, diffSincronizacao } from '../domain/fatura';
-import { materializar } from '../domain/recurrence';
+import { materializar, ocorrencias } from '../domain/recurrence';
 import {
   agoraISO, novoId,
   type Box, type Cartao, type Categoria, type CategoriaCartao, type Cenario, type CompraCartao,
@@ -407,7 +407,7 @@ export async function salvarAssinatura(
     await db.recorrenciasCartao.put(ass);
     await marcarMudanca();
   });
-  await sincronizarCartoes(horizonte);
+  await sincronizarCartoes(horizonte, { permitirCicloAtualPara: ass.id });
   return ass;
 }
 
@@ -450,12 +450,25 @@ export async function removerConferenciaFatura(cartaoId: ID, mes: string, horizo
 }
 
 /** Materializa CompraCartao futuras da assinatura (reusa o diff de recorrências:
- *  compra passada é história ≈ efetivo; futura acompanha a regra ≈ previsto). */
-async function materializarAssinatura(ass: RecorrenciaCartao, hoje: ISODate, ate: ISODate): Promise<void> {
+ *  compra passada é história ≈ efetivo; futura acompanha a regra ≈ previsto).
+ *  `permitirCicloAtual` força a criação do ciclo mais recente (<= hoje) quando ele ainda não
+ *  existe — só usado ao salvar esta assinatura especificamente (ver `salvarAssinatura`), nunca
+ *  em sincronizações automáticas: editar uma assinatura cujo dia do mês já passou não deve
+ *  deixar a fatura atual sem o valor, mas isso não pode virar backfill de ciclos antigos que o
+ *  usuário tenha apagado de propósito. */
+async function materializarAssinatura(
+  ass: RecorrenciaCartao, hoje: ISODate, ate: ISODate, opts?: { permitirCicloAtual?: boolean },
+): Promise<void> {
   const existentes = await db.comprasCartao.where('recorrenciaCartaoId').equals(ass.id).toArray();
   const diff = materializar(ass, existentes.map((c) => ({
     id: c.id, data: c.data, status: (c.data <= hoje ? 'efetivo' : 'previsto') as StatusLancamento,
   })), hoje, ate);
+  if (opts?.permitirCicloAtual && ass.ativa) {
+    const cicloAtual = ocorrencias(ass, hoje).at(-1);
+    if (cicloAtual && !existentes.some((c) => c.data === cicloAtual) && !diff.criarDatas.includes(cicloAtual)) {
+      diff.criarDatas = [...diff.criarDatas, cicloAtual].sort();
+    }
+  }
   const agora = agoraISO();
   await db.comprasCartao.bulkDelete(diff.excluirIds);
   await db.comprasCartao.bulkAdd(diff.criarDatas.map((data): CompraCartao => ({
@@ -474,14 +487,20 @@ async function materializarAssinatura(ass: RecorrenciaCartao, hoje: ISODate, ate
     });
 }
 
-/** Materializa assinaturas e sincroniza os lançamentos de fatura de todos os cartões. */
-export async function sincronizarCartoes(horizonte: ISODate): Promise<void> {
+/** Materializa assinaturas e sincroniza os lançamentos de fatura de todos os cartões.
+ *  `permitirCicloAtualPara` (opcional) libera o ciclo atual em atraso só para essa assinatura —
+ *  ver `materializarAssinatura`. */
+export async function sincronizarCartoes(
+  horizonte: ISODate, opts?: { permitirCicloAtualPara?: ID },
+): Promise<void> {
   const hoje = hojeISO();
   await db.transaction('rw', [
     db.cartoes, db.comprasCartao, db.recorrenciasCartao, db.conferenciasFatura, db.lancamentos,
   ], async () => {
     for (const ass of await db.recorrenciasCartao.toArray()) {
-      await materializarAssinatura(ass, hoje, horizonte);
+      await materializarAssinatura(ass, hoje, horizonte, {
+        permitirCicloAtual: ass.id === opts?.permitirCicloAtualPara,
+      });
     }
     for (const cartao of await db.cartoes.toArray()) {
       const [compras, conferencias, existentes] = await Promise.all([
