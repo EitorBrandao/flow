@@ -3,6 +3,15 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.16.1] - 2026-07-29
+
+### Alterado
+
+- Ajustes, Boxes: a box recém-criada já fica selecionada no topo, e tentar criar sem nome agora avisa em vez de não fazer nada.
+- Ajustes, Boxes: a data do saldo já vem preenchida com hoje quando a box ainda não tem uma.
+- Ajustes, Viagens: início e fim já vêm com hoje, e salvar sem preencher tudo agora avisa o que falta.
+- Lançar: quando o botão está desabilitado, a tela diz o que falta — inclusive quando a box não tem nenhuma categoria.
+
 ## [0.16.0] - 2026-07-29
 
 ### Adicionado
