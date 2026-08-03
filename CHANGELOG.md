@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.17.2] - 2026-08-03
+
+### Alterado
+
+- Correção: ao pagar uma fatura em parte, os campos de parcelamento agora aparecem sozinhos, sem depender de marcar uma caixa que passava despercebida. Antes dava para pagar parcial e o restante sumir da projeção sem o app avisar.
+- Pagamento de fatura: quando sobra valor sem parcelamento informado, a tela avisa em destaque que esse valor some da projeção e não volta em nenhuma fatura.
+
 ## [0.17.1] - 2026-08-03
 
 ### Alterado
