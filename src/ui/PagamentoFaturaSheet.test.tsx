@@ -222,6 +222,38 @@ it('preencher a parcela troca o aviso pelas contas do parcelamento', async () =>
   } finally { vi.useRealTimers(); }
 });
 
+// A invariante que faltava quando a feature saiu: a suíte cobria o caminho com parcelamento
+// e o caminho sem, mas nenhum teste perguntava se dava para o dinheiro sumir calado. Foi
+// exatamente isso que aconteceu em produção — pagamento parcial gravado, milhares de reais
+// fora da projeção, nenhuma palavra na tela. Este teste varre a folha inteira e exige que,
+// para QUALQUER sobra, ou as parcelas cubram o buraco ou a tela diga que ele existe.
+it('INVARIANTE: nenhuma sobra pode ficar sem parcelamento E sem aviso', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { fatura } = await comFatura();
+    montar(fatura);
+    const pago = screen.getByLabelText('Quanto você pagou');
+
+    // varre do pagamento zerado ao total, incluindo as bordas
+    for (const centavos of ['0', '1', '30000', '89999', '90000']) {
+      await userEvent.click(pago);
+      await userEvent.keyboard(`{Backspace>9/}${centavos}`);
+
+      const restante = 90000 - Number(centavos);
+      const avisado = screen.queryByText(/somem da projeção/) != null;
+      const temCampos = screen.queryByLabelText('Valor de cada parcela') != null;
+
+      if (restante > 0) {
+        expect(avisado, `sobra de ${restante} sem aviso`).toBe(true);
+        expect(temCampos, `sobra de ${restante} sem campos de parcelamento`).toBe(true);
+      } else {
+        expect(avisado, 'aviso aparecendo sem sobra nenhuma').toBe(false);
+      }
+    }
+  } finally { vi.useRealTimers(); }
+});
+
 it('salvar sem preencher a parcela não inventa parcelamento nenhum', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
