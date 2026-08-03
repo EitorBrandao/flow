@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.17.1] - 2026-08-03
+
+### Alterado
+
+- Contas previstas agora aparecem na fila de Pendentes até 3 dias antes do vencimento, em vez de só no dia ou depois dele.
+
 ## [0.17.0] - 2026-08-03
 
 ### Adicionado

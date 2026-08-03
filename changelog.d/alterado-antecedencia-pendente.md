@@ -1,1 +1,0 @@
-- Contas previstas agora aparecem na fila de Pendentes até 3 dias antes do vencimento, em vez de só no dia ou depois dele.
