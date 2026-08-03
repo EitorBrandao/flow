@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.17.0] - 2026-08-03
+
+### Adicionado
+
+- Fatura do cartão: agora dá para registrar que você pagou só uma parte e parcelou o restante no banco. As parcelas entram sozinhas nas faturas seguintes, com o saldo projetado acompanhando.
+- O parcelamento aparece na fatura seguinte como "Parcelamento", igual a qualquer compra parcelada, com a contagem de parcelas.
+- Você digita quantas parcelas e quanto é cada uma, como o banco mostra — o app não calcula juros, só mostra quanto deles você está pagando.
+- Hoje: numa fatura pendente, "Descartar" dá lugar a "Paguei outro valor" — fatura sempre acontece, o que varia é quanto foi pago dela.
+- Cartão: a fatura mostra quanto foi pago (ou quanto falta pagar) e deixa corrigir ou parcelar depois, quando você só lembra dias depois.
+
 ## [0.16.1] - 2026-07-29
 
 ### Alterado
