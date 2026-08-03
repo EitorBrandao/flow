@@ -62,6 +62,7 @@ export interface Cartao extends Entidade {
   diaVencimento: number; // 1-31, clampado
   categoriaFaturaId: ID; // categoria de gasto do Flow que recebe a fatura
   categoriaAssinaturasId?: ID; // CategoriaCartao oculta reservada p/ assinaturas; criada sob demanda
+  categoriaParcelamentoId?: ID; // CategoriaCartao oculta reservada p/ parcelamento de fatura; sob demanda
   ativo: boolean;
 }
 

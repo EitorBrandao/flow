@@ -626,3 +626,159 @@ describe('categoriaAssinaturasDe', () => {
     expect(await db.categoriasCartao.count()).toBe(1);
   });
 });
+
+describe('registrarPagamentoFatura', () => {
+  // Monta um cartão com o ciclo pedido e uma fatura já projetada no Flow.
+  async function comFatura(diaFechamento: number, diaVencimento: number, totalCent: number) {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cartao = await repo.salvarCartao({ boxId: box.id, nome: 'Cartão', diaFechamento, diaVencimento }, '2027-12-31');
+    const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-05',
+      valorTotal: totalCent, parcelas: 1,
+    }, '2027-12-31');
+    const lancamentos = await db.lancamentos.toArray();
+    return { cartao, fatura: lancamentos.find((l) => l.origem === 'cartao')! };
+  }
+
+  it('sem parcelamento: só grava o valor pago como efetivo', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, fatura } = await comFatura(28, 5, 90000);
+      expect(fatura.valor).toBe(90000);
+
+      await repo.registrarPagamentoFatura({
+        lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: fatura.faturaMes!,
+        valorPagoCent: 85000, horizonte: '2027-12-31',
+      });
+
+      const depois = await db.lancamentos.get(fatura.id);
+      expect(depois).toMatchObject({ status: 'efetivo', valor: 85000 });
+      expect(await db.comprasCartao.count()).toBe(1); // só a compra original
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('parcelado: a parcela 1 cai na fatura seguinte (vencimento antes do fechamento)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      // fecha 28/07, vence 05/08
+      const { cartao, fatura } = await comFatura(28, 5, 90000);
+      expect(fatura.faturaMes).toBe('2026-08');
+
+      await repo.registrarPagamentoFatura({
+        lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-08',
+        valorPagoCent: 30000, parcelamento: { parcelas: 3, valorParcelaCent: 20000 },
+        horizonte: '2027-12-31',
+      });
+
+      const faturas = (await db.lancamentos.toArray())
+        .filter((l) => l.origem === 'cartao')
+        .sort((a, b) => a.data.localeCompare(b.data));
+      expect(faturas.map((l) => [l.faturaMes, l.valor, l.status])).toEqual([
+        ['2026-08', 30000, 'efetivo'],   // o que foi realmente pago
+        ['2026-09', 20000, 'previsto'],  // parcela 1
+        ['2026-10', 20000, 'previsto'],  // parcela 2
+        ['2026-11', 20000, 'previsto'],  // parcela 3
+      ]);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('parcelado: a parcela 1 cai na fatura seguinte (vencimento depois do fechamento)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      // fecha 10/07, vence 20/07
+      const { cartao, fatura } = await comFatura(10, 20, 90000);
+      expect(fatura.faturaMes).toBe('2026-07');
+
+      await repo.registrarPagamentoFatura({
+        lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-07',
+        valorPagoCent: 30000, parcelamento: { parcelas: 2, valorParcelaCent: 30000 },
+        horizonte: '2027-12-31',
+      });
+
+      const faturas = (await db.lancamentos.toArray())
+        .filter((l) => l.origem === 'cartao')
+        .sort((a, b) => a.data.localeCompare(b.data));
+      expect(faturas.map((l) => [l.faturaMes, l.valor, l.status])).toEqual([
+        ['2026-07', 30000, 'efetivo'],
+        ['2026-08', 30000, 'previsto'],
+        ['2026-09', 30000, 'previsto'],
+      ]);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('o parcelamento vira compra na categoria reservada, com a descrição do mês da fatura', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, fatura } = await comFatura(28, 5, 90000);
+
+      await repo.registrarPagamentoFatura({
+        lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-08',
+        valorPagoCent: 30000, parcelamento: { parcelas: 3, valorParcelaCent: 22000 },
+        horizonte: '2027-12-31',
+      });
+
+      const atualizado = (await db.cartoes.get(cartao.id))!;
+      expect(atualizado.categoriaParcelamentoId).toBeDefined();
+      const categoria = await db.categoriasCartao.get(atualizado.categoriaParcelamentoId!);
+      expect(categoria).toMatchObject({ nome: 'Parcelamento', arquivada: false });
+
+      const parcelamento = (await db.comprasCartao.toArray())
+        .find((c) => c.categoriaCartaoId === atualizado.categoriaParcelamentoId)!;
+      expect(parcelamento).toMatchObject({
+        data: '2026-07-28',      // o fechamento da fatura paga
+        valorTotal: 66000,       // 3 × 220,00 — com os juros do banco embutidos
+        parcelas: 3,
+        descricao: 'Parcelamento da fatura de 08/2026',
+      });
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('parcelar duas faturas reaproveita a mesma categoria reservada', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, fatura } = await comFatura(28, 5, 90000);
+      await repo.registrarPagamentoFatura({
+        lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-08',
+        valorPagoCent: 30000, parcelamento: { parcelas: 2, valorParcelaCent: 30000 },
+        horizonte: '2027-12-31',
+      });
+      const setembro = (await db.lancamentos.toArray()).find((l) => l.faturaMes === '2026-09')!;
+      await repo.registrarPagamentoFatura({
+        lancamentoId: setembro.id, cartaoId: cartao.id, faturaMes: '2026-09',
+        valorPagoCent: 10000, parcelamento: { parcelas: 2, valorParcelaCent: 10000 },
+        horizonte: '2027-12-31',
+      });
+
+      const reservadas = (await db.categoriasCartao.toArray()).filter((c) => c.nome === 'Parcelamento');
+      expect(reservadas).toHaveLength(1);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('parcelar uma fatura já confirmada corrige o valor pago e cria as parcelas', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, fatura } = await comFatura(28, 5, 90000);
+      await repo.confirmarPendente(fatura.id); // confirmou pelo valor cheio, sem lembrar do parcelamento
+      expect((await db.lancamentos.get(fatura.id))!.valor).toBe(90000);
+
+      await repo.registrarPagamentoFatura({
+        lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-08',
+        valorPagoCent: 30000, parcelamento: { parcelas: 3, valorParcelaCent: 20000 },
+        horizonte: '2027-12-31',
+      });
+
+      expect(await db.lancamentos.get(fatura.id)).toMatchObject({ status: 'efetivo', valor: 30000 });
+      const parcelas = (await db.lancamentos.toArray()).filter((l) => l.status === 'previsto' && l.origem === 'cartao');
+      expect(parcelas.map((l) => l.faturaMes).sort()).toEqual(['2026-09', '2026-10', '2026-11']);
+    } finally { vi.useRealTimers(); }
+  });
+});

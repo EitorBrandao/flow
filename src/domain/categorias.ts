@@ -39,10 +39,14 @@ export function proximaOrdem(itensDoGrupo: readonly { ordem: number }[]): number
   return Math.max(-1, ...itensDoGrupo.map((c) => c.ordem)) + 1;
 }
 
-/** Ids das CategoriaCartao reservadas para assinaturas automáticas — não devem aparecer em
- *  nenhuma lista de seleção manual de categoria de cartão. */
-export function categoriasAssinaturasIds(cartoes: Cartao[]): Set<ID> {
+/** Ids das CategoriaCartao que o app reserva para si (assinaturas automáticas e parcelamento
+ *  de fatura) — não devem aparecer em nenhuma lista de **seleção manual** de categoria de
+ *  cartão. Note que elas continuam aparecendo onde a fatura é só *exibida*: o resumo por
+ *  categoria da TelaCartao mostra "Parcelamento" de propósito, que é o ponto da feature. */
+export function categoriasCartaoReservadasIds(cartoes: Cartao[]): Set<ID> {
   return new Set(
-    cartoes.map((c) => c.categoriaAssinaturasId).filter((id): id is ID => id != null),
+    cartoes
+      .flatMap((c) => [c.categoriaAssinaturasId, c.categoriaParcelamentoId])
+      .filter((id): id is ID => id != null),
   );
 }
