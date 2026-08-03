@@ -1,0 +1,154 @@
+import { useId, useState } from 'react';
+import * as repo from '../db/repo';
+import { resumoParcelamento } from '../domain/fatura';
+import { formatarBRL } from '../domain/money';
+import type { Lancamento } from '../domain/types';
+import { useApp } from '../state/store';
+import CampoValor from './CampoValor';
+import Sheet from './Sheet';
+
+/**
+ * Registra o pagamento de uma fatura por um valor diferente do total e, se for o caso, o
+ * parcelamento do restante no banco.
+ *
+ * O app **não** calcula juros: quem digita as parcelas é o usuário, lendo o que o banco
+ * mostrou, e os juros já vêm embutidos ali. A linha de contas só explicita a diferença entre
+ * o que vai ser pago e o que deixou de ser pago — inclusive quando ela é negativa, que é
+ * incoerência do preenchimento e merece aparecer em vez de ser corrigida por baixo do pano.
+ */
+export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, onFechar }: {
+  lancamento: Lancamento;
+  totalFaturaCent: number;
+  onFechar: () => void;
+}) {
+  const { dados, recarregar } = useApp();
+  const [valorPago, setValorPago] = useState(lancamento.valor);
+  const [parcelando, setParcelando] = useState(false);
+  const [parcelas, setParcelas] = useState('2');
+  const [valorParcela, setValorParcela] = useState(0);
+  const [salvando, setSalvando] = useState(false);
+  const uid = useId();
+  if (!dados) return null;
+
+  const parcelasNum = Math.min(48, Math.max(1, Math.round(Number(parcelas) || 1)));
+  const conta = resumoParcelamento(totalFaturaCent, valorPago, {
+    parcelas: parcelasNum, valorParcelaCent: valorParcela,
+  });
+  const podeSalvar = !salvando && (!parcelando || valorParcela > 0);
+
+  async function salvar() {
+    if (!podeSalvar) return;
+    setSalvando(true);
+    try {
+      await repo.registrarPagamentoFatura({
+        lancamentoId: lancamento.id,
+        cartaoId: lancamento.cartaoId!,
+        faturaMes: lancamento.faturaMes!,
+        valorPagoCent: valorPago,
+        ...(parcelando ? { parcelamento: { parcelas: parcelasNum, valorParcelaCent: valorParcela } } : {}),
+        horizonte: dados!.config.horizonteProjecao,
+      });
+      await recarregar();
+      onFechar();
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  return (
+    <>
+      <p className="sub" style={{ margin: 0 }}>
+        Fatura {lancamento.faturaMes?.split('-').reverse().join('/')} · total{' '}
+        <strong>{formatarBRL(totalFaturaCent)}</strong>
+      </p>
+
+      <div className="campo">
+        <label htmlFor={`${uid}-pago`}>Quanto você pagou</label>
+        <CampoValor id={`${uid}-pago`} valorCentavos={valorPago} onChange={setValorPago} />
+      </div>
+
+      <div className="campo">
+        <label htmlFor={`${uid}-parcelando`}>
+          <input
+            id={`${uid}-parcelando`} type="checkbox"
+            checked={parcelando} onChange={(e) => setParcelando(e.target.checked)}
+          />
+          {' '}Parcelei o restante no banco
+        </label>
+      </div>
+
+      {parcelando && (
+        <div className="linha">
+          <div className="campo" style={{ flex: 1 }}>
+            <label htmlFor={`${uid}-parcelas`}>Parcelas</label>
+            <input
+              id={`${uid}-parcelas`} inputMode="numeric" value={parcelas}
+              onChange={(e) => setParcelas(e.target.value)}
+            />
+          </div>
+          <div className="campo" style={{ flex: 2 }}>
+            <label htmlFor={`${uid}-valor-parcela`}>Valor de cada parcela</label>
+            <CampoValor id={`${uid}-valor-parcela`} valorCentavos={valorParcela} onChange={setValorParcela} />
+          </div>
+        </div>
+      )}
+
+      <div className="pagamento-fatura-resumo">
+        <div className="linha-conta">
+          <span>Restou da fatura</span><strong>{formatarBRL(conta.restanteCent)}</strong>
+        </div>
+        {parcelando && (
+          <>
+            <div className="linha-conta">
+              <span>{parcelasNum} × {formatarBRL(valorParcela)}</span>
+              <strong>{formatarBRL(conta.totalParceladoCent)}</strong>
+            </div>
+            <div className="linha-conta">
+              {conta.jurosCent === 0 ? (
+                <>
+                  <span>Juros</span>
+                  <strong className="pagamento-fatura-semjuros">sem juros</strong>
+                </>
+              ) : conta.jurosCent > 0 ? (
+                <>
+                  <span>Juros</span>
+                  <strong className="pagamento-fatura-juros">{formatarBRL(conta.jurosCent)}</strong>
+                </>
+              ) : (
+                <>
+                  <span>Faltam</span>
+                  <strong className="pagamento-fatura-erro">{formatarBRL(-conta.jurosCent)}</strong>
+                </>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      <button className="botao botao-primario" disabled={!podeSalvar} onClick={salvar} style={{ padding: 14 }}>
+        Confirmar pagamento
+      </button>
+      {parcelando && valorParcela === 0 && (
+        <p className="sub" style={{ margin: 0 }}>Digite o valor de cada parcela.</p>
+      )}
+    </>
+  );
+}
+
+/** A folha em si, com o `Sheet` em volta — o conteúdo fica separado para o teste montar sem
+ *  depender do backdrop e da animação. */
+export function PagamentoFaturaSheetModal({ lancamento, totalFaturaCent, onFechar }: {
+  lancamento: Lancamento | null;
+  totalFaturaCent: number;
+  onFechar: () => void;
+}) {
+  return (
+    <Sheet aberto={lancamento != null} onFechar={onFechar} rotulo="Pagamento da fatura">
+      {lancamento && (
+        <PagamentoFaturaSheet
+          lancamento={lancamento} totalFaturaCent={totalFaturaCent} onFechar={onFechar}
+        />
+      )}
+    </Sheet>
+  );
+}

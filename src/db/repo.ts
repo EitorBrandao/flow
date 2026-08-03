@@ -1,6 +1,6 @@
 import { compararCategorias, compararCategoriasCartao } from '../domain/categorias';
 import { hojeISO } from '../domain/dates';
-import { calcularFaturas, dedupConferencias, diffSincronizacao } from '../domain/fatura';
+import { calcularFaturas, datasFaturaDoMes, dedupConferencias, diffSincronizacao, type PlanoParcelamento } from '../domain/fatura';
 import { materializar, ocorrencias } from '../domain/recurrence';
 import {
   agoraISO, novoId,
@@ -352,6 +352,79 @@ export async function categoriaAssinaturasDe(cartaoId: ID): Promise<ID> {
     await marcarMudanca();
   });
   return categoriaId;
+}
+
+export async function categoriaParcelamentoDe(cartaoId: ID): Promise<ID> {
+  const cartao = (await db.cartoes.get(cartaoId))!;
+  if (cartao.categoriaParcelamentoId) return cartao.categoriaParcelamentoId;
+  const agora = agoraISO();
+  const categoriaId = novoId();
+  await db.transaction('rw', db.cartoes, db.categoriasCartao, db.config, async () => {
+    await db.categoriasCartao.add({
+      id: categoriaId, cartaoId, nome: 'Parcelamento', ordem: 0,
+      arquivada: false, criadoEm: agora, alteradoEm: agora,
+    });
+    await db.cartoes.update(cartaoId, { categoriaParcelamentoId: categoriaId, alteradoEm: agora });
+    await marcarMudanca();
+  });
+  return categoriaId;
+}
+
+export interface PagamentoFatura {
+  lancamentoId: ID;      // o lançamento da fatura no Flow (origem 'cartao')
+  cartaoId: ID;
+  faturaMes: string;     // 'AAAA-MM' do vencimento
+  valorPagoCent: number;
+  parcelamento?: PlanoParcelamento;
+  horizonte: ISODate;
+}
+
+/**
+ * Registra que a fatura foi paga por um valor diferente do total e, se for o caso, que o
+ * restante foi parcelado no banco.
+ *
+ * O parcelamento vira uma `CompraCartao` comum numa CategoriaCartao reservada, e não uma
+ * entidade nova: um parcelamento *é* um valor fatiado nas faturas seguintes, que é
+ * exatamente o que `calcularFaturas` já sabe fazer. Daí em diante tudo vem de graça — o
+ * resumo por categoria, a lista da TelaCartao, a sincronização com os lançamentos do Flow e
+ * a edição/exclusão pelo FormCompra.
+ *
+ * A data da compra é a **data de fechamento da fatura sendo paga**: pela regra de
+ * `mesFechamentoDaCompra`, compra no dia exato do fechamento cai na fatura seguinte — que é
+ * onde a parcela 1 deve estar. Nenhuma aritmética de data nova, e vale nas duas
+ * configurações de ciclo (vencimento antes ou depois do fechamento).
+ *
+ * O lançamento pode já estar `efetivo` (parcelamento registrado dias depois): este é o único
+ * caminho do app que reescreve um `efetivo`, e é sob ação explícita do usuário.
+ */
+export async function registrarPagamentoFatura(p: PagamentoFatura): Promise<void> {
+  const cartao = await db.cartoes.get(p.cartaoId);
+  if (!cartao) throw new Error(`cartão ${p.cartaoId} não encontrado`);
+
+  const parcelamento = p.parcelamento;
+  // Criar a categoria reservada fora da transação do lançamento: `categoriaParcelamentoDe`
+  // abre a sua própria, e transação aninhada em Dexie com outro conjunto de tabelas falha.
+  const categoriaCartaoId = parcelamento ? await categoriaParcelamentoDe(p.cartaoId) : null;
+
+  const agora = agoraISO();
+  await db.transaction('rw', db.lancamentos, db.comprasCartao, db.config, async () => {
+    await db.lancamentos.update(p.lancamentoId, {
+      status: 'efetivo', valor: p.valorPagoCent, alteradoEm: agora,
+    });
+    if (parcelamento && categoriaCartaoId) {
+      const [ano, mes] = p.faturaMes.split('-');
+      await db.comprasCartao.add({
+        id: novoId(), cartaoId: p.cartaoId, categoriaCartaoId,
+        data: datasFaturaDoMes(cartao, p.faturaMes).dataFechamento,
+        valorTotal: parcelamento.parcelas * parcelamento.valorParcelaCent,
+        parcelas: parcelamento.parcelas,
+        descricao: `Parcelamento da fatura de ${mes}/${ano}`,
+        criadoEm: agora, alteradoEm: agora,
+      });
+    }
+    await marcarMudanca();
+  });
+  await sincronizarCartoes(p.horizonte);
 }
 
 export interface NovaCompraCartao {

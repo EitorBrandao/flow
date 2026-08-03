@@ -9,6 +9,7 @@ import type { Cartao, CompraCartao } from '../domain/types';
 import { boxIdsSelecionadas, useApp } from '../state/store';
 import CampoValor from './CampoValor';
 import FormCompra from './FormCompra';
+import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
 import Sheet from './Sheet';
 
 function fmtDia(d: string): string {
@@ -90,6 +91,7 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const [mostrarLista, setMostrarLista] = useState(false);
   const [filtroCategoriaId, setFiltroCategoriaId] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
+  const [pagando, setPagando] = useState(false);
   if (!dados) return null;
 
   const compras = dados.comprasCartao.filter((c) => c.cartaoId === cartao.id);
@@ -112,6 +114,10 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const itensFiltrados = fatura.itens.filter((i) =>
     (!filtroCategoriaId || i.categoriaCartaoId === filtroCategoriaId) && (!buscaAtiva || bate(i)));
 
+  // O lançamento que esta fatura virou no Flow. Pode não existir (fatura futura ainda fora do
+  // horizonte, ou já vencida e nunca criada) — aí não há pagamento a registrar.
+  const lancFatura = dados.lancamentos.find((l) => l.cartaoId === cartao.id && l.faturaMes === mes);
+
   const aVista = itensFiltrados.filter((i) => i.totalParcelas === 1).sort((a, b) => b.data.localeCompare(a.data));
   const parceladas = itensFiltrados.filter((i) => i.totalParcelas > 1).sort((a, b) => b.data.localeCompare(a.data));
   const mostrarGrupos = aVista.length > 0 && parceladas.length > 0;
@@ -130,6 +136,17 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
         <button className="botao" aria-label="Mês seguinte" onClick={() => setMes(addMeses(mes, 1))}>›</button>
       </div>
       <BlocoConferencia key={`${cartao.id}:${mes}`} cartao={cartao} mes={mes} totalCent={fatura.totalCent} />
+      {lancFatura && (
+        <p className="sub" style={{ margin: '8px 0 0' }}>
+          {lancFatura.status === 'efetivo'
+            ? `Pago: ${formatarBRL(lancFatura.valor)}`
+            : `A pagar: ${formatarBRL(lancFatura.valor)}`}
+          {' · '}
+          <button className="botao-ver-mais" onClick={() => setPagando(true)}>
+            {lancFatura.status === 'efetivo' ? 'corrigir ou parcelar' : 'paguei outro valor'}
+          </button>
+        </p>
+      )}
       {resumo.length > 1 && (
         <div className="lista" style={{ marginTop: 8 }}>
           {resumo.map(([catId, cent]) => (
@@ -185,6 +202,11 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
       <Sheet aberto={editando != null} onFechar={() => setEditando(null)} rotulo="Editar compra">
         {editando && <FormCompra cartao={cartao} compra={editando} onFechar={() => setEditando(null)} />}
       </Sheet>
+      <PagamentoFaturaSheetModal
+        lancamento={pagando ? lancFatura ?? null : null}
+        totalFaturaCent={fatura.totalCent}
+        onFechar={() => setPagando(false)}
+      />
     </div>
   );
 }

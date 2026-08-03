@@ -58,6 +58,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.wiki-gaveta` | drawer do índice (z-index 51, `min(86vw, 330px)`, 16px padding, `--surface` com borda direita em `--line`, scroll contido) |
 | `.wiki-item` | botão de item do índice; `.ativo` marca o capítulo atual com `--ac-dim` fundo e `--ac` cor |
 | `.primeiro-uso` | cartão de onboarding (`PrimeiroUso.tsx`): flex container com gap 14px, botões em largura cheia, espaçamento entre elementos |
+| `.pagamento-fatura-*` | bloco de contas do parcelamento de fatura (`PagamentoFaturaSheet.tsx`). `.pagamento-fatura-resumo` é o bloco: `--surface2`, raio 12px, `tabular-nums`; dentro dele cada `.linha-conta` (aninhada, sem existência própria) é rótulo à esquerda e valor à direita. Os modificadores dão a cor do juros no valor — `.pagamento-fatura-juros` âmbar (`--aviso-fg`) quando há juros, `.pagamento-fatura-semjuros` verde (`--pos`) quando não há, `.pagamento-fatura-erro` vermelho (`--neg`) quando as parcelas somam menos que o restante |
 | `.sugestoes` / `.sugestao` | contêiner de pílulas de categoria sugerida (quebra linha, gap 8px) e cada pílula (`SeletorCategoria`-like); `.sugestao` é alvo de toque (44px altura), `.marcada` indica seleção com `--ac-dim` fundo e `--ac` cor |
 
 ## Componentes compartilhados (em `src/ui/`)
@@ -94,6 +95,12 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   (Cartão) — a box em si não tem mais seletor próprio nessas telas: todas as telas de
   Ajustes seguem a box selecionada no chip do topo (`boxIdEfetivo`, `state/store.ts`),
   reforçando a sensação de "perfil" (ver `docs/superpowers/specs/`).
+- **`PagamentoFaturaSheet.tsx`** — conteúdo da folha que registra o pagamento de uma fatura
+  por valor diferente do total e o parcelamento do restante. Exporta o conteúdo puro (default,
+  para o teste montar sem backdrop) e `PagamentoFaturaSheetModal`, que o embrulha no `Sheet`.
+  Consumido pela fila de pendentes da `TelaHoje` e pela fatura da `TelaCartao`; recebe o
+  lançamento da fatura e o total dela, porque nem sempre um é o outro (fatura já paga em
+  parte tem valor menor que o total calculado).
 - **`AssinaturasResumoSheet.tsx`** — sheet de Análises com o total de assinaturas do mês,
   agrupado por cartão (`.rotulo-grupo` + `.recuo-1`, mesmo padrão do `LancamentosSheet`).
 - **`ComposicaoBarChart.tsx`** — barras horizontais de composição por categoria na aba

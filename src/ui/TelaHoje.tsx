@@ -3,15 +3,22 @@ import { AnimatePresence, motion } from 'framer-motion';
 import * as repo from '../db/repo';
 import { addDias } from '../domain/dates';
 import { formatarBRL } from '../domain/money';
-import type { ISODate } from '../domain/types';
+import type { ISODate, Lancamento } from '../domain/types';
 import { pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, estadoPrimeiroUso, useApp } from '../state/store';
 import BalanceChart from './BalanceChart';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import PrimeiroUso from './PrimeiroUso';
+import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
 
 const SETE_DIAS_MS = 7 * 86_400_000;
+
+/** Um pendente que é fatura de cartão — tem cartão dono e mês de fatura, e por isso pode ser
+ *  pago parcialmente/parcelado em vez de só confirmado. */
+function ehFatura(l: Lancamento): boolean {
+  return l.origem === 'cartao' && l.cartaoId != null && l.faturaMes != null;
+}
 
 function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalvar }: {
   saldoApp: number;
@@ -66,6 +73,7 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
 
 export default function TelaHoje() {
   const { dados, boxSel, hoje, recarregar, abrirAjustes } = useApp();
+  const [pagando, setPagando] = useState<Lancamento | null>(null);
   const ids = dados ? boxIdsSelecionadas(dados, boxSel) : [];
   const ligados = dados ? cenariosLigados(dados) : new Set<string>();
 
@@ -107,6 +115,10 @@ export default function TelaHoje() {
     await repo.excluirLancamento(id);
     await recarregar();
   }
+
+  // Enquanto o pendente é `previsto`, o valor dele *é* o total da fatura — quem o escreve é a
+  // sincronização do cartão, não a mão do usuário.
+  const totalDaFaturaPendente = pagando?.valor ?? 0;
 
   const { precisa: primeiroUso } = estadoPrimeiroUso(dados);
 
@@ -176,11 +188,21 @@ export default function TelaHoje() {
               </div>
               <div className="acoes">
                 <button className="botao botao-primario" aria-label={`Confirmar ${nomeCat(l.categoriaId)}`} onClick={() => confirmar(l.id)}>✓ Confirmar</button>
-                <button className="botao" aria-label="Descartar" onClick={() => descartar(l.id)}>Descartar</button>
+                {/* Fatura não se descarta — ela sempre aconteceu; o que varia é quanto foi
+                    pago dela. Nos demais pendentes o par Confirmar/Descartar continua igual. */}
+                {ehFatura(l) ? (
+                  <button className="botao" aria-label={`Paguei outro valor de ${nomeCat(l.categoriaId)}`} onClick={() => setPagando(l)}>Paguei outro valor</button>
+                ) : (
+                  <button className="botao" aria-label="Descartar" onClick={() => descartar(l.id)}>Descartar</button>
+                )}
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
+        <PagamentoFaturaSheetModal
+          lancamento={pagando} totalFaturaCent={totalDaFaturaPendente}
+          onFechar={() => setPagando(null)}
+        />
         {fila.length === 0 && <p className="sub">Nada a confirmar — tudo em dia.</p>}
       </div>
     </div>

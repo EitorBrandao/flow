@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import * as repo from '../db/repo';
 import { addMesesData } from '../domain/dates';
-import { categoriasAssinaturasIds } from '../domain/categorias';
+import { categoriasCartaoReservadasIds } from '../domain/categorias';
 import type { Cartao, CompraCartao } from '../domain/types';
 import { viagemAtivaEm } from '../domain/viagem';
 import { useApp } from '../state/store';
@@ -23,7 +23,7 @@ export default function FormCompra({ cartao, compra, onFechar }: {
   const montouRef = useRef(true);
   const uid = useId();
   if (!dados) return null;
-  const ocultas = categoriasAssinaturasIds(dados.cartoes);
+  const ocultas = categoriasCartaoReservadasIds(dados.cartoes);
   const cats = dados.categoriasCartao.filter((c) => c.cartaoId === cartao.id && !c.arquivada && !ocultas.has(c.id));
   const viagemAtiva = viagemAtivaEm(dados.viagens, data);
   const horizonte = dados.config.horizonteProjecao;

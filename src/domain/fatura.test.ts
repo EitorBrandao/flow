@@ -1,5 +1,5 @@
 import type { Cartao, CompraCartao, ConferenciaFatura, Lancamento, RecorrenciaCartao } from './types';
-import { calcularFaturas, categoriasFaturaIds, datasFaturaDoMes, diffSincronizacao, mesFaturaDaCompra, mesFechamentoDaCompra, resumoAssinaturasDoMes, resumoPorCategoria, valorParcela } from './fatura';
+import { calcularFaturas, categoriasFaturaIds, datasFaturaDoMes, diffSincronizacao, mesFaturaDaCompra, mesFechamentoDaCompra, resumoAssinaturasDoMes, resumoParcelamento, resumoPorCategoria, valorParcela } from './fatura';
 
 const nubank = { diaFechamento: 28, diaVencimento: 5 }; // vence no mês seguinte ao fechamento
 const outro = { diaFechamento: 10, diaVencimento: 20 }; // vence no mesmo mês do fechamento
@@ -227,5 +227,35 @@ describe('resumoAssinaturasDoMes', () => {
       '2026-07', ['outra-box'], [cartaoNubank], [compraAssinatura], [assNetflix],
     );
     expect(resumo).toEqual({ totalCent: 0, itens: [] });
+  });
+});
+
+describe('resumoParcelamento', () => {
+  it('sem juros: N parcelas somam exatamente o que ficou de fora', () => {
+    // fatura 900,00; paga 300,00; sobra 600,00 em 3x de 200,00
+    expect(resumoParcelamento(90000, 30000, { parcelas: 3, valorParcelaCent: 20000 }))
+      .toEqual({ restanteCent: 60000, totalParceladoCent: 60000, jurosCent: 0 });
+  });
+
+  it('com juros: a diferença entre o total parcelado e o restante', () => {
+    // sobra 600,00 mas o banco cobra 3x de 220,00
+    expect(resumoParcelamento(90000, 30000, { parcelas: 3, valorParcelaCent: 22000 }))
+      .toEqual({ restanteCent: 60000, totalParceladoCent: 66000, jurosCent: 6000 });
+  });
+
+  it('não arredonda nada: o total parcelado é sempre N × a parcela digitada', () => {
+    // 3 × 200,01 = 600,03 — um centavo a mais por parcela vira juros, não some
+    expect(resumoParcelamento(90000, 30000, { parcelas: 3, valorParcelaCent: 20001 }))
+      .toEqual({ restanteCent: 60000, totalParceladoCent: 60003, jurosCent: 3 });
+  });
+
+  it('pagou a fatura inteira: restante zero, e o parcelado vira juros puro', () => {
+    expect(resumoParcelamento(90000, 90000, { parcelas: 1, valorParcelaCent: 0 }))
+      .toEqual({ restanteCent: 0, totalParceladoCent: 0, jurosCent: 0 });
+  });
+
+  it('juros negativo quando o parcelado cobre menos que o restante — incoerência a mostrar, não a esconder', () => {
+    expect(resumoParcelamento(90000, 30000, { parcelas: 2, valorParcelaCent: 20000 }).jurosCent)
+      .toBe(-20000);
   });
 });

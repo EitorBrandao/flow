@@ -105,6 +105,31 @@ export function valorSincronizado(fatura: Fatura, conf: ConferenciaFatura | unde
   return conf?.usarValorApp ? conf.valorAppCent : fatura.totalCent;
 }
 
+export interface PlanoParcelamento {
+  parcelas: number;        // N >= 1
+  valorParcelaCent: number;
+}
+
+export interface ResumoParcelamento {
+  restanteCent: number;   // o que ficou de fora do pagamento desta fatura
+  totalParceladoCent: number;
+  jurosCent: number;      // > 0 com juros, 0 sem juros, < 0 se o usuário digitou algo incoerente
+}
+
+/**
+ * Contas do parcelamento de fatura, a partir dos números que o app do banco mostra: o app
+ * **não** calcula juros nem deriva a parcela de uma taxa — se houver juros, eles já vêm
+ * embutidos no valor da parcela que o usuário digitou. O juros aqui é só informativo, a
+ * diferença entre o que se vai pagar e o que se deixou de pagar.
+ */
+export function resumoParcelamento(
+  totalFaturaCent: number, valorPagoCent: number, plano: PlanoParcelamento,
+): ResumoParcelamento {
+  const restanteCent = totalFaturaCent - valorPagoCent;
+  const totalParceladoCent = plano.parcelas * plano.valorParcelaCent;
+  return { restanteCent, totalParceladoCent, jurosCent: totalParceladoCent - restanteCent };
+}
+
 /**
  * Conferência é única por cartão e mês, mas o índice `[cartaoId+mes]` do Dexie não é unique:
  * duas conferências do mesmo mês com ids diferentes entram pelo import de backup e ficam.
