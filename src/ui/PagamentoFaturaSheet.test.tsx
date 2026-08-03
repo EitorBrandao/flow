@@ -50,16 +50,22 @@ it('o valor pago já vem preenchido com o total da fatura', async () => {
   } finally { vi.useRealTimers(); }
 });
 
-it('o bloco de parcelamento só aparece quando marcado', async () => {
+it('os campos de parcelamento aparecem sozinhos assim que sobra valor', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
     vi.setSystemTime(new Date('2026-07-01T12:00:00'));
     const { fatura } = await comFatura();
     montar(fatura);
+    // pagando o total não sobra nada, então não há o que parcelar
     expect(screen.queryByLabelText('Valor de cada parcela')).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByLabelText('Parcelei o restante no banco'));
+    const pago = screen.getByLabelText('Quanto você pagou');
+    await userEvent.click(pago);
+    await userEvent.keyboard('{Backspace>7/}30000');
+
+    // sem caixa nenhuma para marcar: sobrou, os campos estão lá
     expect(screen.getByLabelText('Valor de cada parcela')).toBeInTheDocument();
+    expect(screen.getByLabelText('Parcelas')).toBeInTheDocument();
   } finally { vi.useRealTimers(); }
 });
 
@@ -72,7 +78,6 @@ it('a linha de contas mostra "sem juros" quando as parcelas somam o restante', a
     const pago = screen.getByLabelText('Quanto você pagou');
     await userEvent.click(pago);
     await userEvent.keyboard('{Backspace>7/}30000'); // R$ 300,00
-    await userEvent.click(screen.getByLabelText('Parcelei o restante no banco'));
 
     await userEvent.clear(screen.getByLabelText('Parcelas'));
     await userEvent.type(screen.getByLabelText('Parcelas'), '3');
@@ -94,7 +99,6 @@ it('a linha de contas mostra os juros quando as parcelas somam mais que o restan
     const pago = screen.getByLabelText('Quanto você pagou');
     await userEvent.click(pago);
     await userEvent.keyboard('{Backspace>7/}30000');
-    await userEvent.click(screen.getByLabelText('Parcelei o restante no banco'));
     await userEvent.clear(screen.getByLabelText('Parcelas'));
     await userEvent.type(screen.getByLabelText('Parcelas'), '3');
     await userEvent.click(screen.getByLabelText('Valor de cada parcela'));
@@ -114,7 +118,6 @@ it('parcelas que somam menos que o restante aparecem como falta, não como juros
     const pago = screen.getByLabelText('Quanto você pagou');
     await userEvent.click(pago);
     await userEvent.keyboard('{Backspace>7/}30000');
-    await userEvent.click(screen.getByLabelText('Parcelei o restante no banco'));
     await userEvent.clear(screen.getByLabelText('Parcelas'));
     await userEvent.type(screen.getByLabelText('Parcelas'), '2');
     await userEvent.click(screen.getByLabelText('Valor de cada parcela'));
@@ -153,7 +156,6 @@ it('salvar com parcelamento cria as parcelas nas faturas seguintes', async () =>
     const pago = screen.getByLabelText('Quanto você pagou');
     await userEvent.click(pago);
     await userEvent.keyboard('{Backspace>7/}30000');
-    await userEvent.click(screen.getByLabelText('Parcelei o restante no banco'));
     await userEvent.clear(screen.getByLabelText('Parcelas'));
     await userEvent.type(screen.getByLabelText('Parcelas'), '3');
     await userEvent.click(screen.getByLabelText('Valor de cada parcela'));
@@ -174,15 +176,99 @@ it('salvar com parcelamento cria as parcelas nas faturas seguintes', async () =>
   } finally { vi.useRealTimers(); }
 });
 
-it('não deixa salvar um parcelamento sem valor de parcela', async () => {
+it('sobra sem destino é avisada em vez de sumir calada', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
     vi.setSystemTime(new Date('2026-07-01T12:00:00'));
     const { fatura } = await comFatura();
     montar(fatura);
-    await userEvent.click(screen.getByLabelText('Parcelei o restante no banco'));
+    // pagou 300 de 900 e não informou parcelamento nenhum: 600 ficariam sem explicação
+    const pago = screen.getByLabelText('Quanto você pagou');
+    await userEvent.click(pago);
+    await userEvent.keyboard('{Backspace>7/}30000');
 
-    expect(screen.getByRole('button', { name: 'Confirmar pagamento' })).toBeDisabled();
-    expect(screen.getByText('Digite o valor de cada parcela.')).toBeInTheDocument();
+    expect(screen.getByText(/somem da projeção/)).toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});
+
+it('pagando a fatura inteira não há sobra nem aviso', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { fatura } = await comFatura();
+    montar(fatura);
+
+    expect(screen.queryByText(/somem da projeção/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Valor de cada parcela')).not.toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});
+
+it('preencher a parcela troca o aviso pelas contas do parcelamento', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { fatura } = await comFatura();
+    montar(fatura);
+    const pago = screen.getByLabelText('Quanto você pagou');
+    await userEvent.click(pago);
+    await userEvent.keyboard('{Backspace>7/}30000');
+    expect(screen.getByText(/somem da projeção/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByLabelText('Valor de cada parcela'));
+    await userEvent.keyboard('30000'); // 2 × 300,00 cobre os 600,00
+
+    expect(screen.queryByText(/somem da projeção/)).not.toBeInTheDocument();
+    expect(screen.getByText('sem juros')).toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});
+
+// A invariante que faltava quando a feature saiu: a suíte cobria o caminho com parcelamento
+// e o caminho sem, mas nenhum teste perguntava se dava para o dinheiro sumir calado. Foi
+// exatamente isso que aconteceu em produção — pagamento parcial gravado, milhares de reais
+// fora da projeção, nenhuma palavra na tela. Este teste varre a folha inteira e exige que,
+// para QUALQUER sobra, ou as parcelas cubram o buraco ou a tela diga que ele existe.
+it('INVARIANTE: nenhuma sobra pode ficar sem parcelamento E sem aviso', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { fatura } = await comFatura();
+    montar(fatura);
+    const pago = screen.getByLabelText('Quanto você pagou');
+
+    // varre do pagamento zerado ao total, incluindo as bordas
+    for (const centavos of ['0', '1', '30000', '89999', '90000']) {
+      await userEvent.click(pago);
+      await userEvent.keyboard(`{Backspace>9/}${centavos}`);
+
+      const restante = 90000 - Number(centavos);
+      const avisado = screen.queryByText(/somem da projeção/) != null;
+      const temCampos = screen.queryByLabelText('Valor de cada parcela') != null;
+
+      if (restante > 0) {
+        expect(avisado, `sobra de ${restante} sem aviso`).toBe(true);
+        expect(temCampos, `sobra de ${restante} sem campos de parcelamento`).toBe(true);
+      } else {
+        expect(avisado, 'aviso aparecendo sem sobra nenhuma').toBe(false);
+      }
+    }
+  } finally { vi.useRealTimers(); }
+});
+
+it('salvar sem preencher a parcela não inventa parcelamento nenhum', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { fatura } = await comFatura();
+    montar(fatura);
+    const pago = screen.getByLabelText('Quanto você pagou');
+    await userEvent.click(pago);
+    await userEvent.keyboard('{Backspace>7/}30000');
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar pagamento' }));
+
+    await vi.waitFor(async () => {
+      expect(await db.lancamentos.get(fatura.id)).toMatchObject({ status: 'efetivo', valor: 30000 });
+    });
+    expect(await db.comprasCartao.count()).toBe(1); // só a compra original
+    expect((await db.categoriasCartao.toArray()).some((c) => c.nome === 'Parcelamento')).toBe(false);
   } finally { vi.useRealTimers(); }
 });

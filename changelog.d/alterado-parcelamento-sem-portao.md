@@ -1,0 +1,2 @@
+- Correção: ao pagar uma fatura em parte, os campos de parcelamento agora aparecem sozinhos, sem depender de marcar uma caixa que passava despercebida. Antes dava para pagar parcial e o restante sumir da projeção sem o app avisar.
+- Pagamento de fatura: quando sobra valor sem parcelamento informado, a tela avisa em destaque que esse valor some da projeção e não volta em nenhuma fatura.
