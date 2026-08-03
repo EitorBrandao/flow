@@ -84,3 +84,11 @@ it('pendentes: previstos sem cenário com data <= hoje, ordenados', () => {
   ];
   expect(pendentes(lancs, '2026-01-04').map((l) => l.id)).toEqual(['b', 'a']);
 });
+
+it('pendentes: também inclui previstos com vencimento em até 3 dias no futuro', () => {
+  const lancs = [
+    lanc({ id: 'f', data: '2026-01-07', valor: 1, status: 'previsto' }), // hoje + 3
+    lanc({ id: 'g', data: '2026-01-08', valor: 1, status: 'previsto' }), // hoje + 4, ainda não
+  ];
+  expect(pendentes(lancs, '2026-01-04').map((l) => l.id)).toEqual(['f']);
+});

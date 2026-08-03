@@ -1,4 +1,4 @@
-import { diasEntre } from './dates';
+import { addDias, diasEntre } from './dates';
 import type { Box, Categoria, ID, ISODate, Lancamento } from './types';
 
 export interface DiaSaldo {
@@ -65,8 +65,12 @@ export function projetarBoxes(boxIds: readonly ID[], e: EntradaProjecao): DiaSal
   return out;
 }
 
+/** Quantos dias antes do vencimento um previsto já aparece como pendente. */
+const ANTECEDENCIA_PENDENTE_DIAS = 3;
+
 export function pendentes(lancamentos: Lancamento[], hoje: ISODate): Lancamento[] {
+  const limite = addDias(hoje, ANTECEDENCIA_PENDENTE_DIAS);
   return lancamentos
-    .filter((l) => l.status === 'previsto' && !l.cenarioId && l.data <= hoje)
+    .filter((l) => l.status === 'previsto' && !l.cenarioId && l.data <= limite)
     .sort((a, b) => a.data.localeCompare(b.data));
 }
