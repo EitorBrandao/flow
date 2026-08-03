@@ -23,7 +23,6 @@ export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, onFe
 }) {
   const { dados, recarregar } = useApp();
   const [valorPago, setValorPago] = useState(lancamento.valor);
-  const [parcelando, setParcelando] = useState(false);
   const [parcelas, setParcelas] = useState('2');
   const [valorParcela, setValorParcela] = useState(0);
   const [salvando, setSalvando] = useState(false);
@@ -34,7 +33,14 @@ export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, onFe
   const conta = resumoParcelamento(totalFaturaCent, valorPago, {
     parcelas: parcelasNum, valorParcelaCent: valorParcela,
   });
-  const podeSalvar = !salvando && (!parcelando || valorParcela > 0);
+  // Sobrou valor ⇒ os campos de parcelamento aparecem sozinhos. A primeira versão escondia
+  // tudo atrás de uma caixa "Parcelei o restante no banco" que `.campo label` pintava de
+  // cinza 13px, igual a uma legenda — dava para pagar parcialmente e ver milhares de reais
+  // sumirem da projeção sem o app dizer nada. Portão nenhum: quem não parcelou deixa a
+  // parcela zerada e lê o aviso.
+  const sobrou = conta.restanteCent > 0;
+  const parcelando = sobrou && valorParcela > 0;
+  const podeSalvar = !salvando;
 
   async function salvar() {
     if (!podeSalvar) return;
@@ -67,30 +73,23 @@ export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, onFe
         <CampoValor id={`${uid}-pago`} valorCentavos={valorPago} onChange={setValorPago} />
       </div>
 
-      <div className="campo">
-        <label htmlFor={`${uid}-parcelando`}>
-          <input
-            id={`${uid}-parcelando`} type="checkbox"
-            checked={parcelando} onChange={(e) => setParcelando(e.target.checked)}
-          />
-          {' '}Parcelei o restante no banco
-        </label>
-      </div>
-
-      {parcelando && (
-        <div className="linha">
-          <div className="campo" style={{ flex: 1 }}>
-            <label htmlFor={`${uid}-parcelas`}>Parcelas</label>
-            <input
-              id={`${uid}-parcelas`} inputMode="numeric" value={parcelas}
-              onChange={(e) => setParcelas(e.target.value)}
-            />
+      {sobrou && (
+        <>
+          <p className="rotulo" style={{ margin: 0 }}>Parcelou o restante no banco?</p>
+          <div className="linha">
+            <div className="campo" style={{ flex: 1 }}>
+              <label htmlFor={`${uid}-parcelas`}>Parcelas</label>
+              <input
+                id={`${uid}-parcelas`} inputMode="numeric" value={parcelas}
+                onChange={(e) => setParcelas(e.target.value)}
+              />
+            </div>
+            <div className="campo" style={{ flex: 2 }}>
+              <label htmlFor={`${uid}-valor-parcela`}>Valor de cada parcela</label>
+              <CampoValor id={`${uid}-valor-parcela`} valorCentavos={valorParcela} onChange={setValorParcela} />
+            </div>
           </div>
-          <div className="campo" style={{ flex: 2 }}>
-            <label htmlFor={`${uid}-valor-parcela`}>Valor de cada parcela</label>
-            <CampoValor id={`${uid}-valor-parcela`} valorCentavos={valorParcela} onChange={setValorParcela} />
-          </div>
-        </div>
+        </>
       )}
 
       <div className="pagamento-fatura-resumo">
@@ -125,12 +124,17 @@ export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, onFe
         )}
       </div>
 
+      {sobrou && !parcelando && (
+        <p className="aviso" style={{ margin: 0 }}>
+          Sem parcelamento, os {formatarBRL(conta.restanteCent)} que sobraram{' '}
+          <strong>somem da projeção</strong> — não voltam em nenhuma fatura. Se o banco
+          parcelou, preencha acima; se foi desconto ou estorno, pode salvar assim.
+        </p>
+      )}
+
       <button className="botao botao-primario" disabled={!podeSalvar} onClick={salvar} style={{ padding: 14 }}>
         Confirmar pagamento
       </button>
-      {parcelando && valorParcela === 0 && (
-        <p className="sub" style={{ margin: 0 }}>Digite o valor de cada parcela.</p>
-      )}
     </>
   );
 }
