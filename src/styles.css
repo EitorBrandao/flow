@@ -400,3 +400,33 @@ table.tabela th:first-child, table.tabela td:first-child {
   color: var(--ac);
   font-weight: 600;
 }
+
+/* ---- Pagamento de fatura (PagamentoFaturaSheet.tsx) ---- */
+.pagamento-fatura-resumo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.pagamento-fatura-resumo .linha-conta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.pagamento-fatura-resumo .linha-conta span {
+  color: var(--muted);
+}
+.pagamento-fatura-juros {
+  color: var(--aviso-fg);
+}
+.pagamento-fatura-semjuros {
+  color: var(--pos);
+}
+.pagamento-fatura-erro {
+  color: var(--neg);
+}

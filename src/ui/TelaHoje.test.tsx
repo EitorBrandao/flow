@@ -4,6 +4,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
+import { formatarBRL } from '../domain/money';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import TelaHoje from './TelaHoje';
@@ -150,4 +151,64 @@ it('clicar no aviso de backup atrasado abre a subtela de backup', async () => {
   const estado = useApp.getState();
   expect(estado.aba).toBe('ajustes');
   expect(estado.ajustesSecao).toBe('backup');
+});
+
+describe('fatura pendente na fila', () => {
+  /** Cartão com a fatura de 08/2026 (R$ 900,00) já vencida, esperando na fila. */
+  async function comFaturaVencida() {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cartao = await repo.salvarCartao({
+      boxId: box.id, nome: 'Cartão', diaFechamento: 28, diaVencimento: 5,
+    }, '2027-12-31');
+    const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-05',
+      valorTotal: 90000, parcelas: 1,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-08-05' }); // dia do vencimento
+    return { box, cartao };
+  }
+
+  it('oferece "Paguei outro valor" no lugar de "Descartar"', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      await comFaturaVencida();
+
+      render(<TelaHoje />);
+      expect(screen.getByRole('button', { name: /Paguei outro valor/ })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Descartar' })).not.toBeInTheDocument();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('pendente que não é fatura continua com "Descartar"', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-01', valor: 50000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+    render(<TelaHoje />);
+    expect(screen.getByRole('button', { name: 'Descartar' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Paguei outro valor/ })).not.toBeInTheDocument();
+  });
+
+  it('o botão abre a folha de pagamento já com o total da fatura', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      await comFaturaVencida();
+
+      render(<TelaHoje />);
+      await userEvent.click(screen.getByRole('button', { name: /Paguei outro valor/ }));
+
+      expect(await screen.findByRole('dialog', { name: 'Pagamento da fatura' })).toBeInTheDocument();
+      expect(screen.getByLabelText('Quanto você pagou')).toHaveValue(formatarBRL(90000));
+    } finally { vi.useRealTimers(); }
+  });
 });

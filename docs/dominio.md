@@ -163,6 +163,42 @@ de fatura `previsto` cujo vencimento ainda não passou faz ele reaparecer na pr�
 `sincronizarCartoes`, pela mesma lógica (`!vistos.has(faturaMes) && a.data > hoje` em
 `diffSincronizacao`).
 
+### Pagamento parcial e parcelamento da fatura
+
+Uma fatura não precisa ser paga inteira. `registrarPagamentoFatura` (`src/db/repo.ts`) grava
+o lançamento da fatura como `efetivo` **pelo valor realmente pago** e, se o usuário parcelou
+o restante no banco, cria o parcelamento.
+
+O parcelamento **não é entidade nova**: vira uma `CompraCartao` comum, com `parcelas: N` e
+`valorTotal = N × valor da parcela`, numa `CategoriaCartao` reservada chamada "Parcelamento"
+— criada sob demanda por `categoriaParcelamentoDe`, no mesmo padrão de
+`categoriaAssinaturasDe`, e escondida da seleção manual por `categoriasCartaoReservadasIds`
+(`src/domain/categorias.ts`). Daí em diante ele percorre a mesma cadeia acima e aparece nas
+faturas seguintes como qualquer compra parcelada.
+
+A data dessa compra é a **data de fechamento da fatura paga**. Isso não é arbitrário: pela
+regra de `mesFechamentoDaCompra`, compra no dia exato do fechamento cai na fatura seguinte —
+que é onde a parcela 1 deve estar. Vale nas duas configurações de ciclo, sem aritmética de
+data nova.
+
+O app **não calcula juros**. Quem digita o número de parcelas e o valor de cada uma é o
+usuário, lendo o que o banco mostrou; se houver juros, eles já estão embutidos na parcela.
+`resumoParcelamento` (`src/domain/fatura.ts`) só explicita a diferença entre o total
+parcelado e o que ficou de fora do pagamento — inclusive quando ela é **negativa**, caso em
+que a UI mostra "Faltam" em vez de corrigir o número por baixo do pano.
+
+**Ressalva — o único caminho que reescreve um `efetivo`.** Este é o único lugar do app onde
+um lançamento já `efetivo` é alterado, e acontece só por ação explícita do usuário (parcelar
+uma fatura confirmada dias antes, pela aba Cartão). Nenhuma sincronização automática faz
+isso: a garantia de `diffSincronizacao` ("`efetivo` nunca é tocado") continua valendo
+integralmente.
+
+Duas bordas que decorrem do modelo e são intencionais: parcelas cujo vencimento já passou
+não viram lançamento (`diffSincronizacao` só cria com `a.data > hoje`), então registrar um
+parcelamento meses depois não ressuscita faturas antigas; e excluir a `CompraCartao` do
+parcelamento remove as parcelas futuras mas **não** devolve o valor original à fatura que já
+foi paga — essa reversão é manual.
+
 ## A projeção (`projetarBoxes`, `src/domain/projection.ts`)
 
 Calcula três saldos por dia, do início ao `horizonte` recebido: `saldoEfetivo` (só

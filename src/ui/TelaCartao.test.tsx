@@ -218,3 +218,58 @@ it('busca filtra por descrição e mostra estado vazio quando nada bate', async 
     expect(await screen.findByText('Nenhum lançamento encontrado.')).toBeInTheDocument();
   } finally { vi.useRealTimers(); }
 });
+
+describe('pagamento da fatura pela aba Cartão', () => {
+  async function comFatura() {
+    const { box, cartao, catCartao } = await montarCartao();
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-05',
+      valorTotal: 90000, parcelas: 1,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    return { box, cartao };
+  }
+
+  it('a fatura ainda não paga mostra o valor a pagar e o atalho', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      await comFatura();
+      render(<TelaCartao />); // a tela já abre na fatura 08/2026, a da compra de julho
+
+      expect(screen.getByText(/A pagar/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'paguei outro valor' })).toBeInTheDocument();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('fatura já confirmada oferece corrigir ou parcelar depois', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      await comFatura();
+      const lanc = useApp.getState().dados!.lancamentos.find((l) => l.origem === 'cartao')!;
+      await repo.confirmarPendente(lanc.id);
+      await useApp.getState().recarregar();
+
+      render(<TelaCartao />);
+      expect(screen.getByText(/Pago/)).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: 'corrigir ou parcelar' }));
+      expect(await screen.findByRole('dialog', { name: 'Pagamento da fatura' })).toBeInTheDocument();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('mês sem lançamento de fatura não oferece o atalho', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      await comFatura();
+      render(<TelaCartao />);
+      // 09/2026 não tem compra nenhuma, logo não virou lançamento no Flow
+      await userEvent.click(screen.getByRole('button', { name: 'Mês seguinte' }));
+
+      expect(screen.queryByRole('button', { name: /paguei outro valor/i })).not.toBeInTheDocument();
+    } finally { vi.useRealTimers(); }
+  });
+});
