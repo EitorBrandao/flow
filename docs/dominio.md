@@ -165,9 +165,17 @@ de fatura `previsto` cujo vencimento ainda não passou faz ele reaparecer na pr�
 
 ### Pagamento parcial e parcelamento da fatura
 
-Uma fatura não precisa ser paga inteira. `registrarPagamentoFatura` (`src/db/repo.ts`) grava
-o lançamento da fatura como `efetivo` **pelo valor realmente pago** e, se o usuário parcelou
-o restante no banco, cria o parcelamento.
+Uma fatura não precisa ser paga inteira, nem no dia do vencimento.
+`registrarPagamentoFatura` (`src/db/repo.ts`) grava o lançamento da fatura como `efetivo`
+**pelo valor realmente pago e na data em que o dinheiro saiu** e, se o usuário parcelou o
+restante no banco, cria o parcelamento.
+
+A fatura nasce projetada no vencimento, mas quem paga adiantado tira o dinheiro da conta
+antes — então `dataPagamento` reescreve a `data` do lançamento. **`faturaMes` não muda**: a
+identidade da fatura continua sendo o mês do vencimento, e é ela que amarra o lançamento ao
+ciclo do cartão. Por consequência, a data do pagamento **não desloca as parcelas** de um
+parcelamento: elas seguem o fechamento do cartão, não o dia em que a fatura anterior foi
+quitada.
 
 O parcelamento **não é entidade nova**: vira uma `CompraCartao` comum, com `parcelas: N` e
 `valorTotal = N × valor da parcela`, numa `CategoriaCartao` reservada chamada "Parcelamento"
