@@ -46,8 +46,10 @@ async function descartar(id: string) {
   próxima materialização — isso já existe hoje (`recurrence.ts`) e não muda. A tela já
   avisa disso separadamente ("edite a regra em Ajustes"); o texto do `confirm` não repete
   o aviso.
-- Qualquer outro botão de exclusão do app (cartão, recorrência, assinatura, viagem,
-  cenário) já confirma — não há mudança ali.
+- Os botões de exclusão de recorrência, assinatura, viagem, compra de cartão e cenário
+  já confirmam — não há mudança ali. Exceção conhecida, fora do escopo desta mudança:
+  "Remover" conferência de fatura (`TelaCartao.tsx`, função `remover`) ainda apaga sem
+  perguntar — é um registro de reconciliação redigitável, não um lançamento.
 - Não é edição de UI visual (nenhuma classe/componente/token novo), então não aciona
   `docs/estilo-visual.md` nem o catálogo.
 
