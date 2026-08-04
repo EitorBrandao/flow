@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.19.0] - 2026-08-04
+
+### Alterado
+
+- Excluir um lançamento ou descartar um previsto agora pede confirmação antes de apagar
+
 ## [0.18.0] - 2026-08-03
 
 ### Adicionado

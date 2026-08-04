@@ -1,1 +1,0 @@
-- Excluir um lançamento ou descartar um previsto agora pede confirmação antes de apagar
