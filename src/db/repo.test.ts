@@ -652,7 +652,7 @@ describe('registrarPagamentoFatura', () => {
 
       await repo.registrarPagamentoFatura({
         lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: fatura.faturaMes!,
-        valorPagoCent: 85000, horizonte: '2027-12-31',
+        valorPagoCent: 85000, dataPagamento: fatura.data, horizonte: '2027-12-31',
       });
 
       const depois = await db.lancamentos.get(fatura.id);
@@ -671,7 +671,7 @@ describe('registrarPagamentoFatura', () => {
 
       await repo.registrarPagamentoFatura({
         lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-08',
-        valorPagoCent: 30000, parcelamento: { parcelas: 3, valorParcelaCent: 20000 },
+        valorPagoCent: 30000, dataPagamento: fatura.data, parcelamento: { parcelas: 3, valorParcelaCent: 20000 },
         horizonte: '2027-12-31',
       });
 
@@ -697,7 +697,7 @@ describe('registrarPagamentoFatura', () => {
 
       await repo.registrarPagamentoFatura({
         lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-07',
-        valorPagoCent: 30000, parcelamento: { parcelas: 2, valorParcelaCent: 30000 },
+        valorPagoCent: 30000, dataPagamento: fatura.data, parcelamento: { parcelas: 2, valorParcelaCent: 30000 },
         horizonte: '2027-12-31',
       });
 
@@ -720,7 +720,7 @@ describe('registrarPagamentoFatura', () => {
 
       await repo.registrarPagamentoFatura({
         lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-08',
-        valorPagoCent: 30000, parcelamento: { parcelas: 3, valorParcelaCent: 22000 },
+        valorPagoCent: 30000, dataPagamento: fatura.data, parcelamento: { parcelas: 3, valorParcelaCent: 22000 },
         horizonte: '2027-12-31',
       });
 
@@ -747,18 +747,62 @@ describe('registrarPagamentoFatura', () => {
       const { cartao, fatura } = await comFatura(28, 5, 90000);
       await repo.registrarPagamentoFatura({
         lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-08',
-        valorPagoCent: 30000, parcelamento: { parcelas: 2, valorParcelaCent: 30000 },
+        valorPagoCent: 30000, dataPagamento: fatura.data, parcelamento: { parcelas: 2, valorParcelaCent: 30000 },
         horizonte: '2027-12-31',
       });
       const setembro = (await db.lancamentos.toArray()).find((l) => l.faturaMes === '2026-09')!;
       await repo.registrarPagamentoFatura({
         lancamentoId: setembro.id, cartaoId: cartao.id, faturaMes: '2026-09',
-        valorPagoCent: 10000, parcelamento: { parcelas: 2, valorParcelaCent: 10000 },
+        valorPagoCent: 10000, dataPagamento: setembro.data, parcelamento: { parcelas: 2, valorParcelaCent: 10000 },
         horizonte: '2027-12-31',
       });
 
       const reservadas = (await db.categoriasCartao.toArray()).filter((c) => c.nome === 'Parcelamento');
       expect(reservadas).toHaveLength(1);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('pagar adiantado move a saída para o dia do pagamento, sem mexer no mês da fatura', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, fatura } = await comFatura(28, 5, 90000);
+      expect(fatura.data).toBe('2026-08-05'); // vencimento
+
+      await repo.registrarPagamentoFatura({
+        lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-08',
+        valorPagoCent: 90000, dataPagamento: '2026-07-28', // dez dias antes
+        horizonte: '2027-12-31',
+      });
+
+      const depois = await db.lancamentos.get(fatura.id);
+      expect(depois).toMatchObject({ status: 'efetivo', data: '2026-07-28', faturaMes: '2026-08' });
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('a data do pagamento não desloca as parcelas, que seguem o ciclo da fatura', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, fatura } = await comFatura(28, 5, 90000);
+
+      await repo.registrarPagamentoFatura({
+        lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-08',
+        valorPagoCent: 30000, dataPagamento: '2026-07-20', // pagou bem antes do vencimento
+        parcelamento: { parcelas: 3, valorParcelaCent: 20000 },
+        horizonte: '2027-12-31',
+      });
+
+      // as parcelas continuam nas faturas 09, 10 e 11 — quem manda nelas é o fechamento do
+      // cartão, não o dia em que o usuário quitou a fatura anterior
+      const faturas = (await db.lancamentos.toArray())
+        .filter((l) => l.status === 'previsto')
+        .sort((a, b) => a.data.localeCompare(b.data));
+      expect(faturas.map((l) => [l.faturaMes, l.data, l.valor])).toEqual([
+        ['2026-09', '2026-09-05', 20000],
+        ['2026-10', '2026-10-05', 20000],
+        ['2026-11', '2026-11-05', 20000],
+      ]);
     } finally { vi.useRealTimers(); }
   });
 
@@ -772,7 +816,7 @@ describe('registrarPagamentoFatura', () => {
 
       await repo.registrarPagamentoFatura({
         lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-08',
-        valorPagoCent: 30000, parcelamento: { parcelas: 3, valorParcelaCent: 20000 },
+        valorPagoCent: 30000, dataPagamento: fatura.data, parcelamento: { parcelas: 3, valorParcelaCent: 20000 },
         horizonte: '2027-12-31',
       });
 

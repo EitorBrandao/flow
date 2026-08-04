@@ -227,6 +227,56 @@ it('preencher a parcela troca o aviso pelas contas do parcelamento', async () =>
 // exatamente isso que aconteceu em produção — pagamento parcial gravado, milhares de reais
 // fora da projeção, nenhuma palavra na tela. Este teste varre a folha inteira e exige que,
 // para QUALQUER sobra, ou as parcelas cubram o buraco ou a tela diga que ele existe.
+it('numa fatura pendente a data do pagamento já vem em hoje', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { fatura } = await comFatura();
+    expect(fatura.data).toBe('2026-08-05'); // vence só em agosto
+    montar(fatura);
+
+    // pagar é algo que se faz agora; o vencimento é quando venceria, não quando pagou
+    expect(screen.getByLabelText('Quando pagou')).toHaveValue('2026-07-01');
+    expect(screen.getByText(/Pagamento adiantado/)).toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});
+
+it('numa fatura já paga a data registrada é preservada, não trocada por hoje', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { fatura } = await comFatura();
+    await repo.confirmarPendente(fatura.id);
+    await useApp.getState().recarregar();
+    const paga = useApp.getState().dados!.lancamentos.find((l) => l.id === fatura.id)!;
+    montar(paga);
+
+    // corrigir o valor de uma fatura já paga não pode mover a saída de dia sem querer
+    expect(screen.getByLabelText('Quando pagou')).toHaveValue('2026-08-05');
+    expect(screen.queryByText(/Pagamento adiantado/)).not.toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});
+
+it('adiantar o pagamento grava a data escolhida no lançamento', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { fatura } = await comFatura();
+    montar(fatura);
+
+    const data = screen.getByLabelText('Quando pagou');
+    await userEvent.clear(data);
+    await userEvent.type(data, '2026-07-28');
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar pagamento' }));
+
+    await vi.waitFor(async () => {
+      expect(await db.lancamentos.get(fatura.id)).toMatchObject({
+        status: 'efetivo', data: '2026-07-28', faturaMes: '2026-08',
+      });
+    });
+  } finally { vi.useRealTimers(); }
+});
+
 it('INVARIANTE: nenhuma sobra pode ficar sem parcelamento E sem aviso', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {

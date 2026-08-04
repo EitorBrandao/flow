@@ -1,9 +1,11 @@
 import { useId, useState } from 'react';
 import * as repo from '../db/repo';
+import { formatarDataBR } from '../domain/dates';
 import { resumoParcelamento } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
+import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import Sheet from './Sheet';
 
@@ -21,8 +23,14 @@ export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, onFe
   totalFaturaCent: number;
   onFechar: () => void;
 }) {
-  const { dados, recarregar } = useApp();
+  const { dados, hoje, recarregar } = useApp();
   const [valorPago, setValorPago] = useState(lancamento.valor);
+  // Pendente ⇒ o pagamento está acontecendo agora (inclusive adiantado, já que a fila mostra
+  // a fatura antes de vencer). Já efetivo ⇒ manter a data registrada, para uma correção de
+  // valor não mover a saída de dia sem querer.
+  const [dataPagamento, setDataPagamento] = useState(
+    lancamento.status === 'efetivo' ? lancamento.data : hoje,
+  );
   const [parcelas, setParcelas] = useState('2');
   const [valorParcela, setValorParcela] = useState(0);
   const [salvando, setSalvando] = useState(false);
@@ -51,6 +59,7 @@ export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, onFe
         cartaoId: lancamento.cartaoId!,
         faturaMes: lancamento.faturaMes!,
         valorPagoCent: valorPago,
+        dataPagamento,
         ...(parcelando ? { parcelamento: { parcelas: parcelasNum, valorParcelaCent: valorParcela } } : {}),
         horizonte: dados!.config.horizonteProjecao,
       });
@@ -68,10 +77,22 @@ export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, onFe
         <strong>{formatarBRL(totalFaturaCent)}</strong>
       </p>
 
-      <div className="campo">
-        <label htmlFor={`${uid}-pago`}>Quanto você pagou</label>
-        <CampoValor id={`${uid}-pago`} valorCentavos={valorPago} onChange={setValorPago} />
+      <div className="linha">
+        <div className="campo cresce">
+          <label htmlFor={`${uid}-pago`}>Quanto você pagou</label>
+          <CampoValor id={`${uid}-pago`} valorCentavos={valorPago} onChange={setValorPago} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-data`}>Quando pagou</label>
+          <CampoData id={`${uid}-data`} value={dataPagamento} onChange={setDataPagamento} />
+        </div>
       </div>
+      {dataPagamento < lancamento.data && (
+        <p className="sub" style={{ margin: 0 }}>
+          Pagamento adiantado: o valor sai da conta em{' '}
+          {formatarDataBR(dataPagamento)}, e não no vencimento ({formatarDataBR(lancamento.data)}).
+        </p>
+      )}
 
       {sobrou && (
         <>

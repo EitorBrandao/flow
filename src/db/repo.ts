@@ -375,6 +375,7 @@ export interface PagamentoFatura {
   cartaoId: ID;
   faturaMes: string;     // 'AAAA-MM' do vencimento
   valorPagoCent: number;
+  dataPagamento: ISODate; // quando o dinheiro saiu — pode ser antes do vencimento
   parcelamento?: PlanoParcelamento;
   horizonte: ISODate;
 }
@@ -396,6 +397,10 @@ export interface PagamentoFatura {
  *
  * O lançamento pode já estar `efetivo` (parcelamento registrado dias depois): este é o único
  * caminho do app que reescreve um `efetivo`, e é sob ação explícita do usuário.
+ *
+ * `dataPagamento` reescreve a data do lançamento. A fatura nasce projetada no vencimento,
+ * mas quem paga adiantado tira o dinheiro da conta antes — e a projeção só fica honesta se
+ * enxergar a saída no dia certo.
  */
 export async function registrarPagamentoFatura(p: PagamentoFatura): Promise<void> {
   const cartao = await db.cartoes.get(p.cartaoId);
@@ -408,8 +413,11 @@ export async function registrarPagamentoFatura(p: PagamentoFatura): Promise<void
 
   const agora = agoraISO();
   await db.transaction('rw', db.lancamentos, db.comprasCartao, db.config, async () => {
+    // A data do lançamento passa a ser a do pagamento, não a do vencimento: pagar adiantado
+    // tira o dinheiro da conta antes, e é isso que a projeção precisa enxergar. `faturaMes`
+    // não muda — a identidade da fatura continua sendo o mês do vencimento.
     await db.lancamentos.update(p.lancamentoId, {
-      status: 'efetivo', valor: p.valorPagoCent, alteradoEm: agora,
+      status: 'efetivo', valor: p.valorPagoCent, data: p.dataPagamento, alteradoEm: agora,
     });
     if (parcelamento && categoriaCartaoId) {
       const [ano, mes] = p.faturaMes.split('-');
