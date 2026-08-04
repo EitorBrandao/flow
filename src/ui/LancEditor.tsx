@@ -38,6 +38,8 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
   }
 
   async function excluir() {
+    const msg = lanc.status === 'previsto' ? 'Excluir este previsto?' : 'Excluir este lançamento?';
+    if (!window.confirm(msg)) return;
     await repo.excluirLancamento(lanc.id);
     await recarregar();
     onFechar();
