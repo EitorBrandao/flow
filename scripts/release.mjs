@@ -10,7 +10,8 @@
 //      "## [X.Y.Z] - AAAA-MM-DD" no topo do CHANGELOG.md;
 //   4. grava a nova versão em package.json;
 //   5. apaga os fragmentos consumidos;
-//   6. git add + commit "chore(release): vX.Y.Z" + tag vX.Y.Z.
+//   6. git add + commit "chore(release): vX.Y.Z" + tag ANOTADA vX.Y.Z (anotada porque
+//      `git push --follow-tags`, usado pelo ciclo de entrega, ignora tag leve).
 //
 // Validações (todos os guards executam antes de qualquer escrita de arquivo):
 //   - branch: deve estar em main (exceto em dry-run).
@@ -300,5 +301,8 @@ if (dryRun) {
 const git = (...args) => execFileSync('git', args, { cwd: raiz, stdio: 'inherit' });
 git('add', 'CHANGELOG.md', 'package.json', 'changelog.d');
 git('commit', '-m', `chore(release): v${versao}`);
-git('tag', `v${versao}`);
-console.log(`  release: commit + tag v${versao} criados. Rode: git push origin main && npm run deploy`);
+// Tag ANOTADA (-a), não leve. `git push --follow-tags` — que é como o ciclo de entrega
+// empurra — só carrega tags anotadas: com tag leve o push levava o commit e deixava a tag
+// para trás, em silêncio, e nenhuma versão do app aparecia no GitHub.
+git('tag', '-a', `v${versao}`, '-m', `v${versao}`);
+console.log(`  release: commit + tag v${versao} criados. Rode: git push origin main --follow-tags && npm run deploy`);
