@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.18.0] - 2026-08-03
+
+### Adicionado
+
+- Pagamento de fatura: agora dá para informar em que dia você pagou, o que permite registrar um pagamento adiantado. O saldo projetado passa a mostrar a saída no dia certo, e não mais no vencimento.
+- Numa fatura ainda em aberto o campo já vem com hoje; numa fatura já paga ele preserva a data registrada, para corrigir o valor não mudar o dia sem querer.
+- Quando a data escolhida é anterior ao vencimento, a tela diz que o pagamento é adiantado e a partir de quando o valor sai da conta.
+
 ## [0.17.2] - 2026-08-03
 
 ### Alterado
