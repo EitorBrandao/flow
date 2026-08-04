@@ -112,6 +112,7 @@ export default function TelaHoje() {
     await recarregar();
   }
   async function descartar(id: string) {
+    if (!window.confirm('Descartar este previsto?')) return;
     await repo.excluirLancamento(id);
     await recarregar();
   }

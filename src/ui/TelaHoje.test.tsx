@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -196,6 +196,48 @@ describe('fatura pendente na fila', () => {
     render(<TelaHoje />);
     expect(screen.getByRole('button', { name: 'Descartar' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Paguei outro valor/ })).not.toBeInTheDocument();
+  });
+
+  it('descartar pede confirmação: cancelar mantém o pendente na fila', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+    const previsto = await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-01', valor: 50000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<TelaHoje />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Descartar' }));
+
+    expect(confirmSpy).toHaveBeenCalledWith('Descartar este previsto?');
+    expect(screen.getByRole('button', { name: 'Descartar' })).toBeInTheDocument();
+    expect(await db.lancamentos.get(previsto.id)).toBeDefined();
+    confirmSpy.mockRestore();
+  });
+
+  it('descartar pede confirmação: confirmar remove o pendente da fila', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+    const previsto = await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-01', valor: 50000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<TelaHoje />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Descartar' }));
+
+    expect(confirmSpy).toHaveBeenCalledWith('Descartar este previsto?');
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Descartar' })).not.toBeInTheDocument();
+    });
+    expect(await db.lancamentos.get(previsto.id)).toBeUndefined();
+    confirmSpy.mockRestore();
   });
 
   it('o botão abre a folha de pagamento já com o total da fatura', async () => {

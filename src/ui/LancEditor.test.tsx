@@ -88,3 +88,51 @@ it('categoria da fatura de um cartão não aparece no select de categoria do edi
   expect(screen.getByRole('button', { name: 'mercado' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Nubank/ })).not.toBeInTheDocument();
 });
+
+it('excluir pede confirmação: cancelar mantém o lançamento', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const categoria = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-07-05', valor: 5000, status: 'efetivo',
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  const onFechar = vi.fn();
+  render(<LancEditor lanc={lanc} onFechar={onFechar} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+
+  expect(confirmSpy).toHaveBeenCalledWith('Excluir este lançamento?');
+  expect(onFechar).not.toHaveBeenCalled();
+  expect(await db.lancamentos.get(lanc.id)).toBeDefined();
+  confirmSpy.mockRestore();
+});
+
+it('excluir pede confirmação: confirmar apaga o lançamento', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const categoria = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  const previsto = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-07-05', valor: 5000, status: 'previsto',
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  const onFechar = vi.fn();
+  render(<LancEditor lanc={previsto} onFechar={onFechar} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+
+  expect(confirmSpy).toHaveBeenCalledWith('Excluir este previsto?');
+  await waitFor(() => {
+    expect(onFechar).toHaveBeenCalledOnce();
+  });
+  expect(await db.lancamentos.get(previsto.id)).toBeUndefined();
+  confirmSpy.mockRestore();
+});
