@@ -153,6 +153,110 @@ it('clicar no aviso de backup atrasado abre a subtela de backup', async () => {
   expect(estado.ajustesSecao).toBe('backup');
 });
 
+describe('conferência por banco', () => {
+  /** Box com saldo próprio e um lançamento efetivo já contido no saldo (não muda o saldo
+   *  efetivo dali pra frente, então o teste não depende de qual "hoje" real o `recarregar()`
+   *  do store resolver). */
+  async function comBoxESaldo() {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-01-15', valor: 1000, status: 'efetivo' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    return box;
+  }
+
+  it('box sem banco mantém a conferência de sempre (campo único, sem total por banco)', async () => {
+    await comBoxESaldo();
+    render(<TelaHoje />);
+    expect(screen.getByLabelText('Saldo real no banco')).toBeInTheDocument();
+    expect(screen.queryByText('Total informado')).not.toBeInTheDocument();
+  });
+
+  it('com bancos, mostra uma linha por banco e o campo único some', async () => {
+    const box = await comBoxESaldo();
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    expect(screen.getByLabelText('Banco Um')).toBeInTheDocument();
+    expect(screen.getByLabelText('Banco Dois')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Saldo real no banco')).not.toBeInTheDocument();
+    expect(screen.getByText('Total informado')).toBeInTheDocument();
+  });
+
+  it('com bancos mas nenhum informado, não afirma diferença nenhuma', async () => {
+    const box = await comBoxESaldo();
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    // mostrar "diferença = saldo inteiro" seria a tela acusar um descasamento inexistente
+    expect(screen.queryByText(/Diferença/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Bate certinho/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Informe o saldo de ao menos um banco/)).toBeInTheDocument();
+  });
+
+  it('informar o saldo do segundo banco grava nele (não no primeiro) e passa a mostrar a diferença', async () => {
+    const box = await comBoxESaldo();
+    const bancoUm = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    const bancoDois = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    await userEvent.click(screen.getByLabelText('Banco Dois'));
+    await userEvent.keyboard('50000');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
+
+    await vi.waitFor(async () => {
+      expect((await db.bancos.get(bancoDois.id))?.saldoDeclaradoCent).toBe(50000);
+    });
+    // discrimina uma implementação que gravasse sempre no primeiro banco da lista
+    expect((await db.bancos.get(bancoUm.id))?.saldoDeclaradoCent).toBeNull();
+    expect(await screen.findByText(/Diferença/)).toBeInTheDocument();
+  });
+
+  it('na visão casa os bancos aparecem agrupados por box', async () => {
+    const box = await comBoxESaldo();
+    const agora = agoraISO();
+    const outra = { id: novoId(), nome: 'ju', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(outra);
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await repo.salvarBanco({ boxId: outra.id, nome: 'Banco Dois', ordem: 0 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: 'casa' });
+
+    render(<TelaHoje />);
+    expect(screen.getByLabelText('Banco Um')).toBeInTheDocument();
+    expect(screen.getByLabelText('Banco Dois')).toBeInTheDocument();
+    expect(screen.getByText('ju')).toBeInTheDocument();
+    expect(screen.getByText('eitor')).toBeInTheDocument();
+  });
+
+  it('excluir todos os bancos devolve a conferência antiga, com o valor preservado', async () => {
+    const box = await comBoxESaldo();
+    await repo.salvarBox({ ...box, saldoDeclaradoCent: 12300, dataSaldoDeclarado: '2026-07-01' });
+    const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+    render(<TelaHoje />);
+    expect(screen.queryByLabelText('Saldo real no banco')).not.toBeInTheDocument();
+
+    await repo.excluirBanco(banco.id);
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    // é isto que torna a entrega reversível: o valor antigo nunca foi apagado
+    expect(await screen.findByLabelText('Saldo real no banco')).toHaveValue(formatarBRL(12300));
+  });
+});
+
 describe('fatura pendente na fila', () => {
   /** Cartão com a fatura de 08/2026 (R$ 900,00) já vencida, esperando na fila. */
   async function comFaturaVencida() {
