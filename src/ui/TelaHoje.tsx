@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as repo from '../db/repo';
 import { bancosDaBox, totalDeclaradoCent } from '../domain/bancos';
@@ -85,31 +85,45 @@ function textoDiferenca(diff: number): string {
  *  quando é 'casa' (agrupado, mesmo padrão do `LancamentosSheet`: `.rotulo-grupo` + `.recuo-1`). */
 interface GrupoBancos { box: Box | null; itens: Banco[] }
 
-function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSalvarBanco }: {
+function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSalvarBancos }: {
   bancos: Banco[];
   boxes: Box[];
   agruparPorBox: boolean;
   saldoApp: number;
   hoje: ISODate;
-  onSalvarBanco: (id: string, cents: number, data: ISODate) => Promise<void>;
+  onSalvarBancos: (mudancas: { id: string; cents: number }[], data: ISODate) => Promise<void>;
 }) {
   const [valores, setValores] = useState<Record<string, number>>(
     () => Object.fromEntries(bancos.map((b) => [b.id, b.saldoDeclaradoCent ?? 0])),
   );
-  // Só o banco que o usuário efetivamente mexeu entra no "Salvar" — o botão é compartilhado
-  // por todas as linhas, então gravar todo mundo gravaria 0 nos bancos ainda não informados
-  // (o mesmo erro que `totalDeclaradoCent` existe pra evitar: "informou zero" ≠ "não informou").
-  const [tocados, setTocados] = useState<Set<string>>(() => new Set());
+  // Não basta saber que o `onChange` disparou: `CampoValor` zera o buffer já no primeiro foco
+  // chamando onChange(0), mesmo sem o usuário digitar nada (ver CampoValor.test.tsx, "primeiro
+  // foco zera o buffer") — um toque acidental (ou o "próximo" do teclado) já bastava pra incluir
+  // o banco no Salvar com valor zero, apagando um saldo real gravado. Por isso o PRIMEIRO
+  // onChange de cada campo é sempre descartado como esse zera-buffer do foco; só o segundo em
+  // diante (um dígito, um backspace ou um paste) marca o banco como realmente editado.
+  const primeiroFoco = useRef<Set<string>>(new Set());
+  const editados = useRef<Set<string>>(new Set());
 
   function mudarValor(id: string, v: number) {
     setValores((atual) => ({ ...atual, [id]: v }));
-    setTocados((atual) => new Set(atual).add(id));
+    if (primeiroFoco.current.has(id)) editados.current.add(id);
+    else primeiroFoco.current.add(id);
   }
 
   async function salvar() {
-    for (const id of tocados) {
-      await onSalvarBanco(id, valores[id] ?? 0, hoje);
-    }
+    // Grava só quem foi editado de fato e cujo valor final difere do que já está persistido —
+    // "focou e desistiu" deixa o banco fora daqui (não entrou em `editados`), então um banco
+    // nunca informado (`saldoDeclaradoCent: null`) que só foi tocado continua `null`, não vira
+    // "informado zero" (são estados diferentes: ver `totalDeclaradoCent`). Já um banco realmente
+    // zerado por edição (dígitos apagados até zero) entra normalmente, mesmo que o resultado
+    // numérico seja o mesmo zero — é uma decisão consciente do usuário, não um efeito colateral.
+    const mudancas = bancos
+      .filter((b) => editados.current.has(b.id))
+      .map((b) => ({ id: b.id, cents: valores[b.id] ?? 0 }))
+      .filter(({ id, cents }) => bancos.find((b) => b.id === id)?.saldoDeclaradoCent !== cents);
+    if (mudancas.length === 0) return;
+    await onSalvarBancos(mudancas, hoje);
   }
 
   const totalCent = totalDeclaradoCent(bancos);
@@ -193,8 +207,13 @@ export default function TelaHoje() {
     await recarregar();
   }
 
-  async function salvarSaldoBanco(id: string, cents: number, data: string) {
-    await repo.atualizarBanco(id, { saldoDeclaradoCent: cents, dataSaldoDeclarado: data });
+  async function salvarSaldosBancos(mudancas: { id: string; cents: number }[], data: string) {
+    // Grava todos os bancos alterados antes de recarregar — `recarregar()` relê o snapshot
+    // inteiro (ver store.ts), então uma chamada por banco alterado seria N releituras pra uma
+    // única ação de "Salvar conferência dos bancos".
+    await Promise.all(
+      mudancas.map(({ id, cents }) => repo.atualizarBanco(id, { saldoDeclaradoCent: cents, dataSaldoDeclarado: data })),
+    );
     await recarregar();
   }
 
@@ -260,7 +279,7 @@ export default function TelaHoje() {
           ) : (
             <ConferenciaBancos key={`${boxSel}-${chaveBancos}`} bancos={bancos} boxes={dados.boxes}
               agruparPorBox={boxSel === 'casa'} saldoApp={deHoje?.saldoEfetivo ?? 0} hoje={hoje}
-              onSalvarBanco={salvarSaldoBanco} />
+              onSalvarBancos={salvarSaldosBancos} />
           )}
           <BalanceChart serie={janela} hoje={hoje} altura={120} mostrarCenarios={ligados.size > 0} />
         </div>

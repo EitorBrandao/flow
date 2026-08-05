@@ -222,6 +222,64 @@ describe('conferência por banco', () => {
     expect(await screen.findByText(/Diferença/)).toBeInTheDocument();
   });
 
+  it('tocar num banco sem digitar não sobrescreve o saldo dele ao salvar outro banco', async () => {
+    // Reprodução do bug: CampoValor zera o buffer no primeiro foco (onChange(0)) mesmo sem o
+    // usuário digitar nada (ver CampoValor.test.tsx). Um "tocados = qualquer onChange" gravaria
+    // esse banco com zero só por ter sido focado.
+    const box = await comBoxESaldo();
+    const bancoA = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    const bancoB = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+    await repo.atualizarBanco(bancoA.id, { saldoDeclaradoCent: 77700, dataSaldoDeclarado: '2026-07-01' });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    // Só toca no campo do Banco Um — foca e não digita nada.
+    await userEvent.click(screen.getByLabelText('Banco Um'));
+    // Edita de fato o Banco Dois.
+    await userEvent.click(screen.getByLabelText('Banco Dois'));
+    await userEvent.keyboard('30000');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
+
+    await vi.waitFor(async () => {
+      expect((await db.bancos.get(bancoB.id))?.saldoDeclaradoCent).toBe(30000);
+    });
+    // O ponto do teste: o banco só tocado continua com o saldo antigo, não vira zero.
+    expect((await db.bancos.get(bancoA.id))?.saldoDeclaradoCent).toBe(77700);
+  });
+
+  it('apagar os dígitos até zero grava zero de propósito', async () => {
+    const box = await comBoxESaldo();
+    const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await repo.atualizarBanco(banco.id, { saldoDeclaradoCent: 50000, dataSaldoDeclarado: '2026-07-01' });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    await userEvent.click(screen.getByLabelText('Banco Um')); // foco zera o buffer
+    await userEvent.keyboard('500'); // digita algo de verdade...
+    await userEvent.keyboard('{Backspace}{Backspace}{Backspace}'); // ...e apaga tudo de volta a zero
+
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
+
+    await vi.waitFor(async () => {
+      expect((await db.bancos.get(banco.id))?.saldoDeclaradoCent).toBe(0);
+    });
+  });
+
+  it('banco nunca informado, só tocado sem digitar, continua null (não vira "informado zero")', async () => {
+    const box = await comBoxESaldo();
+    const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    await userEvent.click(screen.getByLabelText('Banco Um'));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
+
+    expect((await db.bancos.get(banco.id))?.saldoDeclaradoCent).toBeNull();
+  });
+
   it('na visão casa os bancos aparecem agrupados por box', async () => {
     const box = await comBoxESaldo();
     const agora = agoraISO();
