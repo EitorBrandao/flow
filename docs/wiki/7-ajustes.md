@@ -27,13 +27,25 @@ Saldo inicial negativo é aceito (digitar com "−" na frente). Uma box sem sald
 **Nova box — obrigatório:** nome. **Têm padrão:** saldo inicial (0), data (hoje).
 **Editar box — obrigatório:** nenhum; deixar saldo/data em branco torna a box "sem saldo próprio" (compartilhada).
 
+## Bancos
+
+Uma box representa a **pessoa**, e uma pessoa costuma ter mais de uma conta. Aqui você cadastra os bancos de cada box e informa quanto tem em cada um.
+
+Serve para conferir: a tela Hoje passa a mostrar uma linha por banco, e a diferença contra a projeção é calculada sobre a soma. Sem bancos cadastrados, nada muda — a conferência continua com o campo único de sempre.
+
+> Nesta versão o saldo do banco é **informado por você, não calculado**. Ele não se atualiza sozinho quando você lança: lançamento ainda não aponta para banco.
+
+Cada banco mostra o saldo informado com a data e quantos cartões estão vinculados a ele. Excluir um banco desliga o vínculo dos cartões que apontavam para ele — nenhum cartão fica órfão.
+
+**Obrigatórios:** nome. **Têm padrão:** box (a selecionada no topo; na visão casa, a box "casa"), saldo (não informado).
+
 ## Cartões
 
-Cadastrar/editar o cartão de cada box: nome, dia de fechamento, dia de vencimento e a categoria de gasto do Flow que recebe a fatura.
+Cadastrar/editar o cartão de cada box: nome, dia de fechamento, dia de vencimento, a categoria de gasto do Flow que recebe a fatura e, se a box tiver bancos cadastrados, o banco dono do cartão.
 
 Só um cartão **ativo** por box — tentar ativar um segundo mostra aviso pedindo para desativar o atual primeiro.
 
-**Obrigatórios:** nome, categoria da fatura (pré-preenchida com a categoria "cartão" da box, se existir). **Têm padrão:** box (a primeira com saldo próprio), dia de fechamento (28), dia de vencimento (5).
+**Obrigatórios:** nome, categoria da fatura (pré-preenchida com a categoria "cartão" da box, se existir). **Têm padrão:** box (a primeira com saldo próprio), dia de fechamento (28), dia de vencimento (5), banco (sem banco). O campo de banco só aparece se a box tiver algum cadastrado.
 
 ## Categorias do cartão
 

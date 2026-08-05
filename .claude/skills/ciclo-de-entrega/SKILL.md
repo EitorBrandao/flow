@@ -52,6 +52,37 @@ Suíte inteira, não só os arquivos que você tocou. Rodar um subconjunto e rep
 aconteceu e escondeu cinco falhas. Se um teste cair, rode-o isolado antes de concluir que
 quebrou: a máquina local fica na fronteira sob paralelismo.
 
+## Passo 3.5 — Wiki, se a feature mudou
+
+**Toda feature incluída, alterada ou removida atualiza `docs/wiki/` no mesmo branch.** A wiki
+é a explicação do app para quem chega agora — é o item que existe justamente porque o usuário
+não vai conseguir explicar tudo pessoalmente. Wiki desatualizada é pior que wiki ausente:
+ensina o app errado com a autoridade de quem sabe.
+
+O critério é o mesmo do fragmento de changelog: **mudou o que o usuário vê ou o resultado que
+obtém?** Se sim, algum capítulo precisa mudar. Refactor, teste e tooling não mexem na wiki.
+
+Onde procurar o capítulo:
+
+| Mudou... | Capítulo |
+|---|---|
+| tela ou fluxo de uso | `6-telas.md` |
+| subtela de Ajustes, campos obrigatórios/padrão | `7-ajustes.md` |
+| cartão, fatura, parcelamento, assinatura | `5-cartao.md` |
+| conceito, entidade ou invariante do modelo | `3-conceitos.md`, `4-motor.md` |
+| entidade ou termo novo | `8-glossario.md` |
+| primeiro uso, onboarding | `1-primeiros-passos.md` |
+
+Entidade nova costuma tocar **três** capítulos: a tela onde se cadastra, a tela onde aparece,
+e o glossário. Feature removida sai da wiki no mesmo commit que a remove do código.
+
+O parser da wiki aceita um **subconjunto fechado** de markdown (`docs/wiki/README.md`):
+sintaxe fora dele **lança exceção** em vez de ser ignorada. Valide antes de seguir:
+
+```
+npx vitest run src/ui/ajustes/capitulos.test.ts
+```
+
 ## Passo 4 — Fragmento de changelog e revisão
 
 Só se a mudança for visível (ver acima). Arquivo novo em `changelog.d/`, nome
