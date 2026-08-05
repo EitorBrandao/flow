@@ -847,3 +847,54 @@ describe('registrarPagamentoFatura', () => {
     } finally { vi.useRealTimers(); }
   });
 });
+
+describe('bancos', () => {
+  it('salvarBanco cria com saldo não informado e aparece em carregarTudo', async () => {
+    const { box } = await boxECategoria();
+    const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+
+    expect(banco).toMatchObject({ nome: 'Banco Um', saldoDeclaradoCent: null, dataSaldoDeclarado: null });
+    const dados = await repo.carregarTudo();
+    expect(dados.bancos.map((b) => b.nome)).toEqual(['Banco Um']);
+    expect(dados.config.mudancasDesdeBackup).toBe(true);
+  });
+
+  it('atualizarBanco grava o saldo informado com a data', async () => {
+    const { box } = await boxECategoria();
+    const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await repo.atualizarBanco(banco.id, { saldoDeclaradoCent: 50000, dataSaldoDeclarado: '2026-08-05' });
+
+    expect(await db.bancos.get(banco.id)).toMatchObject({
+      saldoDeclaradoCent: 50000, dataSaldoDeclarado: '2026-08-05',
+    });
+  });
+
+  it('excluirBanco limpa o bancoId dos cartões que apontavam para ele', async () => {
+    const { box } = await boxECategoria();
+    const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    const cartao = await repo.salvarCartao(
+      { boxId: box.id, nome: 'Cartão', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31',
+    );
+    await db.cartoes.update(cartao.id, { bancoId: banco.id });
+
+    await repo.excluirBanco(banco.id);
+
+    // cartão órfão apontando para banco inexistente é inconsistência silenciosa
+    expect(await db.bancos.get(banco.id)).toBeUndefined();
+    expect((await db.cartoes.get(cartao.id))?.bancoId).toBeUndefined();
+  });
+
+  it('excluirBanco não mexe em cartão de outro banco', async () => {
+    const { box } = await boxECategoria();
+    const alvo = await repo.salvarBanco({ boxId: box.id, nome: 'Alvo', ordem: 0 });
+    const outro = await repo.salvarBanco({ boxId: box.id, nome: 'Outro', ordem: 1 });
+    const cartao = await repo.salvarCartao(
+      { boxId: box.id, nome: 'Cartão', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31',
+    );
+    await db.cartoes.update(cartao.id, { bancoId: outro.id });
+
+    await repo.excluirBanco(alvo.id);
+
+    expect((await db.cartoes.get(cartao.id))?.bancoId).toBe(outro.id);
+  });
+});
