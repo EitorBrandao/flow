@@ -3,13 +3,13 @@ import type { Dados } from '../domain/types';
 
 export interface Backup {
   app: 'flow';
-  schema: 3;
+  schema: 4;
   exportadoEm: string;
   dados: Dados;
 }
 
 export function gerarBackup(dados: Dados): Backup {
-  return { app: 'flow', schema: 3, exportadoEm: new Date().toISOString(), dados };
+  return { app: 'flow', schema: 4, exportadoEm: new Date().toISOString(), dados };
 }
 
 const TABELAS_V1 = ['boxes', 'categorias', 'lancamentos', 'recorrencias', 'cenarios'] as const;
@@ -24,7 +24,7 @@ export function validarBackup(json: unknown): Backup {
   if (!b || typeof b !== 'object' || b.app !== 'flow') {
     throw new Error('Este arquivo não é um backup do Flow.');
   }
-  if (b.schema !== 1 && b.schema !== 2 && b.schema !== 3) {
+  if (b.schema !== 1 && b.schema !== 2 && b.schema !== 3 && b.schema !== 4) {
     throw new Error(`Backup de versão incompatível (${String(b.schema)}). Atualize o app e tente de novo.`);
   }
   const d = b.dados;
@@ -40,11 +40,19 @@ export function validarBackup(json: unknown): Backup {
   if (b.schema >= 2 && TABELAS_CARTAO.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
-  if (b.schema === 3 && TABELAS_VIAGEM.some((t) => !Array.isArray(d[t]))) {
+  // >= e não ===: schema 3 era o mais novo quando esta checagem nasceu, mas schema 4 (e
+  // qualquer futuro) também tem que ter viagens bem formada — do contrário um backup schema 4
+  // sem viagens passaria batido (não é < 3, não backfila; não é === 3, não valida).
+  if (b.schema >= 3 && TABELAS_VIAGEM.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
-  // bancos nasceu depois do schema 3, sem bump de schema: é sempre opcional (backfill abaixo),
-  // mas se vier, tem que vir como array — não há versão que a isente de ser bem formada.
+  // bancos nasceu no schema 4: a partir daqui é obrigatória e bem formada.
+  if (b.schema >= 4 && TABELAS_BANCO.some((t) => !Array.isArray(d[t]))) {
+    throw new Error('Backup corrompido: estrutura de dados inesperada.');
+  }
+  // backups de schema < 4 já existentes (gerados antes do bump) podem trazer `bancos` mesmo
+  // assim, porque a entidade nasceu no código antes do schema subir — nesse caso ela é opcional
+  // (backfill abaixo), mas se vier, tem que vir como array.
   if (d.bancos !== undefined && TABELAS_BANCO.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
@@ -63,12 +71,15 @@ export function validarBackup(json: unknown): Backup {
     for (const t of TABELAS_VIAGEM) md[t] = [];
   }
   if (!Array.isArray(dados.bancos)) {
-    // backup de qualquer schema sem a chave bancos: entidade nasceu depois, sem bump de schema
+    // backup de schema < 4 sem a chave bancos: entidade nasceu antes do bump de schema.
+    // Para schema >= 4 este ramo é inalcançável — a checagem obrigatória acima já teria
+    // lançado antes de chegar aqui — mas a condição por array (em vez de por schema) evita
+    // sobrescrever com [] um `bancos` real que já exista num backup de schema < 4.
     const md = dados as unknown as Record<string, unknown[]>;
     for (const t of TABELAS_BANCO) md[t] = [];
   }
   return {
-    app: 'flow', schema: 3,
+    app: 'flow', schema: 4,
     exportadoEm: typeof b.exportadoEm === 'string' ? b.exportadoEm : new Date().toISOString(),
     dados,
   };
