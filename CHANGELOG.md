@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.20.1] - 2026-08-05
+
+### Alterado
+
+- Wiki: o capítulo do cartão passa a explicar como pagar a fatura por outro valor, informar a data em que você pagou e registrar o parcelamento feito no banco.
+- Wiki: novo trecho sobre bancos em Ajustes, e a tela Hoje passa a descrever a conferência de saldo por banco.
+- Wiki: glossário ganhou "banco" e "parcelamento de fatura".
+
 ## [0.20.0] - 2026-08-05
 
 ### Adicionado
