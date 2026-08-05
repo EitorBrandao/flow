@@ -129,6 +129,45 @@ it('recusa backup schema 4 com bancos que não é array', () => {
   })).toThrow(/estrutura de dados inesperada/);
 });
 
+it('recusa backup schema 4 sem a tabela viagens ou com viagens que não é array', () => {
+  // guarda a checagem `b.schema >= 3` de virar `b.schema === 3`: se voltar a `===`, um
+  // backup schema 4 sem viagens bem formada passaria batido (não é < 3, não backfila;
+  // não é === 3, não valida).
+  const base = {
+    app: 'flow', schema: 4, exportadoEm: '2026-08-01T00:00:00.000Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
+      conferenciasFatura: [], bancos: [], config: { id: 'config' },
+    },
+  };
+  expect(() => validarBackup(base)).toThrow(/estrutura de dados inesperada/);
+  expect(() => validarBackup({ ...base, dados: { ...base.dados, viagens: { nome: 'Praia' } } }))
+    .toThrow(/estrutura de dados inesperada/);
+});
+
+it('backup schema 3 com bancos real preserva o registro (não é apagado no backfill)', () => {
+  // o backfill de `bancos` é condicionado a `!Array.isArray(dados.bancos)`, não ao número
+  // do schema: existem backups reais com schema 3 que já trazem `bancos` preenchido (a
+  // entidade nasceu antes do bump). Se a condição virasse `b.schema < 4`, esses bancos reais
+  // virariam `[]` — perda silenciosa de dado financeiro.
+  const bancoReal = {
+    id: 'bk1', boxId: 'box1', nome: 'Banco Teste', ordem: 0,
+    saldoDeclaradoCent: 10_000, dataSaldoDeclarado: '2026-08-01',
+    criadoEm: '2026-08-01T00:00:00.000Z', alteradoEm: '2026-08-01T00:00:00.000Z',
+  };
+  const b = validarBackup({
+    app: 'flow', schema: 3, exportadoEm: '2026-08-01T00:00:00.000Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
+      conferenciasFatura: [], viagens: [], config: { id: 'config' },
+      bancos: [bancoReal],
+    },
+  });
+  expect(b.dados.bancos).toEqual([bancoReal]);
+});
+
 it('mescla bancos pelo alteradoEm mais recente', () => {
   const base = { id: '', boxId: 'box1', nome: '', ordem: 0, saldoDeclaradoCent: null, dataSaldoDeclarado: null, criadoEm: '2026-01-01', alteradoEm: '2026-01-01' };
   const a = dados();
