@@ -58,6 +58,75 @@ it('permite dois cartões ativos na mesma box', async () => {
   expect(cartoes.every((c) => c.ativo)).toBe(true);
 });
 
+it('permite escolher o banco dono do cartão (entre dois, não só o primeiro)', async () => {
+  const box = await montarBox();
+  const bancoUm = await repo.salvarBanco({ boxId: box.id, nome: 'banco principal', ordem: 0 });
+  const bancoDois = await repo.salvarBanco({ boxId: box.id, nome: 'banco da reserva', ordem: 1 });
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Cartoes />);
+
+  await userEvent.type(screen.getByLabelText('Nome do cartão'), 'Nubank');
+  // Escolhe o SEGUNDO banco de propósito: com um banco só, uma implementação que
+  // ignorasse a escolha e sempre gravasse o primeiro passaria por engano.
+  await userEvent.selectOptions(screen.getByLabelText('Banco'), bancoDois.id);
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+  await waitFor(async () => {
+    const cartoes = await db.cartoes.toArray();
+    expect(cartoes).toHaveLength(1);
+    expect(cartoes[0].bancoId).toBe(bancoDois.id);
+    expect(cartoes[0].bancoId).not.toBe(bancoUm.id);
+  });
+});
+
+it('box sem banco nenhum não mostra o campo Banco', async () => {
+  await montarBox();
+  await useApp.getState().iniciar();
+  render(<Cartoes />);
+
+  // seletor com uma opção só ("sem banco") não oferece escolha nenhuma e só ocupa espaço
+  expect(screen.queryByLabelText('Banco')).not.toBeInTheDocument();
+});
+
+it('editar um cartão que já tem banco pré-seleciona o banco atual', async () => {
+  const box = await montarBox();
+  const bancoUm = await repo.salvarBanco({ boxId: box.id, nome: 'banco principal', ordem: 0 });
+  const bancoDois = await repo.salvarBanco({ boxId: box.id, nome: 'banco da reserva', ordem: 1 });
+  await repo.salvarCartao({
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5, bancoId: bancoDois.id,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Cartoes />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+
+  const select = screen.getByLabelText('Banco') as HTMLSelectElement;
+  expect(select.value).toBe(bancoDois.id);
+  expect(select.value).not.toBe(bancoUm.id);
+});
+
+it('trocar para "— sem banco —" remove o vínculo de um cartão que tinha banco', async () => {
+  const box = await montarBox();
+  const banco = await repo.salvarBanco({ boxId: box.id, nome: 'banco principal', ordem: 0 });
+  await repo.salvarCartao({
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5, bancoId: banco.id,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Cartoes />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+  await userEvent.selectOptions(screen.getByLabelText('Banco'), '');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(async () => {
+    const cartoes = await db.cartoes.toArray();
+    expect(cartoes[0].bancoId).toBeUndefined();
+  });
+});
+
 it('trocar de box na tela de Cartões mostra só os cartões daquela box', async () => {
   const agora = agoraISO();
   const eitor = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };

@@ -332,7 +332,7 @@ export async function excluirBanco(id: ID): Promise<void> {
 // ---------- Cartão de crédito ----------
 
 export interface NovoCartao {
-  boxId: ID; nome: string; diaFechamento: number; diaVencimento: number;
+  boxId: ID; nome: string; diaFechamento: number; diaVencimento: number; bancoId?: ID;
 }
 
 export async function salvarCartao(n: NovoCartao | Cartao, horizonte: ISODate): Promise<Cartao> {
@@ -347,7 +347,7 @@ export async function salvarCartao(n: NovoCartao | Cartao, horizonte: ISODate): 
     } else {
       cartao = {
         id: novoId(), boxId: n.boxId, nome: n.nome, diaFechamento: n.diaFechamento, diaVencimento: n.diaVencimento,
-        ativo: true, criadoEm: agora, alteradoEm: agora, categoriaFaturaId: novoId(),
+        bancoId: n.bancoId, ativo: true, criadoEm: agora, alteradoEm: agora, categoriaFaturaId: novoId(),
       };
       await db.categorias.add({
         id: cartao.categoriaFaturaId, boxId: cartao.boxId, nome: cartao.nome, tipo: 'gasto',
