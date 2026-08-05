@@ -164,6 +164,16 @@ exportar e reimportar o backup preserva os bancos.
 ## Fora de escopo (entrega 2)
 
 - `bancoId` no lançamento e o campo na tela Lançar.
+- **Alerta permanente de "sem banco"** — decidido em 2026-08-05, já com o formato: uma linha
+  discreta na tela Hoje ("N lançamentos sem banco") que abre a lista filtrada, para
+  classificar em sequência. **A fila de Pendentes não muda**: ela continua sendo o que falta
+  confirmar, e não se mistura com o que falta classificar — são ações diferentes sobre
+  registros em estados diferentes.
+
+  O alerta **não pode vir antes** do campo no lançamento: sem ele, "sem banco" é 100% dos
+  registros (317 lançamentos e 206 compras), e um alerta que aponta tudo não aponta nada. Só
+  depois do campo existir é que "sem banco" passa a significar anomalia — e aí vale mantê-lo
+  para sempre, como rede de segurança.
 - Banco padrão marcável em Ajustes. **Não entra agora de propósito:** sem lançamento
   carregando banco, seria um controle que não faz nada.
 - Saldo inicial por banco e projeção/gráfico por banco — os gráficos seguem consolidados.
