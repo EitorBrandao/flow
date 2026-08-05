@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import { useApp, type SecaoAjustes } from '../state/store';
 import Assinaturas from './ajustes/Assinaturas';
 import Backup from './ajustes/Backup';
+import Bancos from './ajustes/Bancos';
 import Boxes from './ajustes/Boxes';
 import Cartoes from './ajustes/Cartoes';
 import Categorias from './ajustes/Categorias';
@@ -14,6 +15,7 @@ import Versao from './ajustes/Versao';
 
 const ITENS: { id: SecaoAjustes; rotulo: string }[] = [
   { id: 'boxes', rotulo: 'Boxes' },
+  { id: 'bancos', rotulo: 'Bancos' },
   { id: 'categorias', rotulo: 'Categorias' },
   { id: 'recorrencias', rotulo: 'Recorrências' },
   { id: 'cartoes', rotulo: 'Cartões' },
@@ -61,6 +63,7 @@ export default function TelaAjustes() {
       {secao === 'categorias' && <Categorias />}
       {secao === 'recorrencias' && <Recorrencias />}
       {secao === 'boxes' && <Boxes />}
+      {secao === 'bancos' && <Bancos />}
       {secao === 'cartoes' && <Cartoes />}
       {secao === 'categoriasCartao' && <CategoriasCartao />}
       {secao === 'assinaturas' && <Assinaturas />}

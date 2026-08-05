@@ -6,7 +6,7 @@ import { agoraISO, novoId, type Dados, type ID, type ISODate } from '../domain/t
 
 export type Aba = 'hoje' | 'fluxo' | 'lancar' | 'cartao' | 'analises' | 'simulador' | 'ajustes';
 export type BoxSelecionada = ID | 'casa';
-export type SecaoAjustes = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'cartoes'
+export type SecaoAjustes = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'bancos' | 'cartoes'
   | 'categoriasCartao' | 'assinaturas' | 'viagens' | 'backup' | 'wiki' | 'versao';
 
 interface AppState {
