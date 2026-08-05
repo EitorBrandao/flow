@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.20.0] - 2026-08-05
+
+### Adicionado
+
+- Ajustes ganhou a tela Bancos: dá para cadastrar as contas de cada box e informar quanto tem em cada uma.
+- Um cartão pode pertencer a um banco, para você ver quais cartões saem de qual conta.
+- Tela Hoje: quando a box tem bancos, a conferência de saldo passa a ter uma linha por banco, com o total informado e a diferença para o que o Flow projeta. Cada banco tem o botão de sinal, então conta no cheque especial pode ser informada como negativa.
+- Enquanto nenhum banco tiver saldo informado, a tela não mostra diferença nenhuma — em vez de acusar um descasamento que só existe porque você ainda não digitou.
+- Quem não cadastrar nenhum banco não vê diferença: a conferência continua exatamente como era, e excluir todos os bancos devolve o valor que já estava lá.
+
 ## [0.19.0] - 2026-08-04
 
 ### Alterado
