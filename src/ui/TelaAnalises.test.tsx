@@ -56,34 +56,43 @@ it('trocar o mês com o sheet aberto atualiza os grupos exibidos', async () => {
 });
 
 it('clicar na categoria do cartão mostra o detalhamento por categoria de cartão, não por nota', async () => {
-  const { box } = await seedBoxComCategoria();
-  const cartao = await repo.salvarCartao({
-    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
-  }, '2027-12-31');
-  const catMercado = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'Mercado', ordem: 0 });
-  const catFarmacia = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'Farmácia', ordem: 1 });
-  await repo.salvarCompraCartao({
-    cartaoId: cartao.id, categoriaCartaoId: catMercado.id, data: '2026-07-10', valorTotal: 62000, parcelas: 1,
-  }, '2027-12-31');
-  await repo.salvarCompraCartao({
-    cartaoId: cartao.id, categoriaCartaoId: catFarmacia.id, data: '2026-07-12', valorTotal: 5000, parcelas: 1,
-  }, '2027-12-31');
-  await useApp.getState().iniciar();
-  useApp.setState({ boxSel: box.id, hoje: '2026-08-01' });
+  // `sincronizarCartoes` usa a data REAL do sistema, não o `hoje` do store, e
+  // `diffSincronizacao` só cria o previsto da fatura quando o vencimento é estritamente
+  // posterior a hoje. Sem congelar o relógio, este teste passava enquanto o mundo estivesse
+  // antes de 05/08/2026 (vencimento da fatura montada aqui) e quebrava para sempre depois —
+  // foi o que aconteceu. Data fixa em julho mantém a fatura no futuro para sempre.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box } = await seedBoxComCategoria();
+    const cartao = await repo.salvarCartao({
+      boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
+    }, '2027-12-31');
+    const catMercado = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'Mercado', ordem: 0 });
+    const catFarmacia = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'Farmácia', ordem: 1 });
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catMercado.id, data: '2026-07-10', valorTotal: 62000, parcelas: 1,
+    }, '2027-12-31');
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catFarmacia.id, data: '2026-07-12', valorTotal: 5000, parcelas: 1,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-08-01' });
 
-  render(<TelaAnalises />);
-  await userEvent.click(screen.getByRole('button', { name: /Nubank/ }));
+    render(<TelaAnalises />);
+    await userEvent.click(screen.getByRole('button', { name: /Nubank/ }));
 
-  const dialog = await screen.findByRole('dialog', { name: 'Nubank' });
-  expect(within(dialog).getByText('R$ 670,00')).toBeInTheDocument(); // total da fatura
-  expect(within(dialog).getByText('Mercado')).toBeInTheDocument();
-  expect(within(dialog).getByText('R$ 620,00')).toBeInTheDocument(); // subtotal Mercado
-  expect(within(dialog).getByText('Farmácia')).toBeInTheDocument();
-  expect(within(dialog).getByText('R$ 50,00')).toBeInTheDocument(); // subtotal Farmácia
+    const dialog = await screen.findByRole('dialog', { name: 'Nubank' });
+    expect(within(dialog).getByText('R$ 670,00')).toBeInTheDocument(); // total da fatura
+    expect(within(dialog).getByText('Mercado')).toBeInTheDocument();
+    expect(within(dialog).getByText('R$ 620,00')).toBeInTheDocument(); // subtotal Mercado
+    expect(within(dialog).getByText('Farmácia')).toBeInTheDocument();
+    expect(within(dialog).getByText('R$ 50,00')).toBeInTheDocument(); // subtotal Farmácia
 
-  const link = within(dialog).getByRole('button', { name: /Ver fatura completa/ });
-  await userEvent.click(link);
-  expect(useApp.getState().aba).toBe('cartao');
+    const link = within(dialog).getByRole('button', { name: /Ver fatura completa/ });
+    await userEvent.click(link);
+    expect(useApp.getState().aba).toBe('cartao');
+  } finally { vi.useRealTimers(); }
 });
 
 it('linha Assinaturas soma as compras de assinatura de todos os cartões e abre o resumo agrupado', async () => {
