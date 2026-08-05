@@ -5,7 +5,7 @@ import { proximaOrdem } from '../../domain/categorias';
 import { formatarDataBR } from '../../domain/dates';
 import { formatarBRL } from '../../domain/money';
 import type { ISODate } from '../../domain/types';
-import { boxIdsSelecionadas, useApp } from '../../state/store';
+import { boxIdEfetivo, boxIdsSelecionadas, useApp } from '../../state/store';
 import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 
@@ -29,10 +29,25 @@ export default function Bancos() {
 
   if (!dados) return null;
 
-  // 'casa' consolida todas as boxes (mesmo contrato de todas as outras telas que consultam
-  // boxIdsSelecionadas); numa box concreta, é sempre um array de um id só.
+  // Listar usa boxIdsSelecionadas: 'casa' consolida todas as boxes (mesmo contrato de
+  // todas as outras telas que consultam boxIdsSelecionadas); numa box concreta, é sempre
+  // um array de um id só.
   const boxIds = boxIdsSelecionadas(dados, boxSel);
   const bancos = bancosDaBox(dados.bancos, boxIds);
+
+  // Criar usa boxIdEfetivo: com 'casa' selecionada e várias boxes, o alvo da criação não
+  // pode ser "a primeira do array" (dependeria da ordem de carregamento) — tem que ser a
+  // box concreta chamada "casa". Mesmo contrato de Cartoes.tsx e CategoriasCartao.tsx.
+  const boxIdCriacao = boxIdEfetivo(dados, boxSel);
+  if (boxIdCriacao == null) {
+    return (
+      <div className="tela">
+        <h2>Bancos</h2>
+        <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+      </div>
+    );
+  }
+  const nomeBoxCriacao = dados.boxes.find((b) => b.id === boxIdCriacao)!.nome;
 
   function cartoesDoBanco(bancoId: string): number {
     return dados!.cartoes.filter((c) => c.bancoId === bancoId).length;
@@ -45,10 +60,8 @@ export default function Bancos() {
       setAviso('Dê um nome ao banco para criar.');
       return;
     }
-    const boxId = boxIds[0];
-    if (!boxId) return; // sem nenhuma box carregada ainda — não deve ocorrer em uso normal
-    const ordem = proximaOrdem(bancos.filter((b) => b.boxId === boxId));
-    await repo.salvarBanco({ boxId, nome: nomeNovo.trim(), ordem });
+    const ordem = proximaOrdem(bancos.filter((b) => b.boxId === boxIdCriacao));
+    await repo.salvarBanco({ boxId: boxIdCriacao!, nome: nomeNovo.trim(), ordem });
     await recarregar();
     setNomeNovo('');
     setAviso('');
@@ -106,6 +119,7 @@ export default function Bancos() {
         </div>
         <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={criar}>Criar</button>
       </div>
+      <p className="sub">Será criado na box {nomeBoxCriacao}.</p>
 
       <p className="rotulo-grupo">Bancos desta box</p>
       <div className="lista">

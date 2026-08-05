@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
 import { agoraISO, novoId } from '../../domain/types';
-import { useApp } from '../../state/store';
+import { boxIdsSelecionadas, useApp } from '../../state/store';
 import Bancos from './Bancos';
 
 beforeEach(async () => {
@@ -30,13 +30,73 @@ async function recarregarDados() {
 }
 
 it('cria um banco pelo formulário do topo', async () => {
-  await comBox();
+  const box = await comBox();
   render(<Bancos />);
   await userEvent.type(screen.getByLabelText('Nome do banco'), 'Banco Um');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
 
   expect(await screen.findByText('Banco Um')).toBeInTheDocument();
-  expect((await db.bancos.toArray()).map((b) => b.nome)).toEqual(['Banco Um']);
+  const criados = await db.bancos.toArray();
+  expect(criados.map((b) => b.nome)).toEqual(['Banco Um']);
+  // Com uma box concreta selecionada, o banco tem que cair nela — não em outro lugar.
+  expect(criados[0].boxId).toBe(box.id);
+});
+
+it('com "casa" selecionada e outra box também carregada, cria o banco na box "casa"', async () => {
+  const agora = agoraISO();
+  // Ids escolhidos a dedo (não novoId()) para controlar a ordem natural do IndexedDB:
+  // 'aaa-outra' vem antes de 'zzz-casa' na ordenação lexicográfica da chave primária, que é
+  // a ordem que db.boxes.toArray() (e portanto boxIdsSelecionadas) devolve. Isso garante que
+  // "primeira box do array" e "box casa" sejam registros diferentes — sem isso o teste não
+  // discrimina o bug de usar boxIdsSelecionadas(dados, 'casa')[0] como alvo da criação.
+  const outra = {
+    id: 'aaa-outra', nome: 'Outra Box', saldoInicial: 100000, dataSaldoInicial: '2026-01-01',
+    criadoEm: agora, alteradoEm: agora,
+  };
+  const casa = {
+    id: 'zzz-casa', nome: 'casa', saldoInicial: null, dataSaldoInicial: null,
+    criadoEm: agora, alteradoEm: agora,
+  };
+  await repo.salvarBox(outra);
+  await repo.salvarBox(casa);
+  useApp.setState({ dados: await repo.carregarTudo(), boxSel: 'casa', hoje: '2026-08-05' });
+
+  // Confere a premissa do teste: se isto falhar, o teste deixou de discriminar o bug.
+  const dados = useApp.getState().dados!;
+  expect(boxIdsSelecionadas(dados, 'casa')[0]).toBe(outra.id);
+
+  render(<Bancos />);
+  await userEvent.type(screen.getByLabelText('Nome do banco'), 'Banco Da Casa');
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+  await waitFor(async () => expect(await db.bancos.count()).toBe(1));
+  const criado = (await db.bancos.toArray())[0];
+  expect(criado.boxId).toBe(casa.id);
+  expect(criado.boxId).not.toBe(outra.id);
+});
+
+it('mostra que o banco novo será criado na box "casa" quando essa é a seleção', async () => {
+  await comBox();
+  useApp.setState({ boxSel: 'casa' });
+  render(<Bancos />);
+  expect(await screen.findByText('Será criado na box casa.')).toBeInTheDocument();
+});
+
+it('na visão "casa", a lista mostra bancos de todas as boxes', async () => {
+  const agora = agoraISO();
+  const boxA = { id: novoId(), nome: 'Box A', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  const boxB = { id: novoId(), nome: 'Box B', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(boxA);
+  await repo.salvarBox(boxB);
+  await repo.salvarBanco({ boxId: boxA.id, nome: 'Banco Da Box A', ordem: 0 });
+  await repo.salvarBanco({ boxId: boxB.id, nome: 'Banco Da Box B', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: 'casa', hoje: '2026-08-05' });
+
+  render(<Bancos />);
+
+  expect(await screen.findByText('Banco Da Box A')).toBeInTheDocument();
+  expect(screen.getByText('Banco Da Box B')).toBeInTheDocument();
 });
 
 it('criar sem nome avisa em vez de não fazer nada', async () => {
