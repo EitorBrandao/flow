@@ -6,7 +6,7 @@ function dados(): Dados {
     boxes: [{ id: 'b1', nome: 'eitor', saldoInicial: 100, dataSaldoInicial: '2026-01-01', criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' }],
     categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
     cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [], conferenciasFatura: [],
-    viagens: [],
+    viagens: [], bancos: [],
     config: { id: 'config', boxPadraoId: null, ultimoBackupEm: null, mudancasDesdeBackup: false, horizonteProjecao: '2027-12-31' },
   };
 }

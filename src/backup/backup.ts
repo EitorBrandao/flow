@@ -87,6 +87,7 @@ export function mesclar(atual: Dados, doBackup: Dados): Dados {
       mesclarTabela(atual.conferenciasFatura, doBackup.conferenciasFatura),
     ),
     viagens: mesclarTabela(atual.viagens, doBackup.viagens),
+    bancos: mesclarTabela(atual.bancos, doBackup.bancos),
     config: atual.config,
   };
 }

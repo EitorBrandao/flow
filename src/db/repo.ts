@@ -39,12 +39,12 @@ export async function carregarTudo(): Promise<Dados> {
   }
   const [
     boxes, categorias, lancamentos, recorrencias, cenarios,
-    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens,
+    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, bancos,
   ] = await Promise.all([
     db.boxes.toArray(), db.categorias.toArray(), db.lancamentos.toArray(),
     db.recorrencias.toArray(), db.cenarios.toArray(),
     db.cartoes.toArray(), db.categoriasCartao.toArray(), db.comprasCartao.toArray(),
-    db.recorrenciasCartao.toArray(), db.conferenciasFatura.toArray(), db.viagens.toArray(),
+    db.recorrenciasCartao.toArray(), db.conferenciasFatura.toArray(), db.viagens.toArray(), db.bancos.toArray(),
   ]);
   // ordem canônica na fonte: todo consumidor do snapshot herda a ordem de Ajustes
   categorias.sort(compararCategorias);
@@ -55,7 +55,7 @@ export async function carregarTudo(): Promise<Dados> {
   lancamentos.sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
   return {
     boxes, categorias, lancamentos, recorrencias, cenarios,
-    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, config,
+    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, bancos, config,
   };
 }
 
