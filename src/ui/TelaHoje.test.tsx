@@ -280,6 +280,98 @@ describe('conferência por banco', () => {
     expect((await db.bancos.get(banco.id))?.saldoDeclaradoCent).toBeNull();
   });
 
+  it('banco com saldo persistido negativo abre com o sinal "−" ativo e a magnitude certa', async () => {
+    const box = await comBoxESaldo();
+    const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await repo.atualizarBanco(banco.id, { saldoDeclaradoCent: -32100, dataSaldoDeclarado: '2026-07-01' });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    expect(screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' })).toHaveTextContent('−');
+    expect(screen.getByLabelText('Banco Um')).toHaveValue(formatarBRL(32100));
+  });
+
+  it('alternar o sinal (sem digitar nada) e salvar grava o valor negativo', async () => {
+    // Este teste não digita nada — a única edição é o clique no botão de sinal. Se alternar o
+    // sinal não marcasse o banco como editado, `mudancas` ficaria vazio e nada seria gravado
+    // (o teste falharia com o valor antigo, positivo). Se o salvamento ignorasse o sinal e
+    // gravasse sempre a magnitude, o teste falharia com o valor positivo em vez do negativo.
+    const box = await comBoxESaldo();
+    const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await repo.atualizarBanco(banco.id, { saldoDeclaradoCent: 5000, dataSaldoDeclarado: '2026-07-01' });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    await userEvent.click(screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
+
+    await vi.waitFor(async () => {
+      expect((await db.bancos.get(banco.id))?.saldoDeclaradoCent).toBe(-5000);
+    });
+  });
+
+  it('alternar o sinal de volta para positivo e salvar grava positivo', async () => {
+    const box = await comBoxESaldo();
+    const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await repo.atualizarBanco(banco.id, { saldoDeclaradoCent: -5000, dataSaldoDeclarado: '2026-07-01' });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    await userEvent.click(screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
+
+    await vi.waitFor(async () => {
+      expect((await db.bancos.get(banco.id))?.saldoDeclaradoCent).toBe(5000);
+    });
+  });
+
+  it('falha ao salvar mostra aviso e ainda assim recarrega', async () => {
+    const box = await comBoxESaldo();
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    const erroSpy = vi.spyOn(repo, 'atualizarBanco').mockRejectedValue(new Error('falhou de propósito'));
+    render(<TelaHoje />);
+    await userEvent.click(screen.getByLabelText('Banco Um'));
+    await userEvent.keyboard('5000');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
+
+    expect(await screen.findByText(/nem tudo foi salvo/i)).toBeInTheDocument();
+    erroSpy.mockRestore();
+  });
+
+  it('remonte é atômico: focar um banco antes do remonte não conta como segundo foco na instância nova', async () => {
+    // Documenta o invariante: `primeiroFoco`/`editados` vivem em refs de `ConferenciaBancos`
+    // (o pai), enquanto `CampoValor` guarda "já focado" por instância montada (o filho). Se o
+    // remonte (mudança de `key` ao criar um banco novo) não desmontasse pai e filhos juntos, um
+    // foco antes do remonte poderia "vazar" pra instância nova — tratando o primeiro foco de
+    // verdade como se fosse o segundo, e zerando o saldo ao salvar.
+    const box = await comBoxESaldo();
+    const bancoA = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await repo.atualizarBanco(bancoA.id, { saldoDeclaradoCent: 77700, dataSaldoDeclarado: '2026-07-01' });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    // Foca o campo do banco A na instância ANTIGA, sem digitar nada.
+    await userEvent.click(screen.getByLabelText('Banco Um'));
+
+    // Cria um banco novo: muda `chaveBancos` e força o remonte de `ConferenciaBancos`.
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+    await act(async () => { await useApp.getState().recarregar(); });
+
+    // Na instância NOVA, foca o mesmo campo de novo (primeiro foco de verdade desta instância)
+    // e salva sem digitar nada.
+    await userEvent.click(screen.getByLabelText('Banco Um'));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
+
+    expect((await db.bancos.get(bancoA.id))?.saldoDeclaradoCent).toBe(77700);
+  });
+
   it('na visão casa os bancos aparecem agrupados por box', async () => {
     const box = await comBoxESaldo();
     const agora = agoraISO();

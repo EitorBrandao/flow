@@ -849,7 +849,7 @@ describe('conferência por banco', () => {
 
   it('excluir todos os bancos devolve a conferência antiga, com o valor preservado', async () => {
     const box = await comBoxESaldo();
-    await repo.salvarBox({ ...box, saldoDeclaradoCent: 12300, dataSaldoDeclarado: '2026-07-01' });
+    await repo.salvarBox({ ...box, saldoDeclaradoCent: 12345, dataSaldoDeclarado: '2026-07-01' });
     const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
     await useApp.getState().recarregar();
     render(<TelaHoje />);
@@ -859,7 +859,7 @@ describe('conferência por banco', () => {
     await useApp.getState().recarregar();
 
     // é isto que torna a entrega reversível: o valor antigo nunca foi apagado
-    expect(await screen.findByLabelText('Saldo real no banco')).toHaveValue('R$ 123,00');
+    expect(await screen.findByLabelText('Saldo real no banco')).toHaveValue('R$ 123,45');
   });
 
   it('na visão casa os bancos aparecem agrupados por box', async () => {

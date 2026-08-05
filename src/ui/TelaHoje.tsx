@@ -93,8 +93,14 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
   hoje: ISODate;
   onSalvarBancos: (mudancas: { id: string; cents: number }[], data: ISODate) => Promise<void>;
 }) {
-  const [valores, setValores] = useState<Record<string, number>>(
-    () => Object.fromEntries(bancos.map((b) => [b.id, b.saldoDeclaradoCent ?? 0])),
+  // Magnitude e sinal ficam em estados separados (mesmo padrão de `ConferenciaSaldo` e de
+  // `Bancos.tsx` em Ajustes) — `CampoValor` só sabe lidar com o valor absoluto digitado; quem
+  // decide se o resultado final é negativo é o botão de alternar sinal, ao lado de cada campo.
+  const [magnitudes, setMagnitudes] = useState<Record<string, number>>(
+    () => Object.fromEntries(bancos.map((b) => [b.id, Math.abs(b.saldoDeclaradoCent ?? 0)])),
+  );
+  const [negativos, setNegativos] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(bancos.map((b) => [b.id, (b.saldoDeclaradoCent ?? 0) < 0])),
   );
   // Não basta saber que o `onChange` disparou: `CampoValor` zera o buffer já no primeiro foco
   // chamando onChange(0), mesmo sem o usuário digitar nada (ver CampoValor.test.tsx, "primeiro
@@ -106,9 +112,18 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
   const editados = useRef<Set<string>>(new Set());
 
   function mudarValor(id: string, v: number) {
-    setValores((atual) => ({ ...atual, [id]: v }));
+    setMagnitudes((atual) => ({ ...atual, [id]: v }));
     if (primeiroFoco.current.has(id)) editados.current.add(id);
     else primeiroFoco.current.add(id);
+  }
+
+  // Diferente do `onChange` de `CampoValor`, o clique no botão de sinal não tem zera-buffer de
+  // foco pra descartar — é sempre uma decisão explícita do usuário, então marca o banco como
+  // editado direto. Sem isso, alternar o sinal de um banco nunca tocado de outra forma (ou já
+  // "editado" só pelo zera-buffer) não entraria em `editados`, e o Salvar não gravaria nada.
+  function alternarSinal(id: string) {
+    setNegativos((atual) => ({ ...atual, [id]: !atual[id] }));
+    editados.current.add(id);
   }
 
   async function salvar() {
@@ -120,7 +135,10 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
     // numérico seja o mesmo zero — é uma decisão consciente do usuário, não um efeito colateral.
     const mudancas = bancos
       .filter((b) => editados.current.has(b.id))
-      .map((b) => ({ id: b.id, cents: valores[b.id] ?? 0 }))
+      .map((b) => {
+        const magnitude = magnitudes[b.id] ?? 0;
+        return { id: b.id, cents: negativos[b.id] ? -magnitude : magnitude };
+      })
       .filter(({ id, cents }) => bancos.find((b) => b.id === id)?.saldoDeclaradoCent !== cents);
     if (mudancas.length === 0) return;
     await onSalvarBancos(mudancas, hoje);
@@ -144,11 +162,19 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
           {g.itens.map((b) => (
             <div className={`linha-banco${agruparPorBox ? ' recuo-1' : ''}`} key={b.id}>
               <span>{b.nome}</span>
-              <CampoValor
-                id={`banco-${b.id}`} valorCentavos={valores[b.id] ?? 0}
-                onChange={(v) => mudarValor(b.id, v)}
-                ariaLabel={b.nome} style={{ width: 110 }}
-              />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button
+                  type="button" className="botao" aria-label="Alternar sinal (positivo/negativo)"
+                  onClick={() => alternarSinal(b.id)} style={{ padding: '8px 12px' }}
+                >
+                  {negativos[b.id] ? '−' : '+'}
+                </button>
+                <CampoValor
+                  id={`banco-${b.id}`} valorCentavos={magnitudes[b.id] ?? 0}
+                  onChange={(v) => mudarValor(b.id, v)}
+                  ariaLabel={b.nome} style={{ width: 110 }}
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -170,6 +196,7 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
 export default function TelaHoje() {
   const { dados, boxSel, hoje, recarregar, abrirAjustes } = useApp();
   const [pagando, setPagando] = useState<Lancamento | null>(null);
+  const [avisoSalvarBancos, setAvisoSalvarBancos] = useState<string | null>(null);
   const ids = dados ? boxIdsSelecionadas(dados, boxSel) : [];
   const ligados = dados ? cenariosLigados(dados) : new Set<string>();
 
@@ -211,10 +238,20 @@ export default function TelaHoje() {
     // Grava todos os bancos alterados antes de recarregar — `recarregar()` relê o snapshot
     // inteiro (ver store.ts), então uma chamada por banco alterado seria N releituras pra uma
     // única ação de "Salvar conferência dos bancos".
-    await Promise.all(
-      mudancas.map(({ id, cents }) => repo.atualizarBanco(id, { saldoDeclaradoCent: cents, dataSaldoDeclarado: data })),
-    );
-    await recarregar();
+    setAvisoSalvarBancos(null);
+    try {
+      await Promise.all(
+        mudancas.map(({ id, cents }) => repo.atualizarBanco(id, { saldoDeclaradoCent: cents, dataSaldoDeclarado: data })),
+      );
+    } catch {
+      // Cada gravação é uma transação própria — o que já gravou não se perde. Mas o
+      // `Promise.all` rejeita no primeiro erro, então sem isto a tela ficaria muda: o usuário
+      // acharia que salvou tudo quando só parte gravou de fato.
+      setAvisoSalvarBancos('Nem tudo foi salvo — confira os valores e tente novamente.');
+    } finally {
+      // Recarrega mesmo em caso de erro parcial, pra tela refletir o que de fato foi gravado.
+      await recarregar();
+    }
   }
 
   async function confirmar(id: string) {
@@ -277,9 +314,12 @@ export default function TelaHoje() {
             <ConferenciaSaldo key={boxSel} saldoApp={deHoje?.saldoEfetivo ?? 0} declaradoCent={declaradoCent}
               dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} />
           ) : (
-            <ConferenciaBancos key={`${boxSel}-${chaveBancos}`} bancos={bancos} boxes={dados.boxes}
-              agruparPorBox={boxSel === 'casa'} saldoApp={deHoje?.saldoEfetivo ?? 0} hoje={hoje}
-              onSalvarBancos={salvarSaldosBancos} />
+            <>
+              {avisoSalvarBancos && <p className="aviso">{avisoSalvarBancos}</p>}
+              <ConferenciaBancos key={`${boxSel}-${chaveBancos}`} bancos={bancos} boxes={dados.boxes}
+                agruparPorBox={boxSel === 'casa'} saldoApp={deHoje?.saldoEfetivo ?? 0} hoje={hoje}
+                onSalvarBancos={salvarSaldosBancos} />
+            </>
           )}
           <BalanceChart serie={janela} hoje={hoje} altura={120} mostrarCenarios={ligados.size > 0} />
         </div>
