@@ -550,28 +550,23 @@ export async function atualizarBanco(
   });
 }
 
-/** Excluir um banco desliga os cartões que apontavam para ele — mesma disciplina de
- *  `excluirViagem`. Cartão apontando para banco inexistente é inconsistência silenciosa. */
+/** Excluir um banco desliga os cartões que apontavam para ele. Cartão apontando para
+ *  banco inexistente é inconsistência silenciosa — o mesmo cuidado que
+ *  `converterCenarioEmReal` toma com as recorrências. */
 export async function excluirBanco(id: ID): Promise<void> {
   await db.transaction('rw', db.bancos, db.cartoes, db.config, async () => {
-    await db.cartoes.where('bancoId').equals(id).modify({ bancoId: undefined });
+    const agora = agoraISO();
+    // `bancoId` não é índice (a Tarefa 1 o declarou só como campo), então é `.filter()`
+    // e não `.where()` — mesmo idioma de `converterCenarioEmReal` (`repo.ts:212`).
+    await db.cartoes.filter((c) => c.bancoId === id).modify((c) => {
+      delete c.bancoId;
+      c.alteradoEm = agora;
+    });
     await db.bancos.delete(id);
     await marcarMudanca();
   });
 }
 ```
-
-**Atenção:** `db.cartoes.where('bancoId')` exige que `bancoId` seja índice. Ele **não** é
-(a Tarefa 1 o declarou só como campo). Use a varredura, que é o que `excluirViagem` faz para
-campos sem índice:
-
-```ts
-    const orfaos = await db.cartoes.filter((c) => c.bancoId === id).primaryKeys();
-    await db.cartoes.bulkUpdate(orfaos.map((key) => ({ key, changes: { bancoId: undefined } })));
-```
-
-Se `bulkUpdate` não existir na versão do Dexie do projeto, use um laço com
-`db.cartoes.update(key, { bancoId: undefined })`.
 
 Em `carregarTudo`, acrescente `db.bancos.toArray()` ao `Promise.all`, à desestruturação e ao
 objeto retornado, junto de `viagens`.
