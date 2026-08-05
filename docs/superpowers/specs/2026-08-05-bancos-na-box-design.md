@@ -133,7 +133,7 @@ Nenhuma mutação de banco chama `sincronizarCartoes`: banco não entra em fatur
 ## Estilo
 
 Tela nova (nível 5) mais, possivelmente, classe nova para a lista de conferência por banco
-(nível 2). Consultar `docs/estilo-visual.md` e os capítulos correspondentes antes do código;
+(nível 2). Leia `docs/estilo-visual.md` e os capítulos correspondentes antes do código;
 classe ou componente novo se cataloga em `docs/estilo/catalogo.md` **no mesmo commit** — o
 guard do release bloqueia se faltar. Mudança de UI exige **mockup aprovado** antes de escrever
 a tela.
