@@ -1,0 +1,3 @@
+- Wiki: o capítulo do cartão passa a explicar como pagar a fatura por outro valor, informar a data em que você pagou e registrar o parcelamento feito no banco.
+- Wiki: novo trecho sobre bancos em Ajustes, e a tela Hoje passa a descrever a conferência de saldo por banco.
+- Wiki: glossário ganhou "banco" e "parcelamento de fatura".

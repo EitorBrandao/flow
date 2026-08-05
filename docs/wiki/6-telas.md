@@ -9,12 +9,16 @@ Todas respeitam o seletor de box no topo (no exemplo: `{{boxA}}` / `{{boxB}}` / 
 Tela inicial. Foco em "onde estou agora" e no que precisa de atenção.
 
 - **Saldo hoje:** saldo efetivo em destaque; se o projetado difere, aparece logo abaixo.
-- **Conferência de saldo real:** campo para digitar o saldo que o app do banco mostra + data; o app calcula a diferença ("bate certinho", "falta inserir no app" ou "sobra no app — confira duplicado").
+- **Conferência de saldo real:** campo para digitar o saldo que o app do banco mostra + data; o app calcula a diferença ("bate certinho", "falta inserir no app" ou "sobra no app — confira duplicado"). Se a box tiver bancos cadastrados, vira uma linha por banco, com o total informado abaixo — a diferença passa a ser calculada contra essa soma.
 - **Mini-gráfico** da janela de 7 dias atrás a 28 dias à frente.
 - **Pendentes:** fila de previstos vencidos, com confirmar (✓) ou descartar (✕) em um toque.
 - **Aviso de backup:** banner quando há mudanças e o último backup passou de 7 dias — toca e vai direto para Ajustes → Backup.
 
 **Conferência de saldo — obrigatório:** saldo real no banco. **Tem padrão:** data (hoje).
+
+> Com bancos cadastrados, enquanto nenhum saldo for informado a tela não mostra diferença nenhuma. Acusar um descasamento do tamanho do saldo inteiro só porque você ainda não digitou seria mentira.
+
+Cada linha de banco tem o botão de sinal, então conta no cheque especial se informa como negativa. Salvar grava só os bancos cujo valor você realmente mudou — encostar num campo e desistir não mexe no que já estava lá.
 
 ## Lançar
 
