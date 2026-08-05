@@ -19,6 +19,14 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   `iniciar()` (`src/state/store.ts`) se não existir nenhuma box chamada `"casa"`. Ver
   seção própria abaixo — `'casa'` é ao mesmo tempo o nome dessa box e um sentinela de
   seleção com dois significados diferentes.
+- **Banco** — conta bancária **dentro** de uma box, com `nome`, `ordem` e o par
+  `saldoDeclaradoCent`/`dataSaldoDeclarado`. Existe porque a box modela a *pessoa*, e uma
+  pessoa costuma ter várias contas. **O saldo do banco é informado pelo usuário, não
+  calculado**: lançamento ainda não aponta para banco, então nada aqui se atualiza sozinho
+  ao lançar (ver a seção de conferência, abaixo). Um `Cartao` pode apontar para um banco
+  (`bancoId`, opcional e sem índice); excluir o banco desliga esse vínculo
+  (`excluirBanco`, `src/db/repo.ts`), para não sobrar cartão apontando para banco
+  inexistente.
 - **Categoria** — rótulo de ganho/gasto dentro de uma box, com `ordem` (posição definida
   pelo usuário em Ajustes) e `arquivada` (fica fora das listas de seleção, mas seu
   histórico continua contando nos agregados). A ordem de exibição não é `ordem` cru: é
@@ -266,15 +274,51 @@ cada compra existente é derivado comparando `data` com `hoje`
 `excluirAssinatura` só apaga as compras **futuras** vinculadas à regra (`c.data > hoje`);
 compras passadas ficam como histórico mesmo depois de a assinatura ser excluída.
 
+## Conferência de saldo (`ConferenciaSaldo` e `ConferenciaBancos`, `src/ui/TelaHoje.tsx`)
+
+Conferir é comparar o que o Flow **projeta** com o que o banco **diz**. Existem dois modos,
+escolhidos pelo número de bancos da seleção — nunca os dois ao mesmo tempo:
+
+- **Box sem banco:** campo único, gravando em `Box.saldoDeclaradoCent` (ou em
+  `Config.saldoDeclaradoCent`, na visão `'casa'`). É o comportamento histórico, preservado
+  byte a byte.
+- **Box com bancos:** uma linha por banco, gravando em `Banco.saldoDeclaradoCent`. O total
+  informado (`totalDeclaradoCent`, `src/domain/bancos.ts`) é que se compara com a projeção.
+
+**O valor antigo da box não é apagado** quando passam a existir bancos: ele deixa de ser
+exibido e de entrar na conta, mas continua no banco de dados. Somar os dois níveis contaria o
+mesmo dinheiro duas vezes; apagar destruiria dado para resolver um problema de exibição.
+Excluir todos os bancos devolve o modo antigo, com o valor que estava lá — é isto que torna a
+feature reversível.
+
+**`totalDeclaradoCent` devolve `null` quando nenhum banco foi informado**, e nesse caso a tela
+não exibe diferença alguma. "Informou zero" e "não informou" são estados diferentes: confundi-los
+faria a tela acusar um descasamento do tamanho do saldo inteiro só porque o usuário ainda não
+digitou.
+
+**Só é gravado o banco cujo valor mudou de fato.** `CampoValor` zera o próprio buffer no
+primeiro foco (comportamento deliberado, usado em toda a base), então "marcar como editado
+quando o `onChange` disparar" faria encostar num campo zerar um saldo já gravado. A decisão
+usa o valor final comparado ao persistido, descartando esse primeiro `onChange`; alternar o
+sinal `+/−` também conta como edição. Há testes para os três caminhos.
+
 ## Backup e merge (`src/backup/backup.ts`)
 
-**O que `validarBackup` garante:** `app === 'flow'`; `schema` é `1`, `2` ou `3`; para cada
-schema, as tabelas correspondentes existem e são arrays (`TABELAS_V1` sempre;
-`TABELAS_CARTAO` a partir do schema 2; `TABELAS_VIAGEM` a partir do schema 3); backups de
+**O que `validarBackup` garante:** `app === 'flow'`; `schema` é `1`, `2`, `3` ou `4`; para
+cada schema, as tabelas correspondentes existem e são arrays (`TABELAS_V1` sempre;
+`TABELAS_CARTAO` a partir do schema 2; `TABELAS_VIAGEM` a partir do schema 3;
+`TABELAS_BANCO` a partir do schema 4); backups de
 schema antigo recebem as tabelas novas como array vazio; `dados.config` é um objeto de
 verdade — `null`, array e primitivo são rejeitados com mensagem própria — e sai de
 `validarBackup` sempre com `id: 'config'`, a chave primária do registro único. `mesclar`
 sempre mantém a `config` local (`atual.config`), nunca a do backup.
+
+**Exceção deliberada no preenchimento de `bancos`.** As demais tabelas novas são preenchidas
+com `[]` conforme o **número do schema**; `bancos` é preenchida conforme a **chave não ser um
+array**. A diferença existe porque circularam builds intermediários que já gravavam `bancos`
+num backup ainda marcado como `schema: 3` — condicionar ao schema apagaria esses bancos
+reais, trocando-os por lista vazia, em silêncio. Há teste dedicado a isto
+(`src/backup/backup.test.ts`): se alguém trocar a condição pelo número do schema, ele falha.
 
 **O que `validarBackup` não garante** (validação rasa, por desenho — CLAUDE.md já registra
 isso; aqui é a leitura precisa do código):

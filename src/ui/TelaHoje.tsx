@@ -1,9 +1,10 @@
-import { useId, useMemo, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as repo from '../db/repo';
+import { bancosDaBox, totalDeclaradoCent } from '../domain/bancos';
 import { addDias } from '../domain/dates';
 import { formatarBRL } from '../domain/money';
-import type { ISODate, Lancamento } from '../domain/types';
+import type { Banco, Box, ISODate, Lancamento } from '../domain/types';
 import { pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, estadoPrimeiroUso, useApp } from '../state/store';
 import BalanceChart from './BalanceChart';
@@ -71,9 +72,131 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
   );
 }
 
+/** Mesmas frases de diferença que `ConferenciaSaldo` usa — a conferência por banco muda só
+ *  o campo de entrada (um por banco em vez de um único), não o texto de resultado. */
+function textoDiferenca(diff: number): string {
+  if (Math.abs(diff) <= 1) return 'Bate certinho.';
+  return diff > 0
+    ? `Diferença: ${formatarBRL(diff)} — falta inserir no app`
+    : `Diferença: ${formatarBRL(-diff)} — sobra no app (confira duplicado ou algo não confirmado no banco)`;
+}
+
+/** Um grupo de bancos: sem box quando a seleção é uma única box (lista plana), com box
+ *  quando é 'casa' (agrupado, mesmo padrão do `LancamentosSheet`: `.rotulo-grupo` + `.recuo-1`). */
+interface GrupoBancos { box: Box | null; itens: Banco[] }
+
+function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSalvarBancos }: {
+  bancos: Banco[];
+  boxes: Box[];
+  agruparPorBox: boolean;
+  saldoApp: number;
+  hoje: ISODate;
+  onSalvarBancos: (mudancas: { id: string; cents: number }[], data: ISODate) => Promise<void>;
+}) {
+  // Magnitude e sinal ficam em estados separados (mesmo padrão de `ConferenciaSaldo` e de
+  // `Bancos.tsx` em Ajustes) — `CampoValor` só sabe lidar com o valor absoluto digitado; quem
+  // decide se o resultado final é negativo é o botão de alternar sinal, ao lado de cada campo.
+  const [magnitudes, setMagnitudes] = useState<Record<string, number>>(
+    () => Object.fromEntries(bancos.map((b) => [b.id, Math.abs(b.saldoDeclaradoCent ?? 0)])),
+  );
+  const [negativos, setNegativos] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(bancos.map((b) => [b.id, (b.saldoDeclaradoCent ?? 0) < 0])),
+  );
+  // Não basta saber que o `onChange` disparou: `CampoValor` zera o buffer já no primeiro foco
+  // chamando onChange(0), mesmo sem o usuário digitar nada (ver CampoValor.test.tsx, "primeiro
+  // foco zera o buffer") — um toque acidental (ou o "próximo" do teclado) já bastava pra incluir
+  // o banco no Salvar com valor zero, apagando um saldo real gravado. Por isso o PRIMEIRO
+  // onChange de cada campo é sempre descartado como esse zera-buffer do foco; só o segundo em
+  // diante (um dígito, um backspace ou um paste) marca o banco como realmente editado.
+  const primeiroFoco = useRef<Set<string>>(new Set());
+  const editados = useRef<Set<string>>(new Set());
+
+  function mudarValor(id: string, v: number) {
+    setMagnitudes((atual) => ({ ...atual, [id]: v }));
+    if (primeiroFoco.current.has(id)) editados.current.add(id);
+    else primeiroFoco.current.add(id);
+  }
+
+  // Diferente do `onChange` de `CampoValor`, o clique no botão de sinal não tem zera-buffer de
+  // foco pra descartar — é sempre uma decisão explícita do usuário, então marca o banco como
+  // editado direto. Sem isso, alternar o sinal de um banco nunca tocado de outra forma (ou já
+  // "editado" só pelo zera-buffer) não entraria em `editados`, e o Salvar não gravaria nada.
+  function alternarSinal(id: string) {
+    setNegativos((atual) => ({ ...atual, [id]: !atual[id] }));
+    editados.current.add(id);
+  }
+
+  async function salvar() {
+    // Grava só quem foi editado de fato e cujo valor final difere do que já está persistido —
+    // "focou e desistiu" deixa o banco fora daqui (não entrou em `editados`), então um banco
+    // nunca informado (`saldoDeclaradoCent: null`) que só foi tocado continua `null`, não vira
+    // "informado zero" (são estados diferentes: ver `totalDeclaradoCent`). Já um banco realmente
+    // zerado por edição (dígitos apagados até zero) entra normalmente, mesmo que o resultado
+    // numérico seja o mesmo zero — é uma decisão consciente do usuário, não um efeito colateral.
+    const mudancas = bancos
+      .filter((b) => editados.current.has(b.id))
+      .map((b) => {
+        const magnitude = magnitudes[b.id] ?? 0;
+        return { id: b.id, cents: negativos[b.id] ? -magnitude : magnitude };
+      })
+      .filter(({ id, cents }) => bancos.find((b) => b.id === id)?.saldoDeclaradoCent !== cents);
+    if (mudancas.length === 0) return;
+    await onSalvarBancos(mudancas, hoje);
+  }
+
+  const totalCent = totalDeclaradoCent(bancos);
+  const diff = totalCent != null ? totalCent - saldoApp : null;
+
+  const grupos: GrupoBancos[] = agruparPorBox
+    ? boxes
+      .map((box) => ({ box, itens: bancos.filter((b) => b.boxId === box.id) }))
+      .filter((g) => g.itens.length > 0)
+    : [{ box: null, itens: bancos }];
+
+  return (
+    <div className="conferencia-bancos">
+      <p className="rotulo-grupo">Saldo real em cada banco</p>
+      {grupos.map((g) => (
+        <div key={g.box?.id ?? 'unico'}>
+          {agruparPorBox && g.box && <p className="rotulo-grupo">{g.box.nome}</p>}
+          {g.itens.map((b) => (
+            <div className={`linha-banco${agruparPorBox ? ' recuo-1' : ''}`} key={b.id}>
+              <span>{b.nome}</span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button
+                  type="button" className="botao" aria-label="Alternar sinal (positivo/negativo)"
+                  onClick={() => alternarSinal(b.id)} style={{ padding: '8px 12px' }}
+                >
+                  {negativos[b.id] ? '−' : '+'}
+                </button>
+                <CampoValor
+                  id={`banco-${b.id}`} valorCentavos={magnitudes[b.id] ?? 0}
+                  onChange={(v) => mudarValor(b.id, v)}
+                  ariaLabel={b.nome} style={{ width: 110 }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+      <div className="total">
+        <span>Total informado</span>
+        <span>{totalCent != null ? formatarBRL(totalCent) : '—'}</span>
+      </div>
+      {diff == null ? (
+        <p className="sub" style={{ margin: '4px 0 0' }}>Informe o saldo de ao menos um banco para conferir.</p>
+      ) : (
+        <p className="sub" style={{ margin: '4px 0 0' }}>{textoDiferenca(diff)}</p>
+      )}
+      <button className="botao" style={{ alignSelf: 'flex-start' }} onClick={salvar}>Salvar conferência dos bancos</button>
+    </div>
+  );
+}
+
 export default function TelaHoje() {
   const { dados, boxSel, hoje, recarregar, abrirAjustes } = useApp();
   const [pagando, setPagando] = useState<Lancamento | null>(null);
+  const [avisoSalvarBancos, setAvisoSalvarBancos] = useState<string | null>(null);
   const ids = dados ? boxIdsSelecionadas(dados, boxSel) : [];
   const ligados = dados ? cenariosLigados(dados) : new Set<string>();
 
@@ -100,11 +223,35 @@ export default function TelaHoje() {
   const boxAtual = boxSel !== 'casa' ? dados.boxes.find((b) => b.id === boxSel) : undefined;
   const declaradoCent = (boxSel === 'casa' ? dados.config.saldoDeclaradoCent : boxAtual?.saldoDeclaradoCent) ?? null;
   const dataDeclarado = (boxSel === 'casa' ? dados.config.dataSaldoDeclarado : boxAtual?.dataSaldoDeclarado) ?? null;
+  // Box sem banco nenhum cadastrado mantém a conferência de sempre (campo único) — zero
+  // regressão pra quem nunca cadastrou um banco. Só com bancos a lista por banco assume.
+  const bancos = bancosDaBox(dados.bancos, ids);
+  const chaveBancos = bancos.map((b) => b.id).join(',');
 
   async function salvarSaldoReal(cents: number, data: string) {
     if (boxSel === 'casa') await repo.salvarConfig({ saldoDeclaradoCent: cents, dataSaldoDeclarado: data });
     else if (boxAtual) await repo.salvarBox({ ...boxAtual, saldoDeclaradoCent: cents, dataSaldoDeclarado: data });
     await recarregar();
+  }
+
+  async function salvarSaldosBancos(mudancas: { id: string; cents: number }[], data: string) {
+    // Grava todos os bancos alterados antes de recarregar — `recarregar()` relê o snapshot
+    // inteiro (ver store.ts), então uma chamada por banco alterado seria N releituras pra uma
+    // única ação de "Salvar conferência dos bancos".
+    setAvisoSalvarBancos(null);
+    try {
+      await Promise.all(
+        mudancas.map(({ id, cents }) => repo.atualizarBanco(id, { saldoDeclaradoCent: cents, dataSaldoDeclarado: data })),
+      );
+    } catch {
+      // Cada gravação é uma transação própria — o que já gravou não se perde. Mas o
+      // `Promise.all` rejeita no primeiro erro, então sem isto a tela ficaria muda: o usuário
+      // acharia que salvou tudo quando só parte gravou de fato.
+      setAvisoSalvarBancos('Nem tudo foi salvo — confira os valores e tente novamente.');
+    } finally {
+      // Recarrega mesmo em caso de erro parcial, pra tela refletir o que de fato foi gravado.
+      await recarregar();
+    }
   }
 
   async function confirmar(id: string) {
@@ -163,8 +310,17 @@ export default function TelaHoje() {
               </strong>
             </p>
           )}
-          <ConferenciaSaldo key={boxSel} saldoApp={deHoje?.saldoEfetivo ?? 0} declaradoCent={declaradoCent}
-            dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} />
+          {bancos.length === 0 ? (
+            <ConferenciaSaldo key={boxSel} saldoApp={deHoje?.saldoEfetivo ?? 0} declaradoCent={declaradoCent}
+              dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} />
+          ) : (
+            <>
+              {avisoSalvarBancos && <p className="aviso">{avisoSalvarBancos}</p>}
+              <ConferenciaBancos key={`${boxSel}-${chaveBancos}`} bancos={bancos} boxes={dados.boxes}
+                agruparPorBox={boxSel === 'casa'} saldoApp={deHoje?.saldoEfetivo ?? 0} hoje={hoje}
+                onSalvarBancos={salvarSaldosBancos} />
+            </>
+          )}
           <BalanceChart serie={janela} hoje={hoje} altura={120} mostrarCenarios={ligados.size > 0} />
         </div>
       )}

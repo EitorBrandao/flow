@@ -252,6 +252,7 @@ it('substituirTudo troca completamente os dados e reseta mudancasDesdeBackup', a
     recorrenciasCartao: [],
     conferenciasFatura: [],
     viagens: [],
+    bancos: [],
     config: {
       id: 'config', boxPadraoId: 'nb1', ultimoBackupEm: agora,
       mudancasDesdeBackup: true, horizonteProjecao: `${new Date().getFullYear() + 1}-12-31`,
@@ -583,6 +584,26 @@ describe('viagem', () => {
   });
 });
 
+describe('bancos', () => {
+  it('substituirTudo grava bancos do backup e remove os locais pré-existentes', async () => {
+    const agora = agoraISO();
+    await db.bancos.add({
+      id: 'velho', boxId: 'b', nome: 'Banco Velho', ordem: 0,
+      saldoDeclaradoCent: 1000, dataSaldoDeclarado: '2026-01-01', criadoEm: agora, alteradoEm: agora,
+    });
+    const dados = await repo.carregarTudo();
+    await repo.substituirTudo({
+      ...dados,
+      bancos: [{
+        id: 'novo', boxId: 'b', nome: 'Banco Novo', ordem: 0,
+        saldoDeclaradoCent: 2000, dataSaldoDeclarado: '2026-02-01', criadoEm: agora, alteradoEm: agora,
+      }],
+    });
+    const depois = await db.bancos.toArray();
+    expect(depois.map((c) => c.id)).toEqual(['novo']);
+  });
+});
+
 it('carregarTudo devolve categorias de cartão ordenadas por ordem e nome', async () => {
   const agora = agoraISO();
   const box: Box = {
@@ -824,5 +845,56 @@ describe('registrarPagamentoFatura', () => {
       const parcelas = (await db.lancamentos.toArray()).filter((l) => l.status === 'previsto' && l.origem === 'cartao');
       expect(parcelas.map((l) => l.faturaMes).sort()).toEqual(['2026-09', '2026-10', '2026-11']);
     } finally { vi.useRealTimers(); }
+  });
+});
+
+describe('bancos', () => {
+  it('salvarBanco cria com saldo não informado e aparece em carregarTudo', async () => {
+    const { box } = await boxECategoria();
+    const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+
+    expect(banco).toMatchObject({ nome: 'Banco Um', saldoDeclaradoCent: null, dataSaldoDeclarado: null });
+    const dados = await repo.carregarTudo();
+    expect(dados.bancos.map((b) => b.nome)).toEqual(['Banco Um']);
+    expect(dados.config.mudancasDesdeBackup).toBe(true);
+  });
+
+  it('atualizarBanco grava o saldo informado com a data', async () => {
+    const { box } = await boxECategoria();
+    const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await repo.atualizarBanco(banco.id, { saldoDeclaradoCent: 50000, dataSaldoDeclarado: '2026-08-05' });
+
+    expect(await db.bancos.get(banco.id)).toMatchObject({
+      saldoDeclaradoCent: 50000, dataSaldoDeclarado: '2026-08-05',
+    });
+  });
+
+  it('excluirBanco limpa o bancoId dos cartões que apontavam para ele', async () => {
+    const { box } = await boxECategoria();
+    const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    const cartao = await repo.salvarCartao(
+      { boxId: box.id, nome: 'Cartão', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31',
+    );
+    await db.cartoes.update(cartao.id, { bancoId: banco.id });
+
+    await repo.excluirBanco(banco.id);
+
+    // cartão órfão apontando para banco inexistente é inconsistência silenciosa
+    expect(await db.bancos.get(banco.id)).toBeUndefined();
+    expect((await db.cartoes.get(cartao.id))?.bancoId).toBeUndefined();
+  });
+
+  it('excluirBanco não mexe em cartão de outro banco', async () => {
+    const { box } = await boxECategoria();
+    const alvo = await repo.salvarBanco({ boxId: box.id, nome: 'Alvo', ordem: 0 });
+    const outro = await repo.salvarBanco({ boxId: box.id, nome: 'Outro', ordem: 1 });
+    const cartao = await repo.salvarCartao(
+      { boxId: box.id, nome: 'Cartão', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31',
+    );
+    await db.cartoes.update(cartao.id, { bancoId: outro.id });
+
+    await repo.excluirBanco(alvo.id);
+
+    expect((await db.cartoes.get(cartao.id))?.bancoId).toBe(outro.id);
   });
 });

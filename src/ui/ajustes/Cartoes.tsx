@@ -1,10 +1,12 @@
 import { useEffect, useId, useState } from 'react';
 import * as repo from '../../db/repo';
+import { bancosDaBox } from '../../domain/bancos';
 import { boxIdEfetivo, useApp } from '../../state/store';
 
 export default function Cartoes() {
   const { dados, boxSel, recarregar } = useApp();
   const [nome, setNome] = useState('');
+  const [bancoId, setBancoId] = useState('');
   const [diaFechamento, setDiaFechamento] = useState('28');
   const [diaVencimento, setDiaVencimento] = useState('5');
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -12,7 +14,7 @@ export default function Cartoes() {
   const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
 
   useEffect(() => {
-    setEditandoId(null); setNome('');
+    setEditandoId(null); setNome(''); setBancoId('');
   }, [boxId]);
 
   if (!dados) return null;
@@ -26,6 +28,7 @@ export default function Cartoes() {
   }
   const horizonte = dados.config.horizonteProjecao;
   const cartoesDaBox = dados.cartoes.filter((c) => c.boxId === boxId);
+  const bancos = bancosDaBox(dados.bancos, [boxId]);
 
   function clampDia(t: string): number {
     return Math.min(31, Math.max(1, Math.round(Number(t) || 1)));
@@ -33,7 +36,7 @@ export default function Cartoes() {
 
   function editar(id: string) {
     const c = dados!.cartoes.find((x) => x.id === id)!;
-    setEditandoId(id); setNome(c.nome);
+    setEditandoId(id); setNome(c.nome); setBancoId(c.bancoId ?? '');
     setDiaFechamento(String(c.diaFechamento)); setDiaVencimento(String(c.diaVencimento));
   }
 
@@ -41,7 +44,7 @@ export default function Cartoes() {
     if (!nome.trim()) return;
     const campos = {
       boxId: boxId!, nome: nome.trim(), diaFechamento: clampDia(diaFechamento),
-      diaVencimento: clampDia(diaVencimento),
+      diaVencimento: clampDia(diaVencimento), bancoId: bancoId || undefined,
     };
     if (editandoId) {
       const original = dados!.cartoes.find((c) => c.id === editandoId)!;
@@ -49,7 +52,7 @@ export default function Cartoes() {
     } else {
       await repo.salvarCartao(campos, horizonte);
     }
-    setEditandoId(null); setNome('');
+    setEditandoId(null); setNome(''); setBancoId('');
     await recarregar();
   }
 
@@ -68,6 +71,19 @@ export default function Cartoes() {
           <input id={`${uid}-nome`} placeholder="ex.: Nubank" value={nome} onChange={(e) => setNome(e.target.value)} />
         </div>
       </div>
+      {bancos.length > 0 && (
+        <div className="linha">
+          <div className="campo">
+            <label htmlFor={`${uid}-banco`}>Banco</label>
+            <select id={`${uid}-banco`} value={bancoId} onChange={(e) => setBancoId(e.target.value)}>
+              <option value="">— sem banco —</option>
+              {bancos.map((b) => (
+                <option key={b.id} value={b.id}>{b.nome}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
       <div className="linha">
         <div className="campo">
           <label htmlFor={`${uid}-fecha`}>Dia de fechamento</label>

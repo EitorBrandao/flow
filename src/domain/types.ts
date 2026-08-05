@@ -19,6 +19,16 @@ export interface Box extends Entidade {
   dataSaldoDeclarado?: ISODate | null;
 }
 
+/** Conta bancária dentro de uma box. Nesta entrega o saldo é informado pelo usuário, não
+ *  calculado: lançamento ainda não aponta para banco (ver a spec, entrega 2). */
+export interface Banco extends Entidade {
+  boxId: ID;
+  nome: string;
+  ordem: number;
+  saldoDeclaradoCent: number | null;
+  dataSaldoDeclarado: ISODate | null;
+}
+
 export interface Categoria extends Entidade {
   boxId: ID;
   nome: string;
@@ -64,6 +74,7 @@ export interface Cartao extends Entidade {
   categoriaAssinaturasId?: ID; // CategoriaCartao oculta reservada p/ assinaturas; criada sob demanda
   categoriaParcelamentoId?: ID; // CategoriaCartao oculta reservada p/ parcelamento de fatura; sob demanda
   ativo: boolean;
+  bancoId?: ID; // banco dono do cartão; organizacional nesta entrega
 }
 
 export interface CategoriaCartao extends Entidade {
@@ -137,6 +148,7 @@ export interface Dados {
   recorrenciasCartao: RecorrenciaCartao[];
   conferenciasFatura: ConferenciaFatura[];
   viagens: Viagem[];
+  bancos: Banco[];
   config: Config;
 }
 

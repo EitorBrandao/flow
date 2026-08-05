@@ -6,7 +6,7 @@ function dados(): Dados {
     boxes: [{ id: 'b1', nome: 'eitor', saldoInicial: 100, dataSaldoInicial: '2026-01-01', criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' }],
     categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
     cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [], conferenciasFatura: [],
-    viagens: [],
+    viagens: [], bancos: [],
     config: { id: 'config', boxPadraoId: null, ultimoBackupEm: null, mudancasDesdeBackup: false, horizonteProjecao: '2027-12-31' },
   };
 }
@@ -15,7 +15,7 @@ it('round-trip: gerar → serializar → validar', () => {
   const b = gerarBackup(dados());
   const volta = validarBackup(JSON.parse(JSON.stringify(b)));
   expect(volta.dados.boxes).toHaveLength(1);
-  expect(volta.schema).toBe(3);
+  expect(volta.schema).toBe(4);
 });
 
 it('validarBackup rejeita arquivo de outro app ou schema', () => {
@@ -44,9 +44,9 @@ it('mesclar une registros de ids diferentes', () => {
   expect(mesclar(atual, backup).boxes).toHaveLength(2);
 });
 
-it('gerarBackup emite schema 3', () => {
+it('gerarBackup emite schema 4', () => {
   const b = gerarBackup(dados());
-  expect(b.schema).toBe(3);
+  expect(b.schema).toBe(4);
 });
 
 it('aceita backup schema 1 preenchendo as tabelas do cartão e viagens vazias', () => {
@@ -58,10 +58,26 @@ it('aceita backup schema 1 preenchendo as tabelas do cartão e viagens vazias', 
     },
   };
   const b = validarBackup(v1);
-  expect(b.schema).toBe(3);
+  expect(b.schema).toBe(4);
   expect(b.dados.cartoes).toEqual([]);
   expect(b.dados.conferenciasFatura).toEqual([]);
   expect(b.dados.viagens).toEqual([]);
+});
+
+it('aceita backup schema 3 sem a chave bancos preenchendo-a vazia, e mesclar não quebra', () => {
+  // backup real de usuário: schema continua 3, mas `bancos` nasceu depois e não existe no arquivo
+  const v3SemBancos = {
+    app: 'flow', schema: 3, exportadoEm: '2026-01-01T00:00:00Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [], conferenciasFatura: [],
+      viagens: [],
+      config: { id: 'config' },
+    },
+  };
+  const b = validarBackup(v3SemBancos);
+  expect(b.dados.bancos).toEqual([]);
+  expect(() => mesclar(dados(), b.dados)).not.toThrow();
 });
 
 it('aceita backup schema 2 preenchendo viagens vazia', () => {
@@ -74,8 +90,91 @@ it('aceita backup schema 2 preenchendo viagens vazia', () => {
     },
   };
   const b = validarBackup(v2);
-  expect(b.schema).toBe(3);
+  expect(b.schema).toBe(4);
   expect(b.dados.viagens).toEqual([]);
+});
+
+it('aceita backup schema 3 preenchendo bancos vazia', () => {
+  const b = validarBackup({
+    app: 'flow', schema: 3, exportadoEm: '2026-08-01T00:00:00.000Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
+      conferenciasFatura: [], viagens: [], config: { id: 'config' },
+    },
+  });
+  expect(b.schema).toBe(4);
+  expect(b.dados.bancos).toEqual([]);
+});
+
+it('recusa backup schema 4 sem a tabela bancos', () => {
+  expect(() => validarBackup({
+    app: 'flow', schema: 4, exportadoEm: '2026-08-01T00:00:00.000Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
+      conferenciasFatura: [], viagens: [], config: { id: 'config' },
+    },
+  })).toThrow(/estrutura de dados inesperada/);
+});
+
+it('recusa backup schema 4 com bancos que não é array', () => {
+  expect(() => validarBackup({
+    app: 'flow', schema: 4, exportadoEm: '2026-08-01T00:00:00.000Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
+      conferenciasFatura: [], viagens: [], config: { id: 'config' }, bancos: { nome: 'Alfa' },
+    },
+  })).toThrow(/estrutura de dados inesperada/);
+});
+
+it('recusa backup schema 4 sem a tabela viagens ou com viagens que não é array', () => {
+  // guarda a checagem `b.schema >= 3` de virar `b.schema === 3`: se voltar a `===`, um
+  // backup schema 4 sem viagens bem formada passaria batido (não é < 3, não backfila;
+  // não é === 3, não valida).
+  const base = {
+    app: 'flow', schema: 4, exportadoEm: '2026-08-01T00:00:00.000Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
+      conferenciasFatura: [], bancos: [], config: { id: 'config' },
+    },
+  };
+  expect(() => validarBackup(base)).toThrow(/estrutura de dados inesperada/);
+  expect(() => validarBackup({ ...base, dados: { ...base.dados, viagens: { nome: 'Praia' } } }))
+    .toThrow(/estrutura de dados inesperada/);
+});
+
+it('backup schema 3 com bancos real preserva o registro (não é apagado no backfill)', () => {
+  // o backfill de `bancos` é condicionado a `!Array.isArray(dados.bancos)`, não ao número
+  // do schema: existem backups reais com schema 3 que já trazem `bancos` preenchido (a
+  // entidade nasceu antes do bump). Se a condição virasse `b.schema < 4`, esses bancos reais
+  // virariam `[]` — perda silenciosa de dado financeiro.
+  const bancoReal = {
+    id: 'bk1', boxId: 'box1', nome: 'Banco Teste', ordem: 0,
+    saldoDeclaradoCent: 10_000, dataSaldoDeclarado: '2026-08-01',
+    criadoEm: '2026-08-01T00:00:00.000Z', alteradoEm: '2026-08-01T00:00:00.000Z',
+  };
+  const b = validarBackup({
+    app: 'flow', schema: 3, exportadoEm: '2026-08-01T00:00:00.000Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
+      conferenciasFatura: [], viagens: [], config: { id: 'config' },
+      bancos: [bancoReal],
+    },
+  });
+  expect(b.dados.bancos).toEqual([bancoReal]);
+});
+
+it('mescla bancos pelo alteradoEm mais recente', () => {
+  const base = { id: '', boxId: 'box1', nome: '', ordem: 0, saldoDeclaradoCent: null, dataSaldoDeclarado: null, criadoEm: '2026-01-01', alteradoEm: '2026-01-01' };
+  const a = dados();
+  const b = dados();
+  a.bancos = [{ ...base, id: 'bk1', nome: 'Nome velho', alteradoEm: '2026-01-01' }];
+  b.bancos = [{ ...base, id: 'bk1', nome: 'Nome novo', alteradoEm: '2026-02-01' }];
+  expect(mesclar(a, b).bancos[0].nome).toBe('Nome novo');
 });
 
 it('rejeita schema desconhecido', () => {

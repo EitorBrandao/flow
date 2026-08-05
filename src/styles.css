@@ -430,3 +430,15 @@ table.tabela th:first-child, table.tabela td:first-child {
 .pagamento-fatura-erro {
   color: var(--neg);
 }
+
+/* ---- Conferência por banco (TelaHoje.tsx) ---- */
+.conferencia-bancos { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.conferencia-bancos .linha-banco {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.conferencia-bancos .linha-banco > span { color: var(--muted); font-size: 14px; }
+.conferencia-bancos .total {
+  display: flex; align-items: baseline; justify-content: space-between;
+  border-top: 1px solid var(--line); padding-top: 8px; margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}

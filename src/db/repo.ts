@@ -4,7 +4,7 @@ import { calcularFaturas, datasFaturaDoMes, dedupConferencias, diffSincronizacao
 import { materializar, ocorrencias } from '../domain/recurrence';
 import {
   agoraISO, novoId,
-  type Box, type Cartao, type Categoria, type CategoriaCartao, type Cenario, type CompraCartao,
+  type Banco, type Box, type Cartao, type Categoria, type CategoriaCartao, type Cenario, type CompraCartao,
   type Config, type Dados, type ID, type ISODate, type Lancamento, type Recorrencia,
   type RecorrenciaCartao, type StatusLancamento, type TipoCategoria, type Viagem,
 } from '../domain/types';
@@ -39,12 +39,12 @@ export async function carregarTudo(): Promise<Dados> {
   }
   const [
     boxes, categorias, lancamentos, recorrencias, cenarios,
-    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens,
+    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, bancos,
   ] = await Promise.all([
     db.boxes.toArray(), db.categorias.toArray(), db.lancamentos.toArray(),
     db.recorrencias.toArray(), db.cenarios.toArray(),
     db.cartoes.toArray(), db.categoriasCartao.toArray(), db.comprasCartao.toArray(),
-    db.recorrenciasCartao.toArray(), db.conferenciasFatura.toArray(), db.viagens.toArray(),
+    db.recorrenciasCartao.toArray(), db.conferenciasFatura.toArray(), db.viagens.toArray(), db.bancos.toArray(),
   ]);
   // ordem canônica na fonte: todo consumidor do snapshot herda a ordem de Ajustes
   categorias.sort(compararCategorias);
@@ -55,7 +55,7 @@ export async function carregarTudo(): Promise<Dados> {
   lancamentos.sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
   return {
     boxes, categorias, lancamentos, recorrencias, cenarios,
-    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, config,
+    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, bancos, config,
   };
 }
 
@@ -230,7 +230,7 @@ export async function substituirTudo(d: Dados): Promise<void> {
   const tabelas = [
     db.boxes, db.categorias, db.lancamentos, db.recorrencias, db.cenarios,
     db.cartoes, db.categoriasCartao, db.comprasCartao, db.recorrenciasCartao,
-    db.conferenciasFatura, db.viagens, db.config,
+    db.conferenciasFatura, db.viagens, db.bancos, db.config,
   ];
   await db.transaction('rw', tabelas, async () => {
     await Promise.all(tabelas.map((t) => t.clear()));
@@ -247,6 +247,7 @@ export async function substituirTudo(d: Dados): Promise<void> {
     // conferências do mesmo cartão e mês grava as duas e uma fica órfã (ver dedupConferencias)
     await db.conferenciasFatura.bulkAdd(dedupConferencias(d.conferenciasFatura));
     await db.viagens.bulkAdd(d.viagens);
+    await db.bancos.bulkAdd(d.bancos);
     await db.config.put({ ...d.config, mudancasDesdeBackup: false });
   });
 }
@@ -284,10 +285,54 @@ export async function excluirViagem(id: ID): Promise<void> {
   });
 }
 
+export interface NovoBanco { boxId: ID; nome: string; ordem: number }
+
+export async function salvarBanco(n: NovoBanco | Banco): Promise<Banco> {
+  const agora = agoraISO();
+  const b: Banco = 'id' in n
+    ? { ...n, alteradoEm: agora }
+    : {
+      id: novoId(), saldoDeclaradoCent: null, dataSaldoDeclarado: null,
+      criadoEm: agora, alteradoEm: agora, ...n,
+    };
+  await db.transaction('rw', db.bancos, db.config, async () => {
+    await db.bancos.put(b);
+    await marcarMudanca();
+  });
+  return b;
+}
+
+export async function atualizarBanco(
+  id: ID,
+  patch: Partial<Pick<Banco, 'nome' | 'ordem' | 'saldoDeclaradoCent' | 'dataSaldoDeclarado'>>,
+): Promise<void> {
+  await db.transaction('rw', db.bancos, db.config, async () => {
+    await db.bancos.update(id, { ...patch, alteradoEm: agoraISO() });
+    await marcarMudanca();
+  });
+}
+
+/** Excluir um banco desliga os cartões que apontavam para ele. Cartão apontando para
+ *  banco inexistente é inconsistência silenciosa — o mesmo cuidado que
+ *  `converterCenarioEmReal` toma com as recorrências. */
+export async function excluirBanco(id: ID): Promise<void> {
+  await db.transaction('rw', db.bancos, db.cartoes, db.config, async () => {
+    const agora = agoraISO();
+    // `bancoId` não é índice (a Tarefa 1 o declarou só como campo), então é `.filter()`
+    // e não `.where()` — mesmo idioma de `converterCenarioEmReal` (`repo.ts:212`).
+    await db.cartoes.filter((c) => c.bancoId === id).modify((c) => {
+      delete c.bancoId;
+      c.alteradoEm = agora;
+    });
+    await db.bancos.delete(id);
+    await marcarMudanca();
+  });
+}
+
 // ---------- Cartão de crédito ----------
 
 export interface NovoCartao {
-  boxId: ID; nome: string; diaFechamento: number; diaVencimento: number;
+  boxId: ID; nome: string; diaFechamento: number; diaVencimento: number; bancoId?: ID;
 }
 
 export async function salvarCartao(n: NovoCartao | Cartao, horizonte: ISODate): Promise<Cartao> {
@@ -302,7 +347,7 @@ export async function salvarCartao(n: NovoCartao | Cartao, horizonte: ISODate): 
     } else {
       cartao = {
         id: novoId(), boxId: n.boxId, nome: n.nome, diaFechamento: n.diaFechamento, diaVencimento: n.diaVencimento,
-        ativo: true, criadoEm: agora, alteradoEm: agora, categoriaFaturaId: novoId(),
+        bancoId: n.bancoId, ativo: true, criadoEm: agora, alteradoEm: agora, categoriaFaturaId: novoId(),
       };
       await db.categorias.add({
         id: cartao.categoriaFaturaId, boxId: cartao.boxId, nome: cartao.nome, tipo: 'gasto',

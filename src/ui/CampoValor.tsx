@@ -7,9 +7,10 @@ interface CampoValorProps {
   onChange: (centavos: number) => void;
   autoFocus?: boolean;
   style?: React.CSSProperties;
+  ariaLabel?: string;
 }
 
-export default function CampoValor({ id, valorCentavos, onChange, autoFocus, style }: CampoValorProps) {
+export default function CampoValor({ id, valorCentavos, onChange, autoFocus, style, ariaLabel }: CampoValorProps) {
   const [tocado, setTocado] = useState(false);
 
   function onFocus() {
@@ -34,7 +35,7 @@ export default function CampoValor({ id, valorCentavos, onChange, autoFocus, sty
 
   return (
     <input
-      id={id} inputMode="numeric" autoFocus={autoFocus} style={style}
+      id={id} inputMode="numeric" autoFocus={autoFocus} style={style} aria-label={ariaLabel}
       value={formatarBRL(valorCentavos)}
       onFocus={onFocus} onKeyDown={onKeyDown} onPaste={onPaste}
       onChange={() => {}}
