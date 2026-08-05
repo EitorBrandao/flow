@@ -230,7 +230,7 @@ export async function substituirTudo(d: Dados): Promise<void> {
   const tabelas = [
     db.boxes, db.categorias, db.lancamentos, db.recorrencias, db.cenarios,
     db.cartoes, db.categoriasCartao, db.comprasCartao, db.recorrenciasCartao,
-    db.conferenciasFatura, db.viagens, db.config,
+    db.conferenciasFatura, db.viagens, db.bancos, db.config,
   ];
   await db.transaction('rw', tabelas, async () => {
     await Promise.all(tabelas.map((t) => t.clear()));
@@ -247,6 +247,7 @@ export async function substituirTudo(d: Dados): Promise<void> {
     // conferências do mesmo cartão e mês grava as duas e uma fica órfã (ver dedupConferencias)
     await db.conferenciasFatura.bulkAdd(dedupConferencias(d.conferenciasFatura));
     await db.viagens.bulkAdd(d.viagens);
+    await db.bancos.bulkAdd(d.bancos);
     await db.config.put({ ...d.config, mudancasDesdeBackup: false });
   });
 }

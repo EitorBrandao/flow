@@ -584,6 +584,26 @@ describe('viagem', () => {
   });
 });
 
+describe('bancos', () => {
+  it('substituirTudo grava bancos do backup e remove os locais pré-existentes', async () => {
+    const agora = agoraISO();
+    await db.bancos.add({
+      id: 'velho', boxId: 'b', nome: 'Banco Velho', ordem: 0,
+      saldoDeclaradoCent: 1000, dataSaldoDeclarado: '2026-01-01', criadoEm: agora, alteradoEm: agora,
+    });
+    const dados = await repo.carregarTudo();
+    await repo.substituirTudo({
+      ...dados,
+      bancos: [{
+        id: 'novo', boxId: 'b', nome: 'Banco Novo', ordem: 0,
+        saldoDeclaradoCent: 2000, dataSaldoDeclarado: '2026-02-01', criadoEm: agora, alteradoEm: agora,
+      }],
+    });
+    const depois = await db.bancos.toArray();
+    expect(depois.map((c) => c.id)).toEqual(['novo']);
+  });
+});
+
 it('carregarTudo devolve categorias de cartão ordenadas por ordem e nome', async () => {
   const agora = agoraISO();
   const box: Box = {

@@ -18,7 +18,7 @@ import { agoraISO, novoId } from '../domain/types';
  *    `src/db/database.ts` até a versão atual.
  * 4. Confere que cada registro volta idêntico e que as tabelas novas existem vazias.
  *
- * Só os schemas das versões 1 e 2 são literais aqui (história congelada — nunca mude
+ * Só os schemas das versões 1, 2 e 3 são literais aqui (história congelada — nunca mude
  * estes literais). O lado novo de cada salto é sempre o `FlowDB` real: se alguém alterar
  * ou apagar uma `this.version(n)` em `database.ts`, este arquivo quebra.
  *

@@ -64,6 +64,22 @@ it('aceita backup schema 1 preenchendo as tabelas do cartão e viagens vazias', 
   expect(b.dados.viagens).toEqual([]);
 });
 
+it('aceita backup schema 3 sem a chave bancos preenchendo-a vazia, e mesclar não quebra', () => {
+  // backup real de usuário: schema continua 3, mas `bancos` nasceu depois e não existe no arquivo
+  const v3SemBancos = {
+    app: 'flow', schema: 3, exportadoEm: '2026-01-01T00:00:00Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [], conferenciasFatura: [],
+      viagens: [],
+      config: { id: 'config' },
+    },
+  };
+  const b = validarBackup(v3SemBancos);
+  expect(b.dados.bancos).toEqual([]);
+  expect(() => mesclar(dados(), b.dados)).not.toThrow();
+});
+
 it('aceita backup schema 2 preenchendo viagens vazia', () => {
   const v2 = {
     app: 'flow', schema: 2, exportadoEm: '2026-01-01T00:00:00Z',

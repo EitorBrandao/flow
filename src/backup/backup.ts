@@ -17,6 +17,7 @@ const TABELAS_CARTAO = [
   'cartoes', 'categoriasCartao', 'comprasCartao', 'recorrenciasCartao', 'conferenciasFatura',
 ] as const;
 const TABELAS_VIAGEM = ['viagens'] as const;
+const TABELAS_BANCO = ['bancos'] as const;
 
 export function validarBackup(json: unknown): Backup {
   const b = json as { app?: unknown; schema?: unknown; exportadoEm?: unknown; dados?: Record<string, unknown> } | null;
@@ -42,6 +43,11 @@ export function validarBackup(json: unknown): Backup {
   if (b.schema === 3 && TABELAS_VIAGEM.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
+  // bancos nasceu depois do schema 3, sem bump de schema: é sempre opcional (backfill abaixo),
+  // mas se vier, tem que vir como array — não há versão que a isente de ser bem formada.
+  if (d.bancos !== undefined && TABELAS_BANCO.some((t) => !Array.isArray(d[t]))) {
+    throw new Error('Backup corrompido: estrutura de dados inesperada.');
+  }
   const dados = { ...d } as unknown as Dados;
   // 'config' é a chave primária do registro único; um backup sem ela faz o `put` do repo
   // gravar sem chave e falhar. O id é constante por definição — impor aqui é barato.
@@ -55,6 +61,11 @@ export function validarBackup(json: unknown): Backup {
     // backup antigo: viagens nasceu depois
     const md = dados as unknown as Record<string, unknown[]>;
     for (const t of TABELAS_VIAGEM) md[t] = [];
+  }
+  if (!Array.isArray(dados.bancos)) {
+    // backup de qualquer schema sem a chave bancos: entidade nasceu depois, sem bump de schema
+    const md = dados as unknown as Record<string, unknown[]>;
+    for (const t of TABELAS_BANCO) md[t] = [];
   }
   return {
     app: 'flow', schema: 3,
