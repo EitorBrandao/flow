@@ -102,25 +102,18 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
   const [negativos, setNegativos] = useState<Record<string, boolean>>(
     () => Object.fromEntries(bancos.map((b) => [b.id, (b.saldoDeclaradoCent ?? 0) < 0])),
   );
-  // Não basta saber que o `onChange` disparou: `CampoValor` zera o buffer já no primeiro foco
-  // chamando onChange(0), mesmo sem o usuário digitar nada (ver CampoValor.test.tsx, "primeiro
-  // foco zera o buffer") — um toque acidental (ou o "próximo" do teclado) já bastava pra incluir
-  // o banco no Salvar com valor zero, apagando um saldo real gravado. Por isso o PRIMEIRO
-  // onChange de cada campo é sempre descartado como esse zera-buffer do foco; só o segundo em
-  // diante (um dígito, um backspace ou um paste) marca o banco como realmente editado.
-  const primeiroFoco = useRef<Set<string>>(new Set());
+  // `CampoValor` não dispara `onChange` ao receber foco — focar seleciona o conteúdo, e só
+  // digitar altera. Então todo `onChange` que chega aqui é edição de verdade, e basta
+  // registrar quem mexeu: encostar num campo e desistir não entra na lista.
   const editados = useRef<Set<string>>(new Set());
 
   function mudarValor(id: string, v: number) {
     setMagnitudes((atual) => ({ ...atual, [id]: v }));
-    if (primeiroFoco.current.has(id)) editados.current.add(id);
-    else primeiroFoco.current.add(id);
+    editados.current.add(id);
   }
 
-  // Diferente do `onChange` de `CampoValor`, o clique no botão de sinal não tem zera-buffer de
-  // foco pra descartar — é sempre uma decisão explícita do usuário, então marca o banco como
-  // editado direto. Sem isso, alternar o sinal de um banco nunca tocado de outra forma (ou já
-  // "editado" só pelo zera-buffer) não entraria em `editados`, e o Salvar não gravaria nada.
+  // Alternar o sinal não passa pelo campo de valor, mas é edição igual — sem isto, trocar o
+  // sinal e salvar não gravaria nada.
   function alternarSinal(id: string) {
     setNegativos((atual) => ({ ...atual, [id]: !atual[id] }));
     editados.current.add(id);

@@ -67,7 +67,10 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 - **`CampoValor.tsx`** — input numérico controlado com comportamento estilo caixa eletrônico:
   digita da direita pra esquerda, Backspace remove último dígito, colar substitui o buffer
   inteiro. Exibe valor formatado em BRL (ex.: `R$ 12,34`). Usado para entrada de valores
-  monetários em formulários.
+  monetários em formulários. **Focar seleciona o conteúdo e não dispara `onChange`**: o
+  primeiro dígito substitui o valor, do segundo em diante empurra. Encostar no campo e
+  desistir nunca altera dado — regra de que dependem as telas que salvam vários campos de
+  uma vez.
 - **`CampoData.tsx`** — substitui `<input type="date">` cru em toda a base: um botão visível
   (ícone `Calendar` do `lucide-react` + data formatada `DD/MM/AAAA` via `formatarDataBR`,
   ou `placeholder` quando vazio) sobrepõe um `input[type=date]` nativo real, porém
