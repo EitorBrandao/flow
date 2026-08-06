@@ -129,47 +129,51 @@ export default function Bancos() {
             <div className={`item${emEdicao ? ' item-coluna' : ''}`} key={b.id}>
               {emEdicao ? (
                 <>
-                  <div className="linha-topo">
-                    <div className="campo cresce">
-                      <label htmlFor={`${b.id}-nome`}>Nome</label>
-                      <input
-                        id={`${b.id}-nome`} value={nomeEdicao}
-                        onChange={(e) => setNomeEdicao(e.target.value)}
-                      />
-                    </div>
-                    <button className="botao botao-primario" onClick={salvarEdicao}>Salvar</button>
-                    <button className="botao" onClick={cancelarEdicao}>Cancelar</button>
+                  <div className="campo">
+                    <label htmlFor={`${b.id}-nome`}>Nome</label>
+                    <input
+                      id={`${b.id}-nome`} value={nomeEdicao}
+                      onChange={(e) => setNomeEdicao(e.target.value)}
+                    />
                   </div>
-                  <div className="linha">
-                    <div className="campo">
-                      <label htmlFor={`${b.id}-tem-saldo`}>
-                        <input
-                          id={`${b.id}-tem-saldo`} type="checkbox" checked={temSaldo}
-                          onChange={(e) => setTemSaldo(e.target.checked)}
-                        />
-                        {' '}Saldo informado
-                      </label>
-                    </div>
-                    {temSaldo && (
-                      <>
-                        <div className="campo" style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
+                  <div className="campo">
+                    <label htmlFor={`${b.id}-tem-saldo`}>
+                      <input
+                        id={`${b.id}-tem-saldo`} type="checkbox" checked={temSaldo}
+                        onChange={(e) => setTemSaldo(e.target.checked)}
+                      />
+                      {' '}Saldo informado
+                    </label>
+                  </div>
+                  {temSaldo && (
+                    <>
+                      <div className="campo">
+                        <label htmlFor={`${b.id}-saldo`}>Saldo</label>
+                        {/* O rótulo fica ACIMA, como em todo campo do app; o botão de sinal
+                            divide a linha de baixo com o valor. Antes isto era um `.campo`
+                            com `display:flex` inline — que não desfaz o `flex-direction:
+                            column` da classe, então o botão subia e encostava na direita. */}
+                        <div className="linha">
                           <button
                             type="button" className="botao" aria-label="Alternar sinal (positivo/negativo)"
-                            onClick={() => setNegativo((n) => !n)} style={{ padding: '8px 12px' }}
+                            onClick={() => setNegativo((n) => !n)}
                           >
                             {negativo ? '−' : '+'}
                           </button>
-                          <div>
-                            <label htmlFor={`${b.id}-saldo`}>Saldo</label>
-                            <CampoValor id={`${b.id}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} />
-                          </div>
+                          <CampoValor id={`${b.id}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} />
                         </div>
-                        <div className="campo">
-                          <label htmlFor={`${b.id}-data`}>Data do saldo</label>
-                          <CampoData id={`${b.id}-data`} value={dataEdicao} onChange={setDataEdicao} />
-                        </div>
-                      </>
-                    )}
+                      </div>
+                      <div className="campo">
+                        <label htmlFor={`${b.id}-data`}>Data do saldo</label>
+                        <CampoData id={`${b.id}-data`} value={dataEdicao} onChange={setDataEdicao} />
+                      </div>
+                    </>
+                  )}
+                  {/* Ações no fim do formulário: no topo, ao lado do Nome, "Salvar" parecia
+                      salvar só o nome. */}
+                  <div className="acoes">
+                    <button className="botao botao-primario" onClick={salvarEdicao}>Salvar</button>
+                    <button className="botao" onClick={cancelarEdicao}>Cancelar</button>
                   </div>
                 </>
               ) : (
