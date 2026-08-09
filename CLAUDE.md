@@ -20,6 +20,8 @@ Todos os dados vivem no IndexedDB do navegador. Por isso, backup e export são f
 
 Código, UI e documentação usam **português**.
 
+**Todo texto que você escrever para o usuário — respostas, UI, docs, mensagens de commit — é sempre em português.** Nunca misture frases ou palavras soltas em inglês no meio do texto. Ao verter um termo do inglês, nunca traduza literalmente, palavra por palavra: traduza pelo contexto e pelo sentido, do jeito que um falante nativo técnico escreveria.
+
 ## Comandos
 
 ```
