@@ -16,12 +16,49 @@ describe('CampoValor', () => {
     expect(screen.getByDisplayValue(/R\$\s*123,45/)).toBeInTheDocument();
   });
 
-  it('primeiro foco zera o buffer, chamando onChange(0)', async () => {
+  it('focar NÃO altera o valor — nenhum onChange é disparado', async () => {
+    // Regra central do componente: encostar no campo não pode mexer em dado. Telas que
+    // salvam vários campos de uma vez confiavam nisso e gravavam zero por cima de um valor
+    // real quando o foco zerava o buffer.
     const onChange = vi.fn();
     render(<CampoValor id="campo" valorCentavos={12345} onChange={onChange} />);
     const input = screen.getByRole('textbox');
 
     await userEvent.click(input);
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByDisplayValue(/R\$\s*123,45/)).toBeInTheDocument();
+  });
+
+  it('focar seleciona o conteúdo inteiro', async () => {
+    render(<CampoValor id="campo" valorCentavos={12345} onChange={() => {}} />);
+    const input = screen.getByRole('textbox') as HTMLInputElement;
+
+    await userEvent.click(input);
+
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe(input.value.length);
+  });
+
+  it('o primeiro dígito depois do foco substitui o valor, não concatena', async () => {
+    const onChange = vi.fn();
+    render(<CampoValor id="campo" valorCentavos={12345} onChange={onChange} />);
+    const input = screen.getByRole('textbox');
+
+    await userEvent.click(input);
+    await userEvent.keyboard('7');
+
+    // 7 sozinho vira R$ 0,07 — não R$ 1.234,57
+    expect(onChange).toHaveBeenCalledWith(7);
+  });
+
+  it('backspace com tudo selecionado limpa o campo', async () => {
+    const onChange = vi.fn();
+    render(<CampoValor id="campo" valorCentavos={12345} onChange={onChange} />);
+    const input = screen.getByRole('textbox');
+
+    await userEvent.click(input);
+    await userEvent.keyboard('{Backspace}');
 
     expect(onChange).toHaveBeenCalledWith(0);
   });
@@ -86,19 +123,32 @@ describe('CampoValor', () => {
     expect(screen.getByDisplayValue(/R\$\s*5,00/)).toBeInTheDocument();
   });
 
-  it('segundo foco não reseta, mantém o buffer', async () => {
+  it('voltar ao campo e digitar substitui de novo; sair sem digitar preserva', async () => {
     render(<CampoValorWrapper autoFocus />);
     const input = screen.getByRole('textbox');
 
     await userEvent.click(input);
     await userEvent.type(input, '500');
+    expect(screen.getByDisplayValue(/R\$\s*5,00/)).toBeInTheDocument();
 
+    // sair e voltar sem digitar nada: o valor continua o mesmo
     await userEvent.tab();
     await userEvent.click(input);
-    await userEvent.type(input, '6');
+    expect(screen.getByDisplayValue(/R\$\s*5,00/)).toBeInTheDocument();
 
-    // After typing "500", blurring, focusing again, and typing "6", should show "R$ 50,06"
-    expect(screen.getByDisplayValue(/R\$\s*50,06/)).toBeInTheDocument();
+    // digitar agora substitui, porque o conteúdo estava todo selecionado
+    await userEvent.keyboard('6');
+    expect(screen.getByDisplayValue(/R\$\s*0,06/)).toBeInTheDocument();
+  });
+
+  it('dígitos seguidos empurram normalmente depois do primeiro', async () => {
+    render(<CampoValorWrapper autoFocus />);
+    const input = screen.getByRole('textbox');
+
+    await userEvent.click(input);
+    await userEvent.keyboard('1234');
+
+    expect(screen.getByDisplayValue(/R\$\s*12,34/)).toBeInTheDocument();
   });
 
   it('inputMode é "numeric"', () => {
