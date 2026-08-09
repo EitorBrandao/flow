@@ -18,6 +18,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.cresce` | filho flex que ocupa o espaço restante (`flex: 1; min-width: 0`) |
 | `.acoes` | linha de botões de ação dentro de um item (ex.: Confirmar/Descartar) |
 | `.botao`, `.botao-primario`, `.botao-perigo` | botão padrão / ação principal (azul) / ação destrutiva (texto vermelho) |
+| `.botao-sinal` | modificador de `.botao` para o botão de alternar sinal (`+`/`−`) ao lado de um `CampoValor` — padding menor e largura mínima de alvo de toque. Usado nas duas conferências da `TelaHoje`, em Ajustes → Boxes e em Ajustes → Bancos |
 | `.botao-com-icone` | modificador de `.botao` pra ícone + texto lado a lado (`display: inline-flex; gap: 8px`) |
 | `.botao.ativo` | modificador de `.botao` pra indicar estado ativo/aplicado (ex.: filtro de data com valor) — `--ac-dim`/`--ac`, mesmo padrão de aba/item ativo |
 | `.campo-data` / `.campo-data-input` | ver componente `CampoData.tsx` — botão com ícone de calendário sobre um `input[type=date]` nativo (oculto, mas funcional e acessível) |

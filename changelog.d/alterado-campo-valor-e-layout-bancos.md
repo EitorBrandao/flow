@@ -1,2 +1,3 @@
 - Campos de valor: clicar num campo agora seleciona o valor inteiro em vez de zerá-lo. O primeiro número digitado substitui o que estava lá, e encostar no campo sem digitar não altera mais nada. Vale para todas as telas com campo de dinheiro.
-- Ajustes, Bancos: o editor de banco foi reorganizado — o rótulo do saldo voltou para cima do campo, o botão de sinal ficou ao lado do valor, e Salvar/Cancelar saíram do topo para o fim do formulário.
+- Ajustes, Bancos e Boxes: o rótulo do saldo voltou para cima do campo e o botão de sinal ficou ao lado do valor, em vez de flutuar sozinho à direita.
+- Ajustes, Bancos: Salvar e Cancelar saíram do topo do formulário para o fim, onde não parecem salvar só o nome.

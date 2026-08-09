@@ -155,7 +155,7 @@ export default function Bancos() {
                             column` da classe, então o botão subia e encostava na direita. */}
                         <div className="linha">
                           <button
-                            type="button" className="botao" aria-label="Alternar sinal (positivo/negativo)"
+                            type="button" className="botao botao-sinal" aria-label="Alternar sinal (positivo/negativo)"
                             onClick={() => setNegativo((n) => !n)}
                           >
                             {negativo ? '−' : '+'}

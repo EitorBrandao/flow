@@ -442,3 +442,9 @@ table.tabela th:first-child, table.tabela td:first-child {
   border-top: 1px solid var(--line); padding-top: 8px; margin-top: 2px;
   font-variant-numeric: tabular-nums;
 }
+
+/* Botão de alternar sinal (+/−) ao lado de um CampoValor — quatro telas usam o mesmo. */
+.botao-sinal {
+  padding: 8px 12px;
+  min-width: 44px;
+}
