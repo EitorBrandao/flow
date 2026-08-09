@@ -1,10 +1,24 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Este arquivo orienta o Claude Code (claude.ai/code) no trabalho com o código deste repositório.
+
+Este arquivo segue o padrão ASD-STE100 e os quatro princípios de Zinsser — clareza, simplicidade, brevidade, humanidade: frases curtas, uma ideia por frase, voz ativa, vocabulário consistente. Mantenha esse estilo em qualquer edição futura.
 
 ## O projeto
 
-**Flow** — app de controle financeiro pessoal (fluxo de caixa diário com saldo projetado). PWA local-first: React 18 + TypeScript + Vite, estado em Zustand, persistência em IndexedDB via Dexie, gráficos em Recharts, animação em framer-motion. Não existe servidor — todos os dados vivem no IndexedDB do navegador, por isso backup/export é funcionalidade crítica. Código, UI e docs são em **português**.
+**Flow** é um app de controle financeiro pessoal. Mostra o fluxo de caixa diário com saldo projetado.
+
+O Flow é um PWA local-first, sem servidor:
+
+- Interface em React 18, TypeScript e Vite.
+- Estado global em Zustand.
+- Persistência em IndexedDB via Dexie.
+- Gráficos em Recharts.
+- Animações em framer-motion.
+
+Todos os dados vivem no IndexedDB do navegador. Por isso, backup e export são funcionalidades críticas.
+
+Código, UI e documentação usam **português**.
 
 ## Comandos
 
@@ -18,18 +32,27 @@ npx vitest run -t "nome do teste"               # um teste pelo nome
 npm run deploy       # build + publica dist/ no branch gh-pages de EitorBrandao/flow (GitHub Pages)
                      # → usuário testa em https://eitorbrandao.github.io/flow/
 npm run release -- <patch|minor|major>
-                     # junta os fragmentos de changelog.d/ numa nova versão no CHANGELOG.md,
-                     # bumpa package.json e cria commit + tag. Só na integração, no branch main.
+                     # Junta os fragmentos de changelog.d/ numa nova versão no CHANGELOG.md.
+                     # Bumpa a versão em package.json e cria commit + tag.
+                     # Use só na integração, no branch main.
 ```
 
-Testes usam jsdom + fake-indexeddb (`src/test-setup.ts`) e são colocados ao lado do código (`*.test.ts(x)`). O Vitest exclui `.worktrees/` de propósito — worktrees paralelos têm node_modules próprio e coletar testes de lá quebra os hooks do React.
+Os testes usam jsdom e fake-indexeddb (`src/test-setup.ts`). Ficam ao lado do código, com o sufixo `*.test.ts(x)`.
 
-Os timeouts são **deliberadamente generosos** e vivem em dois lugares independentes: `testTimeout`/`hookTimeout` (20 s, `vite.config.ts`) para o Vitest, e `asyncUtilTimeout` (10 s, `src/test-setup.ts`) para os `findBy*`/`waitFor` do Testing Library — subir um não afeta o outro. Não os aperte nem ponha `{ timeout: n }` numa chamada de `findBy*`: um timeout local é sempre teto e volta a fazer a suíte piscar vermelho numa máquina ocupada. Timeout alto não custa tempo em teste que passa, só limita o quanto um teste travado segura a suíte.
+O Vitest ignora `.worktrees/` de propósito. Cada worktree paralelo tem seu próprio `node_modules`. Coletar testes de lá quebra os hooks do React.
+
+Os timeouts são **deliberadamente generosos**. Vivem em dois lugares independentes:
+
+- `testTimeout` e `hookTimeout` (20 s), em `vite.config.ts`, para o Vitest.
+- `asyncUtilTimeout` (10 s), em `src/test-setup.ts`, para os `findBy*`/`waitFor` do Testing Library.
+
+Mudar um valor não afeta o outro.
+
+Não aperte esses timeouts. Não use `{ timeout: n }` numa chamada de `findBy*`: um timeout local vira um teto mais baixo e volta a deixar a suíte instável numa máquina ocupada. Um timeout alto não custa tempo em teste que passa — só limita o quanto um teste travado segura a suíte.
 
 ## Guardas automáticas
 
-Parte das regras deste arquivo já é bloqueio de máquina, não disciplina. Saber o que é
-automático evita tanto refazer a checagem à mão quanto tratar um abort como defeito:
+Algumas regras deste arquivo já são bloqueios automáticos, não só disciplina. Saber quais são automáticas evita dois erros: refazer a checagem à mão, ou tratar um abort como defeito.
 
 | Guarda | Onde | O que bloqueia |
 |---|---|---|
@@ -40,52 +63,64 @@ automático evita tanto refazer a checagem à mão quanto tratar um abort como d
 | Dados reais | `scripts/verificar-dados-reais.mjs --strict`, chamado pelo release | valor em real fora das exceções sintéticas, ou termo de `~/.claude/flow-dados-reais.txt`, em **qualquer** arquivo versionado. Rode sozinho quando quiser: `node scripts/verificar-dados-reais.mjs` — sem `--strict` ele só avisa (exit 0) |
 | Lembretes | `.claude/hooks/` (ver `.claude/hooks/README.md`) | **nada** — só avisam, ao editar UI, ao editar com HEAD na `main`, ao instalar dependência e ao commitar |
 
-Duas consequências que valem por escrito:
+Duas consequências valem por escrito:
 
-- **`DEPLOY_FORCE=1` pula todos os guards do deploy.** Existe para o caso de o repositório
-  estar num estado que os checks não sabem julgar; usar exige pedido explícito do usuário,
-  nunca como atalho para um check que incomodou.
-- **O texto `chore(release)` é reservado** às mensagens de commit geradas por
-  `npm run release`: o guard do deploy procura essa string com `git log --grep`, que casa em
-  **qualquer posição** da mensagem — não só no começo. Um commit comum que a contenha, num
-  branch lateral, provoca aborto falso do deploy. É o **único** guard que ainda depende de
-  casar texto: o do catálogo passou a bloquear pelo código de saída (`--strict`), justamente
-  porque reescrever o relatório o desligava em silêncio.
+- **`DEPLOY_FORCE=1` pula todos os guards do deploy.** Essa opção existe para o caso de o repositório estar num estado que os checks não sabem julgar. Use-a só com pedido explícito do usuário — nunca como atalho para um check que incomodou.
+- **O texto `chore(release)` é reservado às mensagens de commit geradas por `npm run release`.** O guard do deploy procura essa string com `git log --grep`. Essa busca casa em **qualquer posição** da mensagem, não só no começo. Por isso, um commit comum que contenha esse texto, num branch lateral, causa um aborto falso do deploy. Esse é o **único** guard que ainda depende de casar texto: o do catálogo bloqueia pelo código de saída (`--strict`), porque reescrever o relatório desligava o guard em silêncio.
 
 ## Arquitetura
 
-Modelo conceitual e invariantes de `src/domain/`, `src/db/` e `src/backup/` (o que é a box
-`'casa'`, a matriz `status` × `origem` do lançamento, o ciclo da fatura, o que
-`validarBackup` garante e o que não garante): `docs/dominio.md`.
+`docs/dominio.md` descreve o modelo conceitual e os invariantes de `src/domain/`, `src/db/` e `src/backup/`. Cobre: o que é a box `'casa'`, a matriz `status` × `origem` do lançamento, o ciclo da fatura, e o que `validarBackup` garante e não garante.
 
 Camadas, de baixo para cima:
 
-- **`src/domain/`** — lógica pura, sem IO. `types.ts` define as entidades (Box, Categoria, Lancamento, Recorrencia, Cartao, CategoriaCartao, CompraCartao, RecorrenciaCartao, ConferenciaFatura, Cenario, Viagem, Config) e o snapshot `Dados`, que agrega todas elas. `projection.ts` (`projetarBoxes`) calcula o saldo dia a dia até `config.horizonteProjecao`. `recurrence.ts` materializa recorrências em lançamentos `previsto`. `fatura.ts` calcula ciclos de fechamento/vencimento do cartão e gera as faturas. `aggregations.ts` alimenta a aba Análises. `categorias.ts` guarda a ordenação e a numeração de ordem das categorias (`compararCategorias`, `diffOrdem`, `proximaOrdem`); `viagem.ts` resolve a viagem ativa numa data e agrega os itens de uma viagem (`viagemAtivaEm`, `itensDaViagem`). `money.ts` é o único lugar de parse/format de dinheiro; `dates.ts` concentra a aritmética de calendário sobre `ISODate` (ver `docs/dominio.md` para as exceções de formatação de data na UI).
-- **`src/db/`** — `database.ts` é o schema Dexie (versionado; nova tabela/índice = nova `this.version(n)`). `repo.ts` concentra TODA a persistência. Mutations que afetam recorrências ou cartões recebem `horizonte` e re-materializam/sincronizam (`materializarTodas`, `sincronizarCartoes`) — faturas viram lançamentos com `origem: 'cartao'` na categoria de fatura do cartão.
-- **`src/state/store.ts`** — um único store Zustand. `iniciar()` carrega tudo (`repo.carregarTudo()`), materializa e sincroniza; depois de qualquer mutation a UI chama `recarregar()`, que recarrega o snapshot inteiro (`dados: Dados`). `boxSel` aceita um ID de box ou o sentinela `'casa'` (todas as boxes consolidadas). `aba` define a tela ativa.
-- **`src/ui/`** — uma `Tela*.tsx` por tela: `TelaHoje`, `TelaFluxo`, `TelaLancar`, `TelaCartao`, `TelaAnalises`, `TelaAjustes` e `TelaSimulador` (esta última existe mas não é alcançável por nenhum `setAba`). `Shell.tsx` é a navegação: `ABAS` lista só as abas da barra — Ajustes entra pelo botão do topo, e Lançar, pelo `AdicionarSheet`. Ajustes é uma tela-menu com dez subtelas em `src/ui/ajustes/`. Sheets/modais compartilhados (`Sheet.tsx`, `AdicionarSheet.tsx`, `LancamentosSheet.tsx`).
-- **`src/backup/`** — export/import de backup JSON com merge (`mesclar`).
+- **`src/domain/`** — lógica pura, sem E/S (entrada/saída).
+  - `types.ts`: define as entidades (Box, Categoria, Lancamento, Recorrencia, Cartao, CategoriaCartao, CompraCartao, RecorrenciaCartao, ConferenciaFatura, Cenario, Viagem, Config) e o snapshot `Dados`, que agrega todas elas.
+  - `projection.ts` (`projetarBoxes`): calcula o saldo dia a dia até `config.horizonteProjecao`.
+  - `recurrence.ts`: materializa recorrências em lançamentos `previsto`.
+  - `fatura.ts`: calcula os ciclos de fechamento e vencimento do cartão, e gera as faturas.
+  - `aggregations.ts`: alimenta a aba Análises.
+  - `categorias.ts`: guarda a ordenação e a numeração de ordem das categorias (`compararCategorias`, `diffOrdem`, `proximaOrdem`).
+  - `viagem.ts`: resolve a viagem ativa numa data e agrega os itens de uma viagem (`viagemAtivaEm`, `itensDaViagem`).
+  - `money.ts`: é o único lugar de parse e format de dinheiro.
+  - `dates.ts`: concentra a aritmética de calendário sobre `ISODate` (ver `docs/dominio.md` para as exceções de formatação de data na UI).
+- **`src/db/`**
+  - `database.ts`: é o schema Dexie, versionado. Uma tabela ou índice novo exige uma nova `this.version(n)`.
+  - `repo.ts`: concentra TODA a persistência. Mutations que afetam recorrências ou cartões recebem `horizonte` e re-materializam ou sincronizam (`materializarTodas`, `sincronizarCartoes`). Faturas viram lançamentos com `origem: 'cartao'`, na categoria de fatura do cartão.
+- **`src/state/store.ts`** — um único store Zustand.
+  - `iniciar()`: carrega tudo (`repo.carregarTudo()`), materializa e sincroniza.
+  - Depois de qualquer mutation, a UI chama `recarregar()`. Essa função recarrega o snapshot inteiro (`dados: Dados`).
+  - `boxSel`: aceita um ID de box, ou o sentinela `'casa'` para todas as boxes consolidadas.
+  - `aba`: define a tela ativa.
+- **`src/ui/`** — uma `Tela*.tsx` por tela: `TelaHoje`, `TelaFluxo`, `TelaLancar`, `TelaCartao`, `TelaAnalises`, `TelaAjustes` e `TelaSimulador`. `TelaSimulador` existe, mas nenhum `setAba` a alcança.
+  - `Shell.tsx`: controla a navegação. `ABAS` lista só as abas da barra. Ajustes entra pelo botão do topo. Lançar entra pelo `AdicionarSheet`.
+  - Ajustes: é uma tela-menu com dez subtelas, em `src/ui/ajustes/`.
+  - Sheets e modais compartilhados: `Sheet.tsx`, `AdicionarSheet.tsx`, `LancamentosSheet.tsx`.
+- **`src/backup/`** — exporta e importa backup em JSON, com merge (`mesclar`).
 
-Convenções do domínio: valores monetários são **centavos inteiros**; datas são strings ISO `"AAAA-MM-DD"`. Lançamentos têm `status` (`efetivo`/`previsto`) e `origem` (`manual`/`recorrencia`/`cartao` — `OrigemLancamento` em `src/domain/types.ts`; o antigo `import` saiu junto com a importação de xlsx). Cenários são lançamentos hipotéticos ligáveis/desligáveis na projeção — nunca `efetivo`.
+Convenções do domínio:
+
+- Valores monetários são **centavos inteiros**.
+- Datas são strings ISO `"AAAA-MM-DD"`.
+- Lançamentos têm `status` (`efetivo` ou `previsto`) e `origem` (`manual`, `recorrencia` ou `cartao` — tipo `OrigemLancamento`, em `src/domain/types.ts`). O antigo valor `import` saiu junto com a importação de xlsx.
+- Cenários são lançamentos hipotéticos. Podem ser ligados ou desligados na projeção, mas nunca têm `status: efetivo`.
 
 ## Regras do repositório
 
-- **Antes de qualquer edição de UI, consulte `docs/estilo-visual.md`.** Edição de UI = qualquer diff em `src/ui/**`, `src/styles.css` ou `index.html` — o critério é o caminho do arquivo, não o que a mudança "parece ser". O índice aponta para o capítulo certo em `docs/estilo/` conforme o nível da mudança (editar tela, nova classe, novo token, novo componente, nova tela, mudança de linguagem). Quem cria classe/componente cataloga em `docs/estilo/catalogo.md`. Se código e guia divergirem, o código manda **apenas para divergências que já existiam antes de você chegar** — atualize o guia junto. Divergência que a sua própria mudança criaria não é divergência: é uma edição do nível correspondente (mudar valor de token ou princípio = nível 6). Esta regra nunca legitima uma mudança sua.
-- Specs e planos de features ficam em `docs/superpowers/specs/` e `docs/superpowers/plans/`. O backlog com contexto e decisões em aberto está em `TODO.md`, que é **local e fora do git de propósito** (está no `.gitignore`): num clone limpo, no CI ou num worktree novo ele não existe, e isso é esperado — peça o conteúdo ao usuário em vez de recriá-lo.
-- **Nunca commitar dados financeiros reais — o critério é o conteúdo, não a extensão.** Nenhum valor, saldo, descrição de lançamento ou nome de estabelecimento real do usuário entra em QUALQUER arquivo versionado: testes, fixtures, specs, mockups e fragmentos de changelog usam só dados sintéticos (o `CHANGELOG.md` vai embutido no bundle público, e o repositório é público). `*.xlsx` e `*.json.backup` estão no `.gitignore` de propósito — renomear o arquivo não o torna commitável.
-- **Dependência npm nova (inclusive `devDependencies`) é decisão de produto:** confirme com o usuário antes de instalar, justifique por que código próprio não basta, rode `npm audit` e inclua o lockfile no mesmo commit. Os dados financeiros vivem no navegador do usuário — supply chain é o vetor de ataque mais realista deste app.
-- **`scripts/`, configs de build (`vite.config.ts`, `tsconfig.json`, scripts do `package.json`) e `.claude/` só mudam com pedido explícito do usuário** — nunca como efeito colateral de uma feature. Em particular, os guards de `scripts/` (`release.mjs`, `predeploy.mjs`, `verificar-catalogo.mjs` — ver "Guardas automáticas") são o enforcement automatizado do fluxo: afrouxar qualquer um deles não é manutenção, é mudança de processo.
-- **`public/` vai literal para o site público** (entra em `dist/` e é publicado): arquivo novo ali é decisão explícita, nunca depósito de trabalho. Mudança em config de PWA/service worker: confirme com o usuário — erro de cache pode prender usuários numa versão velha do app.
-- **Topologia de branches:** `main` é o branch **fonte** canônico (código). O site publicado (o build `dist/`) vive num branch separado, **`gh-pages`**, gerado por `npm run deploy` — nunca edite `gh-pages` à mão. Nunca trabalhar direto na `main`: criar branch antes de alterar arquivos. Sessões concorrentes rodam no mesmo checkout — trabalho com commits deve ir para um git worktree próprio (`.worktrees/`).
-- **Versão e changelog só na integração (isto evita colisão entre sessões paralelas):** branches de feature **nunca** editam `"version"` em `package.json` nem o topo do `CHANGELOG.md`. Toda mudança visível ao usuário vira um **fragmento** em `changelog.d/` — arquivo `<tipo>-<slug>.md` (`tipo` = `adicionado`/`alterado`/`removido`, bullets planos; ver `changelog.d/README.md`). O número da versão é decidido **uma única vez**, na integração, por `npm run release`.
-- **Ciclo de entrega — obrigatório, e o passo a passo está na skill `ciclo-de-entrega`** (`.claude/skills/ciclo-de-entrega/SKILL.md`). **Invoque-a antes de integrar qualquer trabalho**: ela cobre da criação do worktree ao deploy, com os dois pontos onde o ciclo para e espera você (mockup aprovado e confirmação literal da revisão do changelog), o critério que decide se há release, e o que fazer quando um guard aborta. O resumo em uma linha: worktree → mockup aprovado (se UI) → `npm test` verde → **wiki atualizada (se a feature mudou)** → fragmento em `changelog.d/` + confirmação do usuário → merge na `main` + `npm run release` → push → `npm run deploy`. Mudança **não** visível ao usuário (refactor, docs, tooling) termina no merge: sem fragmento, sem wiki, sem release, sem deploy.
-- **Feature incluída, alterada ou removida atualiza `docs/wiki/` no mesmo branch** — mesmo critério do fragmento de changelog (mudou o que o usuário vê?). A wiki existe para explicar o app a quem chega agora; desatualizada, ensina o app errado com autoridade. O parser aceita um subconjunto **fechado** de markdown (`docs/wiki/README.md`) e **lança exceção** fora dele: valide com `npx vitest run src/ui/ajustes/capitulos.test.ts`.
+- **Antes de editar a UI, consulte `docs/estilo-visual.md`.** Edição de UI é qualquer diff em `src/ui/**`, `src/styles.css` ou `index.html`. O critério é o caminho do arquivo, não a aparência da mudança. O índice de `docs/estilo-visual.md` aponta para o capítulo certo em `docs/estilo/`, conforme o nível da mudança: editar tela, nova classe, novo token, novo componente, nova tela, ou mudança de linguagem. Quem cria uma classe ou componente cataloga em `docs/estilo/catalogo.md`. Se o código e o guia divergirem, o código manda — mas só para divergências que já existiam antes da sua mudança; nesse caso, atualize o guia também. Uma divergência criada pela sua própria mudança não conta como divergência: é uma edição do nível correspondente (mudar o valor de um token ou um princípio é nível 6). Esta regra nunca autoriza sua própria mudança a divergir do guia.
+- Specs e planos de features ficam em `docs/superpowers/specs/` e `docs/superpowers/plans/`. O backlog, com contexto e decisões em aberto, está em `TODO.md`. Esse arquivo é **local e fica fora do git de propósito** — está no `.gitignore`. Por isso, ele não existe num clone limpo, no CI, ou num worktree novo. Isso é esperado: peça o conteúdo ao usuário, em vez de recriá-lo.
+- **Nunca faça commit de dados financeiros reais do usuário.** O critério é o conteúdo do arquivo, não a extensão. Nenhum valor, saldo, descrição de lançamento ou nome de estabelecimento real pode entrar em nenhum arquivo versionado: testes, fixtures, specs, mockups e fragmentos de changelog usam só dados sintéticos. Isso vale até para o `CHANGELOG.md`, porque ele vai embutido no bundle público, e o repositório é público. `*.xlsx` e `*.json.backup` estão no `.gitignore` de propósito — renomear o arquivo não o torna seguro para commit.
+- **Toda dependência npm nova, inclusive em `devDependencies`, é uma decisão de produto.** Antes de instalar: confirme com o usuário, justifique por que código próprio não basta, rode `npm audit`, e inclua o lockfile no mesmo commit. Os dados financeiros do usuário vivem só no navegador dele — por isso, supply chain é o vetor de ataque mais realista deste app.
+- **`scripts/`, os arquivos de configuração de build (`vite.config.ts`, `tsconfig.json`, scripts do `package.json`) e `.claude/` só mudam com pedido explícito do usuário.** Nunca mude esses arquivos como efeito colateral de uma feature. Os guards em `scripts/` (`release.mjs`, `predeploy.mjs`, `verificar-catalogo.mjs` — ver "Guardas automáticas") aplicam o fluxo de forma automática. Afrouxar qualquer um deles não é manutenção: é mudança de processo.
+- **Tudo em `public/` vai, sem alteração, para o site público** — entra em `dist/` e é publicado. Um arquivo novo ali é uma decisão explícita, nunca um depósito de trabalho. Antes de mudar a configuração de PWA ou de service worker, confirme com o usuário: um erro de cache pode prender usuários numa versão velha do app.
+- **Topologia de branches:** `main` é o branch fonte canônico — o código vive ali. O site publicado, o build `dist/`, vive num branch separado, **`gh-pages`**, gerado por `npm run deploy`. Nunca edite `gh-pages` à mão. Nunca trabalhe direto na `main`: crie um branch antes de alterar qualquer arquivo. Sessões concorrentes rodam no mesmo checkout — por isso, todo trabalho com commits deve ir para um git worktree próprio, em `.worktrees/`.
+- **Versão e changelog só mudam na integração.** Essa regra evita colisão entre sessões paralelas. Branches de feature **nunca** editam `"version"` em `package.json`, nem o topo do `CHANGELOG.md`. Toda mudança visível ao usuário vira um **fragmento** em `changelog.d/`: um arquivo `<tipo>-<slug>.md`, com `tipo` igual a `adicionado`, `alterado` ou `removido`, e bullets planos (ver `changelog.d/README.md`). O número da versão é decidido **uma única vez**, na integração, por `npm run release`.
+- **O ciclo de entrega é obrigatório.** O passo a passo está na skill `ciclo-de-entrega` (`.claude/skills/ciclo-de-entrega/SKILL.md`). **Invoque essa skill antes de integrar qualquer trabalho.** Ela cobre tudo, da criação do worktree ao deploy. Ela também define os dois pontos onde o ciclo para e espera você — o mockup aprovado, e a confirmação literal da revisão do changelog —, o critério que decide se há release, e o que fazer quando um guard aborta. Resumo em uma linha: worktree → mockup aprovado, se for UI → `npm test` verde → **wiki atualizada, se a feature mudou** → fragmento em `changelog.d/` mais confirmação do usuário → merge na `main` mais `npm run release` → push → `npm run deploy`. Uma mudança **não** visível ao usuário — refactor, docs, tooling — termina no merge: sem fragmento, sem wiki, sem release, sem deploy.
+- **Toda feature incluída, alterada ou removida atualiza `docs/wiki/`, no mesmo branch.** O critério é o mesmo do fragmento de changelog: a mudança alterou o que o usuário vê? A wiki explica o app a quem chega agora. Uma wiki desatualizada ensina o app errado, com autoridade. O parser da wiki aceita só um subconjunto **fechado** de markdown (`docs/wiki/README.md`) e **lança uma exceção** fora dele: valide com `npx vitest run src/ui/ajustes/capitulos.test.ts`.
 
 ## Regras de dados (`src/db/`, `src/backup/`)
 
-Erro aqui custa dados financeiros do usuário — que não têm servidor nem cópia automática.
-Modelo conceitual e invariantes (o que cada entidade significa, o que é garantido pelo
-código e o que é só expectativa): `docs/dominio.md`.
+Um erro aqui custa dados financeiros do usuário. Esses dados não têm servidor, nem cópia automática. `docs/dominio.md` descreve o modelo conceitual e os invariantes: o que cada entidade significa, o que o código garante, e o que é só expectativa.
 
-- Nova `this.version(n)` no Dexie exige, no mesmo commit, teste do caminho de upgrade: popular dados no schema n−1 e abrir no schema n.
-- Mudança em `src/backup/` exige testes adversariais (JSON malformado, campos ausentes, `config` nulo, `alteradoEm` no futuro). **Nunca relaxe `validarBackup`** — a validação de import só endurece, nunca afrouxa.
+- Toda nova `this.version(n)` no Dexie exige um teste do caminho de upgrade, no mesmo commit. O teste deve popular dados no schema n−1, e depois abrir esses dados no schema n.
+- Toda mudança em `src/backup/` exige testes adversariais: JSON malformado, campos ausentes, `config` nulo, `alteradoEm` no futuro. **Nunca relaxe `validarBackup`.** A validação de import só pode ficar mais rígida, nunca mais frouxa.
