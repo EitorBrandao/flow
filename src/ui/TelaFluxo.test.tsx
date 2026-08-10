@@ -21,6 +21,16 @@ async function seedBoxComCategoria() {
   return { box, catMercado, catSalario };
 }
 
+/** Busca e filtros ficam recolhidos atrás da lupa (aba Lista) — abre antes de usá-los. */
+async function abrirFiltros() {
+  await userEvent.click(screen.getByRole('button', { name: 'Buscar e filtrar' }));
+}
+
+/** O gráfico virou a 2ª aba (Lista é a padrão) — troca antes de interagir com ele. */
+async function abrirGrafico() {
+  await userEvent.click(screen.getByRole('tab', { name: 'Gráfico' }));
+}
+
 it('busca não encontra lançamento fora do intervalo já exibido', async () => {
   const { box, catMercado } = await seedBoxComCategoria();
   const hoje = '2026-07-05';
@@ -30,6 +40,7 @@ it('busca não encontra lançamento fora do intervalo já exibido', async () => 
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   await userEvent.type(screen.getByPlaceholderText(/Buscar/), 'padaria');
 
   expect(await screen.findByText('Nenhum resultado para a busca.')).toBeInTheDocument();
@@ -45,6 +56,7 @@ it('ampliar o intervalo com +30 dias atrás passa a incluir o lançamento na bus
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   await userEvent.type(screen.getByPlaceholderText(/Buscar/), 'padaria');
   expect(screen.queryByText('padaria da esquina')).not.toBeInTheDocument();
 
@@ -61,6 +73,7 @@ it('busca por nome de categoria encontra lançamento sem nota dentro do interval
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   await userEvent.type(screen.getByPlaceholderText(/Buscar/), 'SALÁRIO');
 
   expect(await screen.findByText('salário')).toBeInTheDocument();
@@ -74,6 +87,7 @@ it('busca por valor encontra lançamento pelo substring do valor formatado dentr
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   await userEvent.type(screen.getByPlaceholderText(/Buscar/), '150');
 
   expect(await screen.findByText('compra grande')).toBeInTheDocument();
@@ -88,6 +102,7 @@ it('limpar a busca restaura todos os lançamentos do intervalo', async () => {
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   const campo = screen.getByPlaceholderText(/Buscar/);
   await userEvent.type(campo, 'padaria');
   await screen.findByText('padaria da esquina');
@@ -108,6 +123,7 @@ it('busca por número do dia encontra lançamento pela data, não pela nota ou v
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   await userEvent.type(screen.getByPlaceholderText(/Buscar/), '25');
 
   expect(await screen.findByText('batata')).toBeInTheDocument();
@@ -123,6 +139,7 @@ it('escolher uma data no calendário pula direto pra aquele dia, mesmo fora do i
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: dataFora } });
 
   expect(await screen.findByText('compra antiga')).toBeInTheDocument();
@@ -136,6 +153,7 @@ it('escolher uma data sem lançamentos mostra mensagem de nenhum resultado', asy
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-01-01' } });
 
   expect(await screen.findByText('Nenhum resultado para a busca.')).toBeInTheDocument();
@@ -149,6 +167,7 @@ it('escolher uma data limpa a busca de texto e vice-versa', async () => {
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   const campoTexto = screen.getByPlaceholderText(/Buscar/);
   const campoData = screen.getByLabelText('Buscar por data');
   await userEvent.type(campoTexto, 'compra');
@@ -168,6 +187,7 @@ it('o botão "Selecionar período" revela um campo de data "Até"', async () => 
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   expect(screen.queryByLabelText('Até')).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'Selecionar período' }));
@@ -189,6 +209,7 @@ it('selecionar um período mostra lançamentos de todos os dias no intervalo, me
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   await userEvent.click(screen.getByRole('button', { name: 'Selecionar período' }));
   fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: dataInicioRange } });
   fireEvent.change(screen.getByLabelText('Até'), { target: { value: dataFimRange } });
@@ -210,6 +231,7 @@ it('período com as datas trocadas (até antes de de) ainda funciona', async () 
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   await userEvent.click(screen.getByRole('button', { name: 'Selecionar período' }));
   fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: dataFimRange } });
   fireEvent.change(screen.getByLabelText('Até'), { target: { value: dataInicioRange } });
@@ -228,6 +250,7 @@ it('limpar reseta o período selecionado', async () => {
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   await userEvent.click(screen.getByRole('button', { name: 'Selecionar período' }));
   fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: dataInicioRange } });
   fireEvent.change(screen.getByLabelText('Até'), { target: { value: dataFimRange } });
@@ -247,6 +270,7 @@ it('busca sem resultados dentro do intervalo mostra mensagem de nenhum resultado
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   await userEvent.type(screen.getByPlaceholderText(/Buscar/), 'inexistente');
 
   expect(await screen.findByText('Nenhum resultado para a busca.')).toBeInTheDocument();
@@ -260,6 +284,7 @@ it('clicar no card do gráfico abre o modal expandido', async () => {
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirGrafico();
   await userEvent.click(screen.getByRole('button', { name: 'Expandir gráfico de saldo' }));
 
   // o primeiro import dinâmico do FluxoChartModal (carrega recharts) é lento no ambiente de
@@ -276,6 +301,7 @@ it('sem ao menos 2 dias na série projetada, o gráfico não fica clicável', as
   useApp.setState({ boxSel: box.id, hoje: '2026-07-05' });
 
   render(<TelaFluxo />);
+  await abrirGrafico();
 
   expect(screen.queryByRole('button', { name: 'Expandir gráfico de saldo' })).not.toBeInTheDocument();
 });
@@ -331,6 +357,7 @@ it('filtro de data ativo não força hoje a aparecer se não tiver lançamento n
   useApp.setState({ boxSel: box.id, hoje });
 
   render(<TelaFluxo />);
+  await abrirFiltros();
   fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-01-01' } });
 
   expect(await screen.findByText('Nenhum resultado para a busca.')).toBeInTheDocument();

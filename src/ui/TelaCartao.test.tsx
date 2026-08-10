@@ -23,6 +23,11 @@ async function montarCartao() {
   return { box, cartao, catCartao };
 }
 
+/** O card da fatura ganhou 3 abas (Resumo/Lançamentos/Conferência) — Resumo é a padrão. */
+async function abrirAba(nome: RegExp | string) {
+  await userEvent.click(screen.getByRole('tab', { name: nome }));
+}
+
 it('box sem cartão oferece cadastro', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
@@ -48,7 +53,7 @@ it('editar uma compra existente abre o formulário num Sheet', async () => {
     useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
     render(<TelaCartao />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Ver lançamentos' }));
+    await abrirAba('Lançamentos');
     await userEvent.click(await screen.findByText('mercado'));
     expect(await screen.findByRole('dialog', { name: 'Editar compra' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Editar compra' })).toBeInTheDocument();
@@ -77,6 +82,7 @@ it('conferência mostra a diferença e a caixa troca o valor do previsto', async
     useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
     render(<TelaCartao />);
 
+    await abrirAba(/Conferência/);
     await userEvent.type(screen.getByLabelText('Valor no app do banco'), '100,00');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
     expect(await screen.findByText(/Falta bater/)).toBeInTheDocument();
@@ -102,6 +108,7 @@ it('botão Remover remove a conferência salva', async () => {
     await useApp.getState().iniciar();
     useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
     render(<TelaCartao />);
+    await abrirAba(/Conferência/);
 
     // Digite valor e salve
     await userEvent.type(screen.getByLabelText('Valor no app do banco'), '100,00');
@@ -151,7 +158,7 @@ it('agrupa lançamentos em À vista/Parceladas, mais recentes primeiro', async (
     useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
     render(<TelaCartao />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Ver lançamentos' }));
+    await abrirAba('Lançamentos');
     const grupos = screen.getAllByText(/À vista|Parceladas/).map((el) => el.textContent);
     expect(grupos).toEqual(['À vista', 'Parceladas']);
 
@@ -180,12 +187,15 @@ it('clicar numa categoria do resumo filtra os lançamentos; clicar de novo limpa
     useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
     render(<TelaCartao />);
 
+    // Clicar na categoria, no Resumo, já pula pra aba Lançamentos com o filtro aplicado.
     await userEvent.click(screen.getByRole('button', { name: /^lazer/ }));
     expect(await screen.findByText('Streaming')).toBeInTheDocument();
     expect(screen.queryByText('Mercado')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^lazer/ })).toHaveAttribute('aria-pressed', 'true');
 
+    await abrirAba('Resumo');
+    expect(screen.getByRole('button', { name: /^lazer/ })).toHaveAttribute('aria-pressed', 'true');
     await userEvent.click(screen.getByRole('button', { name: /^lazer/ }));
+
     expect(await screen.findByText('Mercado')).toBeInTheDocument();
     expect(screen.getByText('Streaming')).toBeInTheDocument();
   } finally { vi.useRealTimers(); }
@@ -208,7 +218,7 @@ it('busca filtra por descrição e mostra estado vazio quando nada bate', async 
     useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
     render(<TelaCartao />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Ver lançamentos' }));
+    await abrirAba('Lançamentos');
     await userEvent.type(screen.getByPlaceholderText(/Buscar/), 'stream');
     expect(await screen.findByText('Streaming')).toBeInTheDocument();
     expect(screen.queryByText('Mercado')).not.toBeInTheDocument();
@@ -236,7 +246,7 @@ describe('pagamento da fatura pela aba Cartão', () => {
     try {
       vi.setSystemTime(new Date('2026-07-01T12:00:00'));
       await comFatura();
-      render(<TelaCartao />); // a tela já abre na fatura 08/2026, a da compra de julho
+      render(<TelaCartao />); // a tela já abre na fatura 08/2026, a da compra de julho, aba Resumo
 
       expect(screen.getByText(/A pagar/)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'paguei outro valor' })).toBeInTheDocument();
