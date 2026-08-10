@@ -94,10 +94,7 @@ Camadas, de baixo para cima:
   - Depois de qualquer mutation, a UI chama `recarregar()`. Essa função recarrega o snapshot inteiro (`dados: Dados`).
   - `boxSel`: aceita um ID de box, ou o sentinela `'casa'` para todas as boxes consolidadas.
   - `aba`: define a tela ativa.
-- **`src/ui/`** — uma `Tela*.tsx` por tela: `TelaHoje`, `TelaFluxo`, `TelaLancar`, `TelaCartao`, `TelaAnalises`, `TelaAjustes` e `TelaSimulador`. `TelaSimulador` existe, mas nenhum `setAba` a alcança.
-  - `Shell.tsx`: controla a navegação. `ABAS` lista só as abas da barra. Ajustes entra pelo botão do topo. Lançar entra pelo `AdicionarSheet`.
-  - Ajustes: é uma tela-menu com dez subtelas, em `src/ui/ajustes/`.
-  - Sheets e modais compartilhados: `Sheet.tsx`, `AdicionarSheet.tsx`, `LancamentosSheet.tsx`.
+- **`src/ui/`** — telas, navegação e sheets. Detalhes em `src/ui/CLAUDE.md`.
 - **`src/backup/`** — exporta e importa backup em JSON, com merge (`mesclar`).
 
 Convenções do domínio:
@@ -124,5 +121,4 @@ Convenções do domínio:
 
 Um erro aqui custa dados financeiros do usuário. Esses dados não têm servidor, nem cópia automática. `docs/dominio.md` descreve o modelo conceitual e os invariantes: o que cada entidade significa, o que o código garante, e o que é só expectativa.
 
-- Toda nova `this.version(n)` no Dexie exige um teste do caminho de upgrade, no mesmo commit. O teste deve popular dados no schema n−1, e depois abrir esses dados no schema n.
-- Toda mudança em `src/backup/` exige testes adversariais: JSON malformado, campos ausentes, `config` nulo, `alteradoEm` no futuro. **Nunca relaxe `validarBackup`.** A validação de import só pode ficar mais rígida, nunca mais frouxa.
+Regras específicas de cada pasta estão em `src/db/CLAUDE.md` e `src/backup/CLAUDE.md`.
