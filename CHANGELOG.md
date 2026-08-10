@@ -3,6 +3,15 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.21.0] - 2026-08-10
+
+### Alterado
+
+- Hoje agora tem três abas: Visão, Conferir e Pendentes, em vez de tudo empilhado numa tela só.
+- Fluxo agora tem duas abas: Lista (padrão, com busca e filtros atrás do ícone de lupa) e Gráfico, que ficou maior.
+- Cartão agora tem três abas dentro do card da fatura: Resumo, Lançamentos e Conferência. O cabeçalho da fatura continua sempre visível.
+- A aba Conferência do cartão mostra ✔️ ou ⚠️ no próprio rótulo assim que existe uma conferência salva, sem precisar entrar na aba pra saber se bate.
+
 ## [0.20.2] - 2026-08-09
 
 ### Alterado

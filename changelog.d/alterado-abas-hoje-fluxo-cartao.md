@@ -1,4 +1,0 @@
-- Hoje agora tem três abas: Visão, Conferir e Pendentes, em vez de tudo empilhado numa tela só.
-- Fluxo agora tem duas abas: Lista (padrão, com busca e filtros atrás do ícone de lupa) e Gráfico, que ficou maior.
-- Cartão agora tem três abas dentro do card da fatura: Resumo, Lançamentos e Conferência. O cabeçalho da fatura continua sempre visível.
-- A aba Conferência do cartão mostra ✔️ ou ⚠️ no próprio rótulo assim que existe uma conferência salva, sem precisar entrar na aba pra saber se bate.
