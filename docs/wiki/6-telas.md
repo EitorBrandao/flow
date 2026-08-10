@@ -6,19 +6,20 @@ Todas respeitam o seletor de box no topo (no exemplo: `{{boxA}}` / `{{boxB}}` / 
 
 ## Hoje
 
-Tela inicial. Foco em "onde estou agora" e no que precisa de atenção.
+Tela inicial. Foco em "onde estou agora" e no que precisa de atenção. Três abas: Visão, Conferir e Pendentes.
 
-- **Saldo hoje:** saldo efetivo em destaque; se o projetado difere, aparece logo abaixo.
-- **Conferência de saldo real:** campo para digitar o saldo que o app do banco mostra + data; o app calcula a diferença ("bate certinho", "falta inserir no app" ou "sobra no app — confira duplicado"). Se a box tiver bancos cadastrados, vira uma linha por banco, com o total informado abaixo — a diferença passa a ser calculada contra essa soma.
-- **Mini-gráfico** da janela de 7 dias atrás a 28 dias à frente.
-- **Pendentes:** fila de previstos vencidos, com confirmar (✓) ou descartar (✕) em um toque.
-- **Aviso de backup:** banner quando há mudanças e o último backup passou de 7 dias — toca e vai direto para Ajustes → Backup.
+- **Visão:** saldo efetivo em destaque; se o projetado difere, aparece logo abaixo. Mini-gráfico da janela de 7 dias atrás a 28 dias à frente.
+- **Conferir:** campo para digitar o saldo que o app do banco mostra + data; o app calcula a diferença ("bate certinho", "falta inserir no app" ou "sobra no app — confira duplicado"). Se a box tiver bancos cadastrados, vira uma linha por banco, com o total informado abaixo — a diferença passa a ser calculada contra essa soma.
+- **Pendentes:** fila de previstos vencidos, com confirmar (✓) ou descartar (✕) em um toque. O rótulo da aba mostra quantos itens esperam.
+- **Aviso de backup:** banner acima das abas, quando há mudanças e o último backup passou de 7 dias — toca e vai direto para Ajustes → Backup.
 
 **Conferência de saldo — obrigatório:** saldo real no banco. **Tem padrão:** data (hoje).
 
 > Com bancos cadastrados, enquanto nenhum saldo for informado a tela não mostra diferença nenhuma. Acusar um descasamento do tamanho do saldo inteiro só porque você ainda não digitou seria mentira.
 
 Cada linha de banco tem o botão de sinal, então conta no cheque especial se informa como negativa. Salvar grava só os bancos cujo valor você realmente mudou — encostar num campo e desistir não mexe no que já estava lá.
+
+> As três abas ficam disponíveis mesmo antes do primeiro uso terminar: uma fatura de cartão pendente aparece em Pendentes mesmo com a Visão ainda mostrando o convite para escolher categorias.
 
 ## Lançar
 
@@ -34,24 +35,23 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 
 ## Fluxo
 
-A linha do tempo do dinheiro: gráfico + lista de lançamentos por dia.
+A linha do tempo do dinheiro. Duas abas: Lista (padrão) e Gráfico.
 
-- Gráfico com o histórico e a projeção completa até o horizonte configurado; linha extra tracejada quando há cenário ligado.
-- Lista mostra por padrão os últimos 14 dias para frente; botão "+30 dias atrás" estende a janela.
-- Cada dia mostra seu saldo projetado no cabeçalho.
-- Tocar num lançamento abre o editor (valor, data, categoria, nota); previstos podem ser confirmados ali mesmo; previstos vindos de recorrência avisam para editar a regra em Ajustes se for para mudar valor/data permanentemente.
+- **Lista** mostra por padrão os últimos 14 dias para frente; o ícone de lupa abre busca e filtros (texto, data única ou período; botão "+30 dias atrás" estende a janela). Cada dia mostra seu saldo projetado no cabeçalho.
+- **Gráfico** mostra o histórico e a projeção completa até o horizonte configurado, numa área maior que o mini-gráfico de Hoje; linha extra tracejada quando há cenário ligado; toque no card abre em tela cheia.
+- Tocar num lançamento, na Lista, abre o editor (valor, data, categoria, nota); previstos podem ser confirmados ali mesmo; previstos vindos de recorrência avisam para editar a regra em Ajustes se for para mudar valor/data permanentemente.
 
 **Editor de lançamento — obrigatórios:** valor, data, categoria. **Opcional:** nota.
 
 ## Cartão
 
-Aba dedicada à fatura do cartão da box selecionada (ou os dois cartões empilhados, na visão casa).
+Aba dedicada à fatura do cartão da box selecionada (ou os dois cartões empilhados, na visão casa). Cada fatura tem três abas: Resumo, Lançamentos e Conferência.
 
 - Mostra a fatura do mês atual por padrão, com navegação ‹ mês anterior / mês seguinte ›.
-- Cabeçalho: total da fatura, dia de fechamento e de vencimento.
-- **Bloco de conferência:** campo "valor no app do banco"; mostra "falta bater R$ X" ou "✓ batido"; checkbox "usar este valor no Flow" (desmarcada por padrão).
-- Resumo por categoria do cartão quando há mais de uma categoria na fatura.
-- Lista de itens com descrição, categoria, valor e marcação de parcela (ex.: "3/12"); tocar abre edição; excluir remove a compra e todas as parcelas dela.
+- Cabeçalho, sempre visível fora das abas: total da fatura, dia de fechamento e de vencimento.
+- **Resumo:** valor pago ou a pagar, com atalho para corrigir; resumo por categoria do cartão quando há mais de uma categoria na fatura — tocar numa categoria já pula para Lançamentos filtrado por ela.
+- **Lançamentos:** busca por descrição, categoria, data ou valor; itens agrupados em À vista/Parceladas, com marcação de parcela (ex.: "3/12"); tocar abre edição; excluir remove a compra e todas as parcelas dela.
+- **Conferência:** campo "valor no app do banco"; mostra "falta bater R$ X" ou "✓ batido"; checkbox "usar este valor no Flow" (desmarcada por padrão). O rótulo da aba mostra ✔️ ou ⚠️ assim que existe uma conferência salva — dá para saber se bate sem entrar na aba.
 - Botão "+ compra" na própria tela (valor, data, categoria do cartão, parcelas, descrição).
 - Sem cartão cadastrado para a seleção: mostra atalho direto para cadastrar em Ajustes.
 

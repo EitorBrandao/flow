@@ -14,6 +14,12 @@ beforeEach(async () => {
   useApp.setState({ aba: 'hoje', ajustesSecao: null });
 });
 
+/** As três abas (Visão/Conferir/Pendentes) trocam o conteúdo visível — quem quiser o que
+ *  está fora da aba inicial (Visão) precisa trocar de aba antes de consultar a tela. */
+async function abrirAba(nome: RegExp | string) {
+  await userEvent.click(screen.getByRole('tab', { name: nome }));
+}
+
 it('mostra saldo e confirma um pendente', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
@@ -24,7 +30,9 @@ it('mostra saldo e confirma um pendente', async () => {
   useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
 
   render(<TelaHoje />);
-  expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent?.replace(/ /g, ' ') === 'R$ 1.000,00')).toBeInTheDocument(); // saldo efetivo
+  expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent?.replace(/\s/g, ' ') === 'R$ 1.000,00')).toBeInTheDocument(); // saldo efetivo, aba Visão
+
+  await abrirAba(/Pendentes/);
   expect(screen.getByText(/salario/)).toBeInTheDocument();     // pendente na fila
 
   await userEvent.click(screen.getByRole('button', { name: /Confirmar/ }));
@@ -42,6 +50,7 @@ it('declara saldo real maior que o saldo do app e mostra que falta inserir', asy
   useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
 
   render(<TelaHoje />);
+  await abrirAba('Conferir');
   await userEvent.type(screen.getByLabelText('Saldo real no banco'), '1050,00');
   await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
@@ -60,6 +69,7 @@ it('declara saldo real negativo (cheque especial) e persiste com o sinal', async
   useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
 
   render(<TelaHoje />);
+  await abrirAba('Conferir');
   await userEvent.type(screen.getByLabelText('Saldo real no banco'), '5000');
   const toggleBtn = screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' });
   await userEvent.click(toggleBtn);
@@ -79,6 +89,7 @@ it('declara saldo real igual ao saldo do app e mostra que bate certinho', async 
   useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
 
   render(<TelaHoje />);
+  await abrirAba('Conferir');
   await userEvent.type(screen.getByLabelText('Saldo real no banco'), '1000,00');
   await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
@@ -98,6 +109,7 @@ it('troca de box reseta o campo de saldo real para o valor daquela box', async (
   useApp.setState({ boxSel: boxA.id, hoje: '2026-07-02' });
 
   const { rerender } = render(<TelaHoje />);
+  await abrirAba('Conferir');
   const saldoInput = screen.getByLabelText('Saldo real no banco') as HTMLInputElement;
   expect(saldoInput.value).toMatch(/1\.050,00/);
 
@@ -171,6 +183,7 @@ describe('conferência por banco', () => {
   it('box sem banco mantém a conferência de sempre (campo único, sem total por banco)', async () => {
     await comBoxESaldo();
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     expect(screen.getByLabelText('Saldo real no banco')).toBeInTheDocument();
     expect(screen.queryByText('Total informado')).not.toBeInTheDocument();
   });
@@ -183,6 +196,7 @@ describe('conferência por banco', () => {
     useApp.setState({ boxSel: box.id });
 
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     expect(screen.getByLabelText('Banco Um')).toBeInTheDocument();
     expect(screen.getByLabelText('Banco Dois')).toBeInTheDocument();
     expect(screen.queryByLabelText('Saldo real no banco')).not.toBeInTheDocument();
@@ -196,6 +210,7 @@ describe('conferência por banco', () => {
     useApp.setState({ boxSel: box.id });
 
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     // mostrar "diferença = saldo inteiro" seria a tela acusar um descasamento inexistente
     expect(screen.queryByText(/Diferença/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Bate certinho/)).not.toBeInTheDocument();
@@ -210,6 +225,7 @@ describe('conferência por banco', () => {
     useApp.setState({ boxSel: box.id });
 
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     await userEvent.click(screen.getByLabelText('Banco Dois'));
     await userEvent.keyboard('50000');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
@@ -234,6 +250,7 @@ describe('conferência por banco', () => {
     useApp.setState({ boxSel: box.id });
 
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     // Só toca no campo do Banco Um — foca e não digita nada.
     await userEvent.click(screen.getByLabelText('Banco Um'));
     // Edita de fato o Banco Dois.
@@ -256,6 +273,7 @@ describe('conferência por banco', () => {
     useApp.setState({ boxSel: box.id });
 
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     await userEvent.click(screen.getByLabelText('Banco Um')); // foco zera o buffer
     await userEvent.keyboard('500'); // digita algo de verdade...
     await userEvent.keyboard('{Backspace}{Backspace}{Backspace}'); // ...e apaga tudo de volta a zero
@@ -274,6 +292,7 @@ describe('conferência por banco', () => {
     useApp.setState({ boxSel: box.id });
 
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     await userEvent.click(screen.getByLabelText('Banco Um'));
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
 
@@ -288,6 +307,7 @@ describe('conferência por banco', () => {
     useApp.setState({ boxSel: box.id });
 
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     expect(screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' })).toHaveTextContent('−');
     expect(screen.getByLabelText('Banco Um')).toHaveValue(formatarBRL(32100));
   });
@@ -304,6 +324,7 @@ describe('conferência por banco', () => {
     useApp.setState({ boxSel: box.id });
 
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     await userEvent.click(screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' }));
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
 
@@ -320,6 +341,7 @@ describe('conferência por banco', () => {
     useApp.setState({ boxSel: box.id });
 
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     await userEvent.click(screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' }));
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
 
@@ -336,6 +358,7 @@ describe('conferência por banco', () => {
 
     const erroSpy = vi.spyOn(repo, 'atualizarBanco').mockRejectedValue(new Error('falhou de propósito'));
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     await userEvent.click(screen.getByLabelText('Banco Um'));
     await userEvent.keyboard('5000');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
@@ -357,6 +380,7 @@ describe('conferência por banco', () => {
     useApp.setState({ boxSel: box.id });
 
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     // Foca o campo do banco A na instância ANTIGA, sem digitar nada.
     await userEvent.click(screen.getByLabelText('Banco Um'));
 
@@ -383,6 +407,7 @@ describe('conferência por banco', () => {
     useApp.setState({ boxSel: 'casa' });
 
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     expect(screen.getByLabelText('Banco Um')).toBeInTheDocument();
     expect(screen.getByLabelText('Banco Dois')).toBeInTheDocument();
     expect(screen.getByText('ju')).toBeInTheDocument();
@@ -396,6 +421,7 @@ describe('conferência por banco', () => {
     await useApp.getState().recarregar();
     useApp.setState({ boxSel: box.id });
     render(<TelaHoje />);
+    await abrirAba('Conferir');
     expect(screen.queryByLabelText('Saldo real no banco')).not.toBeInTheDocument();
 
     await repo.excluirBanco(banco.id);
@@ -433,6 +459,7 @@ describe('fatura pendente na fila', () => {
       await comFaturaVencida();
 
       render(<TelaHoje />);
+      await abrirAba(/Pendentes/);
       expect(screen.getByRole('button', { name: /Paguei outro valor/ })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Descartar' })).not.toBeInTheDocument();
     } finally { vi.useRealTimers(); }
@@ -448,6 +475,7 @@ describe('fatura pendente na fila', () => {
     useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
 
     render(<TelaHoje />);
+    await abrirAba(/Pendentes/);
     expect(screen.getByRole('button', { name: 'Descartar' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Paguei outro valor/ })).not.toBeInTheDocument();
   });
@@ -463,6 +491,7 @@ describe('fatura pendente na fila', () => {
 
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<TelaHoje />);
+    await abrirAba(/Pendentes/);
 
     await userEvent.click(screen.getByRole('button', { name: 'Descartar' }));
 
@@ -483,6 +512,7 @@ describe('fatura pendente na fila', () => {
 
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<TelaHoje />);
+    await abrirAba(/Pendentes/);
 
     await userEvent.click(screen.getByRole('button', { name: 'Descartar' }));
 
@@ -501,6 +531,7 @@ describe('fatura pendente na fila', () => {
       await comFaturaVencida();
 
       render(<TelaHoje />);
+      await abrirAba(/Pendentes/);
       await userEvent.click(screen.getByRole('button', { name: /Paguei outro valor/ }));
 
       expect(await screen.findByRole('dialog', { name: 'Pagamento da fatura' })).toBeInTheDocument();

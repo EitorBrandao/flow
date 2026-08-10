@@ -12,6 +12,11 @@ import FormCompra from './FormCompra';
 import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
 import Sheet from './Sheet';
 
+// NOTA DE PATCH (nível 1): o card de fatura ganhou 3 abas internas (Resumo/Lançamentos/
+// Conferência) via `.pills` — cabeçalho da fatura (mês, total, fecha/vence) continua sempre
+// visível fora das abas, igual antes.
+type AbaCartao = 'resumo' | 'lancamentos' | 'conferencia';
+
 function fmtDia(d: string): string {
   const [, m, dia] = d.split('-');
   return `${dia}/${m}`;
@@ -48,7 +53,7 @@ function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: str
 
   const diff = conf != null ? conf.valorAppCent - totalCent : null;
   return (
-    <div style={{ marginTop: 8 }}>
+    <div>
       <div className="linha">
         <div className="campo">
           <label htmlFor={`${uid}-valorapp`}>Valor no app do banco</label>
@@ -88,10 +93,10 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const { dados, hoje } = useApp();
   const [mes, setMes] = useState(() => mesFaturaDaCompra(cartao, hoje));
   const [editando, setEditando] = useState<CompraCartao | null>(null);
-  const [mostrarLista, setMostrarLista] = useState(false);
   const [filtroCategoriaId, setFiltroCategoriaId] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
   const [pagando, setPagando] = useState(false);
+  const [abaCartao, setAbaCartao] = useState<AbaCartao>('resumo');
   if (!dados) return null;
 
   const compras = dados.comprasCartao.filter((c) => c.cartaoId === cartao.id);
@@ -114,9 +119,12 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const itensFiltrados = fatura.itens.filter((i) =>
     (!filtroCategoriaId || i.categoriaCartaoId === filtroCategoriaId) && (!buscaAtiva || bate(i)));
 
-  // O lançamento que esta fatura virou no Flow. Pode não existir (fatura futura ainda fora do
-  // horizonte, ou já vencida e nunca criada) — aí não há pagamento a registrar.
   const lancFatura = dados.lancamentos.find((l) => l.cartaoId === cartao.id && l.faturaMes === mes);
+
+  // Ícone no rótulo da aba Conferência: dá pra saber se bate sem entrar na aba. Só aparece
+  // depois que existe uma conferência salva — antes disso não há nada a sinalizar.
+  const confAtual = dados.conferenciasFatura.find((c) => c.cartaoId === cartao.id && c.mes === mes);
+  const diffConferencia = confAtual != null ? confAtual.valorAppCent - fatura.totalCent : null;
 
   const aVista = itensFiltrados.filter((i) => i.totalParcelas === 1).sort((a, b) => b.data.localeCompare(a.data));
   const parceladas = itensFiltrados.filter((i) => i.totalParcelas > 1).sort((a, b) => b.data.localeCompare(a.data));
@@ -135,43 +143,54 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
         </div>
         <button className="botao" aria-label="Mês seguinte" onClick={() => setMes(addMeses(mes, 1))}>›</button>
       </div>
-      <BlocoConferencia key={`${cartao.id}:${mes}`} cartao={cartao} mes={mes} totalCent={fatura.totalCent} />
-      {lancFatura && (
-        <p className="sub" style={{ margin: '8px 0 0' }}>
-          {lancFatura.status === 'efetivo'
-            ? `Pago: ${formatarBRL(lancFatura.valor)}`
-            : `A pagar: ${formatarBRL(lancFatura.valor)}`}
-          {' · '}
-          <button className="botao-ver-mais" onClick={() => setPagando(true)}>
-            {lancFatura.status === 'efetivo' ? 'corrigir ou parcelar' : 'paguei outro valor'}
-          </button>
-        </p>
-      )}
-      {resumo.length > 1 && (
-        <div className="lista" style={{ marginTop: 8 }}>
-          {resumo.map(([catId, cent]) => (
-            <button
-              key={catId}
-              className={`botao${filtroCategoriaId === catId ? ' ativo' : ''}`}
-              style={{ display: 'flex', justifyContent: 'space-between', width: '100%', textAlign: 'left' }}
-              aria-pressed={filtroCategoriaId === catId}
-              onClick={() => {
-                setFiltroCategoriaId((v) => (v === catId ? null : catId));
-                setMostrarLista(true);
-              }}
-            >
-              <span>{nomeCat(catId)}</span>
-              <strong className="valor-gasto">{formatarBRL(cent)}</strong>
-            </button>
-          ))}
+
+      <div className="pills" style={{ marginTop: 12 }} role="tablist" aria-label="Seções da fatura">
+        <button role="tab" aria-selected={abaCartao === 'resumo'} className={abaCartao === 'resumo' ? 'ativo' : ''} onClick={() => setAbaCartao('resumo')}>Resumo</button>
+        <button role="tab" aria-selected={abaCartao === 'lancamentos'} className={abaCartao === 'lancamentos' ? 'ativo' : ''} onClick={() => setAbaCartao('lancamentos')}>Lançamentos</button>
+        <button role="tab" aria-selected={abaCartao === 'conferencia'} className={abaCartao === 'conferencia' ? 'ativo' : ''} onClick={() => setAbaCartao('conferencia')}>
+          Conferência{diffConferencia != null && (diffConferencia === 0 ? ' ✔️' : ' ⚠️')}
+        </button>
+      </div>
+
+      {abaCartao === 'resumo' && (
+        <div style={{ marginTop: 12 }}>
+          {lancFatura && (
+            <p className="sub" style={{ margin: 0 }}>
+              {lancFatura.status === 'efetivo'
+                ? `Pago: ${formatarBRL(lancFatura.valor)}`
+                : `A pagar: ${formatarBRL(lancFatura.valor)}`}
+              {' · '}
+              <button className="botao-ver-mais" onClick={() => setPagando(true)}>
+                {lancFatura.status === 'efetivo' ? 'corrigir ou parcelar' : 'paguei outro valor'}
+              </button>
+            </p>
+          )}
+          {resumo.length > 1 && (
+            <div className="lista" style={{ marginTop: 8 }}>
+              {resumo.map(([catId, cent]) => (
+                <button
+                  key={catId}
+                  className={`botao${filtroCategoriaId === catId ? ' ativo' : ''}`}
+                  style={{ display: 'flex', justifyContent: 'space-between', width: '100%', textAlign: 'left' }}
+                  aria-pressed={filtroCategoriaId === catId}
+                  onClick={() => {
+                    setFiltroCategoriaId((v) => (v === catId ? null : catId));
+                    setAbaCartao('lancamentos');
+                  }}
+                >
+                  <span>{nomeCat(catId)}</span>
+                  <strong className="valor-gasto">{formatarBRL(cent)}</strong>
+                </button>
+              ))}
+            </div>
+          )}
+          {resumo.length === 0 && <p className="sub" style={{ marginTop: 8 }}>Nenhum gasto nesta fatura.</p>}
         </div>
       )}
-      <button className="botao-ver-mais" style={{ marginTop: 8 }} onClick={() => setMostrarLista((v) => !v)}>
-        {mostrarLista ? 'Ocultar lançamentos' : 'Ver lançamentos'}
-      </button>
-      {mostrarLista && (
-        <>
-          <div className="linha" style={{ marginTop: 8 }}>
+
+      {abaCartao === 'lancamentos' && (
+        <div style={{ marginTop: 12 }}>
+          <div className="linha">
             <input
               className="campo-busca"
               placeholder="Buscar por descrição, categoria, data ou valor..."
@@ -197,8 +216,15 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
               </p>
             )}
           </div>
-        </>
+        </div>
       )}
+
+      {abaCartao === 'conferencia' && (
+        <div style={{ marginTop: 12 }}>
+          <BlocoConferencia key={`${cartao.id}:${mes}`} cartao={cartao} mes={mes} totalCent={fatura.totalCent} />
+        </div>
+      )}
+
       <Sheet aberto={editando != null} onFechar={() => setEditando(null)} rotulo="Editar compra">
         {editando && <FormCompra cartao={cartao} compra={editando} onFechar={() => setEditando(null)} />}
       </Sheet>

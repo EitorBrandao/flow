@@ -15,6 +15,12 @@ import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
 
 const SETE_DIAS_MS = 7 * 86_400_000;
 
+// NOTA DE PATCH (nível 1 — docs/estilo/nivel-1-editar-tela.md): a tela ganhou 3 abas
+// internas (Visão/Conferir/Pendentes) via `.pills`, classe já catalogada — nenhuma classe
+// nova, nenhum toque em styles.css. Objetivo: reduzir o que fica visível de uma vez sem
+// esconder nada de vez (tudo continua a um toque).
+type AbaHoje = 'visao' | 'conferir' | 'pendentes';
+
 /** Um pendente que é fatura de cartão — tem cartão dono e mês de fatura, e por isso pode ser
  *  pago parcialmente/parcelado em vez de só confirmado. */
 function ehFatura(l: Lancamento): boolean {
@@ -93,18 +99,12 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
   hoje: ISODate;
   onSalvarBancos: (mudancas: { id: string; cents: number }[], data: ISODate) => Promise<void>;
 }) {
-  // Magnitude e sinal ficam em estados separados (mesmo padrão de `ConferenciaSaldo` e de
-  // `Bancos.tsx` em Ajustes) — `CampoValor` só sabe lidar com o valor absoluto digitado; quem
-  // decide se o resultado final é negativo é o botão de alternar sinal, ao lado de cada campo.
   const [magnitudes, setMagnitudes] = useState<Record<string, number>>(
     () => Object.fromEntries(bancos.map((b) => [b.id, Math.abs(b.saldoDeclaradoCent ?? 0)])),
   );
   const [negativos, setNegativos] = useState<Record<string, boolean>>(
     () => Object.fromEntries(bancos.map((b) => [b.id, (b.saldoDeclaradoCent ?? 0) < 0])),
   );
-  // `CampoValor` não dispara `onChange` ao receber foco — focar seleciona o conteúdo, e só
-  // digitar altera. Então todo `onChange` que chega aqui é edição de verdade, e basta
-  // registrar quem mexeu: encostar num campo e desistir não entra na lista.
   const editados = useRef<Set<string>>(new Set());
 
   function mudarValor(id: string, v: number) {
@@ -112,20 +112,12 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
     editados.current.add(id);
   }
 
-  // Alternar o sinal não passa pelo campo de valor, mas é edição igual — sem isto, trocar o
-  // sinal e salvar não gravaria nada.
   function alternarSinal(id: string) {
     setNegativos((atual) => ({ ...atual, [id]: !atual[id] }));
     editados.current.add(id);
   }
 
   async function salvar() {
-    // Grava só quem foi editado de fato e cujo valor final difere do que já está persistido —
-    // "focou e desistiu" deixa o banco fora daqui (não entrou em `editados`), então um banco
-    // nunca informado (`saldoDeclaradoCent: null`) que só foi tocado continua `null`, não vira
-    // "informado zero" (são estados diferentes: ver `totalDeclaradoCent`). Já um banco realmente
-    // zerado por edição (dígitos apagados até zero) entra normalmente, mesmo que o resultado
-    // numérico seja o mesmo zero — é uma decisão consciente do usuário, não um efeito colateral.
     const mudancas = bancos
       .filter((b) => editados.current.has(b.id))
       .map((b) => {
@@ -190,6 +182,7 @@ export default function TelaHoje() {
   const { dados, boxSel, hoje, recarregar, abrirAjustes } = useApp();
   const [pagando, setPagando] = useState<Lancamento | null>(null);
   const [avisoSalvarBancos, setAvisoSalvarBancos] = useState<string | null>(null);
+  const [abaHoje, setAbaHoje] = useState<AbaHoje>('visao');
   const ids = dados ? boxIdsSelecionadas(dados, boxSel) : [];
   const ligados = dados ? cenariosLigados(dados) : new Set<string>();
 
@@ -216,8 +209,6 @@ export default function TelaHoje() {
   const boxAtual = boxSel !== 'casa' ? dados.boxes.find((b) => b.id === boxSel) : undefined;
   const declaradoCent = (boxSel === 'casa' ? dados.config.saldoDeclaradoCent : boxAtual?.saldoDeclaradoCent) ?? null;
   const dataDeclarado = (boxSel === 'casa' ? dados.config.dataSaldoDeclarado : boxAtual?.dataSaldoDeclarado) ?? null;
-  // Box sem banco nenhum cadastrado mantém a conferência de sempre (campo único) — zero
-  // regressão pra quem nunca cadastrou um banco. Só com bancos a lista por banco assume.
   const bancos = bancosDaBox(dados.bancos, ids);
   const chaveBancos = bancos.map((b) => b.id).join(',');
 
@@ -228,21 +219,14 @@ export default function TelaHoje() {
   }
 
   async function salvarSaldosBancos(mudancas: { id: string; cents: number }[], data: string) {
-    // Grava todos os bancos alterados antes de recarregar — `recarregar()` relê o snapshot
-    // inteiro (ver store.ts), então uma chamada por banco alterado seria N releituras pra uma
-    // única ação de "Salvar conferência dos bancos".
     setAvisoSalvarBancos(null);
     try {
       await Promise.all(
         mudancas.map(({ id, cents }) => repo.atualizarBanco(id, { saldoDeclaradoCent: cents, dataSaldoDeclarado: data })),
       );
     } catch {
-      // Cada gravação é uma transação própria — o que já gravou não se perde. Mas o
-      // `Promise.all` rejeita no primeiro erro, então sem isto a tela ficaria muda: o usuário
-      // acharia que salvou tudo quando só parte gravou de fato.
       setAvisoSalvarBancos('Nem tudo foi salvo — confira os valores e tente novamente.');
     } finally {
-      // Recarrega mesmo em caso de erro parcial, pra tela refletir o que de fato foi gravado.
       await recarregar();
     }
   }
@@ -257,8 +241,6 @@ export default function TelaHoje() {
     await recarregar();
   }
 
-  // Enquanto o pendente é `previsto`, o valor dele *é* o total da fatura — quem o escreve é a
-  // sincronização do cartão, não a mão do usuário.
   const totalDaFaturaPendente = pagando?.valor ?? 0;
 
   const { precisa: primeiroUso } = estadoPrimeiroUso(dados);
@@ -270,91 +252,105 @@ export default function TelaHoje() {
           Há mudanças sem backup há mais de 7 dias — toque para exportar.
         </button>
       )}
-      {primeiroUso ? (
-        <PrimeiroUso />
-      ) : (
-        <div className="card">
-          <p className="rotulo" style={{ margin: 0 }}>
-            Saldo hoje · {boxSel === 'casa' ? 'casa' : dados.boxes.find((b) => b.id === boxSel)?.nome}
-          </p>
-          {(() => {
-            const saldoHoje = deHoje?.saldoEfetivo ?? 0;
-            const [reais, centavos] = formatarBRL(saldoHoje).split(',');
-            return (
-              <p className={`saldo-grande${saldoHoje < 0 ? ' negativo' : ''}`} style={{ margin: '4px 0' }}>
-                {reais}<b>,{centavos}</b>
-              </p>
-            );
-          })()}
-          {(() => {
-            const fim = janela.at(-1);
-            const delta = fim && deHoje ? fim.saldoProjetado - deHoje.saldoEfetivo : null;
-            if (delta == null || delta === 0) return null;
-            return (
-              <span className={`delta ${delta > 0 ? 'pos' : 'neg'}`}>
-                {delta > 0 ? '▲' : '▼'} {formatarBRL(Math.abs(delta))} nos próximos 28 dias
-              </span>
-            );
-          })()}
-          {deHoje && deHoje.saldoProjetado !== deHoje.saldoEfetivo && (
-            <p className="sub" style={{ margin: 0 }}>
-              projetado: <strong className={deHoje.saldoProjetado >= 0 ? 'valor-ganho' : 'valor-gasto'}>
-                {formatarBRL(deHoje.saldoProjetado)}
-              </strong>
+      {/* As abas ficam sempre disponíveis, mesmo no primeiro uso: um cartão de fatura pode
+          já estar pendente antes de o usuário terminar de cadastrar categorias, e ele precisa
+          continuar alcançável (era assim antes das abas — só a Visão trocava de conteúdo). */}
+      <div className="pills" role="tablist" aria-label="Seções de Hoje">
+        <button role="tab" aria-selected={abaHoje === 'visao'} className={abaHoje === 'visao' ? 'ativo' : ''} onClick={() => setAbaHoje('visao')}>Visão</button>
+        <button role="tab" aria-selected={abaHoje === 'conferir'} className={abaHoje === 'conferir' ? 'ativo' : ''} onClick={() => setAbaHoje('conferir')}>Conferir</button>
+        <button role="tab" aria-selected={abaHoje === 'pendentes'} className={abaHoje === 'pendentes' ? 'ativo' : ''} onClick={() => setAbaHoje('pendentes')}>Pendentes · {fila.length}</button>
+      </div>
+
+      {abaHoje === 'visao' && (
+        primeiroUso ? (
+          <PrimeiroUso />
+        ) : (
+          <div className="card">
+            <p className="rotulo" style={{ margin: 0 }}>
+              Saldo hoje · {boxSel === 'casa' ? 'casa' : dados.boxes.find((b) => b.id === boxSel)?.nome}
             </p>
-          )}
+            {(() => {
+              const saldoHoje = deHoje?.saldoEfetivo ?? 0;
+              const [reais, centavos] = formatarBRL(saldoHoje).split(',');
+              return (
+                <p className={`saldo-grande${saldoHoje < 0 ? ' negativo' : ''}`} style={{ margin: '4px 0' }}>
+                  {reais}<b>,{centavos}</b>
+                </p>
+              );
+            })()}
+            {(() => {
+              const fim = janela.at(-1);
+              const delta = fim && deHoje ? fim.saldoProjetado - deHoje.saldoEfetivo : null;
+              if (delta == null || delta === 0) return null;
+              return (
+                <span className={`delta ${delta > 0 ? 'pos' : 'neg'}`}>
+                  {delta > 0 ? '▲' : '▼'} {formatarBRL(Math.abs(delta))} nos próximos 28 dias
+                </span>
+              );
+            })()}
+            {deHoje && deHoje.saldoProjetado !== deHoje.saldoEfetivo && (
+              <p className="sub" style={{ margin: 0 }}>
+                projetado: <strong className={deHoje.saldoProjetado >= 0 ? 'valor-ganho' : 'valor-gasto'}>
+                  {formatarBRL(deHoje.saldoProjetado)}
+                </strong>
+              </p>
+            )}
+            <BalanceChart serie={janela} hoje={hoje} altura={120} mostrarCenarios={ligados.size > 0} />
+          </div>
+        )
+      )}
+
+      {abaHoje === 'conferir' && (
+        <div className="card">
+          {avisoSalvarBancos && <p className="aviso">{avisoSalvarBancos}</p>}
           {bancos.length === 0 ? (
             <ConferenciaSaldo key={boxSel} saldoApp={deHoje?.saldoEfetivo ?? 0} declaradoCent={declaradoCent}
               dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} />
           ) : (
-            <>
-              {avisoSalvarBancos && <p className="aviso">{avisoSalvarBancos}</p>}
-              <ConferenciaBancos key={`${boxSel}-${chaveBancos}`} bancos={bancos} boxes={dados.boxes}
-                agruparPorBox={boxSel === 'casa'} saldoApp={deHoje?.saldoEfetivo ?? 0} hoje={hoje}
-                onSalvarBancos={salvarSaldosBancos} />
-            </>
+            <ConferenciaBancos key={`${boxSel}-${chaveBancos}`} bancos={bancos} boxes={dados.boxes}
+              agruparPorBox={boxSel === 'casa'} saldoApp={deHoje?.saldoEfetivo ?? 0} hoje={hoje}
+              onSalvarBancos={salvarSaldosBancos} />
           )}
-          <BalanceChart serie={janela} hoje={hoje} altura={120} mostrarCenarios={ligados.size > 0} />
         </div>
       )}
-      <h2>Pendentes ({fila.length})</h2>
-      <div className="lista">
-        <AnimatePresence initial={false}>
-          {fila.map((l) => (
-            <motion.div
-              className="item item-coluna" key={l.id} layout
-              exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }}
-              style={{ overflow: 'hidden' }}
-              transition={{ duration: 0.18 }}
-            >
-              <div className="linha-topo">
-                <div className="cresce">
-                  <div>{nomeCat(l.categoriaId)}</div>
-                  <div className="sub">{l.data.split('-').reverse().join('/')}{l.nota ? ` · ${l.nota}` : ''}</div>
+
+      {abaHoje === 'pendentes' && (
+        <div className="lista">
+          <AnimatePresence initial={false}>
+            {fila.map((l) => (
+              <motion.div
+                className="item item-coluna" key={l.id} layout
+                exit={{ opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0 }}
+                style={{ overflow: 'hidden' }}
+                transition={{ duration: 0.18 }}
+              >
+                <div className="linha-topo">
+                  <div className="cresce">
+                    <div>{nomeCat(l.categoriaId)}</div>
+                    <div className="sub">{l.data.split('-').reverse().join('/')}{l.nota ? ` · ${l.nota}` : ''}</div>
+                  </div>
+                  <span className={tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
+                    {formatarBRL(l.valor)}
+                  </span>
                 </div>
-                <span className={tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
-                  {formatarBRL(l.valor)}
-                </span>
-              </div>
-              <div className="acoes">
-                <button className="botao botao-primario" aria-label={`Confirmar ${nomeCat(l.categoriaId)}`} onClick={() => confirmar(l.id)}>✓ Confirmar</button>
-                {/* Fatura não se descarta — ela sempre aconteceu; o que varia é quanto foi
-                    pago dela. Nos demais pendentes o par Confirmar/Descartar continua igual. */}
-                {ehFatura(l) ? (
-                  <button className="botao" aria-label={`Paguei outro valor de ${nomeCat(l.categoriaId)}`} onClick={() => setPagando(l)}>Paguei outro valor</button>
-                ) : (
-                  <button className="botao" aria-label="Descartar" onClick={() => descartar(l.id)}>Descartar</button>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        <PagamentoFaturaSheetModal
-          lancamento={pagando} totalFaturaCent={totalDaFaturaPendente}
-          onFechar={() => setPagando(null)}
-        />
-        {fila.length === 0 && <p className="sub">Nada a confirmar — tudo em dia.</p>}
-      </div>
+                <div className="acoes">
+                  <button className="botao botao-primario" aria-label={`Confirmar ${nomeCat(l.categoriaId)}`} onClick={() => confirmar(l.id)}>✓ Confirmar</button>
+                  {ehFatura(l) ? (
+                    <button className="botao" aria-label={`Paguei outro valor de ${nomeCat(l.categoriaId)}`} onClick={() => setPagando(l)}>Paguei outro valor</button>
+                  ) : (
+                    <button className="botao" aria-label="Descartar" onClick={() => descartar(l.id)}>Descartar</button>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          <PagamentoFaturaSheetModal
+            lancamento={pagando} totalFaturaCent={totalDaFaturaPendente}
+            onFechar={() => setPagando(null)}
+          />
+          {fila.length === 0 && <p className="sub">Nada a confirmar — tudo em dia.</p>}
+        </div>
+      )}
     </div>
   );
 }
