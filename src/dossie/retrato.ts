@@ -11,8 +11,9 @@ export interface SaldoBox {
 }
 
 export interface MarcosProjecao {
-  minimo: DiaSaldo;
-  maximo: DiaSaldo;
+  /** `null` quando a série está vazia: nenhuma box com saldo inicial, nenhum lançamento. */
+  minimo: DiaSaldo | null;
+  maximo: DiaSaldo | null;
   fimDeMes: DiaSaldo[];
 }
 
@@ -29,6 +30,9 @@ export interface Retrato {
 }
 
 function marcosDe(serie: DiaSaldo[]): MarcosProjecao {
+  // Série vazia é um corte antes de qualquer box ter saldo inicial. Não há projeção
+  // para relatar: `null` é honesto, um dia de saldo zero inventado mentiria no dossiê.
+  if (serie.length === 0) return { minimo: null, maximo: null, fimDeMes: [] };
   const minimo = serie.reduce((a, b) => (b.saldoProjetado < a.saldoProjetado ? b : a));
   const maximo = serie.reduce((a, b) => (b.saldoProjetado > a.saldoProjetado ? b : a));
   const fimDeMes = serie.filter((d, i) => i === serie.length - 1 || serie[i + 1].data.slice(0, 7) !== d.data.slice(0, 7));

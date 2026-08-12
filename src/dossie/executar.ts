@@ -43,8 +43,14 @@ export async function executarRoteiro(roteiro: Roteiro): Promise<Retrato[]> {
 
     const agenda = [
       ...roteiro.passos.map((p, i) => ({ data: p.data, tipo: 'passo' as const, indice: i, passo: p })),
-      ...roteiro.cortes.map((c) => ({ data: c.data, tipo: 'corte' as const, corte: c })),
-    ].sort((a, b) => (a.data === b.data ? (a.tipo === 'passo' ? -1 : 1) : a.data.localeCompare(b.data)));
+      ...roteiro.cortes.map((c, i) => ({ data: c.data, tipo: 'corte' as const, indice: i, corte: c })),
+    ].sort((a, b) => {
+      if (a.data !== b.data) return a.data.localeCompare(b.data);
+      // Na mesma data, todo passo roda antes de todo corte.
+      if (a.tipo !== b.tipo) return a.tipo === 'passo' ? -1 : 1;
+      // Entre itens do mesmo tipo, vale a ordem de declaração no roteiro.
+      return a.indice - b.indice;
+    });
 
     for (const item of agenda) {
       ambiente.avancarPara(item.data);
@@ -60,10 +66,17 @@ export async function executarRoteiro(roteiro: Roteiro): Promise<Retrato[]> {
           );
         }
       } else {
-        const horizonte = dados.config.horizonteProjecao;
-        await repo.materializarTodas(horizonte);
-        await repo.sincronizarCartoes(horizonte);
-        retratos.push(tirarRetrato(await repo.carregarTudo(), item.corte.data, item.corte.rotulo));
+        try {
+          const horizonte = dados.config.horizonteProjecao;
+          await repo.materializarTodas(horizonte);
+          await repo.sincronizarCartoes(horizonte);
+          retratos.push(tirarRetrato(await repo.carregarTudo(), item.corte.data, item.corte.rotulo));
+        } catch (erro) {
+          const causa = erro instanceof Error ? erro.message : String(erro);
+          throw new Error(
+            `o roteiro parou no corte (${item.corte.data}, "${item.corte.rotulo}"): ${causa}`,
+          );
+        }
       }
     }
   } finally {

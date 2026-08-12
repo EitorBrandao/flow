@@ -87,3 +87,73 @@ it('passo que estoura interrompe e diz qual passo', async () => {
     /passo 3 \(2026-03-01, "passo que quebra de propósito"\)/,
   );
 });
+
+it('corte antes de qualquer box ter saldo tira um retrato com marcos nulos', async () => {
+  // Nenhum passo: só a box "casa" (saldoInicial null) existe no momento do corte.
+  // `projetarBoxes` devolve série vazia — este é o cenário do achado 1.
+  const roteiro: Roteiro = {
+    passos: [],
+    cortes: [{ data: '2026-01-01', rotulo: 'antes de qualquer coisa' }],
+  };
+  const retratos = await executarRoteiro(roteiro);
+  expect(retratos).toHaveLength(1);
+  expect(retratos[0].marcos.minimo).toBeNull();
+  expect(retratos[0].marcos.maximo).toBeNull();
+  expect(retratos[0].marcos.fimDeMes).toEqual([]);
+});
+
+it('dois passos na mesma data rodam na ordem de declaração', async () => {
+  // O segundo passo depende da categoria criada pelo primeiro. Se a ordem inverter,
+  // o `.find(...)!` do segundo passo estoura, e o erro sai embrulhado como "passo 2".
+  const roteiro: Roteiro = {
+    passos: [
+      {
+        data: '2026-01-01',
+        descricao: 'abre a box e a categoria de renda',
+        async executar() {
+          await repo.salvarBox({
+            id: 'box-carteira', nome: 'carteira',
+            saldoInicial: 100000, dataSaldoInicial: '2026-01-01',
+            criadoEm: '2026-01-01T12:00:00.000Z', alteradoEm: '2026-01-01T12:00:00.000Z',
+          });
+          await repo.salvarCategoria({ boxId: 'box-carteira', nome: 'renda', tipo: 'ganho', ordem: 0 });
+        },
+      },
+      {
+        data: '2026-01-01',
+        descricao: 'lança um ganho na categoria recém-criada',
+        async executar(dados) {
+          const renda = dados.categorias.find((c) => c.nome === 'renda')!;
+          // Data do lançamento depois de `dataSaldoInicial`: se caísse na mesma data,
+          // `projetarBoxes` o trataria como já contido no saldo inicial e mascararia o teste.
+          await repo.salvarLancamento({
+            boxId: 'box-carteira', categoriaId: renda.id,
+            data: '2026-01-05', valor: 5000, status: 'efetivo',
+          });
+        },
+      },
+    ],
+    cortes: [{ data: '2026-01-06', rotulo: 'depois dos dois passos' }],
+  };
+  const retratos = await executarRoteiro(roteiro);
+  const carteira = retratos[0].saldos.find((s) => s.nome === 'carteira')!;
+  expect(carteira.efetivo).toBe(105000);
+});
+
+it('dois cortes na mesma data saem na ordem de declaração', async () => {
+  const roteiro = roteiroMinimo();
+  roteiro.cortes = [
+    { data: '2026-01-15', rotulo: 'primeiro corte do dia' },
+    { data: '2026-01-15', rotulo: 'segundo corte do dia' },
+  ];
+  const retratos = await executarRoteiro(roteiro);
+  expect(retratos.map((r) => r.rotulo)).toEqual(['primeiro corte do dia', 'segundo corte do dia']);
+});
+
+it('erro dentro de um corte interrompe e diz qual corte', async () => {
+  const roteiro = roteiroMinimo();
+  vi.spyOn(repo, 'materializarTodas').mockRejectedValueOnce(new Error('falha sintética de materialização'));
+  await expect(executarRoteiro(roteiro)).rejects.toThrow(
+    /corte \(2026-01-15, "depois da abertura"\): falha sintética de materialização/,
+  );
+});
