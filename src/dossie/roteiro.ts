@@ -195,7 +195,7 @@ export const ROTEIRO: Roteiro = {
         });
         await repo.salvarCompraCartao({
           cartaoId: cartao.id, categoriaCartaoId: compras.id, data: '2026-07-17',
-          valorTotal: 6_000, parcelas: 1, descricao: 'Jantar na praia', viagemId: viagem.id,
+          valorTotal: 6_000, parcelas: 1, descricao: 'Sorvete na praia', viagemId: viagem.id,
         }, horizonte);
       },
     },
