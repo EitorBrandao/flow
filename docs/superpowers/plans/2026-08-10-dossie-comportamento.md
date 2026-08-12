@@ -229,7 +229,7 @@ git commit -m "Ambiente determinístico do dossiê: relógio congelado e ids seq
   ```ts
   // retrato.ts
   export interface SaldoBox { boxId: ID; nome: string; efetivo: number; projetado: number; comCenarios: number }
-  export interface MarcosProjecao { minimo: DiaSaldo; maximo: DiaSaldo; fimDeMes: DiaSaldo[] }
+  export interface MarcosProjecao { minimo: DiaSaldo | null; maximo: DiaSaldo | null; fimDeMes: DiaSaldo[] }
   export interface Retrato {
     data: ISODate;
     rotulo: string;
@@ -384,8 +384,9 @@ export interface SaldoBox {
 }
 
 export interface MarcosProjecao {
-  minimo: DiaSaldo;
-  maximo: DiaSaldo;
+  /** `null` quando a série vem vazia — ver a nota abaixo. */
+  minimo: DiaSaldo | null;
+  maximo: DiaSaldo | null;
   fimDeMes: DiaSaldo[];
 }
 
@@ -402,6 +403,11 @@ export interface Retrato {
 }
 
 function marcosDe(serie: DiaSaldo[]): MarcosProjecao {
+  // `projetarBoxes` devolve [] quando não há box com `dataSaldoInicial` nem lançamento antes
+  // do horizonte (`src/domain/projection.ts`). É o estado real depois de o executor criar a
+  // box 'casa', que tem `saldoInicial: null`, e antes do primeiro passo. Um `reduce` sem
+  // valor inicial estoura aí. `null` é honesto; um dia falso com saldo zero mentiria no dossiê.
+  if (serie.length === 0) return { minimo: null, maximo: null, fimDeMes: [] };
   const minimo = serie.reduce((a, b) => (b.saldoProjetado < a.saldoProjetado ? b : a));
   const maximo = serie.reduce((a, b) => (b.saldoProjetado > a.saldoProjetado ? b : a));
   const fimDeMes = serie.filter((d, i) => i === serie.length - 1 || serie[i + 1].data.slice(0, 7) !== d.data.slice(0, 7));
@@ -502,8 +508,16 @@ export async function executarRoteiro(roteiro: Roteiro): Promise<Retrato[]> {
 
     const agenda = [
       ...roteiro.passos.map((p, i) => ({ data: p.data, tipo: 'passo' as const, indice: i, passo: p })),
-      ...roteiro.cortes.map((c) => ({ data: c.data, tipo: 'corte' as const, corte: c })),
-    ].sort((a, b) => (a.data === b.data ? (a.tipo === 'passo' ? -1 : 1) : a.data.localeCompare(b.data)));
+      ...roteiro.cortes.map((c, i) => ({ data: c.data, tipo: 'corte' as const, indice: i, corte: c })),
+    ].sort((a, b) => {
+      if (a.data !== b.data) return a.data.localeCompare(b.data);
+      // Na mesma data, todo passo roda antes de todo corte.
+      if (a.tipo !== b.tipo) return a.tipo === 'passo' ? -1 : 1;
+      // Entre itens do mesmo tipo, vale a ordem de declaração no roteiro. Sem este
+      // desempate o comparador fica inconsistente (devolve o mesmo sinal nos dois
+      // sentidos) e a ordem relativa passa a depender do motor.
+      return a.indice - b.indice;
+    });
 
     for (const item of agenda) {
       ambiente.avancarPara(item.data);
@@ -1514,6 +1528,13 @@ Os outros três seguem o mesmo molde. O formato de saída de cada um, para não 
 - Mínimo: R$ 1.240,00 em 2026-11-04
 - Máximo: R$ 12.000,00 em 2026-01-05
 - Fim de janeiro: R$ 3.820,00
+```
+
+Quando `minimo` e `maximo` vêm `null` — série vazia, num corte anterior à primeira box com
+saldo —, escreva `Sem projeção neste corte.` no lugar da lista. Nunca `R$ 0,00`: inventar um
+saldo mentiria no dossiê.
+
+```markdown
 
 ### Faturas
 
