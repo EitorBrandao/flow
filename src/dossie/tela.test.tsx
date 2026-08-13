@@ -113,7 +113,7 @@ it('coleta uma entrada por corte, com todas as abas', async () => {
   await limparDb();
   const retratos = await executarRoteiro(ROTEIRO);
   const telas = await coletarTelas(retratos);
-  expect(telas).toHaveLength(6);
+  expect(telas).toHaveLength(ROTEIRO.cortes.length);
   expect(Object.keys(telas[0].textos).sort()).toEqual([...ABAS_DO_DOSSIE].sort());
   expect(telas[0].rotulo).toBe(retratos[0].rotulo);
 });

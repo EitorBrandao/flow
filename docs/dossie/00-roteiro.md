@@ -4,6 +4,8 @@ Gerado por `npm run dossie`. Não edite à mão.
 
 Os passos que o roteiro sintético do dossiê executa, em ordem cronológica.
 
+Uma citação marca cada corte, no instante em que o dossiê tira o retrato. Quando um corte cai na mesma data de um passo, o corte vem depois: o retrato é tirado com o passo do dia já aplicado.
+
 ## 2026-01-05
 
 1. Abre as boxes "carteira" e "reserva", cada uma com um banco dentro.
@@ -25,9 +27,21 @@ Os passos que o roteiro sintético do dossiê executa, em ordem cronológica.
 
 1. Faz uma compra à vista de R$ 180,00 e uma compra parcelada de R$ 900,00 em seis vezes no cartão "sigma".
 
+## 2026-01-24
+
+> **Corte: antes do primeiro fechamento.** O dossiê tira o retrato aqui.
+
+## 2026-01-28
+
+> **Corte: entre fechamento e vencimento.** O dossiê tira o retrato aqui.
+
 ## 2026-02-01
 
 1. Assina um serviço de streaming, R$ 39,90 por mês, sem data para acabar.
+
+## 2026-02-10
+
+> **Corte: depois do primeiro vencimento.** O dossiê tira o retrato aqui.
 
 ## 2026-03-06
 
@@ -45,6 +59,10 @@ Os passos que o roteiro sintético do dossiê executa, em ordem cronológica.
 
 1. Paga a fatura de junho por menos que o total e parcela o resto em três vezes.
 
+## 2026-06-20
+
+> **Corte: depois do pagamento parcial.** O dossiê tira o retrato aqui.
+
 ## 2026-07-10
 
 1. Cria a viagem "praia", de 15 a 22 de julho.
@@ -52,6 +70,10 @@ Os passos que o roteiro sintético do dossiê executa, em ordem cronológica.
 ## 2026-07-17
 
 1. Lança um gasto de mercado dentro da viagem e faz uma compra de cartão dentro dela também.
+
+## 2026-07-18
+
+> **Corte: no meio da viagem.** O dossiê tira o retrato aqui.
 
 ## 2026-09-01
 
@@ -61,6 +83,14 @@ Os passos que o roteiro sintético do dossiê executa, em ordem cronológica.
 
 1. Cria um cenário ligado, com um lançamento hipotético de financiamento de carro.
 
+## 2026-10-15
+
+> **Corte: com o cenário ligado.** O dossiê tira o retrato aqui.
+
 ## 2026-11-01
 
 1. Desliga o cenário do financiamento de carro.
+
+## 2026-11-30
+
+> **Corte: fim do roteiro.** O dossiê tira o retrato aqui.

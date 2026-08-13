@@ -349,6 +349,84 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 | previsto/cartao | 22 |
 | previsto/recorrencia | 44 |
 
+## 2026-10-15 — com o cenário ligado
+
+### Saldos
+
+| Box | Efetivo | Projetado | Com cenários |
+|---|---|---|---|
+| carteira | R$ 7.800,00 | R$ 34.445,70 | R$ 31.945,70 |
+| casa | R$ 0,00 | R$ 0,00 | R$ 0,00 |
+| reserva | R$ 12.000,00 | R$ 12.000,00 | R$ 12.000,00 |
+
+### Marcos da projeção
+
+- Mínimo: R$ 16.000,00 em 2026-01-05
+- Máximo: R$ 96.387,10 em 2027-12-05
+- Fim de mês 2026-01: R$ 16.300,00
+- Fim de mês 2026-02: R$ 19.670,00
+- Fim de mês 2026-03: R$ 22.980,10
+- Fim de mês 2026-04: R$ 26.290,20
+- Fim de mês 2026-05: R$ 29.585,20
+- Fim de mês 2026-06: R$ 32.965,20
+- Fim de mês 2026-07: R$ 36.172,00
+- Fim de mês 2026-08: R$ 39.548,80
+- Fim de mês 2026-09: R$ 42.985,60
+- Fim de mês 2026-10: R$ 46.445,70
+- Fim de mês 2026-11: R$ 49.905,80
+- Fim de mês 2026-12: R$ 53.365,90
+- Fim de mês 2027-01: R$ 56.826,00
+- Fim de mês 2027-02: R$ 60.286,10
+- Fim de mês 2027-03: R$ 63.746,20
+- Fim de mês 2027-04: R$ 67.206,30
+- Fim de mês 2027-05: R$ 70.666,40
+- Fim de mês 2027-06: R$ 74.126,50
+- Fim de mês 2027-07: R$ 77.586,60
+- Fim de mês 2027-08: R$ 81.046,70
+- Fim de mês 2027-09: R$ 84.506,80
+- Fim de mês 2027-10: R$ 87.966,90
+- Fim de mês 2027-11: R$ 91.427,00
+- Fim de mês 2027-12: R$ 94.887,10
+
+### Faturas
+
+| Cartão | Ciclo | Itens | Total |
+|---|---|---|---|
+| sigma | 2026-02 | 2 | R$ 330,00 |
+| sigma | 2026-03 | 2 | R$ 189,90 |
+| sigma | 2026-04 | 2 | R$ 189,90 |
+| sigma | 2026-05 | 2 | R$ 189,90 |
+| sigma | 2026-06 | 2 | R$ 189,90 |
+| sigma | 2026-07 | 3 | R$ 213,20 |
+| sigma | 2026-08 | 3 | R$ 123,20 |
+| sigma | 2026-09 | 2 | R$ 63,20 |
+| sigma | 2026-10 | 1 | R$ 39,90 |
+| sigma | 2026-11 | 1 | R$ 39,90 |
+| sigma | 2026-12 | 1 | R$ 39,90 |
+| sigma | 2027-01 | 1 | R$ 39,90 |
+| sigma | 2027-02 | 1 | R$ 39,90 |
+| sigma | 2027-03 | 1 | R$ 39,90 |
+| sigma | 2027-04 | 1 | R$ 39,90 |
+| sigma | 2027-05 | 1 | R$ 39,90 |
+| sigma | 2027-06 | 1 | R$ 39,90 |
+| sigma | 2027-07 | 1 | R$ 39,90 |
+| sigma | 2027-08 | 1 | R$ 39,90 |
+| sigma | 2027-09 | 1 | R$ 39,90 |
+| sigma | 2027-10 | 1 | R$ 39,90 |
+| sigma | 2027-11 | 1 | R$ 39,90 |
+| sigma | 2027-12 | 1 | R$ 39,90 |
+
+### Lançamentos por status e origem
+
+| Combinação | Quantos |
+|---|---|
+| efetivo/cartao | 1 |
+| efetivo/manual | 2 |
+| efetivo/recorrencia | 2 |
+| previsto/cartao | 22 |
+| previsto/manual | 1 |
+| previsto/recorrencia | 44 |
+
 ## 2026-11-30 — fim do roteiro
 
 ### Saldos

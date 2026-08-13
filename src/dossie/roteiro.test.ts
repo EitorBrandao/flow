@@ -12,9 +12,9 @@ it('tem os passos em ordem cronológica', () => {
   expect([...datas].sort()).toEqual(datas);
 });
 
-it('tem seis cortes, em ordem cronológica', () => {
+it('tem os cortes em ordem cronológica', () => {
   const datas = ROTEIRO.cortes.map((c) => c.data);
-  expect(datas).toHaveLength(6);
+  expect(datas).toHaveLength(ROTEIRO.cortes.length);
   expect([...datas].sort()).toEqual(datas);
 });
 
@@ -25,14 +25,14 @@ it('todo passo tem descrição em prosa', () => {
   }
 });
 
-it('roda inteiro e produz seis retratos', async () => {
+it('roda inteiro e produz um retrato por corte', async () => {
   const retratos = await executarRoteiro(ROTEIRO);
-  expect(retratos).toHaveLength(6);
+  expect(retratos).toHaveLength(ROTEIRO.cortes.length);
 });
 
 it('exercita a matriz status × origem inteira', async () => {
   const retratos = await executarRoteiro(ROTEIRO);
-  const chaves = Object.keys(retratos[5].contagemPorStatusOrigem);
+  const chaves = Object.keys(retratos[retratos.length - 1].contagemPorStatusOrigem);
   expect(chaves).toEqual(expect.arrayContaining([
     'efetivo/manual', 'previsto/manual', 'previsto/recorrencia',
     'efetivo/recorrencia', 'previsto/cartao', 'efetivo/cartao',

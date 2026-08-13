@@ -244,6 +244,7 @@ export const ROTEIRO: Roteiro = {
     { data: '2026-02-10', rotulo: 'depois do primeiro vencimento' },
     { data: '2026-06-20', rotulo: 'depois do pagamento parcial' },
     { data: '2026-07-18', rotulo: 'no meio da viagem' },
+    { data: '2026-10-15', rotulo: 'com o cenário ligado' },
     { data: '2026-11-30', rotulo: 'fim do roteiro' },
   ],
 };

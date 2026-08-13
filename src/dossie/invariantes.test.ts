@@ -74,9 +74,11 @@ it('o roteiro passa em todos os invariantes garantidos', async () => {
 it('checa cada invariante em cada corte', async () => {
   const retratos = await executarRoteiro(ROTEIRO);
   const resultados = checarTudo(retratos);
+  const n = ROTEIRO.cortes.length;
   const soDeUmCorte = INVARIANTES.filter((i) => i.checar).length;
   const dePar = INVARIANTES.filter((i) => i.checarPar).length;
-  expect(resultados).toHaveLength(soDeUmCorte * 6 + dePar * 5);
+  // O `- 1` é porque um invariante de par nunca roda no primeiro corte: não há corte anterior.
+  expect(resultados).toHaveLength(soDeUmCorte * n + dePar * (n - 1));
 });
 
 it('detecta referência quebrada e nomeia o registro', async () => {

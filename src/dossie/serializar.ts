@@ -1,7 +1,7 @@
 import { calcularFaturas } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import type { Aba } from '../state/store';
-import type { Roteiro, Passo } from './executar';
+import type { Roteiro, Passo, Corte } from './executar';
 import type { ResultadoInvariante } from './invariantes';
 import type { Retrato } from './retrato';
 import { ABAS_DO_DOSSIE, type TelasDoCorte } from './tela';
@@ -48,31 +48,80 @@ function cabecalhoDoCorte(r: Retrato): string {
 
 // --- 00-roteiro.md ---------------------------------------------------------------------
 
+/** Um item da linha do tempo do roteiro: ou um passo, ou um corte, cada um com sua posição
+ *  de origem — usada só para o desempate dentro da mesma data. */
+type ItemDoRoteiro =
+  | { tipo: 'passo'; data: string; indice: number; passo: Passo }
+  | { tipo: 'corte'; data: string; indice: number; corte: Corte };
+
+/** Junta passos e cortes numa única linha do tempo, na mesma ordem que `executarRoteiro`
+ *  (`src/dossie/executar.ts`) usa para rodar o roteiro: na mesma data, todo passo vem antes
+ *  de todo corte, porque o retrato é tirado com o passo do dia já aplicado. */
+function linhaDoTempo(roteiro: Roteiro): ItemDoRoteiro[] {
+  return [
+    ...roteiro.passos.map((passo, indice) => ({ tipo: 'passo' as const, data: passo.data, indice, passo })),
+    ...roteiro.cortes.map((corte, indice) => ({ tipo: 'corte' as const, data: corte.data, indice, corte })),
+  ].sort((a, b) => {
+    if (a.data !== b.data) return porData(a.data, b.data);
+    if (a.tipo !== b.tipo) return a.tipo === 'passo' ? -1 : 1;
+    return a.indice - b.indice;
+  });
+}
+
 function montarRoteiro(roteiro: Roteiro): string {
   const linhas = abrirArquivo('Roteiro', [
     'Os passos que o roteiro sintético do dossiê executa, em ordem cronológica.',
     '',
+    'Uma citação marca cada corte, no instante em que o dossiê tira o retrato. Quando um '
+      + 'corte cai na mesma data de um passo, o corte vem depois: o retrato é tirado com o '
+      + 'passo do dia já aplicado.',
+    '',
   ]);
 
-  const passos: Passo[] = [...roteiro.passos].sort((a, b) => porData(a.data, b.data));
   let dataAtual: string | null = null;
   let numero = 0;
-  for (const p of passos) {
-    if (p.data !== dataAtual) {
+  let ultimoTipo: 'passo' | 'corte' | null = null;
+  for (const item of linhaDoTempo(roteiro)) {
+    if (item.data !== dataAtual) {
       if (dataAtual !== null) linhas.push('');
-      linhas.push(`## ${p.data}`, '');
-      dataAtual = p.data;
+      linhas.push(`## ${item.data}`, '');
+      dataAtual = item.data;
       numero = 0;
+      ultimoTipo = null;
     }
-    numero += 1;
-    linhas.push(`${numero}. ${p.descricao}`);
+    if (item.tipo === 'passo') {
+      numero += 1;
+      linhas.push(`${numero}. ${item.passo.descricao}`);
+    } else {
+      if (ultimoTipo === 'passo') linhas.push('');
+      linhas.push(`> **Corte: ${item.corte.rotulo}.** O dossiê tira o retrato aqui.`);
+    }
+    ultimoTipo = item.tipo;
   }
   return finalizar(linhas);
 }
 
 // --- 01-invariantes.md ------------------------------------------------------------------
 
-function montarInvariantes(resultados: ResultadoInvariante[]): string {
+/** Compara dois resultados: primeiro por nome do invariante (para a tabela ficar agrupada
+ *  por invariante), depois pela posição cronológica do corte — nunca pelo rótulo do corte,
+ *  que é texto solto, sem ordem alguma. Um rótulo fora de `ordemCorte` é erro de programação
+ *  do chamador: `montarInvariantes` sempre recebe resultados dos mesmos cortes de `retratos`. */
+function porInvarianteECorte(
+  ordemCorte: Map<string, number>,
+): (a: ResultadoInvariante, b: ResultadoInvariante) => number {
+  return (a, b) => {
+    const porNome = a.nome.localeCompare(b.nome, 'pt-BR');
+    if (porNome !== 0) return porNome;
+    const ordemA = ordemCorte.get(a.corte);
+    const ordemB = ordemCorte.get(b.corte);
+    if (ordemA === undefined) throw new Error(`corte "${a.corte}" não está na lista de retratos`);
+    if (ordemB === undefined) throw new Error(`corte "${b.corte}" não está na lista de retratos`);
+    return ordemA - ordemB;
+  };
+}
+
+function montarInvariantes(resultados: ResultadoInvariante[], ordemCorte: Map<string, number>): string {
   const linhas = abrirArquivo('Invariantes', [
     'Um invariante **garantido** violado reprova o `npm test`. Um de **expectativa** só',
     'aparece aqui: o `docs/dominio.md` diz que o código não o promete.',
@@ -80,8 +129,7 @@ function montarInvariantes(resultados: ResultadoInvariante[]): string {
     '| Invariante | Classe | Corte | Resultado | Detalhe |',
     '|---|---|---|---|---|',
   ]);
-  for (const r of [...resultados].sort((a, b) =>
-    a.nome.localeCompare(b.nome, 'pt-BR') || a.corte.localeCompare(b.corte, 'pt-BR'))) {
+  for (const r of [...resultados].sort(porInvarianteECorte(ordemCorte))) {
     linhas.push(`| ${r.nome} | ${r.classe} | ${r.corte} | ${r.ok ? 'passa' : '**viola**'} | ${r.detalhe} |`);
   }
   return finalizar(linhas);
@@ -191,9 +239,10 @@ export function montarDossie(
   resultados: ResultadoInvariante[],
   telas: TelasDoCorte[],
 ): ArquivoDossie[] {
+  const ordemCorte = new Map(retratos.map((r, i) => [r.rotulo, i] as const));
   return [
     { nome: '00-roteiro.md', conteudo: montarRoteiro(roteiro) },
-    { nome: '01-invariantes.md', conteudo: montarInvariantes(resultados) },
+    { nome: '01-invariantes.md', conteudo: montarInvariantes(resultados, ordemCorte) },
     { nome: '02-motor.md', conteudo: montarMotor(retratos) },
     { nome: '03-telas.md', conteudo: montarTelas(retratos, telas) },
   ];

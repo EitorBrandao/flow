@@ -2252,6 +2252,405 @@ Wiki
 Versão
 ```
 
+## 2026-10-15 — com o cenário ligado
+
+### Aba Hoje
+
+```
+button: Hoje
+button: Fluxo
+button: +
+button: Cartão
+button: Análises
+option: carteira
+option: reserva
+option: casa
+Hoje
+button: Há mudanças sem backup há mais de 7 dias — toque para exportar.
+tab: Visão
+tab: Conferir
+tab: Pendentes · 24
+Saldo hoje · carteira
+R$ 7.800
+,00
+▲ R$ 30.105,80 nos próximos 28 dias
+projetado:
+R$ 34.445,70
+08/10
+mín
+R$ 0,00
+· máx
+R$ 39.405,80
+12/11
+```
+
+### Aba Fluxo
+
+```
+button: Hoje
+button: Fluxo
+button: +
+button: Cartão
+button: Análises
+option: carteira
+option: reserva
+option: casa
+Fluxo
+tab: Lista
+tab: Gráfico
+Mostrando desde qui. 01/10/2026
+seg. 05/10/2026
+R$ 35.945,70
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+sáb. 10/10/2026
+R$ 34.445,70
+moradia
+previsto
+−R$ 1.500,00
+qui. 15/10/2026 · hoje
+R$ 34.445,70
+transporte
+cenário
+Parcela hipotética de financiamento de carro
+−R$ 2.500,00
+qui. 05/11/2026
+R$ 39.405,80
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+ter. 10/11/2026
+R$ 37.905,80
+moradia
+previsto
+−R$ 1.500,00
+sáb. 05/12/2026
+R$ 42.865,90
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+qui. 10/12/2026
+R$ 41.365,90
+moradia
+previsto
+−R$ 1.500,00
+ter. 05/01/2027
+R$ 46.326,00
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+dom. 10/01/2027
+R$ 44.826,00
+moradia
+previsto
+−R$ 1.500,00
+sex. 05/02/2027
+R$ 49.786,10
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+qua. 10/02/2027
+R$ 48.286,10
+moradia
+previsto
+−R$ 1.500,00
+sex. 05/03/2027
+R$ 53.246,20
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+qua. 10/03/2027
+R$ 51.746,20
+moradia
+previsto
+−R$ 1.500,00
+seg. 05/04/2027
+R$ 56.706,30
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+sáb. 10/04/2027
+R$ 55.206,30
+moradia
+previsto
+−R$ 1.500,00
+qua. 05/05/2027
+R$ 60.166,40
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+seg. 10/05/2027
+R$ 58.666,40
+moradia
+previsto
+−R$ 1.500,00
+sáb. 05/06/2027
+R$ 63.626,50
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+qui. 10/06/2027
+R$ 62.126,50
+moradia
+previsto
+−R$ 1.500,00
+seg. 05/07/2027
+R$ 67.086,60
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+sáb. 10/07/2027
+R$ 65.586,60
+moradia
+previsto
+−R$ 1.500,00
+qui. 05/08/2027
+R$ 70.546,70
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+ter. 10/08/2027
+R$ 69.046,70
+moradia
+previsto
+−R$ 1.500,00
+dom. 05/09/2027
+R$ 74.006,80
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+sex. 10/09/2027
+R$ 72.506,80
+moradia
+previsto
+−R$ 1.500,00
+ter. 05/10/2027
+R$ 77.466,90
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+dom. 10/10/2027
+R$ 75.966,90
+moradia
+previsto
+−R$ 1.500,00
+sex. 05/11/2027
+R$ 80.927,00
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+qua. 10/11/2027
+R$ 79.427,00
+moradia
+previsto
+−R$ 1.500,00
+dom. 05/12/2027
+R$ 84.387,10
+sigma
+previsto
+−R$ 39,90
+salário
+previsto
++R$ 5.000,00
+sex. 10/12/2027
+R$ 82.887,10
+moradia
+previsto
+−R$ 1.500,00
+```
+
+### Aba Cartão
+
+```
+button: Hoje
+button: Fluxo
+button: +
+button: Cartão
+button: Análises
+option: carteira
+option: reserva
+option: casa
+Cartão
+button: ‹
+sigma · fatura 11/2026
+R$ 39,90
+fecha 25/10 · vence 05/11
+button: ›
+tab: Resumo
+tab: Lançamentos
+tab: Conferência
+A pagar: R$ 39,90
+·
+button: paguei outro valor
+```
+
+### Aba Análises
+
+```
+button: Hoje
+button: Fluxo
+button: +
+button: Cartão
+button: Análises
+option: carteira
+option: reserva
+option: casa
+Análises
+button: ◀
+outubro de 2026
+button: ▶
+label: incluir previstos
+Ganhos
+R$ 5.000,00
+Gastos
+R$ 1.539,90
+Sobra
+R$ 3.460,10
+heading: Por categoria
+barras na mesma escala do card acima (100% = maior entre ganhos e gastos do mês)
+salário
+R$ 5.000,00
+sigma
+0.8%
+R$ 39,90
+moradia
+30.0%
+R$ 1.500,00
+Assinaturas
+todos os cartões
+R$ 39,90
+heading: Evolução mensal
++3.295
++3.380
++3.207
++3.377
++3.437
++3.460
+ganhos
+gastos
+‐ ‐ linha tracejada = tendência
+heading: Viagens
+praia
+15/07/2026 – 22/07/2026
+R$ 140,00
+heading: Comparativo
+columnheader: Categoria
+columnheader: 2026-10
+columnheader: mês anterior
+columnheader: ano passado
+columnheader: média 3m
+cell: salário
+cell: R$ 5.000,00
+cell: R$ 5.000,00
+cell: R$ 0,00
+cell: R$ 5.000,00
+cell: sigma
+cell: R$ 39,90
+cell: R$ 63,20
+cell: R$ 0,00
+cell: R$ 75,43
+cell: moradia
+cell: R$ 1.500,00
+cell: R$ 1.500,00
+cell: R$ 0,00
+cell: R$ 1.500,00
+```
+
+### Aba Lançar
+
+```
+button: Hoje
+button: Fluxo
+button: +
+button: Cartão
+button: Análises
+option: carteira
+option: reserva
+option: casa
+Lançar
+heading: Lançar
+label: Valor
+button: Gasto
+button: Ganho
+button: mercado
+button: transporte
+button: moradia
+label: Data
+15/10/2026
+label: Nota (opcional)
+label: Marcar como previsto
+button: Lançar
+Digite um valor.
+```
+
+### Aba Ajustes
+
+```
+button: Hoje
+button: Fluxo
+button: +
+button: Cartão
+button: Análises
+option: carteira
+option: reserva
+option: casa
+Ajustes
+Boxes
+Bancos
+Categorias
+Recorrências
+Cartões
+Categorias do cartão
+Assinaturas do cartão
+Viagens
+Backup e restauração
+Wiki
+Versão
+```
+
 ## 2026-11-30 — fim do roteiro
 
 ### Aba Hoje
