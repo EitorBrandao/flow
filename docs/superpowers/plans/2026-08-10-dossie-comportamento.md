@@ -657,7 +657,7 @@ it('tem os passos em ordem cronológica', () => {
   expect([...datas].sort()).toEqual(datas);
 });
 
-it('tem seis cortes, em ordem cronológica', () => {
+it('os cortes saem em ordem cronológica', () => {
   const datas = ROTEIRO.cortes.map((c) => c.data);
   expect(datas).toHaveLength(6);
   expect([...datas].sort()).toEqual(datas);
@@ -741,10 +741,16 @@ export const ROTEIRO: Roteiro = {
     { data: '2026-02-10', rotulo: 'depois do primeiro vencimento' },
     { data: '2026-06-20', rotulo: 'depois do pagamento parcial' },
     { data: '2026-07-18', rotulo: 'no meio da viagem' },
+    // Este corte foi acrescentado depois de ler o dossiê gerado. Sem ele, nenhum corte cai
+    // na janela em que o cenário está ligado, e a coluna "Com cenários" nunca difere de
+    // "Projetado" — o dossiê deixava uma funcionalidade inteira do app fora do relatório.
+    { data: '2026-10-15', rotulo: 'com o cenário ligado' },
     { data: '2026-11-30', rotulo: 'fim do roteiro' },
   ],
 };
 ```
+
+**Nenhum teste deve fixar o número de cortes.** Derive de `ROTEIRO.cortes.length`, e nos invariantes de par use `length - 1`, porque eles não rodam no primeiro corte. Um `6` literal apodrece na primeira vez que alguém acrescenta um corte — e acrescentar corte é a forma natural de o roteiro crescer.
 
 Modelo do passo 3, porque toda mutation que mexe em recorrência ou cartão exige o `horizonte`:
 
@@ -1674,7 +1680,7 @@ git commit -m "Serializador do dossiê: quatro markdown determinísticos"
 
 `scripts/verificar-dados-reais.mjs` casa qualquer texto no formato `R$ 1.234,56`. O
 `docs/dossie/02-motor.md` é **feito** de dinheiro formatado: todo saldo e todo total de
-fatura, em seis cortes. Sem tratamento, o verificador acumula centenas de achados e o
+fatura, em todos os cortes. Sem tratamento, o verificador acumula centenas de achados e o
 `npm run release`, que o chama com `--strict`, aborta.
 
 Nenhum desses valores pode ser real: o dossiê é função pura de um roteiro sintético.
