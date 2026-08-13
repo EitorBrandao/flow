@@ -43,16 +43,7 @@ export const useApp = create<AppState>((set) => ({
     await repo.materializarTodas(inicial.config.horizonteProjecao);
     await repo.sincronizarCartoes(inicial.config.horizonteProjecao);
     const dados = await repo.carregarTudo();
-    // boxPadraoId só é válido se apontar para uma box com saldo próprio: é a única lista
-    // que o seletor do Shell exibe (+ o sentinela 'casa'). Um valor órfão (ex.: box da
-    // casa, saldoInicial null) cai no mesmo fallback de quando não há padrão definido.
-    const boxPadraoValido = dados.config.boxPadraoId != null
-      && dados.boxes.some((b) => b.id === dados.config.boxPadraoId && b.saldoInicial != null);
-    const boxSel: BoxSelecionada =
-      (boxPadraoValido ? dados.config.boxPadraoId : null)
-      ?? dados.boxes.find((b) => b.saldoInicial != null)?.id
-      ?? 'casa';
-    set({ dados, carregado: true, hoje: hojeISO(), boxSel });
+    set({ dados, carregado: true, hoje: hojeISO(), boxSel: boxSelInicial(dados) });
   },
   async recarregar() {
     set({ dados: await repo.carregarTudo(), hoje: hojeISO() });
@@ -62,6 +53,22 @@ export const useApp = create<AppState>((set) => ({
   abrirAjustes: (secao) => set({ aba: 'ajustes', ajustesSecao: secao }),
   limparAjustesSecao: () => set({ ajustesSecao: null }),
 }));
+
+/**
+ * A box que o app seleciona ao abrir: a padrão, se válida; senão a primeira com saldo
+ * próprio; senão o sentinela consolidado.
+ *
+ * boxPadraoId só é válido se apontar para uma box com saldo próprio: é a única lista
+ * que o seletor do Shell exibe (+ o sentinela 'casa'). Um valor órfão (ex.: box da
+ * casa, saldoInicial null) cai no mesmo fallback de quando não há padrão definido.
+ */
+export function boxSelInicial(dados: Dados): BoxSelecionada {
+  const boxPadraoValido = dados.config.boxPadraoId != null
+    && dados.boxes.some((b) => b.id === dados.config.boxPadraoId && b.saldoInicial != null);
+  return (boxPadraoValido ? dados.config.boxPadraoId : null)
+    ?? dados.boxes.find((b) => b.saldoInicial != null)?.id
+    ?? 'casa';
+}
 
 /** Ids das boxes da seleção atual ('casa' = todas, para consolidação). */
 export function boxIdsSelecionadas(dados: Dados, boxSel: BoxSelecionada): ID[] {

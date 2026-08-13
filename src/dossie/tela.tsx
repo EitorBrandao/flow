@@ -1,6 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import { render, cleanup } from '@testing-library/react';
-import { useApp, type Aba } from '../state/store';
+import { boxSelInicial, useApp, type Aba } from '../state/store';
 import Shell from '../ui/Shell';
 import type { Retrato } from './retrato';
 
@@ -152,7 +152,7 @@ export async function renderComCaptura(elemento: ReactNode): Promise<string> {
 export async function textoDaTela(retrato: Retrato, aba: Aba): Promise<string> {
   useApp.setState({
     dados: retrato.dados, hoje: retrato.data, aba,
-    boxSel: 'casa', carregado: true, ajustesSecao: null,
+    boxSel: boxSelInicial(retrato.dados), carregado: true, ajustesSecao: null,
   });
   return renderComCaptura(<Shell />);
 }
