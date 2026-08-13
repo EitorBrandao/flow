@@ -820,7 +820,7 @@ git commit -m "Roteiro de 12 meses do dossiê: 16 passos e 6 cortes"
 - Testar: `src/dossie/tela.test.tsx`
 
 **Interfaces:**
-- Consome: `render`, `cleanup` de `@testing-library/react`; `useApp`, `Aba` de `src/state/store.ts`; `Shell` de `src/ui/Shell.tsx`; `Retrato` da Tarefa 2.
+- Consome: `Component`, `ReactNode` de `react`; `render`, `cleanup` de `@testing-library/react`; `useApp`, `Aba` de `src/state/store.ts`; `Shell` de `src/ui/Shell.tsx`; `Retrato` da Tarefa 2.
 - Produz:
   ```ts
   export const ABAS_DO_DOSSIE: Aba[];  // ['hoje','fluxo','cartao','analises','lancar','ajustes']
@@ -838,6 +838,8 @@ git commit -m "Roteiro de 12 meses do dossiê: 16 passos e 6 cortes"
 
 Por isso a extração recolhe **texto de folha**: percorre a árvore e emite o texto de cada elemento que não tem filho-elemento com texto. Atributo `class`, `style` e `id` são ignorados por construção. Onde o elemento tiver papel explícito ou implícito, o papel entra como prefixo.
 
+**Percorra `childNodes`, nunca `children`.** Um elemento pode misturar texto solto com filho-elemento — `src/ui/TelaHoje.tsx` faz exatamente isso, em `projetado: <strong>{...}</strong>`. Descer só pelos filhos-elemento descarta o "projetado: " inteiro, e aí trocar esse rótulo não move o dossiê. Isso quebra a regra acima no caso que mais importa.
+
 Consequência aceita e que precisa estar clara: reestruturar markup **move** o dossiê. Isso é desejado — reestruturação é mudança de verdade, e merece um olhar. Só CSS puro é invisível.
 
 **Como renderizar:** as telas leem tudo do store. Então preencha o store e monte o `Shell`, que já escolhe a tela pela aba:
@@ -848,6 +850,8 @@ const { container } = render(<Shell />);
 ```
 
 `TelaAnalises` importa Recharts sob demanda, então o texto não está pronto no primeiro quadro. Estabilize antes de ler: leia o texto, espere, leia de novo, e pare quando dois valores seguidos forem iguais. Nada de `{ timeout: n }` em `findBy*` — o `CLAUDE.md` proíbe.
+
+**Como capturar uma tela que estoura.** Um `try` em volta do `render()` pega só o que estoura de forma síncrona, e o app não tem error boundary nenhum. Um erro descoberto num re-render posterior — efeito com promise, `setTimeout`, resolução de Suspense — escapa, e a tela devolve ou string vazia ou o texto de antes do estouro, sem marcador. Fecham o buraco duas peças juntas, nenhuma sozinha: um error boundary local, dentro de `tela.tsx`, para a fase de render; e ouvintes de `error` e `unhandledrejection` no `window`, ativos só durante aquela renderização, para o que estoura dentro de callback assíncrono. Erro encontrado tem prioridade sobre o texto lido, e só a primeira mensagem entra — estouro costuma vir em cascata.
 
 - [ ] **Passo 1: escrever o teste que falha**
 
@@ -903,7 +907,21 @@ it('não emite linha para elemento sem texto', () => {
   const { container } = render(<div><svg /><p>Texto</p></div>);
   expect(resumirNo(container).split('\n')).toEqual(['Texto']);
 });
+
+it('enxerga rótulo solto ao lado de um filho-elemento', () => {
+  const { container: a } = render(<div><p>Saldo: <b>R$ 10,00</b></p></div>);
+  const { container: b } = render(<div><p>Total: <b>R$ 10,00</b></p></div>);
+  expect(resumirNo(b)).not.toBe(resumirNo(a));
+});
+
+it('emite o texto solto e o do filho', () => {
+  const { container } = render(<div><p>Saldo: <b>R$ 10,00</b></p></div>);
+  expect(resumirNo(container)).toContain('Saldo:');
+  expect(resumirNo(container)).toContain('R$ 10,00');
+});
 ```
+
+Mais um, para o erro assíncrono: um componente sintético que estoura dentro de um `setTimeout` curto tem que sair com `PREFIXO_EXCECAO`, e não com o texto de antes do estouro. Ele não passa pelo `textoDaTela`, que renderiza o `Shell` de verdade — monte-o sobre o mesmo par boundary + ouvintes.
 
 - [ ] **Passo 2: rodar e confirmar que falha**
 
@@ -918,6 +936,7 @@ Esperado: FALHA, com `Failed to resolve import "./tela"`.
 Criar `src/dossie/tela.tsx`:
 
 ```tsx
+import { Component, type ReactNode } from 'react';
 import { render, cleanup } from '@testing-library/react';
 import { useApp, type Aba } from '../state/store';
 import Shell from '../ui/Shell';
@@ -954,30 +973,63 @@ function temFilhoComTexto(el: Element): boolean {
  */
 export function resumirNo(container: HTMLElement): string {
   const linhas: string[] = [];
-  const visitar = (el: Element) => {
-    const texto = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+  const normalizar = (t: string | null) => (t ?? '').replace(/\s+/g, ' ').trim();
+
+  const visitar = (no: Node) => {
+    if (no.nodeType === Node.TEXT_NODE) {
+      // Texto solto ao lado de um filho-elemento. Sem esta linha, trocar o rótulo
+      // "projetado:" em TelaHoje não moveria o dossiê.
+      const solto = normalizar(no.textContent);
+      if (solto !== '') linhas.push(solto);
+      return;
+    }
+    if (no.nodeType !== Node.ELEMENT_NODE) return;
+    const el = no as Element;
+    const texto = normalizar(el.textContent);
     if (texto === '') return;
     if (temFilhoComTexto(el)) {
-      for (const filho of Array.from(el.children)) visitar(filho);
+      for (const filho of Array.from(el.childNodes)) visitar(filho);
       return;
     }
     const papel = papelDe(el);
     linhas.push(papel ? `${papel}: ${texto}` : texto);
   };
-  for (const filho of Array.from(container.children)) visitar(filho);
+
+  for (const filho of Array.from(container.childNodes)) visitar(filho);
   return linhas.join('\n');
 }
 
 /** Espera o texto parar de mudar. TelaAnalises importa Recharts sob demanda. */
 async function estabilizar(container: HTMLElement): Promise<string> {
+  // Vazio pode ser o estado final legítimo ou só o quadro anterior ao conteúdo. Por isso
+  // ele precisa de mais repetições iguais: 10 × 50 ms = 500 ms, acima dos ~330 ms que o
+  // import do Recharts leva para resolver neste ambiente.
+  const REPETICOES_VAZIO = 10;
   let anterior = '';
+  let iguais = 0;
   for (let tentativa = 0; tentativa < 40; tentativa++) {
     const atual = resumirNo(container);
-    if (atual !== '' && atual === anterior) return atual;
+    iguais = atual === anterior ? iguais + 1 : 0;
+    if (iguais >= (atual === '' ? REPETICOES_VAZIO : 1)) return atual;
     anterior = atual;
     await new Promise((r) => setTimeout(r, 50));
   }
   return anterior;
+}
+
+/** Pega o que estoura na fase de render. O que estoura em callback assíncrono, não. */
+class Sentinela extends Component<
+  { aoErro: (erro: unknown) => void; children: ReactNode },
+  { estourou: boolean }
+> {
+  state = { estourou: false };
+  static getDerivedStateFromError() { return { estourou: true }; }
+  componentDidCatch(erro: unknown) { this.props.aoErro(erro); }
+  render() { return this.state.estourou ? null : this.props.children; }
+}
+
+function mensagemDe(erro: unknown): string {
+  return erro instanceof Error ? erro.message : String(erro);
 }
 
 export async function textoDaTela(retrato: Retrato, aba: Aba): Promise<string> {
@@ -985,14 +1037,27 @@ export async function textoDaTela(retrato: Retrato, aba: Aba): Promise<string> {
     dados: retrato.dados, hoje: retrato.data, aba,
     boxSel: 'casa', carregado: true, ajustesSecao: null,
   });
+  const erros: string[] = [];
+  // Um boundary pega o que estoura no render. Ele não pega o que estoura dentro de um
+  // callback assíncrono — por isso os dois ouvintes do window também.
+  const aoErroGlobal = (e: ErrorEvent) => { erros.push(mensagemDe(e.error ?? e.message)); };
+  const aoRejeicao = (e: PromiseRejectionEvent) => { erros.push(mensagemDe(e.reason)); };
+  window.addEventListener('error', aoErroGlobal);
+  window.addEventListener('unhandledrejection', aoRejeicao);
   try {
-    const { container } = render(<Shell />);
-    return await estabilizar(container);
-  } catch (erro) {
+    const { container } = render(
+      <Sentinela aoErro={(erro) => erros.push(mensagemDe(erro))}><Shell /></Sentinela>,
+    );
+    const texto = await estabilizar(container);
     // A geração não para. O invariante `nenhuma tela lança` reprova depois, e o revisor lê
     // o estrago no dossiê em vez de receber um stack trace no lugar do relatório inteiro.
-    return PREFIXO_EXCECAO + (erro instanceof Error ? erro.message : String(erro));
+    // O erro tem prioridade sobre o texto: é o texto plausível que hoje esconde o estrago.
+    return erros.length > 0 ? PREFIXO_EXCECAO + erros[0] : texto;
+  } catch (erro) {
+    return PREFIXO_EXCECAO + mensagemDe(erro);
   } finally {
+    window.removeEventListener('error', aoErroGlobal);
+    window.removeEventListener('unhandledrejection', aoRejeicao);
     cleanup();
   }
 }
@@ -1014,7 +1079,7 @@ export async function coletarTelas(retratos: Retrato[]): Promise<TelasDoCorte[]>
 npx vitest run src/dossie/tela.test.tsx
 ```
 
-Esperado: 7 testes passando.
+Esperado: os 7 originais mais os 3 do Passo 1 — o rótulo solto, o texto solto junto com o do filho, e o erro assíncrono.
 
 - [ ] **Passo 5: testar contra uma tela de verdade**
 
@@ -1032,6 +1097,9 @@ it('cada aba do dossiê rende texto não vazio no primeiro corte', async () => {
   for (const aba of ABAS_DO_DOSSIE) {
     const texto = await textoDaTela(retratos[0], aba);
     expect(texto, `aba ${aba} veio vazia`).not.toBe('');
+    // Sem esta linha o teste passa com todas as abas estouradas: o prefixo de exceção
+    // também é uma string não vazia.
+    expect(texto, `aba ${aba} estourou`).not.toContain(PREFIXO_EXCECAO);
   }
 });
 
@@ -1059,7 +1127,7 @@ Rodar de novo:
 npx vitest run src/dossie/tela.test.tsx
 ```
 
-Esperado: 10 testes passando.
+Esperado: os 10 do passo anterior mais estes 3.
 
 - [ ] **Passo 6: commitar**
 
