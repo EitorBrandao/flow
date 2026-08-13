@@ -4,7 +4,20 @@ import { useApp, type Aba } from '../state/store';
 import Shell from '../ui/Shell';
 import type { Retrato } from './retrato';
 
-/** Uma tela que estoura não derruba a geração — o estrago entra no dossiê e é julgado lá. */
+/**
+ * Marca, no texto da tela, que ela estourou em vez de renderizar.
+ *
+ * Vale para o que a `Sentinela` pega — render, construtor, ciclo de vida, inclusive depois
+ * de um Suspense resolver. Aí a geração segue, e o invariante `nenhuma tela lança` reprova
+ * lendo esta marca.
+ *
+ * **Não** vale para um `throw` dentro de callback assíncrono, sob o Vitest. Lá o jsdom não
+ * roda numa VM: `window` é o global do Node, e `window.setTimeout` é o `setTimeout` nativo.
+ * Um estouro assíncrono vira exceção não tratada do processo, não evento de `window` — os
+ * ouvintes de `renderComCaptura` não o veem, e a geração inteira morre com exit code 1.
+ * Isso é aceitável: falha barulhenta é melhor que dossiê silenciosamente errado. Mas é o
+ * processo que aborta, não esta marca que aparece.
+ */
 export const PREFIXO_EXCECAO = '⚠ a tela lançou exceção: ';
 
 export interface TelasDoCorte { rotulo: string; textos: Record<string, string> }
@@ -104,9 +117,12 @@ function mensagemDe(erro: unknown): string {
 
 /**
  * Renderiza um elemento e devolve o texto estabilizado, ou `PREFIXO_EXCECAO` se algo
- * estourou — no render (via `Sentinela`) ou num callback assíncrono (via os ouvintes do
- * `window`). Extraída de `textoDaTela` para aceitar qualquer elemento, sem depender do
- * `Shell` nem do store: é o que permite testar a captura de erro assíncrono isolada.
+ * estourou. Extraída de `textoDaTela` para aceitar qualquer elemento, sem depender do
+ * `Shell` nem do store: é o que permite testar a captura de erro isolada.
+ *
+ * Quem faz o trabalho aqui é a `Sentinela`. Os dois ouvintes do `window` só têm efeito num
+ * navegador de verdade — ver a nota em `PREFIXO_EXCECAO`. Ficam porque custam nada e cobrem
+ * o caso de alguém disparar `ErrorEvent` à mão, mas não conte com eles sob o Vitest.
  */
 export async function renderComCaptura(elemento: ReactNode): Promise<string> {
   const erros: string[] = [];

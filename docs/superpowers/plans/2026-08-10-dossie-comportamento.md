@@ -853,6 +853,8 @@ const { container } = render(<Shell />);
 
 **Como capturar uma tela que estoura.** Um `try` em volta do `render()` pega só o que estoura de forma síncrona, e o app não tem error boundary nenhum. Um erro descoberto num re-render posterior — efeito com promise, `setTimeout`, resolução de Suspense — escapa, e a tela devolve ou string vazia ou o texto de antes do estouro, sem marcador. Fecham o buraco duas peças juntas, nenhuma sozinha: um error boundary local, dentro de `tela.tsx`, para a fase de render; e ouvintes de `error` e `unhandledrejection` no `window`, ativos só durante aquela renderização, para o que estoura dentro de callback assíncrono. Erro encontrado tem prioridade sobre o texto lido, e só a primeira mensagem entra — estouro costuma vir em cascata.
 
+**Limite do ambiente, verificado duas vezes.** Sob o Vitest, o jsdom não roda numa VM: `window` é o global do Node, e `window.setTimeout` é o `setTimeout` nativo. Um `throw` dentro de callback assíncrono vira exceção não tratada do processo, não evento de `window` — os ouvintes não o veem. O resultado observável passa a ser a geração inteira abortando com exit code 1, que `scripts/dossie.mjs` propaga. Isso é aceitável, porque falha barulhenta é melhor que dossiê silenciosamente errado; o que não pode é o código dizer que a geração continua. Quem trabalha de fato aqui é o boundary. Os ouvintes ficam pelo navegador de verdade, mas o comentário do código tem que dizer isso com todas as letras.
+
 - [ ] **Passo 1: escrever o teste que falha**
 
 Criar `src/dossie/tela.test.tsx`:
