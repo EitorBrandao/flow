@@ -52,12 +52,21 @@ const EXCECOES_VALOR = [
   // redondos de fixture (saldos, faturas e assinaturas inventadas)
   'R$ 1.000,00', '1.000,00', 'R$ 100,00', 'R$ 500,00', 'R$ 650,00',
   'R$4.000,00', 'R$ 6.200,00', 'R$ 51,90', 'R$ 45,00',
+  // roteiro e plano do dossiê de comportamento (sintéticos, 2026-08-12)
+  'R$ 4.000,00', 'R$ 12.000,00', 'R$ 3.820,00', 'R$ 1.240,00', 'R$ 480,00',
+  'R$ 300,00', 'R$ 180,00', 'R$ 900,00', 'R$ 39,90', 'R$ 10,00', 'R$ 11,00',
 ];
 
 // Arquivos que contêm os próprios padrões e exemplos: casariam consigo mesmos.
 const EXCECOES_ARQUIVO = [
   'scripts/verificar-dados-reais.mjs',
   'scripts/verificar-dados-reais.test.mjs',
+  // Gerado por `npm run dossie` a partir de um roteiro sintético (src/dossie/roteiro.ts).
+  // Dado real não tem por onde entrar aqui: a saída é função pura da entrada, que é checada.
+  'docs/dossie/00-roteiro.md',
+  'docs/dossie/01-invariantes.md',
+  'docs/dossie/02-motor.md',
+  'docs/dossie/03-telas.md',
 ];
 
 // Binários e afins: não há texto para varrer e ler tudo em memória é desperdício.
