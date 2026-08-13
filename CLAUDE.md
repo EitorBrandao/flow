@@ -31,6 +31,7 @@ npm test             # vitest run (uma passada)
 npm run test:watch   # vitest em modo watch
 npx vitest run src/domain/fatura.test.ts        # um arquivo de teste
 npx vitest run -t "nome do teste"               # um teste pelo nome
+npm run dossie       # regenera o dossiê de comportamento em docs/dossie/
 npm run deploy       # build + publica dist/ no branch gh-pages de EitorBrandao/flow (GitHub Pages)
                      # → usuário testa em https://eitorbrandao.github.io/flow/
 npm run release -- <patch|minor|major>
@@ -63,6 +64,7 @@ Algumas regras deste arquivo já são bloqueios automáticos, não só disciplin
 | Catálogo | `scripts/verificar-catalogo.mjs --strict`, chamado pelo release | classe de `src/styles.css` ou componente de `src/ui/` fora de `docs/estilo/catalogo.md` (e o inverso), e o próprio `catalogo.md` ausente havendo `src/styles.css`. Rode sozinho quando quiser: `node scripts/verificar-catalogo.mjs` — sem `--strict` ele só avisa (exit 0) |
 | Deploy | `scripts/predeploy.mjs` | branch ≠ `main`, working tree suja, commit `chore(release)` de outro branch fora da ancestralidade do HEAD, HEAD ≠ `origin/main` (este último é pulado com aviso se o `git fetch` falhar; a checagem de ancestralidade só enxerga refs já presentes localmente) |
 | Dados reais | `scripts/verificar-dados-reais.mjs --strict`, chamado pelo release | valor em real fora das exceções sintéticas, ou termo de `~/.claude/flow-dados-reais.txt`, em **qualquer** arquivo versionado. Rode sozinho quando quiser: `node scripts/verificar-dados-reais.mjs` — sem `--strict` ele só avisa (exit 0) |
+| Dossiê | `src/dossie/dossie.test.ts`, rodado por `npm test` | dossiê em `docs/dossie/` desatualizado, ou invariante **garantido** violado. Regenere com `npm run dossie` |
 | Lembretes | `.claude/hooks/` (ver `.claude/hooks/README.md`) | **nada** — só avisam, ao editar UI, ao editar com HEAD na `main`, ao instalar dependência e ao commitar |
 
 Duas consequências valem por escrito:
