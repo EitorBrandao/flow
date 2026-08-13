@@ -603,7 +603,7 @@ salvarCenario(c: Cenario): Promise<void>
 | 1 | 2026-01-05 | Abre as boxes `carteira` (R$ 4.000,00) e `reserva` (R$ 12.000,00), com um banco em cada. |
 | 2 | 2026-01-05 | Cria categorias: `salário` e `extra` (ganho); `mercado`, `transporte` e `moradia` (gasto). |
 | 3 | 2026-01-08 | Cria as recorrências: salário no dia 5, moradia no dia 10. |
-| 4 | 2026-01-20 | Cadastra o cartão `roxo`, fechamento dia 25, vencimento dia 5. |
+| 4 | 2026-01-20 | Cadastra o cartão `sigma`, fechamento dia 25, vencimento dia 5. |
 | 5 | 2026-01-21 | Cria as categorias do cartão: `compras` e `serviços`. |
 | 6 | 2026-01-22 | Compra à vista de R$ 180,00 e parcelada de R$ 900,00 em 6 vezes. |
 | 7 | 2026-02-01 | Assina um serviço de R$ 39,90 por mês, sem fim. |
@@ -777,7 +777,7 @@ Modelo do passo 11, o mais difícil, porque depende do lançamento que a sincron
   data: '2026-06-05',
   descricao: 'Paga a fatura de junho por menos que o total e parcela o resto em três vezes.',
   async executar(dados) {
-    const cartao = dados.cartoes.find((c) => c.nome === 'roxo')!;
+    const cartao = dados.cartoes.find((c) => c.nome === 'sigma')!;
     const fatura = dados.lancamentos.find(
       (l) => l.origem === 'cartao' && l.categoriaId === cartao.categoriaFaturaId && l.data.startsWith('2026-06'),
     )!;
@@ -1166,7 +1166,7 @@ git commit -m "Extrator de tela do dossiê: texto de folha, imune a classe de CS
   }
   export function checarTudo(retratos: Retrato[]): ResultadoInvariante[];
   /** `nenhuma tela lança` mora aqui porque o texto de tela não cabe no Retrato. */
-  export function checarTelas(telas: TelasDoCorte[]): ResultadoInvariante[];
+  export function checarTelas(telas: TelasDoCorte[], retratos: Retrato[]): ResultadoInvariante[];
   ```
 
 **Por que `checarTelas` é separado.** O `Retrato` sai do executor, que não conhece a UI. O texto de tela sai do extrator, que roda depois. Juntar os dois no `Retrato` criaria dependência circular entre `executar.ts` e `tela.tsx`. Duas funções e uma concatenação no chamador resolvem, sem acoplar as camadas.
@@ -1182,15 +1182,20 @@ git commit -m "Extrator de tela do dossiê: texto de folha, imune a classe de CS
 | `efetivo não some` | Par de cortes: todo lançamento `efetivo` no corte anterior ainda existe no atual. |
 | `efetivo não volta a previsto` | Par de cortes: nenhum lançamento `efetivo` no corte anterior aparece como `previsto` no atual. |
 | `uma conferência por cartão e mês` | Nenhum par `cartaoId` + `mes` repetido. |
-| `categoria de fatura fica escondida` | Nenhuma categoria de `categoriasFaturaIds` aparece na lista de seleção manual; idem para `categoriasCartaoReservadasIds`. |
-| `backup dá a volta` | `validarBackup(JSON.parse(JSON.stringify(gerarBackup(dados))))` devolve os mesmos `dados`. |
+| `categoria de fatura só é usada pelo cartão` | Toda categoria de `categoriasFaturaIds` e de `categoriasCartaoReservadasIds` ainda existe, e nenhum lançamento de origem diferente de `cartao` usa uma delas. |
+| `backup dá a volta` | `validarBackup(JSON.parse(JSON.stringify(gerarBackup(dados))))` devolve os mesmos `dados`. O `detalhe` nomeia a coleção e o registro que divergiu — "os dados mudaram" não permite agir. |
 | `projeção acumula` | Para cada dia da série, `saldoProjetado` é igual ao do dia anterior mais os lançamentos não-cenário daquele dia, **com o sinal do tipo da categoria**: `(tipo === 'ganho' ? 1 : -1) * valor`. Pule os lançamentos com `data <= dataSaldoInicial` da box, que a projeção ignora por já estarem no saldo inicial. |
 
-E um nono, garantido, que vive em `checarTelas` porque lê texto de tela, não `Retrato`:
+E mais dois, garantidos, que vivem em `checarTelas` porque leem texto de tela, não `Retrato`:
 
 | Nome | O que checa |
 |---|---|
 | `nenhuma tela lança` | Nenhum texto de tela começa com `PREFIXO_EXCECAO`. |
+| `categoria de fatura fica escondida` | No texto da aba `lancar`, nenhuma linha é o nome de uma categoria de fatura. |
+
+**Por que esse segundo mora aqui.** A aba `lancar` **é** a lista de seleção manual, e o dossiê já a tem como texto. Checar ali entrega o que a tabela pediu sem tocar em tela nenhuma. A alternativa — extrair um `categoriasSelecionaveis()` puro e reusá-lo nas seis telas que hoje duplicam o filtro `!ocultas.has(c.id)` — é a solução melhor no longo prazo, mas é refatoração de `src/ui/**`, fora do escopo desta feature. Fica anotada como pendência.
+
+O nome de uma categoria de fatura é sempre igual ao nome do cartão (`src/db/repo.ts:346,353`). Compare **linha inteira**, nunca substring: o texto de `resumirNo` é uma linha por folha, e a linha pode vir com prefixo de papel (`label: `, `option: `). Substring casaria qualquer palavra contida noutra.
 
 **Os invariantes de expectativa:**
 
@@ -1288,6 +1293,13 @@ Troque a linha de import dos invariantes, no topo do arquivo, e acrescente a do 
 import { INVARIANTES, checarTelas, checarTudo } from './invariantes';
 import { PREFIXO_EXCECAO } from './tela';
 ```
+
+Os dois testes de `checarTelas` acima estão escritos com a assinatura antiga, de um argumento. Passe também um retrato por corte, com `dados.cartoes` e `dados.categorias` coerentes — o invariante `categoria de fatura fica escondida` precisa deles para saber que nome procurar. Um retrato sintético mínimo basta; não precisa rodar o roteiro.
+
+E acrescente dois testes para esse invariante novo, porque sem eles ele não vale nada:
+
+- Um `TelasDoCorte` em que o nome do cartão aparece como linha da aba `lancar` **reprova**.
+- O mesmo nome aparecendo em **outra** aba — `cartao`, onde ele deve aparecer — **não** reprova.
 
 - [ ] **Passo 2: rodar e confirmar que falha**
 
@@ -1403,7 +1415,7 @@ export function checarTudo(retratos: Retrato[]): ResultadoInvariante[] {
  * O invariante das telas mora aqui, e não em INVARIANTES, porque lê texto de tela — que o
  * Retrato não carrega. Juntar os dois acoplaria o executor à UI.
  */
-export function checarTelas(telas: TelasDoCorte[]): ResultadoInvariante[] {
+export function checarTelas(telas: TelasDoCorte[], retratos: Retrato[]): ResultadoInvariante[] {
   return telas.map((t) => {
     const quebrada = Object.entries(t.textos).find(([, texto]) => texto.startsWith(PREFIXO_EXCECAO));
     return {
@@ -1494,7 +1506,7 @@ beforeEach(async () => {
 async function gerar() {
   const retratos = await executarRoteiro(ROTEIRO);
   const telas = await coletarTelas(retratos);
-  const resultados = [...checarTudo(retratos), ...checarTelas(telas)];
+  const resultados = [...checarTudo(retratos), ...checarTelas(telas, retratos)];
   return montarDossie(ROTEIRO, retratos, resultados, telas);
 }
 
@@ -1610,7 +1622,7 @@ saldo mentiria no dossiê.
 
 | Cartão | Ciclo | Itens | Total |
 |---|---|---|---|
-| roxo | 2026-02 | 3 | R$ 480,00 |
+| sigma | 2026-02 | 3 | R$ 480,00 |
 
 ### Lançamentos por status e origem
 
@@ -1726,7 +1738,7 @@ it('o dossiê no disco reflete o comportamento atual do app', async () => {
   await limparDb();
   const retratos = await executarRoteiro(ROTEIRO);
   const telas = await coletarTelas(retratos);
-  const resultados = [...checarTudo(retratos), ...checarTelas(telas)];
+  const resultados = [...checarTudo(retratos), ...checarTelas(telas, retratos)];
   const arquivos = montarDossie(ROTEIRO, retratos, resultados, telas);
 
   if (process.env.DOSSIE === 'escrever') {
@@ -1750,7 +1762,7 @@ it('nenhum invariante garantido está violado', async () => {
   await limparDb();
   const retratos = await executarRoteiro(ROTEIRO);
   const telas = await coletarTelas(retratos);
-  const violados = [...checarTudo(retratos), ...checarTelas(telas)]
+  const violados = [...checarTudo(retratos), ...checarTelas(telas, retratos)]
     .filter((r) => r.classe === 'garantido' && !r.ok)
     .map((r) => `${r.nome} @ ${r.corte}: ${r.detalhe}`);
   expect(violados).toEqual([]);

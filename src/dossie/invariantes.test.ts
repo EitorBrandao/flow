@@ -128,7 +128,7 @@ it('lançamento de cenário que volta a previsto reprova "efetivo não volta a p
 });
 
 it('tela que estourou reprova e diz qual aba', async () => {
-  const retratos = [retratoMinimo(dadosComCartao('roxo-teste'))];
+  const retratos = [retratoMinimo(dadosComCartao('sigma-teste'))];
   const resultados = checarTelas([
     { rotulo: 'corte de teste', textos: { hoje: 'button: Hoje', cartao: `${PREFIXO_EXCECAO}saldo indefinido` } },
   ], retratos);
@@ -140,7 +140,7 @@ it('tela que estourou reprova e diz qual aba', async () => {
 });
 
 it('telas sem exceção passam', async () => {
-  const retratos = [retratoMinimo(dadosComCartao('roxo-teste'))];
+  const retratos = [retratoMinimo(dadosComCartao('sigma-teste'))];
   const resultados = checarTelas([
     { rotulo: 'corte de teste', textos: { hoje: 'button: Hoje', cartao: 'heading: Cartão' } },
   ], retratos);
@@ -148,7 +148,7 @@ it('telas sem exceção passam', async () => {
 });
 
 it('checarTelas estoura se telas e retratos não casarem em tamanho', () => {
-  const retratos = [retratoMinimo(dadosComCartao('roxo-teste'))];
+  const retratos = [retratoMinimo(dadosComCartao('sigma-teste'))];
   const telas: TelasDoCorte[] = [
     { rotulo: 'a', textos: {} },
     { rotulo: 'b', textos: {} },
@@ -157,29 +157,29 @@ it('checarTelas estoura se telas e retratos não casarem em tamanho', () => {
 });
 
 it('categoria de fatura vazando na aba lancar reprova, e nomeia a categoria e a linha', () => {
-  const dados = dadosComCartao('roxo-teste');
+  const dados = dadosComCartao('sigma-teste');
   const retratos = [retratoMinimo(dados)];
   const telas: TelasDoCorte[] = [
     {
       rotulo: 'corte sintético',
-      textos: { lancar: 'heading: Lançar\noption: roxo-teste\noption: mercado' },
+      textos: { lancar: 'heading: Lançar\noption: sigma-teste\noption: mercado' },
     },
   ];
   const resultados = checarTelas(telas, retratos);
   const violado = resultados.find((r) => r.nome === 'categoria de fatura fica escondida' && !r.ok);
   expect(violado).toBeDefined();
   expect(violado!.classe).toBe('garantido');
-  expect(violado!.detalhe).toContain('roxo-teste');
-  expect(violado!.detalhe).toContain('option: roxo-teste');
+  expect(violado!.detalhe).toContain('sigma-teste');
+  expect(violado!.detalhe).toContain('option: sigma-teste');
 });
 
 it('categoria de fatura aparecendo só na aba cartao não reprova', () => {
-  const dados = dadosComCartao('roxo-teste');
+  const dados = dadosComCartao('sigma-teste');
   const retratos = [retratoMinimo(dados)];
   const telas: TelasDoCorte[] = [
     {
       rotulo: 'corte sintético',
-      textos: { cartao: 'heading: roxo-teste\nfatura de agosto: R$ 100,00', lancar: 'option: mercado' },
+      textos: { cartao: 'heading: sigma-teste\nfatura de agosto: R$ 100,00', lancar: 'option: mercado' },
     },
   ];
   const resultados = checarTelas(telas, retratos);

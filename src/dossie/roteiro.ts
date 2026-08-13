@@ -70,21 +70,21 @@ export const ROTEIRO: Roteiro = {
     },
     {
       data: '2026-01-20',
-      descricao: 'Cadastra o cartão "roxo", com fechamento no dia 25 e vencimento no dia 5.',
+      descricao: 'Cadastra o cartão "sigma", com fechamento no dia 25 e vencimento no dia 5.',
       async executar(dados) {
         const horizonte = dados.config.horizonteProjecao;
         const carteira = dados.boxes.find((b) => b.nome === 'carteira')!;
         const bancoAzul = dados.bancos.find((b) => b.nome === 'banco azul')!;
         await repo.salvarCartao({
-          boxId: carteira.id, nome: 'roxo', diaFechamento: 25, diaVencimento: 5, bancoId: bancoAzul.id,
+          boxId: carteira.id, nome: 'sigma', diaFechamento: 25, diaVencimento: 5, bancoId: bancoAzul.id,
         }, horizonte);
       },
     },
     {
       data: '2026-01-21',
-      descricao: 'Cria as categorias do cartão "roxo": "compras" e "serviços".',
+      descricao: 'Cria as categorias do cartão "sigma": "compras" e "serviços".',
       async executar(dados) {
-        const cartao = dados.cartoes.find((c) => c.nome === 'roxo')!;
+        const cartao = dados.cartoes.find((c) => c.nome === 'sigma')!;
         await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'compras', ordem: 0 });
         await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'serviços', ordem: 1 });
       },
@@ -93,10 +93,10 @@ export const ROTEIRO: Roteiro = {
       data: '2026-01-22',
       descricao:
         'Faz uma compra à vista de R$ 180,00 e uma compra parcelada de R$ 900,00 em seis vezes '
-        + 'no cartão "roxo".',
+        + 'no cartão "sigma".',
       async executar(dados) {
         const horizonte = dados.config.horizonteProjecao;
-        const cartao = dados.cartoes.find((c) => c.nome === 'roxo')!;
+        const cartao = dados.cartoes.find((c) => c.nome === 'sigma')!;
         const compras = dados.categoriasCartao.find((cc) => cc.cartaoId === cartao.id && cc.nome === 'compras')!;
         const servicos = dados.categoriasCartao.find((cc) => cc.cartaoId === cartao.id && cc.nome === 'serviços')!;
         await repo.salvarCompraCartao({
@@ -114,7 +114,7 @@ export const ROTEIRO: Roteiro = {
       descricao: 'Assina um serviço de streaming, R$ 39,90 por mês, sem data para acabar.',
       async executar(dados) {
         const horizonte = dados.config.horizonteProjecao;
-        const cartao = dados.cartoes.find((c) => c.nome === 'roxo')!;
+        const cartao = dados.cartoes.find((c) => c.nome === 'sigma')!;
         const servicos = dados.categoriasCartao.find((cc) => cc.cartaoId === cartao.id && cc.nome === 'serviços')!;
         await repo.salvarAssinatura({
           cartaoId: cartao.id, categoriaCartaoId: servicos.id, valor: 3_990,
@@ -149,7 +149,7 @@ export const ROTEIRO: Roteiro = {
       descricao: 'Registra uma conferência da fatura de maio com valor divergente da soma das compras.',
       async executar(dados) {
         const horizonte = dados.config.horizonteProjecao;
-        const cartao = dados.cartoes.find((c) => c.nome === 'roxo')!;
+        const cartao = dados.cartoes.find((c) => c.nome === 'sigma')!;
         await repo.salvarConferenciaFatura(cartao.id, '2026-05', 20_500, true, horizonte);
       },
     },
@@ -157,7 +157,7 @@ export const ROTEIRO: Roteiro = {
       data: '2026-06-05',
       descricao: 'Paga a fatura de junho por menos que o total e parcela o resto em três vezes.',
       async executar(dados) {
-        const cartao = dados.cartoes.find((c) => c.nome === 'roxo')!;
+        const cartao = dados.cartoes.find((c) => c.nome === 'sigma')!;
         const fatura = dados.lancamentos.find(
           (l) => l.origem === 'cartao' && l.categoriaId === cartao.categoriaFaturaId && l.data.startsWith('2026-06'),
         )!;
@@ -186,7 +186,7 @@ export const ROTEIRO: Roteiro = {
         const horizonte = dados.config.horizonteProjecao;
         const carteira = dados.boxes.find((b) => b.nome === 'carteira')!;
         const mercado = dados.categorias.find((c) => c.nome === 'mercado')!;
-        const cartao = dados.cartoes.find((c) => c.nome === 'roxo')!;
+        const cartao = dados.cartoes.find((c) => c.nome === 'sigma')!;
         const compras = dados.categoriasCartao.find((cc) => cc.cartaoId === cartao.id && cc.nome === 'compras')!;
         const viagem = dados.viagens.find((v) => v.nome === 'praia')!;
         await repo.salvarLancamento({

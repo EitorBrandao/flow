@@ -417,7 +417,7 @@ export function checarTudo(retratos: Retrato[]): ResultadoInvariante[] {
 
 /**
  * Uma linha de `resumirNo` casa com `nome` se ela é o nome sozinho, ou o nome com um
- * prefixo de papel (`"option: roxo"`, `"label: roxo"`...). Comparar a linha inteira, e não
+ * prefixo de papel (`"option: sigma"`, `"label: sigma"`...). Comparar a linha inteira, e não
  * por `includes`, evita falso positivo com qualquer palavra que só contenha o nome.
  */
 function linhaCasaComNome(linha: string, nome: string): boolean {
