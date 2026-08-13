@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { render } from '@testing-library/react';
-import { resumirNo } from './tela';
+import { PREFIXO_EXCECAO, renderComCaptura, resumirNo } from './tela';
 
 it('ignora classe, estilo e id', () => {
   const { container: a } = render(
@@ -48,6 +48,44 @@ it('não emite linha para elemento sem texto', () => {
   expect(resumirNo(container).split('\n')).toEqual(['Texto']);
 });
 
+it('rótulo ao lado de um filho-elemento move a saída', () => {
+  const { container: a } = render(<p>Saldo: <b>R$ 10,00</b></p>);
+  const { container: b } = render(<p>Total: <b>R$ 10,00</b></p>);
+  expect(resumirNo(a)).not.toBe(resumirNo(b));
+});
+
+it('texto solto e texto do filho aparecem os dois', () => {
+  const { container } = render(<p>Saldo: <b>R$ 10,00</b></p>);
+  const texto = resumirNo(container);
+  expect(texto).toContain('Saldo:');
+  expect(texto).toContain('R$ 10,00');
+});
+
+it('erro em callback assíncrono vira PREFIXO_EXCECAO', async () => {
+  // `renderComCaptura` é o miolo de `textoDaTela`, extraído para aceitar qualquer
+  // elemento, sem depender do Shell nem do store — é o que permite isolar este teste.
+  //
+  // O gatilho real seria um `throw` dentro de um `setTimeout`, depois do primeiro quadro —
+  // o caso que um error boundary sozinho não pega. Não dá para simular esse `throw` aqui:
+  // o Vitest roda o jsdom fora de uma VM, então `window` desta suíte É o `global` do Node
+  // (confirmado por `window === globalThis`), e `window.setTimeout` é o `setTimeout` nativo
+  // do Node — não a versão do jsdom que embrulha a chamada em try/catch e despacha 'error'.
+  // Um `throw` num `setTimeout` aqui vira exceção não tratada do Node, não evento de
+  // `window`, e nunca chegaria ao ouvinte. Isso é uma lacuna deste ambiente de teste, não
+  // do app: no navegador de verdade, `window` é o único objeto global, e um estouro
+  // assíncrono dispara 'error' nele de verdade.
+  //
+  // Por isso o teste dispara o evento à mão, de dentro de um `setTimeout` — o mesmo atraso
+  // "depois do primeiro quadro" do cenário real — o que prova exatamente o que este teste
+  // precisa provar: um evento de erro que chega depois do render inicial não se perde.
+  function Ok() { return <div>ok</div>; }
+  setTimeout(() => {
+    window.dispatchEvent(new ErrorEvent('error', { error: new Error('estouro assíncrono') }));
+  }, 10);
+  const texto = await renderComCaptura(<Ok />);
+  expect(texto).toContain(PREFIXO_EXCECAO);
+});
+
 import { limparDb } from '../test-setup';
 import { executarRoteiro } from './executar';
 import { ROTEIRO } from './roteiro';
@@ -59,6 +97,7 @@ it('cada aba do dossiê rende texto não vazio no primeiro corte', async () => {
   for (const aba of ABAS_DO_DOSSIE) {
     const texto = await textoDaTela(retratos[0], aba);
     expect(texto, `aba ${aba} veio vazia`).not.toBe('');
+    expect(texto, `aba ${aba} estourou`).not.toContain(PREFIXO_EXCECAO);
   }
 });
 
