@@ -1,0 +1,7 @@
+# O dossiê de comportamento é gerado por `npm run dossie` (Node, que escreve sempre LF) e
+# comparado byte a byte com o disco pelo guarda em `src/dossie/dossie.test.ts`.
+#
+# Sem esta regra, num clone com `core.autocrlf=true` — o padrão no Windows — o git entrega
+# estes arquivos com CRLF, o gerador os reescreve com LF, e o guarda reprova para sempre:
+# regenerar suja a working tree, commitar não resolve, e o checkout seguinte converte de novo.
+docs/dossie/*.md text eol=lf
