@@ -165,9 +165,13 @@ export const ROTEIRO: Roteiro = {
           lancamentoId: fatura.id,
           cartaoId: cartao.id,
           faturaMes: '2026-06',
-          valorPagoCent: 20_000,
+          // A fatura de junho fecha em 18_990. Pagar 12_000 deixa 6_990 de resto, que sai em
+          // três parcelas de 2_330. Os números têm que fechar com a descrição do passo: o
+          // dossiê narra este passo com essas palavras, e narração que não bate com o número
+          // engana quem lê o relatório.
+          valorPagoCent: 12_000,
           dataPagamento: '2026-06-05',
-          parcelamento: { parcelas: 3, valorParcelaCent: 15_000 },
+          parcelamento: { parcelas: 3, valorParcelaCent: 2_330 },
           horizonte: dados.config.horizonteProjecao,
         });
       },

@@ -1374,16 +1374,16 @@ tab: Visão
 tab: Conferir
 tab: Pendentes · 12
 Saldo hoje · carteira
-R$ 7.800
+R$ 7.880
 ,00
-▲ R$ 16.245,30 nos próximos 28 dias
+▲ R$ 16.372,00 nos próximos 28 dias
 projetado:
-R$ 20.885,20
+R$ 20.965,20
 13/06
 mín
 R$ 0,00
 · máx
-R$ 25.545,30
+R$ 25.752,00
 18/07
 ```
 
@@ -1403,53 +1403,53 @@ tab: Lista
 tab: Gráfico
 Mostrando desde sáb. 06/06/2026
 qua. 10/06/2026
-R$ 20.885,20
+R$ 20.965,20
 moradia
 previsto
 −R$ 1.500,00
 sáb. 20/06/2026 · hoje
-R$ 20.885,20
+R$ 20.965,20
 dom. 05/07/2026
-R$ 25.545,30
+R$ 25.752,00
 sigma
 previsto
-−R$ 339,90
+−R$ 213,20
 salário
 previsto
 +R$ 5.000,00
 sex. 10/07/2026
-R$ 24.045,30
+R$ 24.252,00
 moradia
 previsto
 −R$ 1.500,00
 qua. 05/08/2026
-R$ 28.855,40
+R$ 29.188,80
 sigma
 previsto
-−R$ 189,90
+−R$ 63,20
 salário
 previsto
 +R$ 5.000,00
 seg. 10/08/2026
-R$ 27.355,40
+R$ 27.688,80
 moradia
 previsto
 −R$ 1.500,00
 sáb. 05/09/2026
-R$ 32.165,50
+R$ 32.625,60
 sigma
 previsto
-−R$ 189,90
+−R$ 63,20
 salário
 previsto
 +R$ 5.000,00
 qui. 10/09/2026
-R$ 30.665,50
+R$ 31.125,60
 moradia
 previsto
 −R$ 1.500,00
 seg. 05/10/2026
-R$ 35.625,60
+R$ 36.085,70
 sigma
 previsto
 −R$ 39,90
@@ -1457,12 +1457,12 @@ salário
 previsto
 +R$ 5.000,00
 sáb. 10/10/2026
-R$ 34.125,60
+R$ 34.585,70
 moradia
 previsto
 −R$ 1.500,00
 qui. 05/11/2026
-R$ 39.085,70
+R$ 39.545,80
 sigma
 previsto
 −R$ 39,90
@@ -1470,12 +1470,12 @@ salário
 previsto
 +R$ 5.000,00
 ter. 10/11/2026
-R$ 37.585,70
+R$ 38.045,80
 moradia
 previsto
 −R$ 1.500,00
 sáb. 05/12/2026
-R$ 42.545,80
+R$ 43.005,90
 sigma
 previsto
 −R$ 39,90
@@ -1483,12 +1483,12 @@ salário
 previsto
 +R$ 5.000,00
 qui. 10/12/2026
-R$ 41.045,80
+R$ 41.505,90
 moradia
 previsto
 −R$ 1.500,00
 ter. 05/01/2027
-R$ 46.005,90
+R$ 46.466,00
 sigma
 previsto
 −R$ 39,90
@@ -1496,12 +1496,12 @@ salário
 previsto
 +R$ 5.000,00
 dom. 10/01/2027
-R$ 44.505,90
+R$ 44.966,00
 moradia
 previsto
 −R$ 1.500,00
 sex. 05/02/2027
-R$ 49.466,00
+R$ 49.926,10
 sigma
 previsto
 −R$ 39,90
@@ -1509,12 +1509,12 @@ salário
 previsto
 +R$ 5.000,00
 qua. 10/02/2027
-R$ 47.966,00
+R$ 48.426,10
 moradia
 previsto
 −R$ 1.500,00
 sex. 05/03/2027
-R$ 52.926,10
+R$ 53.386,20
 sigma
 previsto
 −R$ 39,90
@@ -1522,12 +1522,12 @@ salário
 previsto
 +R$ 5.000,00
 qua. 10/03/2027
-R$ 51.426,10
+R$ 51.886,20
 moradia
 previsto
 −R$ 1.500,00
 seg. 05/04/2027
-R$ 56.386,20
+R$ 56.846,30
 sigma
 previsto
 −R$ 39,90
@@ -1535,12 +1535,12 @@ salário
 previsto
 +R$ 5.000,00
 sáb. 10/04/2027
-R$ 54.886,20
+R$ 55.346,30
 moradia
 previsto
 −R$ 1.500,00
 qua. 05/05/2027
-R$ 59.846,30
+R$ 60.306,40
 sigma
 previsto
 −R$ 39,90
@@ -1548,12 +1548,12 @@ salário
 previsto
 +R$ 5.000,00
 seg. 10/05/2027
-R$ 58.346,30
+R$ 58.806,40
 moradia
 previsto
 −R$ 1.500,00
 sáb. 05/06/2027
-R$ 63.306,40
+R$ 63.766,50
 sigma
 previsto
 −R$ 39,90
@@ -1561,12 +1561,12 @@ salário
 previsto
 +R$ 5.000,00
 qui. 10/06/2027
-R$ 61.806,40
+R$ 62.266,50
 moradia
 previsto
 −R$ 1.500,00
 seg. 05/07/2027
-R$ 66.766,50
+R$ 67.226,60
 sigma
 previsto
 −R$ 39,90
@@ -1574,12 +1574,12 @@ salário
 previsto
 +R$ 5.000,00
 sáb. 10/07/2027
-R$ 65.266,50
+R$ 65.726,60
 moradia
 previsto
 −R$ 1.500,00
 qui. 05/08/2027
-R$ 70.226,60
+R$ 70.686,70
 sigma
 previsto
 −R$ 39,90
@@ -1587,12 +1587,12 @@ salário
 previsto
 +R$ 5.000,00
 ter. 10/08/2027
-R$ 68.726,60
+R$ 69.186,70
 moradia
 previsto
 −R$ 1.500,00
 dom. 05/09/2027
-R$ 73.686,70
+R$ 74.146,80
 sigma
 previsto
 −R$ 39,90
@@ -1600,12 +1600,12 @@ salário
 previsto
 +R$ 5.000,00
 sex. 10/09/2027
-R$ 72.186,70
+R$ 72.646,80
 moradia
 previsto
 −R$ 1.500,00
 ter. 05/10/2027
-R$ 77.146,80
+R$ 77.606,90
 sigma
 previsto
 −R$ 39,90
@@ -1613,12 +1613,12 @@ salário
 previsto
 +R$ 5.000,00
 dom. 10/10/2027
-R$ 75.646,80
+R$ 76.106,90
 moradia
 previsto
 −R$ 1.500,00
 sex. 05/11/2027
-R$ 80.606,90
+R$ 81.067,00
 sigma
 previsto
 −R$ 39,90
@@ -1626,12 +1626,12 @@ salário
 previsto
 +R$ 5.000,00
 qua. 10/11/2027
-R$ 79.106,90
+R$ 79.567,00
 moradia
 previsto
 −R$ 1.500,00
 dom. 05/12/2027
-R$ 84.067,00
+R$ 84.527,10
 sigma
 previsto
 −R$ 39,90
@@ -1639,7 +1639,7 @@ salário
 previsto
 +R$ 5.000,00
 sex. 10/12/2027
-R$ 82.567,00
+R$ 83.027,10
 moradia
 previsto
 −R$ 1.500,00
@@ -1659,19 +1659,19 @@ option: casa
 Cartão
 button: ‹
 sigma · fatura 07/2026
-R$ 339,90
+R$ 213,20
 fecha 25/06 · vence 05/07
 button: ›
 tab: Resumo
 tab: Lançamentos
 tab: Conferência
-A pagar: R$ 339,90
+A pagar: R$ 213,20
 ·
 button: paguei outro valor
 serviços
 R$ 189,90
 Parcelamento
-R$ 150,00
+R$ 23,30
 ```
 
 ### Aba Análises
@@ -1693,16 +1693,16 @@ label: incluir previstos
 Ganhos
 R$ 5.000,00
 Gastos
-R$ 1.700,00
+R$ 1.620,00
 Sobra
-R$ 3.300,00
+R$ 3.380,00
 heading: Por categoria
 barras na mesma escala do card acima (100% = maior entre ganhos e gastos do mês)
 salário
 R$ 5.000,00
 sigma
-4.0%
-R$ 200,00
+2.4%
+R$ 120,00
 moradia
 30.0%
 R$ 1.500,00
@@ -1715,7 +1715,7 @@ heading: Evolução mensal
 +3.310
 +3.310
 +3.295
-+3.300
++3.380
 ganhos
 gastos
 ‐ ‐ linha tracejada = tendência
@@ -1733,10 +1733,10 @@ cell: R$ 5.000,00
 cell: R$ 0,00
 cell: R$ 5.000,00
 cell: sigma
-cell: R$ 200,00
+cell: R$ 120,00
 cell: R$ 205,00
 cell: R$ 0,00
-cell: R$ 198,30
+cell: R$ 171,63
 cell: moradia
 cell: R$ 1.500,00
 cell: R$ 1.500,00
@@ -1815,16 +1815,16 @@ tab: Visão
 tab: Conferir
 tab: Pendentes · 15
 Saldo hoje · carteira
-R$ 7.720
+R$ 7.800
 ,00
-▲ R$ 19.495,40 nos próximos 28 dias
+▲ R$ 19.748,80 nos próximos 28 dias
 projetado:
-R$ 23.965,30
+R$ 24.172,00
 11/07
 mín
 R$ 0,00
 · máx
-R$ 28.715,40
+R$ 29.048,80
 15/08
 ```
 
@@ -1844,53 +1844,53 @@ tab: Lista
 tab: Gráfico
 Mostrando desde sáb. 04/07/2026
 dom. 05/07/2026
-R$ 25.545,30
+R$ 25.752,00
 sigma
 previsto
-−R$ 339,90
+−R$ 213,20
 salário
 previsto
 +R$ 5.000,00
 sex. 10/07/2026
-R$ 24.045,30
+R$ 24.252,00
 moradia
 previsto
 −R$ 1.500,00
 sex. 17/07/2026
-R$ 23.965,30
+R$ 24.172,00
 mercado
 Mercado na praia
 −R$ 80,00
 sáb. 18/07/2026 · hoje
-R$ 23.965,30
+R$ 24.172,00
 qua. 05/08/2026
-R$ 28.715,40
+R$ 29.048,80
 sigma
 previsto
-−R$ 249,90
+−R$ 123,20
 salário
 previsto
 +R$ 5.000,00
 seg. 10/08/2026
-R$ 27.215,40
+R$ 27.548,80
 moradia
 previsto
 −R$ 1.500,00
 sáb. 05/09/2026
-R$ 32.025,50
+R$ 32.485,60
 sigma
 previsto
-−R$ 189,90
+−R$ 63,20
 salário
 previsto
 +R$ 5.000,00
 qui. 10/09/2026
-R$ 30.525,50
+R$ 30.985,60
 moradia
 previsto
 −R$ 1.500,00
 seg. 05/10/2026
-R$ 35.485,60
+R$ 35.945,70
 sigma
 previsto
 −R$ 39,90
@@ -1898,12 +1898,12 @@ salário
 previsto
 +R$ 5.000,00
 sáb. 10/10/2026
-R$ 33.985,60
+R$ 34.445,70
 moradia
 previsto
 −R$ 1.500,00
 qui. 05/11/2026
-R$ 38.945,70
+R$ 39.405,80
 sigma
 previsto
 −R$ 39,90
@@ -1911,12 +1911,12 @@ salário
 previsto
 +R$ 5.000,00
 ter. 10/11/2026
-R$ 37.445,70
+R$ 37.905,80
 moradia
 previsto
 −R$ 1.500,00
 sáb. 05/12/2026
-R$ 42.405,80
+R$ 42.865,90
 sigma
 previsto
 −R$ 39,90
@@ -1924,12 +1924,12 @@ salário
 previsto
 +R$ 5.000,00
 qui. 10/12/2026
-R$ 40.905,80
+R$ 41.365,90
 moradia
 previsto
 −R$ 1.500,00
 ter. 05/01/2027
-R$ 45.865,90
+R$ 46.326,00
 sigma
 previsto
 −R$ 39,90
@@ -1937,12 +1937,12 @@ salário
 previsto
 +R$ 5.000,00
 dom. 10/01/2027
-R$ 44.365,90
+R$ 44.826,00
 moradia
 previsto
 −R$ 1.500,00
 sex. 05/02/2027
-R$ 49.326,00
+R$ 49.786,10
 sigma
 previsto
 −R$ 39,90
@@ -1950,12 +1950,12 @@ salário
 previsto
 +R$ 5.000,00
 qua. 10/02/2027
-R$ 47.826,00
+R$ 48.286,10
 moradia
 previsto
 −R$ 1.500,00
 sex. 05/03/2027
-R$ 52.786,10
+R$ 53.246,20
 sigma
 previsto
 −R$ 39,90
@@ -1963,12 +1963,12 @@ salário
 previsto
 +R$ 5.000,00
 qua. 10/03/2027
-R$ 51.286,10
+R$ 51.746,20
 moradia
 previsto
 −R$ 1.500,00
 seg. 05/04/2027
-R$ 56.246,20
+R$ 56.706,30
 sigma
 previsto
 −R$ 39,90
@@ -1976,12 +1976,12 @@ salário
 previsto
 +R$ 5.000,00
 sáb. 10/04/2027
-R$ 54.746,20
+R$ 55.206,30
 moradia
 previsto
 −R$ 1.500,00
 qua. 05/05/2027
-R$ 59.706,30
+R$ 60.166,40
 sigma
 previsto
 −R$ 39,90
@@ -1989,12 +1989,12 @@ salário
 previsto
 +R$ 5.000,00
 seg. 10/05/2027
-R$ 58.206,30
+R$ 58.666,40
 moradia
 previsto
 −R$ 1.500,00
 sáb. 05/06/2027
-R$ 63.166,40
+R$ 63.626,50
 sigma
 previsto
 −R$ 39,90
@@ -2002,12 +2002,12 @@ salário
 previsto
 +R$ 5.000,00
 qui. 10/06/2027
-R$ 61.666,40
+R$ 62.126,50
 moradia
 previsto
 −R$ 1.500,00
 seg. 05/07/2027
-R$ 66.626,50
+R$ 67.086,60
 sigma
 previsto
 −R$ 39,90
@@ -2015,12 +2015,12 @@ salário
 previsto
 +R$ 5.000,00
 sáb. 10/07/2027
-R$ 65.126,50
+R$ 65.586,60
 moradia
 previsto
 −R$ 1.500,00
 qui. 05/08/2027
-R$ 70.086,60
+R$ 70.546,70
 sigma
 previsto
 −R$ 39,90
@@ -2028,12 +2028,12 @@ salário
 previsto
 +R$ 5.000,00
 ter. 10/08/2027
-R$ 68.586,60
+R$ 69.046,70
 moradia
 previsto
 −R$ 1.500,00
 dom. 05/09/2027
-R$ 73.546,70
+R$ 74.006,80
 sigma
 previsto
 −R$ 39,90
@@ -2041,12 +2041,12 @@ salário
 previsto
 +R$ 5.000,00
 sex. 10/09/2027
-R$ 72.046,70
+R$ 72.506,80
 moradia
 previsto
 −R$ 1.500,00
 ter. 05/10/2027
-R$ 77.006,80
+R$ 77.466,90
 sigma
 previsto
 −R$ 39,90
@@ -2054,12 +2054,12 @@ salário
 previsto
 +R$ 5.000,00
 dom. 10/10/2027
-R$ 75.506,80
+R$ 75.966,90
 moradia
 previsto
 −R$ 1.500,00
 sex. 05/11/2027
-R$ 80.466,90
+R$ 80.927,00
 sigma
 previsto
 −R$ 39,90
@@ -2067,12 +2067,12 @@ salário
 previsto
 +R$ 5.000,00
 qua. 10/11/2027
-R$ 78.966,90
+R$ 79.427,00
 moradia
 previsto
 −R$ 1.500,00
 dom. 05/12/2027
-R$ 83.927,00
+R$ 84.387,10
 sigma
 previsto
 −R$ 39,90
@@ -2080,7 +2080,7 @@ salário
 previsto
 +R$ 5.000,00
 sex. 10/12/2027
-R$ 82.427,00
+R$ 82.887,10
 moradia
 previsto
 −R$ 1.500,00
@@ -2100,21 +2100,21 @@ option: casa
 Cartão
 button: ‹
 sigma · fatura 08/2026
-R$ 249,90
+R$ 123,20
 fecha 25/07 · vence 05/08
 button: ›
 tab: Resumo
 tab: Lançamentos
 tab: Conferência
-A pagar: R$ 249,90
+A pagar: R$ 123,20
 ·
 button: paguei outro valor
-Parcelamento
-R$ 150,00
 compras
 R$ 60,00
 serviços
 R$ 39,90
+Parcelamento
+R$ 23,30
 ```
 
 ### Aba Análises
@@ -2136,9 +2136,9 @@ label: incluir previstos
 Ganhos
 R$ 5.000,00
 Gastos
-R$ 1.919,90
+R$ 1.793,20
 Sobra
-R$ 3.080,10
+R$ 3.206,80
 heading: Por categoria
 barras na mesma escala do card acima (100% = maior entre ganhos e gastos do mês)
 salário
@@ -2147,8 +2147,8 @@ mercado
 1.6%
 R$ 80,00
 sigma
-6.8%
-R$ 339,90
+4.3%
+R$ 213,20
 moradia
 30.0%
 R$ 1.500,00
@@ -2162,8 +2162,8 @@ heading: Evolução mensal
 +3.310
 +3.310
 +3.295
-+3.300
-+3.080
++3.380
++3.207
 ganhos
 gastos
 ‐ ‐ linha tracejada = tendência
@@ -2188,10 +2188,10 @@ cell: R$ 0,00
 cell: R$ 0,00
 cell: R$ 26,67
 cell: sigma
-cell: R$ 339,90
-cell: R$ 200,00
+cell: R$ 213,20
+cell: R$ 120,00
 cell: R$ 0,00
-cell: R$ 248,30
+cell: R$ 179,40
 cell: moradia
 cell: R$ 1.500,00
 cell: R$ 1.500,00
@@ -2271,16 +2271,16 @@ tab: Visão
 tab: Conferir
 tab: Pendentes · 27
 Saldo hoje · carteira
-R$ 7.720
+R$ 7.800
 ,00
-▲ R$ 33.185,80 nos próximos 28 dias
+▲ R$ 33.565,90 nos próximos 28 dias
 projetado:
-R$ 37.445,70
+R$ 37.905,80
 23/11
 mín
 R$ 0,00
 · máx
-R$ 42.405,80
+R$ 42.865,90
 28/12
 ```
 
@@ -2300,9 +2300,9 @@ tab: Lista
 tab: Gráfico
 Mostrando desde seg. 16/11/2026
 seg. 30/11/2026 · hoje
-R$ 37.445,70
+R$ 37.905,80
 sáb. 05/12/2026
-R$ 42.405,80
+R$ 42.865,90
 sigma
 previsto
 −R$ 39,90
@@ -2310,12 +2310,12 @@ salário
 previsto
 +R$ 5.000,00
 qui. 10/12/2026
-R$ 40.905,80
+R$ 41.365,90
 moradia
 previsto
 −R$ 1.500,00
 ter. 05/01/2027
-R$ 45.865,90
+R$ 46.326,00
 sigma
 previsto
 −R$ 39,90
@@ -2323,12 +2323,12 @@ salário
 previsto
 +R$ 5.000,00
 dom. 10/01/2027
-R$ 44.365,90
+R$ 44.826,00
 moradia
 previsto
 −R$ 1.500,00
 sex. 05/02/2027
-R$ 49.326,00
+R$ 49.786,10
 sigma
 previsto
 −R$ 39,90
@@ -2336,12 +2336,12 @@ salário
 previsto
 +R$ 5.000,00
 qua. 10/02/2027
-R$ 47.826,00
+R$ 48.286,10
 moradia
 previsto
 −R$ 1.500,00
 sex. 05/03/2027
-R$ 52.786,10
+R$ 53.246,20
 sigma
 previsto
 −R$ 39,90
@@ -2349,12 +2349,12 @@ salário
 previsto
 +R$ 5.000,00
 qua. 10/03/2027
-R$ 51.286,10
+R$ 51.746,20
 moradia
 previsto
 −R$ 1.500,00
 seg. 05/04/2027
-R$ 56.246,20
+R$ 56.706,30
 sigma
 previsto
 −R$ 39,90
@@ -2362,12 +2362,12 @@ salário
 previsto
 +R$ 5.000,00
 sáb. 10/04/2027
-R$ 54.746,20
+R$ 55.206,30
 moradia
 previsto
 −R$ 1.500,00
 qua. 05/05/2027
-R$ 59.706,30
+R$ 60.166,40
 sigma
 previsto
 −R$ 39,90
@@ -2375,12 +2375,12 @@ salário
 previsto
 +R$ 5.000,00
 seg. 10/05/2027
-R$ 58.206,30
+R$ 58.666,40
 moradia
 previsto
 −R$ 1.500,00
 sáb. 05/06/2027
-R$ 63.166,40
+R$ 63.626,50
 sigma
 previsto
 −R$ 39,90
@@ -2388,12 +2388,12 @@ salário
 previsto
 +R$ 5.000,00
 qui. 10/06/2027
-R$ 61.666,40
+R$ 62.126,50
 moradia
 previsto
 −R$ 1.500,00
 seg. 05/07/2027
-R$ 66.626,50
+R$ 67.086,60
 sigma
 previsto
 −R$ 39,90
@@ -2401,12 +2401,12 @@ salário
 previsto
 +R$ 5.000,00
 sáb. 10/07/2027
-R$ 65.126,50
+R$ 65.586,60
 moradia
 previsto
 −R$ 1.500,00
 qui. 05/08/2027
-R$ 70.086,60
+R$ 70.546,70
 sigma
 previsto
 −R$ 39,90
@@ -2414,12 +2414,12 @@ salário
 previsto
 +R$ 5.000,00
 ter. 10/08/2027
-R$ 68.586,60
+R$ 69.046,70
 moradia
 previsto
 −R$ 1.500,00
 dom. 05/09/2027
-R$ 73.546,70
+R$ 74.006,80
 sigma
 previsto
 −R$ 39,90
@@ -2427,12 +2427,12 @@ salário
 previsto
 +R$ 5.000,00
 sex. 10/09/2027
-R$ 72.046,70
+R$ 72.506,80
 moradia
 previsto
 −R$ 1.500,00
 ter. 05/10/2027
-R$ 77.006,80
+R$ 77.466,90
 sigma
 previsto
 −R$ 39,90
@@ -2440,12 +2440,12 @@ salário
 previsto
 +R$ 5.000,00
 dom. 10/10/2027
-R$ 75.506,80
+R$ 75.966,90
 moradia
 previsto
 −R$ 1.500,00
 sex. 05/11/2027
-R$ 80.466,90
+R$ 80.927,00
 sigma
 previsto
 −R$ 39,90
@@ -2453,12 +2453,12 @@ salário
 previsto
 +R$ 5.000,00
 qua. 10/11/2027
-R$ 78.966,90
+R$ 79.427,00
 moradia
 previsto
 −R$ 1.500,00
 dom. 05/12/2027
-R$ 83.927,00
+R$ 84.387,10
 sigma
 previsto
 −R$ 39,90
@@ -2466,7 +2466,7 @@ salário
 previsto
 +R$ 5.000,00
 sex. 10/12/2027
-R$ 82.427,00
+R$ 82.887,10
 moradia
 previsto
 −R$ 1.500,00
@@ -2533,10 +2533,10 @@ Assinaturas
 todos os cartões
 R$ 39,90
 heading: Evolução mensal
-+3.300
-+3.080
-+3.250
-+3.310
++3.380
++3.207
++3.377
++3.437
 +3.460
 +3.460
 ganhos
@@ -2561,7 +2561,7 @@ cell: sigma
 cell: R$ 39,90
 cell: R$ 39,90
 cell: R$ 0,00
-cell: R$ 89,90
+cell: R$ 47,67
 cell: moradia
 cell: R$ 1.500,00
 cell: R$ 1.500,00

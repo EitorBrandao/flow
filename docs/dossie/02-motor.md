@@ -201,38 +201,38 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 
 | Box | Efetivo | Projetado | Com cenários |
 |---|---|---|---|
-| carteira | R$ 7.800,00 | R$ 20.885,20 | R$ 20.885,20 |
+| carteira | R$ 7.880,00 | R$ 20.965,20 | R$ 20.965,20 |
 | casa | R$ 0,00 | R$ 0,00 | R$ 0,00 |
 | reserva | R$ 12.000,00 | R$ 12.000,00 | R$ 12.000,00 |
 
 ### Marcos da projeção
 
 - Mínimo: R$ 16.000,00 em 2026-01-05
-- Máximo: R$ 96.067,00 em 2027-12-05
+- Máximo: R$ 96.527,10 em 2027-12-05
 - Fim de mês 2026-01: R$ 16.300,00
 - Fim de mês 2026-02: R$ 19.670,00
 - Fim de mês 2026-03: R$ 22.980,10
 - Fim de mês 2026-04: R$ 26.290,20
 - Fim de mês 2026-05: R$ 29.585,20
-- Fim de mês 2026-06: R$ 32.885,20
-- Fim de mês 2026-07: R$ 36.045,30
-- Fim de mês 2026-08: R$ 39.355,40
-- Fim de mês 2026-09: R$ 42.665,50
-- Fim de mês 2026-10: R$ 46.125,60
-- Fim de mês 2026-11: R$ 49.585,70
-- Fim de mês 2026-12: R$ 53.045,80
-- Fim de mês 2027-01: R$ 56.505,90
-- Fim de mês 2027-02: R$ 59.966,00
-- Fim de mês 2027-03: R$ 63.426,10
-- Fim de mês 2027-04: R$ 66.886,20
-- Fim de mês 2027-05: R$ 70.346,30
-- Fim de mês 2027-06: R$ 73.806,40
-- Fim de mês 2027-07: R$ 77.266,50
-- Fim de mês 2027-08: R$ 80.726,60
-- Fim de mês 2027-09: R$ 84.186,70
-- Fim de mês 2027-10: R$ 87.646,80
-- Fim de mês 2027-11: R$ 91.106,90
-- Fim de mês 2027-12: R$ 94.567,00
+- Fim de mês 2026-06: R$ 32.965,20
+- Fim de mês 2026-07: R$ 36.252,00
+- Fim de mês 2026-08: R$ 39.688,80
+- Fim de mês 2026-09: R$ 43.125,60
+- Fim de mês 2026-10: R$ 46.585,70
+- Fim de mês 2026-11: R$ 50.045,80
+- Fim de mês 2026-12: R$ 53.505,90
+- Fim de mês 2027-01: R$ 56.966,00
+- Fim de mês 2027-02: R$ 60.426,10
+- Fim de mês 2027-03: R$ 63.886,20
+- Fim de mês 2027-04: R$ 67.346,30
+- Fim de mês 2027-05: R$ 70.806,40
+- Fim de mês 2027-06: R$ 74.266,50
+- Fim de mês 2027-07: R$ 77.726,60
+- Fim de mês 2027-08: R$ 81.186,70
+- Fim de mês 2027-09: R$ 84.646,80
+- Fim de mês 2027-10: R$ 88.106,90
+- Fim de mês 2027-11: R$ 91.567,00
+- Fim de mês 2027-12: R$ 95.027,10
 
 ### Faturas
 
@@ -243,9 +243,9 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 | sigma | 2026-04 | 2 | R$ 189,90 |
 | sigma | 2026-05 | 2 | R$ 189,90 |
 | sigma | 2026-06 | 2 | R$ 189,90 |
-| sigma | 2026-07 | 3 | R$ 339,90 |
-| sigma | 2026-08 | 2 | R$ 189,90 |
-| sigma | 2026-09 | 2 | R$ 189,90 |
+| sigma | 2026-07 | 3 | R$ 213,20 |
+| sigma | 2026-08 | 2 | R$ 63,20 |
+| sigma | 2026-09 | 2 | R$ 63,20 |
 | sigma | 2026-10 | 1 | R$ 39,90 |
 | sigma | 2026-11 | 1 | R$ 39,90 |
 | sigma | 2026-12 | 1 | R$ 39,90 |
@@ -278,38 +278,38 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 
 | Box | Efetivo | Projetado | Com cenários |
 |---|---|---|---|
-| carteira | R$ 7.720,00 | R$ 23.965,30 | R$ 23.965,30 |
+| carteira | R$ 7.800,00 | R$ 24.172,00 | R$ 24.172,00 |
 | casa | R$ 0,00 | R$ 0,00 | R$ 0,00 |
 | reserva | R$ 12.000,00 | R$ 12.000,00 | R$ 12.000,00 |
 
 ### Marcos da projeção
 
 - Mínimo: R$ 16.000,00 em 2026-01-05
-- Máximo: R$ 95.927,00 em 2027-12-05
+- Máximo: R$ 96.387,10 em 2027-12-05
 - Fim de mês 2026-01: R$ 16.300,00
 - Fim de mês 2026-02: R$ 19.670,00
 - Fim de mês 2026-03: R$ 22.980,10
 - Fim de mês 2026-04: R$ 26.290,20
 - Fim de mês 2026-05: R$ 29.585,20
-- Fim de mês 2026-06: R$ 32.885,20
-- Fim de mês 2026-07: R$ 35.965,30
-- Fim de mês 2026-08: R$ 39.215,40
-- Fim de mês 2026-09: R$ 42.525,50
-- Fim de mês 2026-10: R$ 45.985,60
-- Fim de mês 2026-11: R$ 49.445,70
-- Fim de mês 2026-12: R$ 52.905,80
-- Fim de mês 2027-01: R$ 56.365,90
-- Fim de mês 2027-02: R$ 59.826,00
-- Fim de mês 2027-03: R$ 63.286,10
-- Fim de mês 2027-04: R$ 66.746,20
-- Fim de mês 2027-05: R$ 70.206,30
-- Fim de mês 2027-06: R$ 73.666,40
-- Fim de mês 2027-07: R$ 77.126,50
-- Fim de mês 2027-08: R$ 80.586,60
-- Fim de mês 2027-09: R$ 84.046,70
-- Fim de mês 2027-10: R$ 87.506,80
-- Fim de mês 2027-11: R$ 90.966,90
-- Fim de mês 2027-12: R$ 94.427,00
+- Fim de mês 2026-06: R$ 32.965,20
+- Fim de mês 2026-07: R$ 36.172,00
+- Fim de mês 2026-08: R$ 39.548,80
+- Fim de mês 2026-09: R$ 42.985,60
+- Fim de mês 2026-10: R$ 46.445,70
+- Fim de mês 2026-11: R$ 49.905,80
+- Fim de mês 2026-12: R$ 53.365,90
+- Fim de mês 2027-01: R$ 56.826,00
+- Fim de mês 2027-02: R$ 60.286,10
+- Fim de mês 2027-03: R$ 63.746,20
+- Fim de mês 2027-04: R$ 67.206,30
+- Fim de mês 2027-05: R$ 70.666,40
+- Fim de mês 2027-06: R$ 74.126,50
+- Fim de mês 2027-07: R$ 77.586,60
+- Fim de mês 2027-08: R$ 81.046,70
+- Fim de mês 2027-09: R$ 84.506,80
+- Fim de mês 2027-10: R$ 87.966,90
+- Fim de mês 2027-11: R$ 91.427,00
+- Fim de mês 2027-12: R$ 94.887,10
 
 ### Faturas
 
@@ -320,9 +320,9 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 | sigma | 2026-04 | 2 | R$ 189,90 |
 | sigma | 2026-05 | 2 | R$ 189,90 |
 | sigma | 2026-06 | 2 | R$ 189,90 |
-| sigma | 2026-07 | 3 | R$ 339,90 |
-| sigma | 2026-08 | 3 | R$ 249,90 |
-| sigma | 2026-09 | 2 | R$ 189,90 |
+| sigma | 2026-07 | 3 | R$ 213,20 |
+| sigma | 2026-08 | 3 | R$ 123,20 |
+| sigma | 2026-09 | 2 | R$ 63,20 |
 | sigma | 2026-10 | 1 | R$ 39,90 |
 | sigma | 2026-11 | 1 | R$ 39,90 |
 | sigma | 2026-12 | 1 | R$ 39,90 |
@@ -355,38 +355,38 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 
 | Box | Efetivo | Projetado | Com cenários |
 |---|---|---|---|
-| carteira | R$ 7.720,00 | R$ 37.445,70 | R$ 37.445,70 |
+| carteira | R$ 7.800,00 | R$ 37.905,80 | R$ 37.905,80 |
 | casa | R$ 0,00 | R$ 0,00 | R$ 0,00 |
 | reserva | R$ 12.000,00 | R$ 12.000,00 | R$ 12.000,00 |
 
 ### Marcos da projeção
 
 - Mínimo: R$ 16.000,00 em 2026-01-05
-- Máximo: R$ 95.927,00 em 2027-12-05
+- Máximo: R$ 96.387,10 em 2027-12-05
 - Fim de mês 2026-01: R$ 16.300,00
 - Fim de mês 2026-02: R$ 19.670,00
 - Fim de mês 2026-03: R$ 22.980,10
 - Fim de mês 2026-04: R$ 26.290,20
 - Fim de mês 2026-05: R$ 29.585,20
-- Fim de mês 2026-06: R$ 32.885,20
-- Fim de mês 2026-07: R$ 35.965,30
-- Fim de mês 2026-08: R$ 39.215,40
-- Fim de mês 2026-09: R$ 42.525,50
-- Fim de mês 2026-10: R$ 45.985,60
-- Fim de mês 2026-11: R$ 49.445,70
-- Fim de mês 2026-12: R$ 52.905,80
-- Fim de mês 2027-01: R$ 56.365,90
-- Fim de mês 2027-02: R$ 59.826,00
-- Fim de mês 2027-03: R$ 63.286,10
-- Fim de mês 2027-04: R$ 66.746,20
-- Fim de mês 2027-05: R$ 70.206,30
-- Fim de mês 2027-06: R$ 73.666,40
-- Fim de mês 2027-07: R$ 77.126,50
-- Fim de mês 2027-08: R$ 80.586,60
-- Fim de mês 2027-09: R$ 84.046,70
-- Fim de mês 2027-10: R$ 87.506,80
-- Fim de mês 2027-11: R$ 90.966,90
-- Fim de mês 2027-12: R$ 94.427,00
+- Fim de mês 2026-06: R$ 32.965,20
+- Fim de mês 2026-07: R$ 36.172,00
+- Fim de mês 2026-08: R$ 39.548,80
+- Fim de mês 2026-09: R$ 42.985,60
+- Fim de mês 2026-10: R$ 46.445,70
+- Fim de mês 2026-11: R$ 49.905,80
+- Fim de mês 2026-12: R$ 53.365,90
+- Fim de mês 2027-01: R$ 56.826,00
+- Fim de mês 2027-02: R$ 60.286,10
+- Fim de mês 2027-03: R$ 63.746,20
+- Fim de mês 2027-04: R$ 67.206,30
+- Fim de mês 2027-05: R$ 70.666,40
+- Fim de mês 2027-06: R$ 74.126,50
+- Fim de mês 2027-07: R$ 77.586,60
+- Fim de mês 2027-08: R$ 81.046,70
+- Fim de mês 2027-09: R$ 84.506,80
+- Fim de mês 2027-10: R$ 87.966,90
+- Fim de mês 2027-11: R$ 91.427,00
+- Fim de mês 2027-12: R$ 94.887,10
 
 ### Faturas
 
@@ -397,9 +397,9 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 | sigma | 2026-04 | 2 | R$ 189,90 |
 | sigma | 2026-05 | 2 | R$ 189,90 |
 | sigma | 2026-06 | 2 | R$ 189,90 |
-| sigma | 2026-07 | 3 | R$ 339,90 |
-| sigma | 2026-08 | 3 | R$ 249,90 |
-| sigma | 2026-09 | 2 | R$ 189,90 |
+| sigma | 2026-07 | 3 | R$ 213,20 |
+| sigma | 2026-08 | 3 | R$ 123,20 |
+| sigma | 2026-09 | 2 | R$ 63,20 |
 | sigma | 2026-10 | 1 | R$ 39,90 |
 | sigma | 2026-11 | 1 | R$ 39,90 |
 | sigma | 2026-12 | 1 | R$ 39,90 |
