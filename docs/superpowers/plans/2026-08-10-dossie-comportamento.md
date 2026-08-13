@@ -1584,9 +1584,50 @@ git commit -m "Serializador do dossiê: quatro markdown determinísticos"
 
 **Arquivos:**
 - Criar: `src/dossie/dossie.test.ts`, `scripts/dossie.mjs`, `docs/dossie/*.md`, `docs/dossie/README.md`
-- Modificar: `package.json` (só o campo `scripts`)
+- Modificar: `package.json` (só o campo `scripts`), `scripts/verificar-dados-reais.mjs` (só as duas listas de exceção)
 
-**Autorização:** o `CLAUDE.md` reserva `scripts/` e os scripts do `package.json` a pedido explícito do usuário. Concedido em 2026-08-10, registrado na seção "Autorizações concedidas" da spec. **Não mexa em mais nada nesses arquivos.**
+**Autorização:** o `CLAUDE.md` reserva `scripts/` e os scripts do `package.json` a pedido explícito do usuário. Concedido em 2026-08-10 e ampliado em 2026-08-12, registrado na seção "Autorizações concedidas" da spec. **Não mexa em mais nada nesses arquivos.**
+
+#### A colisão com o verificador de dados reais, e como resolvê-la
+
+`scripts/verificar-dados-reais.mjs` casa qualquer texto no formato `R$ 1.234,56`. O
+`docs/dossie/02-motor.md` é **feito** de dinheiro formatado: todo saldo e todo total de
+fatura, em seis cortes. Sem tratamento, o verificador acumula centenas de achados e o
+`npm run release`, que o chama com `--strict`, aborta.
+
+Nenhum desses valores pode ser real: o dossiê é função pura de um roteiro sintético.
+
+**A resolução, decidida pelo usuário em 2026-08-12,** mantém o crivo onde ele protege e o
+remove onde não protege nada:
+
+1. **Isente só a saída gerada.** Acrescente os quatro arquivos de `docs/dossie/` a
+   `EXCECOES_ARQUIVO`, com um comentário dizendo por quê:
+
+   ```js
+   // Gerado por `npm run dossie` a partir de um roteiro sintético (src/dossie/roteiro.ts).
+   // Dado real não tem por onde entrar aqui: a saída é função pura da entrada, que é checada.
+   'docs/dossie/00-roteiro.md',
+   'docs/dossie/01-invariantes.md',
+   'docs/dossie/02-motor.md',
+   'docs/dossie/03-telas.md',
+   ```
+
+2. **Mantenha `src/dossie/roteiro.ts` sob checagem.** É onde uma pessoa escreve valor à mão,
+   e é justamente ali que o crivo vale. Os valores sintéticos deste trabalho vão para
+   `EXCECOES_VALOR`, aprovados um a um:
+
+   ```js
+   // roteiro e plano do dossiê de comportamento (sintéticos, 2026-08-12)
+   'R$ 4.000,00', 'R$ 12.000,00', 'R$ 3.820,00', 'R$ 1.240,00', 'R$ 480,00',
+   'R$ 300,00', 'R$ 180,00', 'R$ 900,00', 'R$ 39,90', 'R$ 10,00', 'R$ 11,00',
+   ```
+
+**Não** isente `src/dossie/`. **Não** mexa nos padrões de casamento nem no código de saída do
+verificador. A única mudança autorizada nesse arquivo são as duas listas acima.
+
+Se, depois disso, o verificador ainda acusar um valor, **o valor é que muda** — troque-o no
+roteiro ou no plano por um dos já aprovados. Só acrescente à lista o que você não conseguir
+evitar, e diga no relatório qual foi e por quê.
 
 **Interfaces:**
 - Consome: tudo das tarefas anteriores.
