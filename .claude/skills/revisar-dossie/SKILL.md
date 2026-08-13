@@ -6,7 +6,7 @@ description: Use ao ler o dossiê de comportamento do Flow (docs/dossie/) — pa
 # Revisar o dossiê de comportamento
 
 `docs/dossie/` descreve o app inteiro em ação: um roteiro sintético de 12 meses, rodado pelo
-motor de verdade, com o texto de cada tela capturado em seis cortes de tempo. É gerado por
+motor de verdade, com o texto de cada tela capturado em sete cortes de tempo. É gerado por
 `npm run dossie` — nunca edite os quatro arquivos à mão. Um conflito de merge neles se resolve
 regenerando, não no editor.
 
@@ -50,5 +50,8 @@ O dossiê não mostra tudo. Leia o silêncio com esses limites em mente:
   subtelas de Ajustes ficam de fora.
 - Cada tela é capturada com a box que o app selecionaria ao abrir — uma box concreta. A visão
   consolidada (`casa`, todas as boxes somadas) não é exercitada.
-- O roteiro tem seis cortes no tempo. Nenhum cai na janela em que o cenário do roteiro está
-  ligado. Por isso o dossiê nunca mostra o efeito de um cenário ligado na projeção.
+- Cada tela entra num só estado: o que ela mostra ao abrir. Nada é clicado, nenhum filtro é
+  trocado, nenhum formulário é preenchido. Um vazamento que só aparece depois de um clique
+  não chega ao dossiê.
+- O roteiro tem sete cortes no tempo. Um deles cai dentro da janela do cenário ligado, então
+  a coluna "Com cenários" difere de "Projetado" ali — e só ali.

@@ -2,7 +2,7 @@
 
 Os quatro arquivos desta pasta descrevem o app inteiro em ação: um roteiro sintético de 12
 meses, rodado pelo motor de projeção e de fatura de verdade, com o texto de cada tela
-capturado em seis cortes de tempo.
+capturado em sete cortes de tempo.
 
 - `00-roteiro.md` — os passos do roteiro, em ordem cronológica.
 - `01-invariantes.md` — o resultado de cada invariante do domínio, em cada corte.
@@ -20,5 +20,5 @@ npm run dossie
 ```
 
 Um conflito de merge nestes quatro arquivos se resolve regenerando, nunca editando à mão:
-aceite qualquer lado (ou descarte os dois), rode `npm run dossie` de novo, e comite o
+aceite qualquer lado (ou descarte os dois), rode `npm run dossie` de novo, e faça o commit do
 resultado.
