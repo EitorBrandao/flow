@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from 'react';
-import { render, cleanup } from '@testing-library/react';
+import { act, render, cleanup } from '@testing-library/react';
 import { boxSelInicial, useApp, type Aba } from '../state/store';
 import Shell from '../ui/Shell';
 import type { Retrato } from './retrato';
@@ -74,7 +74,28 @@ export function resumirNo(container: HTMLElement): string {
   return linhas.join('\n');
 }
 
-/** Espera o texto parar de mudar. TelaAnalises importa Recharts sob demanda. */
+/**
+ * O app carrega dois gráficos sob demanda, com `React.lazy`. Sob carga, o import demora mais
+ * que a janela de sondagem de `estabilizar`, e a tela era lida sem o gráfico — o dossiê saía
+ * diferente conforme a máquina estivesse ocupada. Resolver os módulos antes de renderizar
+ * tira o relógio da equação: quando o React precisa deles, já estão prontos.
+ */
+let preaquecido: Promise<unknown> | null = null;
+function preaquecerPreguicosos(): Promise<unknown> {
+  preaquecido ??= Promise.all([
+    import('../ui/EvolucaoMensalChart'),
+    import('../ui/FluxoChartModal'),
+  ]);
+  return preaquecido;
+}
+
+/**
+ * Espera o texto parar de mudar. TelaAnalises importa Recharts sob demanda — mesmo com os
+ * módulos preaquecidos (ver `preaquecerPreguicosos`), esta função continua sondando por
+ * repetição, como defesa em profundidade: se algo ainda estiver pendente, `act` dá ao React
+ * a chance de esvaziar microtasks e efeitos entre uma leitura e outra, em vez de só confiar
+ * em o relógio ter andado o suficiente.
+ */
 async function estabilizar(container: HTMLElement): Promise<string> {
   // Vazio pode ser o estado final legítimo ou só o quadro anterior ao conteúdo. Por isso
   // ele precisa de mais repetições iguais: 10 × 50 ms = 500 ms, acima dos ~330 ms que o
@@ -83,6 +104,7 @@ async function estabilizar(container: HTMLElement): Promise<string> {
   let anterior = '';
   let iguais = 0;
   for (let tentativa = 0; tentativa < 40; tentativa++) {
+    await act(async () => {});
     const atual = resumirNo(container);
     iguais = atual === anterior ? iguais + 1 : 0;
     if (iguais >= (atual === '' ? REPETICOES_VAZIO : 1)) return atual;
@@ -131,6 +153,7 @@ export async function renderComCaptura(elemento: ReactNode): Promise<string> {
   window.addEventListener('error', aoErroGlobal);
   window.addEventListener('unhandledrejection', aoRejeicao);
   try {
+    await preaquecerPreguicosos();
     const { container } = render(
       <Sentinela aoErro={(erro) => erros.push(mensagemDe(erro))}>{elemento}</Sentinela>,
     );
