@@ -68,6 +68,46 @@ function datasDe(dados: Dados): { rotulo: string; data: string | null | undefine
   return saida;
 }
 
+/**
+ * Aponta onde `ida` e `volta` divergem, nomeando a coleção e, quando dá, o registro e o
+ * campo. Devolve `null` se não achar diferença (não deveria acontecer quando chamada só
+ * após o `JSON.stringify` dos dois já ter dado diferente).
+ */
+function diferencaDeBackup(ida: Dados, volta: Dados): string | null {
+  for (const chave of Object.keys(ida) as (keyof Dados)[]) {
+    if (chave === 'config') {
+      const antes = JSON.stringify(ida.config);
+      const depois = JSON.stringify(volta.config);
+      if (antes !== depois) return `a coleção config voltou diferente: era ${antes}, voltou ${depois}`;
+      continue;
+    }
+    const listaIda = ida[chave] as { id: string }[];
+    const listaVolta = volta[chave] as { id: string }[] | undefined;
+    if (!Array.isArray(listaVolta)) {
+      return `a coleção ${chave} não existe no backup que voltou`;
+    }
+    if (listaIda.length !== listaVolta.length) {
+      return `a coleção ${chave} voltou com ${listaVolta.length} registros, ida tinha ${listaIda.length}`;
+    }
+    const voltaPorId = new Map(listaVolta.map((reg) => [reg.id, reg]));
+    for (const registroIda of listaIda) {
+      const registroVolta = voltaPorId.get(registroIda.id);
+      if (!registroVolta) {
+        return `a coleção ${chave} não tem mais o registro ${registroIda.id} depois de voltar`;
+      }
+      for (const campo of Object.keys(registroIda) as (keyof typeof registroIda)[]) {
+        const valorIda = (registroIda as Record<string, unknown>)[campo as string];
+        const valorVolta = (registroVolta as Record<string, unknown>)[campo as string];
+        if (JSON.stringify(valorIda) !== JSON.stringify(valorVolta)) {
+          return `registro ${registroIda.id} da coleção ${chave} voltou diferente: campo ${String(campo)} `
+            + `era ${JSON.stringify(valorIda)}, voltou ${JSON.stringify(valorVolta)}`;
+        }
+      }
+    }
+  }
+  return null;
+}
+
 export const INVARIANTES: Invariante[] = [
   {
     nome: 'referências resolvem',
@@ -134,16 +174,12 @@ export const INVARIANTES: Invariante[] = [
     },
   },
 
-  // Cenário nunca deveria ser efetivo — se um dado malformado ou de teste tornar isso
-  // realidade, é "cenário nunca é efetivo" que reprova, e só ele: um lançamento de cenário
-  // fica de fora daqui, senão sua transição de status (que não é o que este invariante audita)
-  // reprovaria a suíte por uma regra que não é dela.
   {
     nome: 'efetivo não volta a previsto',
     classe: 'garantido',
     checarPar(anterior, atual) {
       const efetivosAntes = new Set(
-        anterior.dados.lancamentos.filter((l) => l.status === 'efetivo' && !l.cenarioId).map((l) => l.id),
+        anterior.dados.lancamentos.filter((l) => l.status === 'efetivo').map((l) => l.id),
       );
       const porAtual = new Map(atual.dados.lancamentos.map((l) => [l.id, l]));
       for (const id of efetivosAntes) {
@@ -188,7 +224,7 @@ export const INVARIANTES: Invariante[] = [
   // categoria escolhida (`Assinaturas.tsx`) usam essas categorias de propósito, e nada no
   // snapshot distingue essa origem legítima de uma seleção manual indevida.
   {
-    nome: 'categoria de fatura fica escondida',
+    nome: 'categoria de fatura só é usada pelo cartão',
     classe: 'garantido',
     checar(r) {
       const idsCategoria = categoriasFaturaIds(r.dados.cartoes);
@@ -227,9 +263,12 @@ export const INVARIANTES: Invariante[] = [
       const volta = validarBackup(JSON.parse(JSON.stringify(ida)));
       const antes = JSON.stringify(ida.dados);
       const depois = JSON.stringify(volta.dados);
-      return antes === depois
-        ? OK
-        : { ok: false, detalhe: 'exportar e reimportar mudou os dados' };
+      if (antes === depois) return OK;
+      const detalhe = diferencaDeBackup(ida.dados, volta.dados);
+      return {
+        ok: false,
+        detalhe: detalhe ?? 'exportar e reimportar mudou os dados, mas a divergência não pôde ser isolada',
+      };
     },
   },
 
@@ -377,20 +416,72 @@ export function checarTudo(retratos: Retrato[]): ResultadoInvariante[] {
 }
 
 /**
+ * Uma linha de `resumirNo` casa com `nome` se ela é o nome sozinho, ou o nome com um
+ * prefixo de papel (`"option: roxo"`, `"label: roxo"`...). Comparar a linha inteira, e não
+ * por `includes`, evita falso positivo com qualquer palavra que só contenha o nome.
+ */
+function linhaCasaComNome(linha: string, nome: string): boolean {
+  if (linha === nome) return true;
+  const doisPontos = linha.indexOf(': ');
+  return doisPontos !== -1 && linha.slice(doisPontos + 2) === nome;
+}
+
+/**
  * O invariante das telas mora aqui, e não em INVARIANTES, porque lê texto de tela — que o
  * Retrato não carrega. Juntar os dois acoplaria o executor à UI.
+ *
+ * `telas` e `retratos` casam por índice: `coletarTelas` preserva a ordem dos cortes, então
+ * `telas[i]` é sempre o mesmo corte que `retratos[i]`. Não confiar cegamente nisso — um
+ * tamanho diferente é erro de programação do chamador, não achado de dossiê, e por isso
+ * estoura em vez de produzir um resultado incoerente.
  */
-export function checarTelas(telas: TelasDoCorte[]): ResultadoInvariante[] {
-  return telas.map((t) => {
+export function checarTelas(telas: TelasDoCorte[], retratos: Retrato[]): ResultadoInvariante[] {
+  if (telas.length !== retratos.length) {
+    throw new Error(
+      `checarTelas recebeu ${telas.length} telas e ${retratos.length} retratos: os dois têm que `
+        + 'ter um item por corte, na mesma ordem.',
+    );
+  }
+  const saida: ResultadoInvariante[] = [];
+  telas.forEach((t, i) => {
     const quebrada = Object.entries(t.textos).find(([, texto]) => texto.startsWith(PREFIXO_EXCECAO));
-    return {
+    saida.push({
       nome: 'nenhuma tela lança',
-      classe: 'garantido' as const,
+      classe: 'garantido',
       corte: t.rotulo,
       ok: !quebrada,
       detalhe: quebrada
         ? `a aba ${quebrada[0]} estourou: ${quebrada[1].slice(PREFIXO_EXCECAO.length)}`
         : '—',
-    };
+    });
+
+    // O nome de uma categoria de fatura é sempre igual ao nome do cartão (`src/db/repo.ts`,
+    // `salvarCartao`). Checar a aba `lancar` — a lista de seleção manual de verdade — é o
+    // que a tabela do plano pede, e é o que o invariante de referência não consegue checar.
+    const retrato = retratos[i];
+    const idsCategoriaFatura = categoriasFaturaIds(retrato.dados.cartoes);
+    const categoriasPorId = new Map(retrato.dados.categorias.map((c) => [c.id, c]));
+    const linhasLancar = (t.textos.lancar ?? '').split('\n');
+    let vazamento: { nomeCategoria: string; linha: string } | undefined;
+    for (const id of idsCategoriaFatura) {
+      const nome = categoriasPorId.get(id)?.nome;
+      if (nome == null) continue; // categoria apagada é achado de outro invariante
+      const linha = linhasLancar.find((l) => linhaCasaComNome(l, nome));
+      if (linha) {
+        vazamento = { nomeCategoria: nome, linha };
+        break;
+      }
+    }
+    saida.push({
+      nome: 'categoria de fatura fica escondida',
+      classe: 'garantido',
+      corte: t.rotulo,
+      ok: !vazamento,
+      detalhe: vazamento
+        ? `a categoria de fatura "${vazamento.nomeCategoria}" apareceu na aba lancar, na linha `
+          + `"${vazamento.linha}"`
+        : '—',
+    });
   });
+  return saida;
 }
