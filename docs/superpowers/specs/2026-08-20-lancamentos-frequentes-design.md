@@ -92,8 +92,8 @@ categorias de cartão e cartões — e a lista de parâmetros ficaria pior que a
 ### A faixa, na sheet Adicionar
 
 Fica no topo, acima de "Lançamento" e "Compra no cartão", com o rótulo `Frequentes`
-(`.rotulo-grupo`) e um separador abaixo. Sem chip nenhum, nada disso é renderizado: quem
-instalou ontem vê a sheet exatamente como ela é hoje.
+(`.rotulo-grupo`). Sem chip nenhum, nada disso é renderizado: quem instalou ontem vê a sheet
+exatamente como ela é hoje.
 
 O chip é uma pílula de uma linha: ponto azul (só quando o destino é cartão), nome da
 categoria, e o valor em `--muted` sem `R$`. A legenda `● vai para o cartão` fica abaixo da
@@ -160,6 +160,7 @@ nesse caso.
 
 | Arquivo | O quê |
 |---|---|
+| `src/domain/money.ts` + teste | `formatarSemSimbolo` — valor com centavos e sem `R$`, para caber no chip |
 | `src/domain/aggregations.ts` + teste | `frequentes`, `ChipFrequente`, `DestinoFrequente` |
 | `src/state/store.ts` | `rascunhoLancar` e `setRascunhoLancar` |
 | `src/ui/AdicionarSheet.tsx` + teste | a faixa, e o que cada toque faz |
