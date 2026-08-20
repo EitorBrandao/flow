@@ -9,7 +9,7 @@ import { viagemAtivaEm } from '../domain/viagem';
 import { boxIdEfetivo, useApp } from '../state/store';
 
 export default function TelaLancar() {
-  const { dados, boxSel, hoje, recarregar } = useApp();
+  const { dados, boxSel, hoje, recarregar, rascunhoLancar, setRascunhoLancar } = useApp();
   const [cents, setCents] = useState(0);
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
   const [categoriaId, setCategoriaId] = useState<string | null>(null);
@@ -24,6 +24,19 @@ export default function TelaLancar() {
   useEffect(() => {
     setViagemMarcada(true);
   }, [viagemAtiva?.id ?? null]);
+
+  // A sheet Adicionar não renderiza esta tela, então manda o atalho pelo store. A dependência
+  // é o rascunho, não a montagem: o + pode ser aberto com a tela Lançar já visível.
+  useEffect(() => {
+    if (!rascunhoLancar || !dados) return;
+    const cat = dados.categorias.find((c) => c.id === rascunhoLancar.categoriaId);
+    if (cat) {
+      setTipo(cat.tipo);
+      setCategoriaId(cat.id);
+      setCents(rascunhoLancar.valorCent);
+    }
+    setRascunhoLancar(null);
+  }, [rascunhoLancar, dados, setRascunhoLancar]);
 
   useEffect(() => () => {
     if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);

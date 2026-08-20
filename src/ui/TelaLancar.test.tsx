@@ -185,3 +185,42 @@ it('com categoria mas sem valor, pede o valor', async () => {
 
   expect(screen.getByText('Digite um valor.')).toBeInTheDocument();
 });
+
+it('consome o rascunho: preenche valor, categoria e tipo, e limpa o rascunho', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  const ganho = await repo.salvarCategoria({ boxId: box.id, nome: 'bico', tipo: 'ganho', ordem: 1 });
+  await useApp.getState().iniciar();
+  useApp.setState({
+    boxSel: box.id, hoje: '2026-07-02',
+    rascunhoLancar: { categoriaId: ganho.id, valorCent: 4500 },
+  });
+
+  render(<TelaLancar />);
+
+  // a categoria semeada é de GANHO, e a tela abre em 'gasto': se o tipo não virar sozinho,
+  // ela nem aparece na grade. É por isso que a fixture tem uma categoria de cada tipo.
+  expect(await screen.findByRole('button', { name: 'bico' })).toHaveClass('selecionada');
+  expect(screen.getByLabelText('Valor')).toHaveValue('R$ 45,00');
+  // o rascunho é de uso único: sem limpar, voltar para a tela ressuscitaria o valor
+  expect(useApp.getState().rascunhoLancar).toBeNull();
+});
+
+it('rascunho com categoria que não existe mais não quebra a tela e é descartado', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({
+    boxSel: box.id, hoje: '2026-07-02',
+    rascunhoLancar: { categoriaId: 'sumiu', valorCent: 4500 },
+  });
+
+  render(<TelaLancar />);
+
+  expect(await screen.findByRole('heading', { name: 'Lançar' })).toBeInTheDocument();
+  expect(useApp.getState().rascunhoLancar).toBeNull();
+});

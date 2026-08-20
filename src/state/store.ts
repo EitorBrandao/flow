@@ -9,6 +9,9 @@ export type BoxSelecionada = ID | 'casa';
 export type SecaoAjustes = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'bancos' | 'cartoes'
   | 'categoriasCartao' | 'assinaturas' | 'viagens' | 'backup' | 'wiki' | 'versao';
 
+/** Semente de um lançamento vinda dos atalhos da sheet Adicionar; de uso único. */
+export interface RascunhoLancar { categoriaId: ID; valorCent: number }
+
 interface AppState {
   carregado: boolean;
   dados: Dados | null;
@@ -16,12 +19,14 @@ interface AppState {
   aba: Aba;
   boxSel: BoxSelecionada;
   ajustesSecao: SecaoAjustes | null;
+  rascunhoLancar: RascunhoLancar | null;
   iniciar(): Promise<void>;
   recarregar(): Promise<void>;
   setAba(aba: Aba): void;
   setBoxSel(boxSel: BoxSelecionada): void;
   abrirAjustes(secao: SecaoAjustes): void;
   limparAjustesSecao(): void;
+  setRascunhoLancar(r: RascunhoLancar | null): void;
 }
 
 export const useApp = create<AppState>((set) => ({
@@ -31,6 +36,7 @@ export const useApp = create<AppState>((set) => ({
   aba: 'hoje',
   boxSel: 'casa',
   ajustesSecao: null,
+  rascunhoLancar: null,
   async iniciar() {
     const inicial = await repo.carregarTudo();
     if (!inicial.boxes.some((b) => b.nome === 'casa')) {
@@ -61,6 +67,7 @@ export const useApp = create<AppState>((set) => ({
   setBoxSel: (boxSel) => set({ boxSel }),
   abrirAjustes: (secao) => set({ aba: 'ajustes', ajustesSecao: secao }),
   limparAjustesSecao: () => set({ ajustesSecao: null }),
+  setRascunhoLancar: (rascunhoLancar) => set({ rascunhoLancar }),
 }));
 
 /** Ids das boxes da seleção atual ('casa' = todas, para consolidação). */
