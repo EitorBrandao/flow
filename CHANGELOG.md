@@ -7,10 +7,8 @@ com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado
 
 ### Adicionado
 
-- O botão + agora mostra atalhos para o que você mais lança: cada um já vem com a categoria, o cartão ou a box, e o valor da última vez.
-- O atalho abre o formulário preenchido, para você conferir antes de confirmar — nada é lançado só de tocar.
-- Conta só o que você digitou — lançamentos e compras no cartão — nos últimos dois meses; recorrência, fatura e assinatura não viram atalho porque já entram sozinhas.
-- Quem ainda não tem histórico não vê nada de novo: a tela fica igual ao que era.
+- O botão + agora mostra atalhos para o que você mais lança: cada atalho já vem com a categoria, o cartão ou a box e o valor da última vez, e abre o formulário preenchido para você conferir antes de confirmar — nada é lançado só de tocar.
+- Os atalhos saem do que você mesmo digitou nos últimos dois meses, em lançamentos e em compras no cartão; recorrência, fatura e assinatura não viram atalho porque já entram sozinhas, e quem ainda não tem histórico continua vendo a tela como ela era.
 
 ## [0.21.0] - 2026-08-10
 
