@@ -80,6 +80,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
   return (
     <>
       <h2 style={{ marginTop: 0 }}>{compra ? 'Editar compra' : 'Nova compra'}</h2>
+      <p className="sub">{cartao.nome}</p>
       <div className="linha">
         <div className="campo">
           <label htmlFor={`${uid}-valor`}>Valor</label>

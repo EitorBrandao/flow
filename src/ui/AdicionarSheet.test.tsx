@@ -82,6 +82,11 @@ async function montarComHistorico() {
   const cartao = await repo.salvarCartao({
     boxId: box.id, nome: 'Cartão A', diaFechamento: 20, diaVencimento: 28,
   }, '2027-12-31');
+  // um segundo cartão ativo: com só um cartão, "Compra no cartão" também pularia a
+  // escolha, e a asserção "sem passar pela escolha de cartão" ficaria vácua.
+  await repo.salvarCartao({
+    boxId: box.id, nome: 'Cartão B', diaFechamento: 10, diaVencimento: 17,
+  }, '2027-12-31');
   const catCartao = await repo.salvarCategoriaCartao({
     cartaoId: cartao.id, nome: 'Farmácia', ordem: 0,
   });
@@ -142,4 +147,14 @@ it('o chip diz de que cartão é, para quem não enxerga o ponto azul', async ()
 
   expect(await screen.findByRole('button', { name: 'Farmácia, no Cartão A, 62,40' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Café, nesta box, 8,50' })).toBeInTheDocument();
+});
+
+it('chip de cartão mostra o nome do cartão na folha, não só no aria-label', async () => {
+  await montarComHistorico();
+  render(<AdicionarSheet aberto onFechar={() => {}} />);
+
+  await userEvent.click(await screen.findByRole('button', { name: /Farmácia/ }));
+
+  expect(await screen.findByRole('heading', { name: 'Nova compra' })).toBeInTheDocument();
+  expect(screen.getByText('Cartão A')).toBeInTheDocument();
 });

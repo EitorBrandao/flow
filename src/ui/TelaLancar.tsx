@@ -34,9 +34,14 @@ export default function TelaLancar() {
       setTipo(cat.tipo);
       setCategoriaId(cat.id);
       setCents(rascunhoLancar.valorCent);
+      // O atalho é sempre "lançar agora": zera o que a tela já tinha, para não herdar
+      // data futura, nota velha ou o previsto de um preenchimento anterior abandonado.
+      setData(hoje);
+      setNota('');
+      setPrevisto(false);
     }
     setRascunhoLancar(null);
-  }, [rascunhoLancar, dados, setRascunhoLancar]);
+  }, [rascunhoLancar, dados, hoje, setRascunhoLancar]);
 
   useEffect(() => () => {
     if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);

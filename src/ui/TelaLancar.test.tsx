@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -223,4 +223,35 @@ it('rascunho com categoria que não existe mais não quebra a tela e é descarta
 
   expect(await screen.findByRole('heading', { name: 'Lançar' })).toBeInTheDocument();
   expect(useApp.getState().rascunhoLancar).toBeNull();
+  // rascunho inválido não pode semear nada parcialmente: o campo de valor fica em zero
+  expect(screen.getByLabelText('Valor')).toHaveValue('R$ 0,00');
+});
+
+it('atalho usado com a tela Lançar já aberta não herda data, nota nem previsto que a pessoa já tinha digitado', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cafe = await repo.salvarCategoria({ boxId: box.id, nome: 'café', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+
+  // a pessoa já estava na tela, mexeu em tudo e desistiu — antes de usar o atalho
+  const inputData = screen.getByLabelText('Data') as HTMLInputElement;
+  await userEvent.clear(inputData);
+  await userEvent.type(inputData, '2026-09-01');
+  await userEvent.type(screen.getByLabelText('Nota (opcional)'), 'nota antiga');
+  await userEvent.click(screen.getByLabelText(/Marcar como previsto/));
+  expect(inputData.value).toBe('2026-09-01');
+  expect(screen.getByLabelText(/Marcar como previsto/)).toBeChecked();
+
+  // aí vem o atalho — setAba('lancar') não muda `aba`, a tela não remonta
+  act(() => useApp.setState({ rascunhoLancar: { categoriaId: cafe.id, valorCent: 850 } }));
+
+  expect(await screen.findByRole('button', { name: 'café' })).toHaveClass('selecionada');
+  expect(screen.getByLabelText('Valor')).toHaveValue('R$ 8,50');
+  expect(inputData.value).toBe('2026-07-02');
+  expect(screen.getByLabelText('Nota (opcional)')).toHaveValue('');
+  expect(screen.getByLabelText(/Marcar como previsto/)).not.toBeChecked();
 });
