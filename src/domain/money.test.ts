@@ -1,4 +1,4 @@
-import { formatarBRL, formatarSobraCompacta, empurrarDigito, apagarUltimoDigito, digitosParaCentavos } from './money';
+import { formatarBRL, formatarSobraCompacta, empurrarDigito, apagarUltimoDigito, digitosParaCentavos, formatarSemSimbolo } from './money';
 
 describe('formatarBRL', () => {
   it('formata centavos como moeda pt-BR', () => {
@@ -70,4 +70,11 @@ describe('formatarSobraCompacta', () => {
   it('zero é positivo (sinal +)', () => {
     expect(formatarSobraCompacta(0)).toBe('+0');
   });
+});
+
+it('formatarSemSimbolo mostra centavos e milhar, sem R$', () => {
+  expect(formatarSemSimbolo(850)).toBe('8,50');
+  expect(formatarSemSimbolo(123456)).toBe('1.234,56');
+  expect(formatarSemSimbolo(0)).toBe('0,00');
+  expect(formatarSemSimbolo(100)).toBe('1,00'); // não '1'
 });

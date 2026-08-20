@@ -1,0 +1,4 @@
+- O botão + agora mostra atalhos para o que você mais lança: cada um já vem com a categoria, o cartão ou a box, e o valor da última vez.
+- O atalho abre o formulário preenchido, para você conferir antes de confirmar — nada é lançado só de tocar.
+- Conta só o que você digitou — lançamentos e compras no cartão — nos últimos dois meses; recorrência, fatura e assinatura não viram atalho porque já entram sozinhas.
+- Quem ainda não tem histórico não vê nada de novo: a tela fica igual ao que era.

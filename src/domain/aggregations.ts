@@ -1,6 +1,6 @@
-import { addMeses, mesDe } from './dates';
-import type { Categoria, ID, ISODate, Lancamento, TipoCategoria } from './types';
-import { compararCategorias } from './categorias';
+import { addMeses, mesDe, addDias } from './dates';
+import type { Categoria, ID, ISODate, Lancamento, TipoCategoria, Dados } from './types';
+import { compararCategorias, categoriasCartaoReservadasIds } from './categorias';
 
 export interface LinhaResumo {
   categoriaId: ID;
@@ -181,4 +181,104 @@ export function lancamentosDaCategoria(
     g.itens.sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0));
   }
   return [...grupos.values()].sort((a, b) => b.subtotal - a.subtotal);
+}
+
+export type DestinoFrequente =
+  | { tipo: 'box'; categoriaId: ID }
+  | { tipo: 'cartao'; cartaoId: ID; categoriaCartaoId: ID };
+
+export interface ChipFrequente {
+  chave: string;      // 'box:<categoriaId>' | 'cartao:<cartaoId>:<categoriaCartaoId>'
+  destino: DestinoFrequente;
+  rotulo: string;     // nome da categoria
+  valorCent: number;  // valor da ocorrência mais recente
+  usos: number;
+}
+
+interface Acumulado extends ChipFrequente {
+  ultimaData: ISODate;
+}
+
+/**
+ * Combinações de categoria + destino que o usuário mais digitou na janela, para virarem
+ * atalhos na sheet Adicionar. Só conta o que foi digitado à mão: recorrência, fatura,
+ * assinatura e parcelamento entram sozinhos no app, e um atalho para eles convidaria a
+ * lançar em duplicidade. `status` não filtra — o que separa gesto de automação é `origem`.
+ *
+ * A janela é medida pela `data` do lançamento, não por `criadoEm`: quem digita hoje o gasto
+ * do mês passado quer que ele conte no mês passado.
+ */
+export function frequentes(
+  dados: Dados,
+  opcoes: {
+    hoje: ISODate;
+    boxId: ID | null;
+    cartaoIds: readonly ID[];
+    janelaDias?: number;
+    limite?: number;
+  },
+): ChipFrequente[] {
+  const janelaDias = opcoes.janelaDias ?? 60;
+  const limite = opcoes.limite ?? 6;
+  const inicio = addDias(opcoes.hoje, -(janelaDias - 1));
+  const dentro = (d: ISODate) => d >= inicio && d <= opcoes.hoje;
+
+  const acc = new Map<string, Acumulado>();
+  function registrar(
+    chave: string, destino: DestinoFrequente, rotulo: string, data: ISODate, valorCent: number,
+  ) {
+    const atual = acc.get(chave);
+    if (!atual) {
+      acc.set(chave, { chave, destino, rotulo, valorCent, usos: 1, ultimaData: data });
+      return;
+    }
+    atual.usos += 1;
+    // empate de data: vence quem aparece por último no array — arbitrário, mas estável
+    if (data >= atual.ultimaData) { atual.ultimaData = data; atual.valorCent = valorCent; }
+  }
+
+  if (opcoes.boxId != null) {
+    const cats = new Map(
+      dados.categorias
+        .filter((c) => c.boxId === opcoes.boxId && !c.arquivada)
+        .map((c) => [c.id, c] as const),
+    );
+    for (const l of dados.lancamentos) {
+      if (l.origem !== 'manual' || l.cenarioId) continue;
+      if (l.boxId !== opcoes.boxId || !dentro(l.data)) continue;
+      const cat = cats.get(l.categoriaId);
+      if (!cat) continue;
+      registrar(`box:${cat.id}`, { tipo: 'box', categoriaId: cat.id }, cat.nome, l.data, l.valor);
+    }
+  }
+
+  const permitidos = new Set(
+    dados.cartoes.filter((c) => c.ativo && opcoes.cartaoIds.includes(c.id)).map((c) => c.id),
+  );
+  const reservadas = categoriasCartaoReservadasIds(dados.cartoes);
+  const catsCartao = new Map(
+    dados.categoriasCartao
+      .filter((c) => !c.arquivada && !reservadas.has(c.id))
+      .map((c) => [c.id, c] as const),
+  );
+  for (const co of dados.comprasCartao) {
+    if (co.recorrenciaCartaoId) continue;
+    if (!permitidos.has(co.cartaoId) || !dentro(co.data)) continue;
+    const cat = catsCartao.get(co.categoriaCartaoId);
+    if (!cat || cat.cartaoId !== co.cartaoId) continue;
+    registrar(
+      `cartao:${co.cartaoId}:${cat.id}`,
+      { tipo: 'cartao', cartaoId: co.cartaoId, categoriaCartaoId: cat.id },
+      cat.nome, co.data, co.valorTotal,
+    );
+  }
+
+  return [...acc.values()]
+    .sort((a, b) => (
+      b.usos - a.usos
+      || (a.ultimaData < b.ultimaData ? 1 : a.ultimaData > b.ultimaData ? -1 : 0)
+      || (a.chave < b.chave ? -1 : a.chave > b.chave ? 1 : 0)
+    ))
+    .slice(0, limite)
+    .map(({ chave, destino, rotulo, valorCent, usos }) => ({ chave, destino, rotulo, valorCent, usos }));
 }

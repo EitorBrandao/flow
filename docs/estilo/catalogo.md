@@ -62,6 +62,10 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.pagamento-fatura-*` | bloco de contas do parcelamento de fatura (`PagamentoFaturaSheet.tsx`). `.pagamento-fatura-resumo` é o bloco: `--surface2`, raio 12px, `tabular-nums`; dentro dele cada `.linha-conta` (aninhada, sem existência própria) é rótulo à esquerda e valor à direita. Os modificadores dão a cor do juros no valor — `.pagamento-fatura-juros` âmbar (`--aviso-fg`) quando há juros, `.pagamento-fatura-semjuros` verde (`--pos`) quando não há, `.pagamento-fatura-erro` vermelho (`--neg`) quando as parcelas somam menos que o restante |
 | `.sugestoes` / `.sugestao` | contêiner de pílulas de categoria sugerida (quebra linha, gap 8px) e cada pílula (`SeletorCategoria`-like); `.sugestao` é alvo de toque (44px altura), `.marcada` indica seleção com `--ac-dim` fundo e `--ac` cor |
 | `.conferencia-bancos` / `.conferencia-bancos-*` | conferência de saldo por banco na `TelaHoje.tsx`, no lugar do campo único quando a box (ou a "casa" inteira) tem bancos cadastrados. `.conferencia-bancos` é a classe raiz (coluna, gap 8px); dentro dela, `.linha-banco` (aninhada, sem existência própria) é o nome do banco à esquerda (`span` em `--muted` 14px) e o `CampoValor` à direita; `.total` (aninhada) é a linha "Total informado" com borda superior em `--line`, `tabular-nums` |
+| `.frequentes` | faixa de atalhos no topo da sheet Adicionar (`AdicionarSheet.tsx`) |
+| `.frequentes-chip` | pílula de atalho (categoria + valor) dentro de `.frequentes` — `--surface2`, porque a sheet já é `--surface` |
+| `.frequentes-detalhe` | o valor dentro do chip, em `--muted` e `tabular-nums` |
+| `.frequentes-ponto` | ponto azul que marca atalho com destino de cartão |
 
 ## Componentes compartilhados (em `src/ui/`)
 
