@@ -24,7 +24,9 @@
 //     sintéticas, nem termo da lista privada (roda sempre — ver
 //     scripts/verificar-dados-reais.mjs).
 //   - fragmento vazio: nenhum fragmento pode estar vazio.
-//   - formato de bullet: cada linha deve começar com "- ", sem "**" ou indentação.
+//   - formato de bullet: tópico começa com "- " na coluna 0; detalhe é "  - " (exatamente
+//     2 espaços); qualquer outra indentação sem "- " é continuação do bullet anterior;
+//     nenhuma linha pode conter "**".
 //   - items resultante: após coleta, deve haver pelo menos um item.
 //
 // Fonte única do número de versão: ele é decidido AQUI, na integração, nunca
@@ -178,35 +180,77 @@ function coletarFragmentos(dir) {
       abortar(`fragmento vazio: "${nome}"`);
     }
 
-    // Guard: validar formato de cada linha
+    // Tópicos deste fragmento, cada um com seus próprios detalhes.
+    const topicos = [];
+    let topicoAtual = null;
+
     for (let i = 0; i < linhas.length; i++) {
       const linha = linhas[i];
-      if (linha.trim() === '') continue; // Pula linhas vazias
+      if (linha.trim() === '') continue; // pula linhas vazias
       const numLinha = i + 1; // número da linha no arquivo (1-indexed)
 
-      // Não pode começar com espaço ou tab (check primeiro)
-      if (/^\s/.test(linha)) {
-        abortar(
-          `fragmento "${nome}" linha ${numLinha}: não pode começar com espaço ou tab. Veja changelog.d/README.md.`
-        );
-      }
-
-      // Deve começar com "- " (check segundo)
-      if (!/^- /.test(linha)) {
-        abortar(
-          `fragmento "${nome}" linha ${numLinha}: deve começar com "- ". Veja changelog.d/README.md.`
-        );
-      }
-
-      // Não pode conter "**" (check terceiro)
+      // Negrito nunca é permitido, em nenhum tipo de linha.
       if (linha.includes('**')) {
         abortar(
           `fragmento "${nome}" linha ${numLinha}: não pode conter "**" (negrito). Veja changelog.d/README.md.`
         );
       }
+
+      // Tópico: "- " na coluna 0.
+      const topicoMatch = /^- (.+)$/.exec(linha);
+      if (topicoMatch) {
+        topicoAtual = { texto: topicoMatch[1], detalhes: [] };
+        topicos.push(topicoAtual);
+        continue;
+      }
+
+      // Detalhe: exatamente 2 espaços + "- ".
+      const detalheMatch = /^ {2}- (.+)$/.exec(linha);
+      if (detalheMatch) {
+        if (!topicoAtual) {
+          abortar(
+            `fragmento "${nome}" linha ${numLinha}: detalhe sem tópico — a primeira linha ` +
+            `útil do fragmento precisa ser um tópico, sem indentação. Veja changelog.d/README.md.`
+          );
+        }
+        topicoAtual.detalhes.push(detalheMatch[1]);
+        continue;
+      }
+
+      // Indentação com "- " que não seja exatamente 2 espaços: não existe terceiro nível.
+      if (/^\s*- /.test(linha)) {
+        abortar(
+          `fragmento "${nome}" linha ${numLinha}: detalhe precisa de exatamente 2 espaços de ` +
+          `indentação. Veja changelog.d/README.md.`
+        );
+      }
+
+      // Qualquer outra linha indentada: continuação do bullet mais recente (detalhe, se
+      // houver algum; senão o próprio tópico).
+      if (/^\s/.test(linha)) {
+        if (!topicoAtual) {
+          abortar(
+            `fragmento "${nome}" linha ${numLinha}: linha indentada sem tópico anterior. ` +
+            `Veja changelog.d/README.md.`
+          );
+        }
+        const texto = linha.replace(/^\s+/, '');
+        if (topicoAtual.detalhes.length > 0) {
+          const ultimo = topicoAtual.detalhes.length - 1;
+          topicoAtual.detalhes[ultimo] += ` ${texto}`;
+        } else {
+          topicoAtual.texto += ` ${texto}`;
+        }
+        continue;
+      }
+
+      // Não indentada e não começa com "- ".
+      abortar(
+        `fragmento "${nome}" linha ${numLinha}: deve começar com "- ". Veja changelog.d/README.md.`
+      );
     }
 
-    (itens[tipo] ??= []).push(...linhasUteis);
+    (itens[tipo] ??= []).push(...topicos);
   }
   return { itens, arquivos };
 }
@@ -215,9 +259,16 @@ function coletarFragmentos(dir) {
 function montarSecao(versao, data, itens, eol) {
   const partes = [`## [${versao}] - ${data}`, ''];
   for (const tipo of SECOES) {
-    const linhas = itens[tipo];
-    if (!linhas || linhas.length === 0) continue;
-    partes.push(`### ${TITULOS[tipo]}`, '', ...linhas, '');
+    const topicos = itens[tipo];
+    if (!topicos || topicos.length === 0) continue;
+    partes.push(`### ${TITULOS[tipo]}`, '');
+    for (const topico of topicos) {
+      partes.push(`- ${topico.texto}`);
+      for (const detalhe of topico.detalhes) {
+        partes.push(`  - ${detalhe}`);
+      }
+    }
+    partes.push('');
   }
   return partes.join(eol);
 }
