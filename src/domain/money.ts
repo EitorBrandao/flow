@@ -26,7 +26,7 @@ export function formatarSobraCompacta(centavos: number): string {
   return `${sinal}${reais.toLocaleString('pt-BR')}`;
 }
 
-/** Valor com centavos, sem "R$" — para caber em pílula estreita (ex.: "8,50", "1.870,30"). */
+/** Valor com centavos, sem "R$" — para caber em pílula estreita (ex.: "8,50", "1.234,56"). */
 export function formatarSemSimbolo(centavos: number): string {
   return (centavos / 100).toLocaleString('pt-BR', {
     minimumFractionDigits: 2, maximumFractionDigits: 2,

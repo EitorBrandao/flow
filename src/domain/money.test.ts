@@ -74,7 +74,7 @@ describe('formatarSobraCompacta', () => {
 
 it('formatarSemSimbolo mostra centavos e milhar, sem R$', () => {
   expect(formatarSemSimbolo(850)).toBe('8,50');
-  expect(formatarSemSimbolo(187030)).toBe('1.870,30');
+  expect(formatarSemSimbolo(123456)).toBe('1.234,56');
   expect(formatarSemSimbolo(0)).toBe('0,00');
   expect(formatarSemSimbolo(100)).toBe('1,00'); // não '1'
 });

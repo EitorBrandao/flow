@@ -273,7 +273,7 @@ E em `src/domain/money.test.ts`, acrescente:
 ```ts
 it('formatarSemSimbolo mostra centavos e milhar, sem R$', () => {
   expect(formatarSemSimbolo(850)).toBe('8,50');
-  expect(formatarSemSimbolo(187030)).toBe('1.870,30');
+  expect(formatarSemSimbolo(123456)).toBe('1.234,56');
   expect(formatarSemSimbolo(0)).toBe('0,00');
   expect(formatarSemSimbolo(100)).toBe('1,00'); // não '1'
 });
@@ -294,7 +294,7 @@ Esperado: erro de compilação — `frequentes` e `formatarSemSimbolo` não exis
 Ao fim de `src/domain/money.ts`:
 
 ```ts
-/** Valor com centavos, sem "R$" — para caber em pílula estreita (ex.: "8,50", "1.870,30"). */
+/** Valor com centavos, sem "R$" — para caber em pílula estreita (ex.: "8,50", "1.234,56"). */
 export function formatarSemSimbolo(centavos: number): string {
   return (centavos / 100).toLocaleString('pt-BR', {
     minimumFractionDigits: 2, maximumFractionDigits: 2,
@@ -617,7 +617,7 @@ it('inicial semeia valor e categoria de uma compra nova', async () => {
   );
 
   expect(await screen.findByRole('button', { name: 'mercado' })).toHaveClass('selecionada');
-  expect(screen.getByLabelText('Valor')).toHaveValue('R$ 62,40');
+  expect(screen.getByLabelText('Valor')).toHaveValue(formatarBRL(6240));
   expect(screen.getByLabelText('Parcelas')).toHaveValue('1');
 });
 
@@ -642,7 +642,7 @@ it('editando uma compra, inicial é ignorado', async () => {
 
   // a compra que está sendo editada manda; inicial não pode sobrescrever dado gravado
   expect(await screen.findByRole('button', { name: 'mercado' })).toHaveClass('selecionada');
-  expect(screen.getByLabelText('Valor')).toHaveValue('R$ 100,00');
+  expect(screen.getByLabelText('Valor')).toHaveValue(formatarBRL(10000));
   expect(screen.getByLabelText('Parcelas')).toHaveValue('3');
 });
 ```
@@ -763,7 +763,7 @@ it('chip de cartão abre o formulário preenchido, sem escolher cartão', async 
   // o passo "Compra em qual cartão?" não pode ter acontecido
   expect(screen.queryByRole('heading', { name: 'Compra em qual cartão?' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Farmácia' })).toHaveClass('selecionada');
-  expect(screen.getByLabelText('Valor')).toHaveValue('R$ 62,40');
+  expect(screen.getByLabelText('Valor')).toHaveValue(formatarBRL(6240));
 });
 
 it('chip de box fecha a sheet, vai para Lançar e grava o rascunho', async () => {
@@ -1010,9 +1010,10 @@ Esperado: verde. Se lançar exceção, o markdown saiu do subconjunto aceito —
 
 `changelog.d/adicionado-lancamentos-frequentes.md`:
 
-```markdown
-### Adicionado
+O arquivo é só bullets planos, **sem cabeçalho nenhum** — o tipo vem do prefixo do nome
+do arquivo. Cabeçalho `###` quebra o parser da tela de Versão.
 
+```markdown
 - O botão + agora mostra atalhos para o que você mais lança: cada um já vem com a categoria, o cartão ou a box, e o valor da última vez.
 - O atalho abre o formulário preenchido, para você conferir antes de confirmar — nada é lançado só de tocar.
 - Contam só os lançamentos que você digitou nos últimos 60 dias; recorrência, fatura e assinatura não viram atalho porque já entram sozinhas.
