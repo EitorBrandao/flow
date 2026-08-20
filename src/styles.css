@@ -450,7 +450,7 @@ table.tabela th:first-child, table.tabela td:first-child {
 }
 
 /* ---- Frequentes (AdicionarSheet.tsx) ---- */
-.frequentes { display: flex; flex-wrap: wrap; gap: 8px; }
+.frequentes { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .frequentes-chip {
   display: inline-flex; align-items: center; gap: 7px;
   background: var(--surface2); border: none; color: var(--fg);

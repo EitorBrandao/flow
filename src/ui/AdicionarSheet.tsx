@@ -22,42 +22,44 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
   const [inicialCompra, setInicialCompra] =
     useState<{ valorTotal: number; categoriaCartaoId: string } | null>(null);
 
-  const chips = useMemo(() => {
+  const cartoesAtivos = useMemo(() => {
     if (!dados) return [];
     const ids = boxIdsSelecionadas(dados, boxSel);
-    const cartaoIds = dados.cartoes.filter((c) => c.ativo && ids.includes(c.boxId)).map((c) => c.id);
+    return dados.cartoes.filter((c) => c.ativo && ids.includes(c.boxId));
+  }, [dados, boxSel]);
+
+  const chips = useMemo(() => {
+    if (!dados) return [];
+    const cartaoIds = cartoesAtivos.map((c) => c.id);
     return frequentes(dados, { hoje, boxId: boxIdEfetivo(dados, boxSel), cartaoIds });
-  }, [dados, boxSel, hoje]);
+  }, [dados, boxSel, hoje, cartoesAtivos]);
 
   useEffect(() => {
     if (!aberto) { setPasso('menu'); setCartaoEscolhido(null); setInicialCompra(null); }
   }, [aberto]);
 
   if (!dados) return null;
-  const ids = boxIdsSelecionadas(dados, boxSel);
-  const cartoesAtivos = dados.cartoes.filter((c) => c.ativo && ids.includes(c.boxId));
 
   function nomeCartaoDe(chip: ChipFrequente): string | null {
-    if (chip.destino.tipo !== 'cartao') return null;
-    const dest = chip.destino as Extract<typeof chip.destino, { tipo: 'cartao' }>;
-    return dados!.cartoes.find((c) => c.id === dest.cartaoId)?.nome ?? null;
+    const destino = chip.destino;
+    if (destino.tipo !== 'cartao') return null;
+    return dados!.cartoes.find((c) => c.id === destino.cartaoId)?.nome ?? null;
   }
 
   function tocarChip(chip: ChipFrequente) {
-    if (chip.destino.tipo === 'cartao') {
-      const dest = chip.destino as Extract<typeof chip.destino, { tipo: 'cartao' }>;
-      const cartao = dados!.cartoes.find((c) => c.id === dest.cartaoId);
+    const destino = chip.destino;
+    if (destino.tipo === 'cartao') {
+      const cartao = dados!.cartoes.find((c) => c.id === destino.cartaoId);
+      // Inalcançável: o chip e este handler leem o mesmo snapshot de `dados`, no mesmo
+      // render — o cartão do chip sempre existe aqui. É só proteção de tipos.
       if (!cartao) return;
       setCartaoEscolhido(cartao);
       setInicialCompra({
-        valorTotal: chip.valorCent, categoriaCartaoId: dest.categoriaCartaoId,
+        valorTotal: chip.valorCent, categoriaCartaoId: destino.categoriaCartaoId,
       });
       setPasso('form');
-      return;
-    }
-    if (chip.destino.tipo === 'box') {
-      const dest = chip.destino as Extract<typeof chip.destino, { tipo: 'box' }>;
-      setRascunhoLancar({ categoriaId: dest.categoriaId, valorCent: chip.valorCent });
+    } else {
+      setRascunhoLancar({ categoriaId: destino.categoriaId, valorCent: chip.valorCent });
       onFechar();
       setAba('lancar');
     }
@@ -106,7 +108,9 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
                 })}
               </div>
               {chips.some((c) => c.destino.tipo === 'cartao') && (
-                <p className="sub">● vai para o cartão</p>
+                <p className="sub" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span className="frequentes-ponto" aria-hidden="true" /> vai para o cartão
+                </p>
               )}
             </>
           )}

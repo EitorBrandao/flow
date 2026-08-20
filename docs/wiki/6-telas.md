@@ -32,7 +32,7 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 - Ao salvar, mostra "Lançado ✓" por alguns segundos e limpa o formulário (mantendo a box e o tipo selecionados).
 - Tocar no (+) mostra antes uma faixa de atalhos para o que você mais lança; cada atalho já traz a categoria, o destino (box ou cartão) e o valor da última vez — você confere e confirma.
 - Atalho com ponto azul vai para cartão; sem ponto, é lançamento direto na box.
-- Só contam lançamentos que você digitou nos últimos dois meses; recorrência, fatura e assinatura não viram atalho porque já entram sozinhas.
+- Só conta o que você digitou — lançamentos e compras no cartão — nos últimos dois meses; recorrência, fatura e assinatura não viram atalho porque já entram sozinhas.
 - Sem histórico de lançamentos, a faixa de atalhos não aparece.
 
 **Obrigatórios:** valor, categoria. **Têm padrão:** data (hoje). **Opcionais:** nota, marcar como previsto.
