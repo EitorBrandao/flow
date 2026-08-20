@@ -9,13 +9,19 @@ import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import SeletorCategoria from './SeletorCategoria';
 
-export default function FormCompra({ cartao, compra, onFechar }: {
-  cartao: Cartao; compra?: CompraCartao; onFechar: () => void;
+export default function FormCompra({ cartao, compra, inicial, onFechar }: {
+  cartao: Cartao;
+  compra?: CompraCartao;
+  /** Semente de uma compra NOVA (atalho da sheet Adicionar). `compra` tem precedência. */
+  inicial?: { valorTotal: number; categoriaCartaoId: string };
+  onFechar: () => void;
 }) {
   const { dados, hoje, recarregar } = useApp();
-  const [valor, setValor] = useState(compra?.valorTotal ?? 0);
+  const [valor, setValor] = useState(compra?.valorTotal ?? inicial?.valorTotal ?? 0);
   const [data, setData] = useState(compra?.data ?? hoje);
-  const [categoriaId, setCategoriaId] = useState<string | null>(compra?.categoriaCartaoId ?? null);
+  const [categoriaId, setCategoriaId] = useState<string | null>(
+    compra?.categoriaCartaoId ?? inicial?.categoriaCartaoId ?? null,
+  );
   const [parcelas, setParcelas] = useState(compra ? String(compra.parcelas) : '1');
   const [parcelasPagas, setParcelasPagas] = useState('');
   const [descricao, setDescricao] = useState(compra?.descricao ?? '');
