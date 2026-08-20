@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Cartao } from '../domain/types';
-import { boxIdsSelecionadas, useApp } from '../state/store';
+import { frequentes, type ChipFrequente } from '../domain/aggregations';
+import { formatarSemSimbolo } from '../domain/money';
+import { boxIdEfetivo, boxIdsSelecionadas, useApp } from '../state/store';
 import FormCompra from './FormCompra';
 import Sheet from './Sheet';
 
@@ -14,17 +16,52 @@ const ROTULOS: Record<Passo, string> = {
 };
 
 export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; onFechar: () => void }) {
-  const { dados, boxSel, setAba } = useApp();
+  const { dados, boxSel, hoje, setAba, setRascunhoLancar } = useApp();
   const [passo, setPasso] = useState<Passo>('menu');
   const [cartaoEscolhido, setCartaoEscolhido] = useState<Cartao | null>(null);
+  const [inicialCompra, setInicialCompra] =
+    useState<{ valorTotal: number; categoriaCartaoId: string } | null>(null);
+
+  const chips = useMemo(() => {
+    if (!dados) return [];
+    const ids = boxIdsSelecionadas(dados, boxSel);
+    const cartaoIds = dados.cartoes.filter((c) => c.ativo && ids.includes(c.boxId)).map((c) => c.id);
+    return frequentes(dados, { hoje, boxId: boxIdEfetivo(dados, boxSel), cartaoIds });
+  }, [dados, boxSel, hoje]);
 
   useEffect(() => {
-    if (!aberto) { setPasso('menu'); setCartaoEscolhido(null); }
+    if (!aberto) { setPasso('menu'); setCartaoEscolhido(null); setInicialCompra(null); }
   }, [aberto]);
 
   if (!dados) return null;
   const ids = boxIdsSelecionadas(dados, boxSel);
   const cartoesAtivos = dados.cartoes.filter((c) => c.ativo && ids.includes(c.boxId));
+
+  function nomeCartaoDe(chip: ChipFrequente): string | null {
+    if (chip.destino.tipo !== 'cartao') return null;
+    const dest = chip.destino as Extract<typeof chip.destino, { tipo: 'cartao' }>;
+    return dados!.cartoes.find((c) => c.id === dest.cartaoId)?.nome ?? null;
+  }
+
+  function tocarChip(chip: ChipFrequente) {
+    if (chip.destino.tipo === 'cartao') {
+      const dest = chip.destino as Extract<typeof chip.destino, { tipo: 'cartao' }>;
+      const cartao = dados!.cartoes.find((c) => c.id === dest.cartaoId);
+      if (!cartao) return;
+      setCartaoEscolhido(cartao);
+      setInicialCompra({
+        valorTotal: chip.valorCent, categoriaCartaoId: dest.categoriaCartaoId,
+      });
+      setPasso('form');
+      return;
+    }
+    if (chip.destino.tipo === 'box') {
+      const dest = chip.destino as Extract<typeof chip.destino, { tipo: 'box' }>;
+      setRascunhoLancar({ categoriaId: dest.categoriaId, valorCent: chip.valorCent });
+      onFechar();
+      setAba('lancar');
+    }
+  }
 
   function irParaLancamento() {
     onFechar();
@@ -47,6 +84,32 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
       {passo === 'menu' && (
         <>
           <h2 style={{ marginTop: 0 }}>Adicionar</h2>
+          {chips.length > 0 && (
+            <>
+              <p className="rotulo-grupo">Frequentes</p>
+              <div className="frequentes">
+                {chips.map((chip) => {
+                  const nomeCartao = nomeCartaoDe(chip);
+                  const valor = formatarSemSimbolo(chip.valorCent);
+                  return (
+                    <button
+                      key={chip.chave}
+                      className="frequentes-chip"
+                      aria-label={`${chip.rotulo}, ${nomeCartao ? `no ${nomeCartao}` : 'nesta box'}, ${valor}`}
+                      onClick={() => tocarChip(chip)}
+                    >
+                      {nomeCartao && <span className="frequentes-ponto" aria-hidden="true" />}
+                      {chip.rotulo}
+                      <span className="frequentes-detalhe">{valor}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {chips.some((c) => c.destino.tipo === 'cartao') && (
+                <p className="sub">● vai para o cartão</p>
+              )}
+            </>
+          )}
           <div className="lista">
             <button className="item" onClick={irParaLancamento}>
               <div className="cresce">
@@ -83,7 +146,11 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
         </>
       )}
       {passo === 'form' && cartaoEscolhido && (
-        <FormCompra cartao={cartaoEscolhido} onFechar={onFechar} />
+        <FormCompra
+          cartao={cartaoEscolhido}
+          {...(inicialCompra ? { inicial: inicialCompra } : {})}
+          onFechar={onFechar}
+        />
       )}
     </Sheet>
   );

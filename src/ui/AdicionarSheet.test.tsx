@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
+import { formatarBRL } from '../domain/money';
 import { useApp } from '../state/store';
 import AdicionarSheet from './AdicionarSheet';
 
@@ -74,4 +75,71 @@ it('2+ cartões ativos: "Compra no cartão" mostra lista de escolha antes do for
   expect(await screen.findByRole('heading', { name: 'Compra em qual cartão?' })).toBeInTheDocument();
   await userEvent.click(screen.getByText('Inter'));
   expect(await screen.findByRole('heading', { name: 'Nova compra' })).toBeInTheDocument();
+});
+
+async function montarComHistorico() {
+  const box = await montarBox();
+  const cartao = await repo.salvarCartao({
+    boxId: box.id, nome: 'Cartão A', diaFechamento: 20, diaVencimento: 28,
+  }, '2027-12-31');
+  const catCartao = await repo.salvarCategoriaCartao({
+    cartaoId: cartao.id, nome: 'Farmácia', ordem: 0,
+  });
+  const catBox = await repo.salvarCategoria({
+    boxId: box.id, nome: 'Café', tipo: 'gasto', ordem: 0,
+  });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: catBox.id, data: '2026-08-10', valor: 850, status: 'efetivo',
+  });
+  await repo.salvarCompraCartao({
+    cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-12',
+    valorTotal: 6240, parcelas: 1,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-08-20' });
+  return { box, cartao, catBox, catCartao };
+}
+
+it('sem histórico, a faixa de frequentes não aparece', async () => {
+  const box = await montarBox();
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-08-20' });
+  render(<AdicionarSheet aberto onFechar={() => {}} />);
+
+  expect(await screen.findByText('Lançamento')).toBeInTheDocument();
+  expect(screen.queryByText('Frequentes')).not.toBeInTheDocument();
+});
+
+it('chip de cartão abre o formulário preenchido, sem escolher cartão', async () => {
+  await montarComHistorico();
+  render(<AdicionarSheet aberto onFechar={() => {}} />);
+
+  await userEvent.click(await screen.findByRole('button', { name: /Farmácia/ }));
+
+  expect(await screen.findByRole('heading', { name: 'Nova compra' })).toBeInTheDocument();
+  // o passo "Compra em qual cartão?" não pode ter acontecido
+  expect(screen.queryByRole('heading', { name: 'Compra em qual cartão?' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Farmácia' })).toHaveClass('selecionada');
+  expect(await screen.findByLabelText('Valor')).toHaveValue(formatarBRL(6240));
+});
+
+it('chip de box fecha a sheet, vai para Lançar e grava o rascunho', async () => {
+  const { catBox } = await montarComHistorico();
+  const onFechar = vi.fn();
+  useApp.setState({ aba: 'hoje' });
+  render(<AdicionarSheet aberto onFechar={onFechar} />);
+
+  await userEvent.click(await screen.findByRole('button', { name: /Café/ }));
+
+  expect(onFechar).toHaveBeenCalledOnce();
+  expect(useApp.getState().aba).toBe('lancar');
+  expect(useApp.getState().rascunhoLancar).toEqual({ categoriaId: catBox.id, valorCent: 850 });
+});
+
+it('o chip diz de que cartão é, para quem não enxerga o ponto azul', async () => {
+  await montarComHistorico();
+  render(<AdicionarSheet aberto onFechar={() => {}} />);
+
+  expect(await screen.findByRole('button', { name: 'Farmácia, no Cartão A, 62,40' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Café, nesta box, 8,50' })).toBeInTheDocument();
 });
