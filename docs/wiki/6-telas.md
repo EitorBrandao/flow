@@ -30,6 +30,10 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 - Data padrão hoje; nota opcional; caixa "marcar como previsto".
 - Data futura vira previsto automaticamente mesmo sem marcar a caixa.
 - Ao salvar, mostra "Lançado ✓" por alguns segundos e limpa o formulário (mantendo a box e o tipo selecionados).
+- No topo da sheet aparece uma faixa com atalhos para o que você mais lança; cada atalho vem com a categoria, o destino (box ou cartão) e o valor da última vez — você confere e confirma.
+- Atalho com ponto azul vai para cartão; sem ponto, é lançamento direto na box.
+- Só contam lançamentos que você digitou nos últimos dois meses; recorrência, fatura e assinatura não viram atalho porque já entram sozinhas.
+- Sem histórico de lançamentos, a faixa de atalhos não aparece.
 
 **Obrigatórios:** valor, categoria. **Têm padrão:** data (hoje). **Opcionais:** nota, marcar como previsto.
 
