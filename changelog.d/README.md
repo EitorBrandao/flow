@@ -19,8 +19,8 @@ Nome do arquivo: `<tipo>-<slug>.md`, onde `<tipo>` é um de:
 Exemplos: `adicionado-exportar-backup.md`, `alterado-cores-valores.md`.
 
 O conteúdo tem dois níveis: **tópico** e, opcionalmente, **detalhe**. O parser do
-app (`src/ui/ajustes/changelog.ts`) só entende exatamente isto — markdown rico
-(negrito, terceiro nível) passa no release e quebra a tela de Versão depois:
+app (`src/ui/ajustes/changelog.ts`) só entende exatamente isto — `npm run release`
+rejeita negrito ou terceiro nível na hora, com erro apontando o arquivo e a linha:
 
 - **Tópico**: toda linha começa com `- `, sem indentação.
 - **Detalhe**: uma linha do tópico, indentada com **exatamente 2 espaços** antes
