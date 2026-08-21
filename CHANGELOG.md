@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.23.0] - 2026-08-21
+
+### Alterado
+
+- O changelog agora aceita tópico e detalhe: um item pode vir com uma lista de detalhes indentados abaixo dele, em vez de só bullets soltos do mesmo nível.
+  - Vale para os fragmentos em changelog.d/, para o CHANGELOG.md e para a tela Ajustes → Versão.
+  - Um fragmento sem nenhum detalhe continua funcionando exatamente como antes.
+
 ## [0.22.0] - 2026-08-20
 
 ### Adicionado

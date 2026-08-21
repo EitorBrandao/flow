@@ -1,3 +1,0 @@
-- O changelog agora aceita tópico e detalhe: um item pode vir com uma lista de detalhes indentados abaixo dele, em vez de só bullets soltos do mesmo nível.
-  - Vale para os fragmentos em changelog.d/, para o CHANGELOG.md e para a tela Ajustes → Versão.
-  - Um fragmento sem nenhum detalhe continua funcionando exatamente como antes.
