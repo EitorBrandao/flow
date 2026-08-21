@@ -7,8 +7,12 @@ com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado
 
 ### Adicionado
 
-- O botão + agora mostra atalhos para o que você mais lança: cada atalho já vem com a categoria, o cartão ou a box e o valor da última vez, e abre o formulário preenchido para você conferir antes de confirmar — nada é lançado só de tocar.
-- Os atalhos saem do que você mesmo digitou nos últimos dois meses, em lançamentos e em compras no cartão; recorrência, fatura e assinatura não viram atalho porque já entram sozinhas, e quem ainda não tem histórico continua vendo a tela como ela era.
+- O botão + agora mostra atalhos para o que você mais lança.
+  - Cada atalho já vem com a categoria, o cartão ou a box e o valor da última vez.
+  - Abre o formulário preenchido para você conferir antes de confirmar — nada é lançado só de tocar.
+- Os atalhos saem do que você mesmo digitou nos últimos dois meses, em lançamentos e em compras no cartão.
+  - Recorrência, fatura e assinatura não viram atalho porque já entram sozinhas.
+  - Quem ainda não tem histórico continua vendo a tela como ela era.
 
 ## [0.21.0] - 2026-08-10
 
@@ -16,14 +20,17 @@ com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado
 
 - Hoje agora tem três abas: Visão, Conferir e Pendentes, em vez de tudo empilhado numa tela só.
 - Fluxo agora tem duas abas: Lista (padrão, com busca e filtros atrás do ícone de lupa) e Gráfico, que ficou maior.
-- Cartão agora tem três abas dentro do card da fatura: Resumo, Lançamentos e Conferência. O cabeçalho da fatura continua sempre visível.
+- Cartão agora tem três abas dentro do card da fatura: Resumo, Lançamentos e Conferência.
+  - O cabeçalho da fatura continua sempre visível.
 - A aba Conferência do cartão mostra ✔️ ou ⚠️ no próprio rótulo assim que existe uma conferência salva, sem precisar entrar na aba pra saber se bate.
 
 ## [0.20.2] - 2026-08-09
 
 ### Alterado
 
-- Campos de valor: clicar num campo agora seleciona o valor inteiro em vez de zerá-lo. O primeiro número digitado substitui o que estava lá, e encostar no campo sem digitar não altera mais nada. Vale para todas as telas com campo de dinheiro.
+- Campos de valor: clicar num campo agora seleciona o valor inteiro em vez de zerá-lo.
+  - O primeiro número digitado substitui o que estava lá, e encostar no campo sem digitar não altera mais nada.
+  - Vale para todas as telas com campo de dinheiro.
 - Ajustes, Bancos e Boxes: o rótulo do saldo voltou para cima do campo e o botão de sinal ficou ao lado do valor, em vez de flutuar sozinho à direita.
 - Ajustes, Bancos: Salvar e Cancelar saíram do topo do formulário para o fim, onde não parecem salvar só o nome.
 
@@ -41,7 +48,8 @@ com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado
 
 - Ajustes ganhou a tela Bancos: dá para cadastrar as contas de cada box e informar quanto tem em cada uma.
 - Um cartão pode pertencer a um banco, para você ver quais cartões saem de qual conta.
-- Tela Hoje: quando a box tem bancos, a conferência de saldo passa a ter uma linha por banco, com o total informado e a diferença para o que o Flow projeta. Cada banco tem o botão de sinal, então conta no cheque especial pode ser informada como negativa.
+- Tela Hoje: quando a box tem bancos, a conferência de saldo passa a ter uma linha por banco, com o total informado e a diferença para o que o Flow projeta.
+  - Cada banco tem o botão de sinal, então conta no cheque especial pode ser informada como negativa.
 - Enquanto nenhum banco tiver saldo informado, a tela não mostra diferença nenhuma — em vez de acusar um descasamento que só existe porque você ainda não digitou.
 - Quem não cadastrar nenhum banco não vê diferença: a conferência continua exatamente como era, e excluir todos os bancos devolve o valor que já estava lá.
 
