@@ -66,6 +66,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.frequentes-chip` | pílula de atalho (categoria + valor) dentro de `.frequentes` — `--surface2`, porque a sheet já é `--surface` |
 | `.frequentes-detalhe` | o valor dentro do chip, em `--muted` e `tabular-nums` |
 | `.frequentes-ponto` | ponto azul que marca atalho com destino de cartão |
+| `.versao-detalhes` | lista de detalhes recuada sob um tópico do changelog, na tela Versão (`Versao.tsx`) — `--muted`, 13px |
 
 ## Componentes compartilhados (em `src/ui/`)
 

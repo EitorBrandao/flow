@@ -463,3 +463,12 @@ table.tabela th:first-child, table.tabela td:first-child {
 .frequentes-ponto {
   width: 6px; height: 6px; border-radius: 999px; background: var(--ac); flex: 0 0 auto;
 }
+
+/* ---- Detalhe de tópico (Versao.tsx) ---- */
+.versao-detalhes {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.versao-detalhes li { margin-bottom: 2px; }
