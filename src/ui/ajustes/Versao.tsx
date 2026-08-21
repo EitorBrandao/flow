@@ -26,13 +26,13 @@ export default function Versao() {
             <div key={s.titulo}>
               <p className="rotulo-grupo">{s.titulo}</p>
               <ul>
-                {s.itens.map((item) => (
-                  <li key={item.texto}>
+                {s.itens.map((item, i) => (
+                  <li key={i}>
                     {item.texto}
                     {item.detalhes.length > 0 && (
                       <ul className="versao-detalhes">
-                        {item.detalhes.map((detalhe) => (
-                          <li key={detalhe}>{detalhe}</li>
+                        {item.detalhes.map((detalhe, j) => (
+                          <li key={j}>{detalhe}</li>
                         ))}
                       </ul>
                     )}

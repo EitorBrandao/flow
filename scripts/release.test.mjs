@@ -363,6 +363,30 @@ describe('release.mjs', () => {
       }
     });
 
+    it('gruda continuação de linha no último detalhe, não no texto do tópico', () => {
+      const tmp = criarFixture();
+      try {
+        fs.writeFileSync(
+          path.join(tmp, 'package.json'),
+          JSON.stringify({ version: '1.0.0' }, null, 2)
+        );
+        fs.writeFileSync(path.join(tmp, 'CHANGELOG.md'), '# Changelog\n\n');
+        fs.mkdirSync(path.join(tmp, 'changelog.d'));
+        fs.writeFileSync(
+          path.join(tmp, 'changelog.d', 'adicionado-continuacao-detalhe.md'),
+          '- Tópico.\n  - Detalhe que quebrou\n    numa segunda linha.\n'
+        );
+
+        const result = executarRelease(tmp, 'patch');
+
+        expect(result.exitCode).toBe(0);
+        const changelogContent = fs.readFileSync(path.join(tmp, 'CHANGELOG.md'), 'utf8');
+        expect(changelogContent).toContain('  - Detalhe que quebrou numa segunda linha.');
+      } finally {
+        fs.rmSync(tmp, { recursive: true });
+      }
+    });
+
     it('deve abortar se detalhe não tem exatamente 2 espaços de indentação', () => {
       const tmp = criarFixture();
       try {

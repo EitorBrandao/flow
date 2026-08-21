@@ -92,7 +92,7 @@ Vira lista markdown aninhada de verdade — o preview do GitHub já sabe renderi
 
 - Botão de exportar backup na tela de Ajustes.
   - Fica no rodapé, ao lado de "Importar".
-  - Funciona mesmo sem conexão com a internet.
+  - Funciona mesmo sem conexão de rede.
 - Aviso quando o backup falha silenciosamente.
 ```
 
