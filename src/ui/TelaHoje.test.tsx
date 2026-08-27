@@ -647,6 +647,22 @@ it('previsto com valor negativo continua negativo depois de corrigido', async ()
   expect(salvo?.valor).toBe(-5000);
 });
 
+it('confirma pendente de valor negativo sem mexer em nada, preservando valor e sinal', async () => {
+  const { lanc } = await cenarioPendenteComum(-4000);
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await screen.findByLabelText('Valor pago'); // aguarda abertura dos campos
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar internet' }));
+
+  await screen.findByText('Nada a confirmar — tudo em dia.');
+  const salvo = await db.lancamentos.get(lanc.id);
+  expect(salvo?.status).toBe('efetivo');
+  expect(salvo?.valor).toBe(-4000);
+  expect(salvo?.data).toBe('2026-08-27');
+});
+
 it('a fatura de cartão não ganha o gesto e mantém "Paguei outro valor"', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-08-01', criadoEm: agora, alteradoEm: agora };
