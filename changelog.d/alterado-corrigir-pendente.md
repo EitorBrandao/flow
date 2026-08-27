@@ -1,4 +1,0 @@
-- Na fila de Pendentes, tocar no valor de um previsto abre a correção ali mesmo.
-  - Dá para ajustar o valor e a data antes de confirmar, num gesto só.
-  - O ajuste vale só para aquela ocorrência: a recorrência que gerou o previsto não muda.
-  - Fatura de cartão continua com "Paguei outro valor", que abre a folha de parcelamento.

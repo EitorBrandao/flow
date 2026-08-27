@@ -3,6 +3,15 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.25.0] - 2026-08-27
+
+### Alterado
+
+- Na fila de Pendentes, tocar no valor de um previsto abre a correção ali mesmo.
+  - Dá para ajustar o valor e a data antes de confirmar, num gesto só.
+  - O ajuste vale só para aquela ocorrência: a recorrência que gerou o previsto não muda.
+  - Fatura de cartão continua com "Paguei outro valor", que abre a folha de parcelamento.
+
 ## [0.24.0] - 2026-08-27
 
 ### Alterado
