@@ -41,7 +41,7 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 
 A linha do tempo do dinheiro. Duas abas: Lista (padrão) e Gráfico.
 
-- **Lista** mostra por padrão os últimos 14 dias para frente; o ícone de lupa abre busca e filtros (texto, data única ou período; botão "+30 dias atrás" estende a janela). Cada dia mostra seu saldo projetado no cabeçalho.
+- **Lista** mostra por padrão os últimos 14 dias para frente; o ícone de lupa abre busca e filtros (texto, data única ou período; botão "+30 dias atrás" estende a janela). A busca por texto também alcança as compras dentro da fatura de um cartão: bater numa delas (descrição, categoria do cartão ou valor) mostra o lançamento da fatura na lista. Cada dia mostra seu saldo projetado no cabeçalho.
 - **Gráfico** mostra o histórico e a projeção completa até o horizonte configurado, numa área maior que o mini-gráfico de Hoje; linha extra tracejada quando há cenário ligado; toque no card abre em tela cheia.
 - Tocar num lançamento, na Lista, abre o editor (valor, data, categoria, nota); previstos podem ser confirmados ali mesmo; previstos vindos de recorrência avisam para editar a regra em Ajustes se for para mudar valor/data permanentemente.
 

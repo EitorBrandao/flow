@@ -1,0 +1,1 @@
+- Busca do Fluxo agora encontra a fatura do cartão pela descrição, categoria ou valor de uma compra dentro dela.
