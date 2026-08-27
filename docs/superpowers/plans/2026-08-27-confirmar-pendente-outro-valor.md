@@ -144,8 +144,8 @@ que vale é o que estiver no arquivo.
         </div>
       </div>
       <div class="linha">
-        <div class="campo"><label>Valor pago</label><input value="R$ 137,00"></div>
         <div class="campo"><label>Data do pagamento</label><input value="27/08/2026"></div>
+        <div class="campo"><label>Valor pago</label><input value="R$ 137,00"></div>
       </div>
       <div class="acoes">
         <button class="botao botao-primario">✓ Confirmar</button>
@@ -469,21 +469,26 @@ correção:
                 {corrigindo === l.id && (
                   <div className="linha">
                     <div className="campo cresce">
+                      <label htmlFor={`corrigir-data-${l.id}`}>Data do pagamento</label>
+                      <CampoData
+                        id={`corrigir-data-${l.id}`} value={dataCorrigida} onChange={setDataCorrigida}
+                      />
+                    </div>
+                    <div className="campo cresce">
                       <label htmlFor={`corrigir-valor-${l.id}`}>Valor pago</label>
                       <CampoValor
                         id={`corrigir-valor-${l.id}`} valorCentavos={valorCorrigido}
                         onChange={setValorCorrigido} autoFocus
                       />
                     </div>
-                    <div className="campo">
-                      <label htmlFor={`corrigir-data-${l.id}`}>Data do pagamento</label>
-                      <CampoData
-                        id={`corrigir-data-${l.id}`} value={dataCorrigida} onChange={setDataCorrigida}
-                      />
-                    </div>
                   </div>
                 )}
 ```
+
+**A ordem dos dois campos é decisão aprovada, não detalhe:** a data vem primeiro e o valor
+fica à direita, no mesmo lugar da pílula de valor no estado de repouso. Trocar a ordem faz o
+valor pular de lado ao abrir a correção. `cresce` nos dois deixa as metades iguais (`.item
+.cresce { flex: 1 }`, `src/styles.css:80`).
 
 **3.5.** Troque o bloco `div.acoes` inteiro. O de hoje é:
 
