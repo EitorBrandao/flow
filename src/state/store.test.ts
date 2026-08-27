@@ -3,7 +3,7 @@ import { limparDb } from '../test-setup';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
-import { boxIdEfetivo, boxIdsSelecionadas, estadoPrimeiroUso, useApp } from './store';
+import { boxIdEfetivo, boxIdsSelecionadas, boxSelInicial, estadoPrimeiroUso, useApp } from './store';
 
 beforeEach(async () => {
   await limparDb();
@@ -116,6 +116,38 @@ describe('boxIdEfetivo', () => {
   it('retorna null se a box "casa" não existir (ex.: foi renomeada)', () => {
     const dadosSemCasa = { boxes: [{ id: 'x', nome: 'eitor' } as never] } as never;
     expect(boxIdEfetivo(dadosSemCasa, 'casa')).toBeNull();
+  });
+});
+
+describe('boxSelInicial', () => {
+  it('retorna o boxPadraoId quando ele aponta para uma box com saldo próprio', () => {
+    const dados = {
+      config: { boxPadraoId: 'b1' },
+      boxes: [
+        { id: 'b1', saldoInicial: 1000 } as never,
+        { id: 'b2', saldoInicial: 2000 } as never,
+      ],
+    } as never;
+    expect(boxSelInicial(dados)).toBe('b1');
+  });
+
+  it('ignora boxPadraoId órfão (ex.: aponta pra "casa", sem saldo próprio) e cai na primeira box com saldo próprio', () => {
+    const dados = {
+      config: { boxPadraoId: 'casa-id' },
+      boxes: [
+        { id: 'casa-id', saldoInicial: null } as never,
+        { id: 'b1', saldoInicial: 1000 } as never,
+      ],
+    } as never;
+    expect(boxSelInicial(dados)).toBe('b1');
+  });
+
+  it('cai no sentinela "casa" quando nenhuma box tem saldo próprio', () => {
+    const dados = {
+      config: { boxPadraoId: null },
+      boxes: [{ id: 'casa-id', saldoInicial: null } as never],
+    } as never;
+    expect(boxSelInicial(dados)).toBe('casa');
   });
 });
 

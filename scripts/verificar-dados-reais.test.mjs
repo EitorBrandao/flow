@@ -115,6 +115,25 @@ describe('verificar-dados-reais', () => {
     expect(saida).toContain('Algo.tsx:1');
   });
 
+  // O README da pasta é escrito à mão e continua sob o padrão genérico: é isso que separa
+  // "arquivo gerado pelo roteiro sintético" de "qualquer markdown em docs/dossie/". Sem a
+  // segunda asserção, alargar a regex para a pasta inteira não quebraria nada.
+  //
+  // Só cobre a metade do padrão genérico. A outra metade — os termos da lista privada
+  // CONTINUAM valendo nos arquivos gerados — não é testável aqui: `termosPrivados()` lê de
+  // `os.homedir()`, sem injeção.
+  it('padrão genérico não vale no dossiê gerado, mas vale no README da mesma pasta', () => {
+    versionar({
+      'docs/dossie/02-motor.md': '- Fim de mês 2026-01: R$ 7.777,77\n',
+      'docs/dossie/README.md': 'Exemplo de saldo: R$ 8.888,88\n',
+    });
+
+    const { saida } = rodar();
+
+    expect(saida).not.toContain('02-motor.md');
+    expect(saida).toContain('docs/dossie/README.md:1');
+  });
+
   it('valor com milhar e centavos conta mesmo sem R$', () => {
     versionar({ 'docs/nota.md': 'fechou em 9.999,99 no mês\n' });
 

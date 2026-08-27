@@ -83,6 +83,12 @@ sintaxe fora dele **lança exceção** em vez de ser ignorada. Valide antes de s
 npx vitest run src/ui/ajustes/capitulos.test.ts
 ```
 
+## Passo 3.6 — Revisão do dossiê
+
+Rode `npm run dossie`. Se `docs/dossie/` mudou, commite a regeneração e invoque a skill
+`revisar-dossie` no recorte por branch. Entregue a leitura ao usuário. Não é guarda que
+aborta — é leitura que ele recebe.
+
 ## Passo 4 — Fragmento de changelog e revisão
 
 Só se a mudança for visível (ver acima). Arquivo novo em `changelog.d/`, nome
