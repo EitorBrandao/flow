@@ -44,7 +44,7 @@ framer-motion (`AnimatePresence`, já no arquivo).
 
 | Arquivo | Papel | Ação |
 |---|---|---|
-| `docs/mockups/2026-08-27-corrigir-pendente.html` | mockup dos dois estados do item, para aprovação | criar |
+| `<scratchpad>/corrigir-pendente.html` | mockup dos dois estados do item, para aprovação — **fora do repo** | criar |
 | `src/db/repo.ts` | `confirmarPendente` ganha `dataReal` | modificar (linha ~94) |
 | `src/db/repo.test.ts` | teste da data corrigida | modificar |
 | `src/styles.css` | modificador `.editavel` do valor | modificar (perto da linha 125) |
@@ -62,7 +62,8 @@ framer-motion (`AnimatePresence`, já no arquivo).
 usuário. Esta tarefa termina esperando resposta — não siga para a Tarefa 2 sem ela.
 
 **Arquivos:**
-- Criar: `docs/mockups/2026-08-27-corrigir-pendente.html`
+- Criar: `corrigir-pendente.html` **no diretório de scratchpad da sessão**, nunca dentro do
+  repositório. Mockup é material de aprovação, não entregável — o repo nunca versionou nenhum.
 
 - [ ] **Passo 1: Escrever o mockup**
 
@@ -163,12 +164,8 @@ Entregue o arquivo ao usuário (`SendUserFile`, com `display: "render"`) e pergu
 **Pare aqui.** Só continue com um "sim" explícito. Se ele pedir mudança, ajuste o mockup e
 pergunte de novo.
 
-- [ ] **Passo 3: Commitar o mockup aprovado**
-
-```bash
-git add docs/mockups/2026-08-27-corrigir-pendente.html
-git commit -m "docs: mockup do gesto de corrigir pendente"
-```
+Nada a commitar nesta tarefa: o mockup fica no scratchpad. Com o "sim" na mão, siga para a
+Tarefa 2.
 
 ---
 
