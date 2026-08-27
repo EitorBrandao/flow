@@ -898,3 +898,44 @@ describe('bancos', () => {
     expect((await db.cartoes.get(cartao.id))?.bancoId).toBe(outro.id);
   });
 });
+
+it('confirma um pendente com valor e data corrigidos', async () => {
+  const { box, gasto } = await boxECategoria();
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: gasto.id, data: '2026-08-27', valor: 12000, status: 'previsto',
+  });
+
+  await repo.confirmarPendente(lanc.id, 13700, '2026-08-28');
+
+  const salvo = await db.lancamentos.get(lanc.id);
+  expect(salvo?.status).toBe('efetivo');
+  expect(salvo?.valor).toBe(13700);
+  expect(salvo?.data).toBe('2026-08-28');
+});
+
+it('confirma um pendente sem data corrigida e mantém a data do previsto', async () => {
+  const { box, gasto } = await boxECategoria();
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: gasto.id, data: '2026-08-27', valor: 12000, status: 'previsto',
+  });
+
+  await repo.confirmarPendente(lanc.id, 13700);
+
+  const salvo = await db.lancamentos.get(lanc.id);
+  expect(salvo?.valor).toBe(13700);
+  expect(salvo?.data).toBe('2026-08-27');
+});
+
+it('confirma um pendente só com data corrigida e mantém o valor do previsto', async () => {
+  const { box, gasto } = await boxECategoria();
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: gasto.id, data: '2026-08-27', valor: 12000, status: 'previsto',
+  });
+
+  await repo.confirmarPendente(lanc.id, undefined, '2026-08-28');
+
+  const salvo = await db.lancamentos.get(lanc.id);
+  expect(salvo?.status).toBe('efetivo');
+  expect(salvo?.valor).toBe(12000);
+  expect(salvo?.data).toBe('2026-08-28');
+});

@@ -539,3 +539,146 @@ describe('fatura pendente na fila', () => {
     } finally { vi.useRealTimers(); }
   });
 });
+
+/** Monta uma box com um previsto comum de gasto na fila de Pendentes. */
+async function cenarioPendenteComum(valor = 12000) {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-08-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'luz', tipo: 'gasto', ordem: 0 });
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: cat.id, data: '2026-08-27', valor, status: 'previsto',
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-08-27' });
+  return { box, cat, lanc };
+}
+
+it('tocar no valor de um previsto comum abre os campos de correção', async () => {
+  await cenarioPendenteComum();
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  expect(screen.queryByLabelText('Valor pago')).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
+
+  expect(await screen.findByLabelText('Valor pago')).toBeInTheDocument();
+  expect(screen.getByLabelText('Data do pagamento')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Descartar' })).not.toBeInTheDocument();
+});
+
+it('cancelar a correção fecha os campos sem gravar nada', async () => {
+  const { lanc } = await cenarioPendenteComum();
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Cancelar' }));
+
+  await waitFor(() => expect(screen.queryByLabelText('Valor pago')).not.toBeInTheDocument());
+  const salvo = await db.lancamentos.get(lanc.id);
+  expect(salvo?.status).toBe('previsto');
+  expect(salvo?.valor).toBe(12000);
+});
+
+it('abrir a correção de um item fecha a do outro', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-08-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const net = await repo.salvarCategoria({ boxId: box.id, nome: 'luz', tipo: 'gasto', ordem: 0 });
+  const agua = await repo.salvarCategoria({ boxId: box.id, nome: 'agua', tipo: 'gasto', ordem: 1 });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: net.id, data: '2026-08-27', valor: 12000, status: 'previsto' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: agua.id, data: '2026-08-27', valor: 8000, status: 'previsto' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-08-27' });
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
+  await screen.findByLabelText('Valor pago');
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de agua' }));
+
+  await waitFor(() => expect(screen.getAllByLabelText('Valor pago')).toHaveLength(1));
+});
+
+it('confirma o pendente com o valor corrigido e o tira da fila', async () => {
+  const { lanc } = await cenarioPendenteComum();
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
+  await userEvent.type(await screen.findByLabelText('Valor pago'), '13700');
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
+
+  await screen.findByText('Nada a confirmar — tudo em dia.');
+  const salvo = await db.lancamentos.get(lanc.id);
+  expect(salvo?.status).toBe('efetivo');
+  expect(salvo?.valor).toBe(13700);
+});
+
+it('confirma o pendente com a data corrigida', async () => {
+  const { lanc } = await cenarioPendenteComum();
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
+  const data = await screen.findByLabelText('Data do pagamento');
+  await userEvent.clear(data);
+  await userEvent.type(data, '2026-08-25');
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
+
+  await screen.findByText('Nada a confirmar — tudo em dia.');
+  const salvo = await db.lancamentos.get(lanc.id);
+  expect(salvo?.data).toBe('2026-08-25');
+});
+
+it('previsto com valor negativo continua negativo depois de corrigido', async () => {
+  const { lanc } = await cenarioPendenteComum(-4000);
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
+  await userEvent.type(await screen.findByLabelText('Valor pago'), '5000');
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
+
+  await screen.findByText('Nada a confirmar — tudo em dia.');
+  const salvo = await db.lancamentos.get(lanc.id);
+  expect(salvo?.valor).toBe(-5000);
+});
+
+it('confirma pendente de valor negativo sem mexer em nada, preservando valor e sinal', async () => {
+  const { lanc } = await cenarioPendenteComum(-4000);
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
+  await screen.findByLabelText('Valor pago'); // aguarda abertura dos campos
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
+
+  await screen.findByText('Nada a confirmar — tudo em dia.');
+  const salvo = await db.lancamentos.get(lanc.id);
+  expect(salvo?.status).toBe('efetivo');
+  expect(salvo?.valor).toBe(-4000);
+  expect(salvo?.data).toBe('2026-08-27');
+});
+
+it('a fatura de cartão não ganha o gesto e mantém "Paguei outro valor"', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-08-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'fatura cartao', tipo: 'gasto', ordem: 0 });
+  await db.lancamentos.add({
+    id: novoId(), boxId: box.id, categoriaId: cat.id, data: '2026-08-27', valor: 50000,
+    status: 'previsto', origem: 'cartao', cartaoId: novoId(), faturaMes: '2026-08',
+    criadoEm: agora, alteradoEm: agora,
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-08-27' });
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+
+  expect(screen.queryByRole('button', { name: 'Corrigir valor de fatura cartao' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Paguei outro valor/ })).toBeInTheDocument();
+});

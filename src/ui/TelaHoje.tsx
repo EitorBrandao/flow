@@ -183,6 +183,11 @@ export default function TelaHoje() {
   const [pagando, setPagando] = useState<Lancamento | null>(null);
   const [avisoSalvarBancos, setAvisoSalvarBancos] = useState<string | null>(null);
   const [abaHoje, setAbaHoje] = useState<AbaHoje>('visao');
+  // Id do pendente com a correção aberta — um por vez, para a fila não virar um formulário
+  // com vários campos abertos ao mesmo tempo.
+  const [corrigindo, setCorrigindo] = useState<string | null>(null);
+  const [valorCorrigido, setValorCorrigido] = useState(0);
+  const [dataCorrigida, setDataCorrigida] = useState<ISODate>(hoje);
   const ids = dados ? boxIdsSelecionadas(dados, boxSel) : [];
   const ligados = dados ? cenariosLigados(dados) : new Set<string>();
 
@@ -229,6 +234,21 @@ export default function TelaHoje() {
     } finally {
       await recarregar();
     }
+  }
+
+  function abrirCorrecao(l: Lancamento) {
+    setCorrigindo(l.id);
+    setValorCorrigido(Math.abs(l.valor));
+    setDataCorrigida(l.data);
+  }
+
+  // O campo edita a magnitude; o sinal vem do previsto original, para um estorno negativo não
+  // virar positivo em silêncio. Trocar o sinal continua sendo trabalho do LancEditor.
+  async function confirmarCorrigido(l: Lancamento) {
+    const valor = l.valor < 0 ? -valorCorrigido : valorCorrigido;
+    setCorrigindo(null);
+    await repo.confirmarPendente(l.id, valor, dataCorrigida);
+    await recarregar();
   }
 
   async function confirmar(id: string) {
@@ -329,16 +349,53 @@ export default function TelaHoje() {
                     <div>{nomeCat(l.categoriaId)}</div>
                     <div className="sub">{l.data.split('-').reverse().join('/')}{l.nota ? ` · ${l.nota}` : ''}</div>
                   </div>
-                  <span className={tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
-                    {formatarBRL(l.valor)}
-                  </span>
-                </div>
-                <div className="acoes">
-                  <button className="botao botao-primario" aria-label={`Confirmar ${nomeCat(l.categoriaId)}`} onClick={() => confirmar(l.id)}>✓ Confirmar</button>
                   {ehFatura(l) ? (
-                    <button className="botao" aria-label={`Paguei outro valor de ${nomeCat(l.categoriaId)}`} onClick={() => setPagando(l)}>Paguei outro valor</button>
+                    <span className={tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
+                      {formatarBRL(l.valor)}
+                    </span>
                   ) : (
-                    <button className="botao" aria-label="Descartar" onClick={() => descartar(l.id)}>Descartar</button>
+                    <button
+                      type="button"
+                      className={`${tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'} editavel`}
+                      aria-label={`Corrigir valor de ${nomeCat(l.categoriaId)}`}
+                      onClick={() => abrirCorrecao(l)}
+                    >
+                      {formatarBRL(l.valor)}
+                    </button>
+                  )}
+                </div>
+                {corrigindo === l.id && (
+                  <div className="linha">
+                    <div className="campo cresce">
+                      <label htmlFor={`corrigir-data-${l.id}`}>Data do pagamento</label>
+                      <CampoData
+                        id={`corrigir-data-${l.id}`} value={dataCorrigida} onChange={setDataCorrigida}
+                      />
+                    </div>
+                    <div className="campo cresce">
+                      <label htmlFor={`corrigir-valor-${l.id}`}>Valor pago</label>
+                      <CampoValor
+                        id={`corrigir-valor-${l.id}`} valorCentavos={valorCorrigido}
+                        onChange={setValorCorrigido} autoFocus
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="acoes">
+                  {corrigindo === l.id ? (
+                    <>
+                      <button className="botao botao-primario" aria-label={`Confirmar ${nomeCat(l.categoriaId)}`} onClick={() => confirmarCorrigido(l)}>✓ Confirmar</button>
+                      <button className="botao" onClick={() => setCorrigindo(null)}>Cancelar</button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="botao botao-primario" aria-label={`Confirmar ${nomeCat(l.categoriaId)}`} onClick={() => confirmar(l.id)}>✓ Confirmar</button>
+                      {ehFatura(l) ? (
+                        <button className="botao" aria-label={`Paguei outro valor de ${nomeCat(l.categoriaId)}`} onClick={() => setPagando(l)}>Paguei outro valor</button>
+                      ) : (
+                        <button className="botao" aria-label="Descartar" onClick={() => descartar(l.id)}>Descartar</button>
+                      )}
+                    </>
                   )}
                 </div>
               </motion.div>
