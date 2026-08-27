@@ -4,6 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
+import { formatarBRL } from '../domain/money';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import FormCompra from './FormCompra';
@@ -300,4 +301,47 @@ it('categoria automática de assinaturas não aparece no grid de categoria da co
   render(<FormCompra cartao={cartao} onFechar={() => {}} />);
 
   expect(screen.queryByRole('button', { name: 'Assinaturas' })).not.toBeInTheDocument();
+});
+
+it('inicial semeia valor e categoria de uma compra nova', async () => {
+  const { box, cartao, catCartao } = await montarCartao();
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+  render(
+    <FormCompra
+      cartao={cartao}
+      inicial={{ valorTotal: 6240, categoriaCartaoId: catCartao.id }}
+      onFechar={() => {}}
+    />,
+  );
+
+  expect(await screen.findByRole('button', { name: 'mercado' })).toHaveClass('selecionada');
+  expect(screen.getByLabelText('Valor')).toHaveValue(formatarBRL(6240));
+  expect(screen.getByLabelText('Parcelas')).toHaveValue(1);
+});
+
+it('editando uma compra, inicial é ignorado', async () => {
+  const { box, cartao, catCartao } = await montarCartao();
+  const outra = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'posto', ordem: 1 });
+  const compra = await repo.salvarCompraCartao({
+    cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-06-10',
+    valorTotal: 10000, parcelas: 3,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+  render(
+    <FormCompra
+      cartao={cartao}
+      compra={compra}
+      inicial={{ valorTotal: 6240, categoriaCartaoId: outra.id }}
+      onFechar={() => {}}
+    />,
+  );
+
+  // a compra que está sendo editada manda; inicial não pode sobrescrever dado gravado
+  expect(await screen.findByRole('button', { name: 'mercado' })).toHaveClass('selecionada');
+  expect(screen.getByLabelText('Valor')).toHaveValue(formatarBRL(10000));
+  expect(screen.getByLabelText('Parcelas')).toHaveValue(3);
 });

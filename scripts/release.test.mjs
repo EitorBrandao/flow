@@ -162,6 +162,41 @@ describe('release.mjs', () => {
         fs.rmSync(tmp, { recursive: true });
       }
     });
+
+    it('mantém cada tópico com seus próprios detalhes ao juntar fragmentos diferentes', () => {
+      const tmp = criarFixture();
+      try {
+        fs.writeFileSync(
+          path.join(tmp, 'package.json'),
+          JSON.stringify({ version: '1.0.0' }, null, 2)
+        );
+        fs.writeFileSync(path.join(tmp, 'CHANGELOG.md'), '# Changelog\n\n');
+        fs.mkdirSync(path.join(tmp, 'changelog.d'));
+        fs.writeFileSync(
+          path.join(tmp, 'changelog.d', 'adicionado-a.md'),
+          '- Tópico A.\n  - Detalhe A1.\n'
+        );
+        fs.writeFileSync(
+          path.join(tmp, 'changelog.d', 'adicionado-b.md'),
+          '- Tópico B.\n  - Detalhe B1.\n  - Detalhe B2.\n'
+        );
+
+        const result = executarRelease(tmp, 'patch');
+
+        expect(result.exitCode).toBe(0);
+        const changelogContent = fs.readFileSync(path.join(tmp, 'CHANGELOG.md'), 'utf8');
+        const linhas = changelogContent.split('\n').map((l) => l.trimEnd());
+        const idxA = linhas.indexOf('- Tópico A.');
+        const idxB = linhas.indexOf('- Tópico B.');
+        expect(idxA).toBeGreaterThan(-1);
+        expect(idxB).toBeGreaterThan(-1);
+        expect(linhas[idxA + 1]).toBe('  - Detalhe A1.');
+        expect(linhas[idxB + 1]).toBe('  - Detalhe B1.');
+        expect(linhas[idxB + 2]).toBe('  - Detalhe B2.');
+      } finally {
+        fs.rmSync(tmp, { recursive: true });
+      }
+    });
   });
 
   describe('fragmento vazio', () => {
@@ -279,7 +314,7 @@ describe('release.mjs', () => {
       }
     });
 
-    it('deve abortar se linha começa com espaço/tab (com hífen)', () => {
+    it('aceita detalhe indentado com exatamente 2 espaços como sub-item do tópico', () => {
       const tmp = criarFixture();
       try {
         fs.writeFileSync(
@@ -289,16 +324,88 @@ describe('release.mjs', () => {
         fs.writeFileSync(path.join(tmp, 'CHANGELOG.md'), '# Changelog\n\n');
         fs.mkdirSync(path.join(tmp, 'changelog.d'));
         fs.writeFileSync(
-          path.join(tmp, 'changelog.d', 'adicionado-indented.md'),
-          '- Linha válida.\n  - sub-item indentado.\n'
+          path.join(tmp, 'changelog.d', 'adicionado-com-detalhe.md'),
+          '- Tópico principal.\n  - Detalhe do tópico.\n'
+        );
+
+        const result = executarRelease(tmp, 'patch');
+
+        expect(result.exitCode).toBe(0);
+        const changelogContent = fs.readFileSync(path.join(tmp, 'CHANGELOG.md'), 'utf8');
+        expect(changelogContent).toContain('- Tópico principal.');
+        expect(changelogContent).toContain('  - Detalhe do tópico.');
+      } finally {
+        fs.rmSync(tmp, { recursive: true });
+      }
+    });
+
+    it('gruda linha indentada sem hífen no texto do tópico anterior (continuação)', () => {
+      const tmp = criarFixture();
+      try {
+        fs.writeFileSync(
+          path.join(tmp, 'package.json'),
+          JSON.stringify({ version: '1.0.0' }, null, 2)
+        );
+        fs.writeFileSync(path.join(tmp, 'CHANGELOG.md'), '# Changelog\n\n');
+        fs.mkdirSync(path.join(tmp, 'changelog.d'));
+        fs.writeFileSync(
+          path.join(tmp, 'changelog.d', 'adicionado-continuacao.md'),
+          '- Tópico que quebrou\n  a frase em duas linhas.\n'
+        );
+
+        const result = executarRelease(tmp, 'patch');
+
+        expect(result.exitCode).toBe(0);
+        const changelogContent = fs.readFileSync(path.join(tmp, 'CHANGELOG.md'), 'utf8');
+        expect(changelogContent).toContain('- Tópico que quebrou a frase em duas linhas.');
+      } finally {
+        fs.rmSync(tmp, { recursive: true });
+      }
+    });
+
+    it('gruda continuação de linha no último detalhe, não no texto do tópico', () => {
+      const tmp = criarFixture();
+      try {
+        fs.writeFileSync(
+          path.join(tmp, 'package.json'),
+          JSON.stringify({ version: '1.0.0' }, null, 2)
+        );
+        fs.writeFileSync(path.join(tmp, 'CHANGELOG.md'), '# Changelog\n\n');
+        fs.mkdirSync(path.join(tmp, 'changelog.d'));
+        fs.writeFileSync(
+          path.join(tmp, 'changelog.d', 'adicionado-continuacao-detalhe.md'),
+          '- Tópico.\n  - Detalhe que quebrou\n    numa segunda linha.\n'
+        );
+
+        const result = executarRelease(tmp, 'patch');
+
+        expect(result.exitCode).toBe(0);
+        const changelogContent = fs.readFileSync(path.join(tmp, 'CHANGELOG.md'), 'utf8');
+        expect(changelogContent).toContain('  - Detalhe que quebrou numa segunda linha.');
+      } finally {
+        fs.rmSync(tmp, { recursive: true });
+      }
+    });
+
+    it('deve abortar se detalhe não tem exatamente 2 espaços de indentação', () => {
+      const tmp = criarFixture();
+      try {
+        fs.writeFileSync(
+          path.join(tmp, 'package.json'),
+          JSON.stringify({ version: '1.0.0' }, null, 2)
+        );
+        fs.writeFileSync(path.join(tmp, 'CHANGELOG.md'), '# Changelog\n\n');
+        fs.mkdirSync(path.join(tmp, 'changelog.d'));
+        fs.writeFileSync(
+          path.join(tmp, 'changelog.d', 'adicionado-indent-errada.md'),
+          '- Tópico.\n    - Detalhe indentado demais.\n'
         );
 
         const result = executarRelease(tmp, 'patch');
 
         expect(result.exitCode).toBe(1);
-        // Uma linha indentada é rejeitada no check de indentação (ordem corrigida)
-        expect(result.stderr).toContain('não pode começar com espaço ou tab');
-        expect(result.stderr).toContain('changelog.d/README.md');
+        expect(result.stderr).toContain('exatamente 2 espaços de indentação');
+        expect(result.stderr).toContain('adicionado-indent-errada.md');
 
         const pkg = JSON.parse(fs.readFileSync(path.join(tmp, 'package.json'), 'utf8'));
         expect(pkg.version).toBe('1.0.0');
@@ -307,7 +414,7 @@ describe('release.mjs', () => {
       }
     });
 
-    it('deve abortar se linha começa com espaço/tab (sem hífen)', () => {
+    it('deve abortar se um detalhe aparece antes de qualquer tópico', () => {
       const tmp = criarFixture();
       try {
         fs.writeFileSync(
@@ -317,16 +424,15 @@ describe('release.mjs', () => {
         fs.writeFileSync(path.join(tmp, 'CHANGELOG.md'), '# Changelog\n\n');
         fs.mkdirSync(path.join(tmp, 'changelog.d'));
         fs.writeFileSync(
-          path.join(tmp, 'changelog.d', 'adicionado-indented.md'),
-          '- Linha válida.\n  Linha indentada sem hífen.\n'
+          path.join(tmp, 'changelog.d', 'adicionado-orfao.md'),
+          '  - Detalhe sem tópico.\n'
         );
 
         const result = executarRelease(tmp, 'patch');
 
         expect(result.exitCode).toBe(1);
-        // Uma linha indentada é rejeitada no check de indentação (ordem corrigida)
-        expect(result.stderr).toContain('não pode começar com espaço ou tab');
-        expect(result.stderr).toContain('changelog.d/README.md');
+        expect(result.stderr).toContain('detalhe sem tópico');
+        expect(result.stderr).toContain('adicionado-orfao.md');
 
         const pkg = JSON.parse(fs.readFileSync(path.join(tmp, 'package.json'), 'utf8'));
         expect(pkg.version).toBe('1.0.0');

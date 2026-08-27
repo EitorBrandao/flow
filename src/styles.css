@@ -448,3 +448,27 @@ table.tabela th:first-child, table.tabela td:first-child {
   padding: 8px 12px;
   min-width: 44px;
 }
+
+/* ---- Frequentes (AdicionarSheet.tsx) ---- */
+.frequentes { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.frequentes-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--surface2); border: none; color: var(--fg);
+  padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 600;
+  min-height: 38px;
+}
+.frequentes-detalhe {
+  color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums;
+}
+.frequentes-ponto {
+  width: 6px; height: 6px; border-radius: 999px; background: var(--ac); flex: 0 0 auto;
+}
+
+/* ---- Detalhe de tópico (Versao.tsx) ---- */
+.versao-detalhes {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.versao-detalhes li { margin-bottom: 2px; }

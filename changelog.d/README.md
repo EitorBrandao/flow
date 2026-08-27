@@ -18,12 +18,23 @@ Nome do arquivo: `<tipo>-<slug>.md`, onde `<tipo>` é um de:
 
 Exemplos: `adicionado-exportar-backup.md`, `alterado-cores-valores.md`.
 
-O conteúdo é um ou mais **bullets planos**: toda linha começa com `- `, sem
-negrito, sem sub-itens indentados — o parser do app (`src/ui/ajustes/changelog.ts`)
-só entende isso; markdown rico passa no release e quebra a tela de Versão depois:
+O conteúdo tem dois níveis: **tópico** e, opcionalmente, **detalhe**. O parser do
+app (`src/ui/ajustes/changelog.ts`) só entende exatamente isto — `npm run release`
+rejeita negrito ou terceiro nível na hora, com erro apontando o arquivo e a linha:
+
+- **Tópico**: a linha começa com `- `, sem indentação.
+- **Detalhe**: uma linha do tópico, indentada com **exatamente 2 espaços** antes
+  do `- `. Fica subordinado ao tópico mais recente.
+- **Sem negrito** (`**`) em nenhuma linha, tópico ou detalhe.
+- **Continuação**: uma linha indentada, sem `- ` próprio, gruda no texto do bullet mais
+  recente — no último detalhe, se houver algum; senão no próprio tópico. Serve para quebrar um
+  bullet longo em várias linhas no arquivo-fonte, sem virar um item novo.
+- Um tópico sem nenhum detalhe é só um bullet solto, como sempre foi.
 
 ```
 - Botão de exportar backup na tela de Ajustes.
+  - Fica no rodapé, ao lado de "Importar".
+  - Funciona mesmo sem conexão de rede.
 - Aviso quando o backup falha silenciosamente.
 ```
 
