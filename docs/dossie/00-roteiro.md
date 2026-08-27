@@ -39,6 +39,10 @@ Uma citação marca cada corte, no instante em que o dossiê tira o retrato. Qua
 
 1. Assina um serviço de streaming, R$ 39,90 por mês, sem data para acabar.
 
+## 2026-02-08
+
+1. Reordena as categorias de gasto da box "carteira": "moradia" passa para a frente, e "mercado" e "transporte" descem uma posição.
+
 ## 2026-02-10
 
 > **Corte: depois do primeiro vencimento.** O dossiê tira o retrato aqui.
@@ -75,9 +79,25 @@ Uma citação marca cada corte, no instante em que o dossiê tira o retrato. Qua
 
 > **Corte: no meio da viagem.** O dossiê tira o retrato aqui.
 
+## 2026-08-05
+
+1. Paga a fatura de agosto inteira, pelo valor que ela fechou, sem parcelar nada.
+
 ## 2026-09-01
 
 1. Arquiva a categoria "extra", que já tem histórico de lançamento.
+
+## 2026-09-10
+
+1. Exporta o backup e reimporta no modo "mesclar".
+
+## 2026-09-11
+
+1. Exporta o backup de novo e reimporta no modo "substituir tudo".
+
+## 2026-09-12
+
+> **Corte: depois da volta do backup.** O dossiê tira o retrato aqui.
 
 ## 2026-10-01
 

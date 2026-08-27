@@ -1,4 +1,3 @@
-import { calcularFaturas } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import type { Aba } from '../state/store';
 import type { Roteiro, Passo, Corte } from './executar';
@@ -163,19 +162,9 @@ function montarMotor(retratos: Retrato[]): string {
     }
 
     linhas.push('', '### Faturas', '');
-    // Recalcula por cartão, e não usa `r.faturas`: `Fatura` não guarda o id do cartão, e o
-    // dossiê precisa nomeá-lo na tabela. `dados.cartoes` e `dados.comprasCartao` são a mesma
-    // fonte que `tirarRetrato` usa; recalcular aqui só recupera a associação perdida no achatamento.
-    const linhasFatura: string[] = [];
-    for (const cartao of [...r.dados.cartoes].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))) {
-      const compras = r.dados.comprasCartao.filter((c) => c.cartaoId === cartao.id);
-      const faturas = calcularFaturas(cartao, compras, r.dados.config.horizonteProjecao);
-      for (const fatura of faturas) {
-        linhasFatura.push(
-          `| ${cartao.nome} | ${fatura.mes} | ${fatura.itens.length} | ${formatarBRL(fatura.totalCent)} |`,
-        );
-      }
-    }
+    const linhasFatura = r.faturas.map(({ cartao, fatura }) => (
+      `| ${cartao.nome} | ${fatura.mes} | ${fatura.itens.length} | ${formatarBRL(fatura.totalCent)} |`
+    ));
     if (linhasFatura.length === 0) {
       linhas.push('Nenhuma fatura neste corte.');
     } else {

@@ -1,6 +1,33 @@
+import { gerarBackup, mesclar, validarBackup } from '../backup/backup';
 import * as repo from '../db/repo';
-import { agoraISO, novoId } from '../domain/types';
+import { diffOrdem } from '../domain/categorias';
+import { categoriasFaturaIds } from '../domain/fatura';
+import { agoraISO, novoId, type Dados } from '../domain/types';
 import type { Roteiro } from './executar';
+
+/**
+ * Faz a volta inteira do backup: exporta, serializa para JSON, valida na volta e grava.
+ *
+ * Passa pelo `JSON.parse(JSON.stringify(...))` de propósito. É esse trecho que derruba campo
+ * `undefined` e converte o que não sobrevive ao texto — um teste que passasse o objeto direto
+ * de `gerarBackup` para `substituirTudo` nunca veria essa perda. Depois vem `validarBackup`,
+ * o mesmo portão que a tela Ajustes → Backup usa ao ler o arquivo.
+ *
+ * O caminho é o da tela (`src/ui/ajustes/Backup.tsx:52-64`), sem a confirmação e sem o
+ * `<input type="file">`. Reimportar o próprio backup deve deixar os dados como estavam; se
+ * não deixar, o dossiê mostra a diferença no corte seguinte, que é o ponto.
+ */
+async function reimportar(dados: Dados, modo: 'mesclar' | 'substituir'): Promise<void> {
+  const arquivo = JSON.stringify(gerarBackup(dados));
+  // Exportar não é só gerar o arquivo: a tela grava a data e desliga o aviso de "há mudanças
+  // sem backup" (`Backup.tsx:43`). Sem esta linha o dossiê mostraria a tela Hoje pedindo
+  // backup logo depois de o roteiro ter feito um.
+  await repo.salvarConfig({ ultimoBackupEm: agoraISO(), mudancasDesdeBackup: false });
+
+  const backup = validarBackup(JSON.parse(arquivo));
+  const finais = modo === 'substituir' ? backup.dados : mesclar(await repo.carregarTudo(), backup.dados);
+  await repo.substituirTudo(finais);
+}
 
 /**
  * Os 12 meses sintéticos que o dossiê roda. Cada passo acha o que precisa em `dados` pelo
@@ -123,6 +150,32 @@ export const ROTEIRO: Roteiro = {
       },
     },
     {
+      data: '2026-02-08',
+      descricao:
+        'Reordena as categorias de gasto da box "carteira": "moradia" passa para a frente, '
+        + 'e "mercado" e "transporte" descem uma posição.',
+      async executar(dados) {
+        // Mesmo caminho da tela Ajustes → Categorias (`Categorias.tsx:130`): a nova ordem é
+        // uma lista, `diffOrdem` diz quais posições mudaram, e cada uma vira um update. Um
+        // passo que gravasse `ordem` na mão exercitaria o Dexie, não o app.
+        //
+        // A lista é montada com os mesmos dois filtros da tela (`Categorias.tsx:81-82`):
+        // fora as categorias de fatura e fora as arquivadas. Sem o primeiro filtro o passo
+        // reordena a categoria de fatura, que a tela esconde de todo mundo — o dossiê
+        // passaria a mostrar um estado que nenhum usuário consegue produzir.
+        const ocultas = categoriasFaturaIds(dados.cartoes);
+        const gastos = dados.categorias
+          .filter((c) => c.boxId === 'box-carteira' && c.tipo === 'gasto'
+            && !ocultas.has(c.id) && !c.arquivada)
+          .sort((a, b) => a.ordem - b.ordem);
+        const moradia = gastos.find((c) => c.nome === 'moradia')!;
+        const novaOrdem = [moradia, ...gastos.filter((c) => c.id !== moradia.id)];
+        for (const a of diffOrdem(novaOrdem)) {
+          await repo.atualizarCategoria(a.id, { ordem: a.ordem });
+        }
+      },
+    },
+    {
       data: '2026-03-06',
       descricao: 'Confirma o pendente da moradia de fevereiro com o valor previsto.',
       async executar(dados) {
@@ -204,11 +257,47 @@ export const ROTEIRO: Roteiro = {
       },
     },
     {
+      data: '2026-08-05',
+      descricao: 'Paga a fatura de agosto inteira, pelo valor que ela fechou, sem parcelar nada.',
+      async executar(dados) {
+        const cartao = dados.cartoes.find((c) => c.nome === 'sigma')!;
+        const fatura = dados.lancamentos.find(
+          (l) => l.origem === 'cartao' && l.categoriaId === cartao.categoriaFaturaId && l.data.startsWith('2026-08'),
+        )!;
+        await repo.registrarPagamentoFatura({
+          lancamentoId: fatura.id,
+          cartaoId: cartao.id,
+          faturaMes: '2026-08',
+          // Paga o valor que o próprio lançamento traz, em vez de um número escrito aqui.
+          // "Inteira" quer dizer "não sobra nada", e um valor fixo passaria a mentir no dia
+          // em que uma compra mudasse de mês. O ramo sem `parcelamento` é o alvo do passo:
+          // é o único de `registrarPagamentoFatura` que o roteiro não exercitava.
+          valorPagoCent: fatura.valor,
+          dataPagamento: '2026-08-05',
+          horizonte: dados.config.horizonteProjecao,
+        });
+      },
+    },
+    {
       data: '2026-09-01',
       descricao: 'Arquiva a categoria "extra", que já tem histórico de lançamento.',
       async executar(dados) {
         const extra = dados.categorias.find((c) => c.nome === 'extra')!;
         await repo.atualizarCategoria(extra.id, { arquivada: true });
+      },
+    },
+    {
+      data: '2026-09-10',
+      descricao: 'Exporta o backup e reimporta no modo "mesclar".',
+      async executar(dados) {
+        await reimportar(dados, 'mesclar');
+      },
+    },
+    {
+      data: '2026-09-11',
+      descricao: 'Exporta o backup de novo e reimporta no modo "substituir tudo".',
+      async executar(dados) {
+        await reimportar(dados, 'substituir');
       },
     },
     {
@@ -244,6 +333,10 @@ export const ROTEIRO: Roteiro = {
     { data: '2026-02-10', rotulo: 'depois do primeiro vencimento' },
     { data: '2026-06-20', rotulo: 'depois do pagamento parcial' },
     { data: '2026-07-18', rotulo: 'no meio da viagem' },
+    // Cai depois do pagamento integral da fatura de agosto e da volta do backup nos dois
+    // modos. Sem ele o dossiê executaria os três passos e não mostraria o resultado de
+    // nenhum: o corte seguinte só vem em outubro.
+    { data: '2026-09-12', rotulo: 'depois da volta do backup' },
     { data: '2026-10-15', rotulo: 'com o cenário ligado' },
     { data: '2026-11-30', rotulo: 'fim do roteiro' },
   ],

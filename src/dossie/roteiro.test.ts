@@ -14,8 +14,16 @@ it('tem os passos em ordem cronológica', () => {
 
 it('tem os cortes em ordem cronológica', () => {
   const datas = ROTEIRO.cortes.map((c) => c.data);
-  expect(datas).toHaveLength(ROTEIRO.cortes.length);
   expect([...datas].sort()).toEqual(datas);
+});
+
+// `serializar.ts` indexa os cortes pelo rótulo para pôr as linhas de `01-invariantes.md` em
+// ordem cronológica. Dois rótulos iguais colapsam nesse índice, e a ordem sai errada sem
+// nenhum erro — por isso a unicidade é checada aqui, e não deixada à disciplina de quem
+// acrescenta um corte.
+it('não repete rótulo de corte', () => {
+  const rotulos = ROTEIRO.cortes.map((c) => c.rotulo);
+  expect(new Set(rotulos).size).toBe(rotulos.length);
 });
 
 it('todo passo tem descrição em prosa', () => {

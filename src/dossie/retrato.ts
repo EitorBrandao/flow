@@ -1,6 +1,6 @@
 import { calcularFaturas, type Fatura } from '../domain/fatura';
 import { projetarBoxes, type DiaSaldo } from '../domain/projection';
-import type { Dados, ID, ISODate } from '../domain/types';
+import type { Cartao, Dados, ID, ISODate } from '../domain/types';
 
 export interface SaldoBox {
   boxId: ID;
@@ -17,6 +17,19 @@ export interface MarcosProjecao {
   fimDeMes: DiaSaldo[];
 }
 
+/**
+ * Uma fatura junto do cartão que a emitiu.
+ *
+ * `Fatura` não guarda o id do cartão, então uma lista achatada de faturas perde de quem é
+ * cada uma — e todo leitor do dossiê precisa nomear o cartão. Antes cada leitor refazia a
+ * associação por conta própria, a partir de `dados.cartoes`. Agora ela é feita uma vez, em
+ * `tirarRetrato`, e viaja no retrato.
+ */
+export interface FaturaDeCartao {
+  cartao: Cartao;
+  fatura: Fatura;
+}
+
 export interface Retrato {
   data: ISODate;
   rotulo: string;
@@ -24,9 +37,20 @@ export interface Retrato {
   marcos: MarcosProjecao;
   /** Série consolidada dia a dia. Serve aos invariantes; não entra no dossiê. */
   serie: DiaSaldo[];
-  faturas: Fatura[];
+  faturas: FaturaDeCartao[];
   contagemPorStatusOrigem: Record<string, number>;
   dados: Dados;
+}
+
+/** Todas as faturas do snapshot, em ordem estável: por nome de cartão, depois por ciclo. */
+export function faturasPorCartao(dados: Dados): FaturaDeCartao[] {
+  return [...dados.cartoes]
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+    .flatMap((cartao) => calcularFaturas(
+      cartao,
+      dados.comprasCartao.filter((c) => c.cartaoId === cartao.id),
+      dados.config.horizonteProjecao,
+    ).map((fatura) => ({ cartao, fatura })));
 }
 
 function marcosDe(serie: DiaSaldo[]): MarcosProjecao {
@@ -65,13 +89,7 @@ export function tirarRetrato(dados: Dados, data: ISODate, rotulo: string): Retra
       };
     });
 
-  const faturas = [...dados.cartoes]
-    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-    .flatMap((cartao) => calcularFaturas(
-      cartao,
-      dados.comprasCartao.filter((c) => c.cartaoId === cartao.id),
-      dados.config.horizonteProjecao,
-    ));
+  const faturas = faturasPorCartao(dados);
 
   const contagemPorStatusOrigem: Record<string, number> = {};
   for (const l of dados.lancamentos) {

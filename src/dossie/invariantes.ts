@@ -1,6 +1,6 @@
 import { gerarBackup, validarBackup } from '../backup/backup';
 import { categoriasCartaoReservadasIds } from '../domain/categorias';
-import { calcularFaturas, categoriasFaturaIds, valorSincronizado } from '../domain/fatura';
+import { categoriasFaturaIds, valorSincronizado } from '../domain/fatura';
 import { projetarBoxes } from '../domain/projection';
 import type { Dados, ISODate } from '../domain/types';
 import { viagensSobrepoem } from '../domain/viagem';
@@ -139,23 +139,19 @@ export const INVARIANTES: Invariante[] = [
     nome: 'fatura bate com os itens',
     classe: 'garantido',
     checar(r) {
-      for (const cartao of r.dados.cartoes) {
-        const compras = r.dados.comprasCartao.filter((c) => c.cartaoId === cartao.id);
-        const faturas = calcularFaturas(cartao, compras, r.dados.config.horizonteProjecao);
-        for (const fatura of faturas) {
-          const lanc = r.dados.lancamentos.find(
-            (l) => l.origem === 'cartao' && l.cartaoId === cartao.id && l.faturaMes === fatura.mes,
-          );
-          if (!lanc || lanc.status === 'efetivo') continue;
-          const conf = r.dados.conferenciasFatura.find((c) => c.cartaoId === cartao.id && c.mes === fatura.mes);
-          const esperado = valorSincronizado(fatura, conf);
-          if (lanc.valor !== esperado) {
-            return {
-              ok: false,
-              detalhe: `fatura do cartão ${cartao.id} (${cartao.nome}), mês ${fatura.mes}: itens somam `
-                + `${esperado}, mas o lançamento ${lanc.id} tem valor ${lanc.valor}`,
-            };
-          }
+      for (const { cartao, fatura } of r.faturas) {
+        const lanc = r.dados.lancamentos.find(
+          (l) => l.origem === 'cartao' && l.cartaoId === cartao.id && l.faturaMes === fatura.mes,
+        );
+        if (!lanc || lanc.status === 'efetivo') continue;
+        const conf = r.dados.conferenciasFatura.find((c) => c.cartaoId === cartao.id && c.mes === fatura.mes);
+        const esperado = valorSincronizado(fatura, conf);
+        if (lanc.valor !== esperado) {
+          return {
+            ok: false,
+            detalhe: `fatura do cartão ${cartao.id} (${cartao.nome}), mês ${fatura.mes}: itens somam `
+              + `${esperado}, mas o lançamento ${lanc.id} tem valor ${lanc.valor}`,
+          };
         }
       }
       return OK;
