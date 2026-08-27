@@ -7,7 +7,7 @@
 
 A fila de Pendentes da tela Hoje confirma um previsto com um toque. O valor que ela grava é o
 valor previsto, sempre. Mas o valor previsto é uma estimativa: a recorrência diz R$ 120 e a
-conta de internet veio R$ 137.
+conta de luz veio R$ 137.
 
 Hoje só há dois caminhos, e os dois são ruins:
 
@@ -43,7 +43,7 @@ Estado de repouso — igual ao de hoje, com o valor recebendo afordância de cam
 
 ```
 ┌─────────────────────────────┐
-│ Internet        [R$ 120,00] │  ← tocável
+│ luz        [R$ 120] │  ← tocável
 │ 27/08 · Vivo                │
 │ [✓ Confirmar] [Descartar]   │
 └─────────────────────────────┘
@@ -53,9 +53,9 @@ Depois do toque no valor:
 
 ```
 ┌─────────────────────────────┐
-│ Internet                    │
+│ luz                    │
 │ 27/08 · Vivo                │
-│ Valor  [R$ 137,00]          │
+│ Valor  [R$ 137]          │
 │ Data   [27/08/2026]         │
 │ [✓ Confirmar] [Cancelar]    │
 └─────────────────────────────┘

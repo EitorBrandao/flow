@@ -28,7 +28,7 @@ framer-motion (`AnimatePresence`, já no arquivo).
 - **Dinheiro:** centavos inteiros. Parse e format só por `src/domain/money.ts`.
 - **Datas:** strings ISO `"AAAA-MM-DD"`.
 - **Dados reais proibidos:** nenhum valor, saldo, descrição ou nome de estabelecimento real em
-  arquivo versionado. Os testes usam nomes sintéticos (`internet`, `agua`) e valores redondos,
+  arquivo versionado. Os testes usam nomes sintéticos (`luz`, `agua`) e valores redondos,
   como o resto da suíte.
 - **Edição de UI:** antes de tocar em `src/ui/**` ou `src/styles.css`, leia
   `docs/estilo-visual.md` e o capítulo do nível. Este plano é **nível 2** (classe CSS nova):
@@ -123,10 +123,10 @@ que vale é o que estiver no arquivo.
     <div class="item">
       <div class="linha-topo">
         <div class="cresce">
-          <div>internet</div>
+          <div>luz</div>
           <div class="sub">27/08 · mensal</div>
         </div>
-        <button class="valor-gasto editavel">R$ 120,00</button>
+        <button class="valor-gasto editavel">R$ 120</button>
       </div>
       <div class="acoes">
         <button class="botao botao-primario">✓ Confirmar</button>
@@ -139,13 +139,13 @@ que vale é o que estiver no arquivo.
     <div class="item">
       <div class="linha-topo">
         <div class="cresce">
-          <div>internet</div>
+          <div>luz</div>
           <div class="sub">27/08 · mensal</div>
         </div>
       </div>
       <div class="linha">
         <div class="campo"><label>Data do pagamento</label><input value="27/08/2026"></div>
-        <div class="campo"><label>Valor pago</label><input value="R$ 137,00"></div>
+        <div class="campo"><label>Valor pago</label><input value="R$ 137"></div>
       </div>
       <div class="acoes">
         <button class="botao botao-primario">✓ Confirmar</button>
@@ -189,7 +189,7 @@ it('confirma um pendente com valor e data corrigidos', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
-  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'internet', tipo: 'gasto', ordem: 0 });
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'luz', tipo: 'gasto', ordem: 0 });
   const lanc = await repo.salvarLancamento({
     boxId: box.id, categoriaId: cat.id, data: '2026-08-27', valor: 12000, status: 'previsto',
   });
@@ -206,7 +206,7 @@ it('confirma um pendente sem data corrigida e mantém a data do previsto', async
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
-  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'internet', tipo: 'gasto', ordem: 0 });
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'luz', tipo: 'gasto', ordem: 0 });
   const lanc = await repo.salvarLancamento({
     boxId: box.id, categoriaId: cat.id, data: '2026-08-27', valor: 12000, status: 'previsto',
   });
@@ -337,7 +337,7 @@ async function cenarioPendenteComum(valor = 12000) {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-08-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
-  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'internet', tipo: 'gasto', ordem: 0 });
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'luz', tipo: 'gasto', ordem: 0 });
   const lanc = await repo.salvarLancamento({
     boxId: box.id, categoriaId: cat.id, data: '2026-08-27', valor, status: 'previsto',
   });
@@ -353,7 +353,7 @@ it('tocar no valor de um previsto comum abre os campos de correção', async () 
   await abrirAba(/Pendentes/);
   expect(screen.queryByLabelText('Valor pago')).not.toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
 
   expect(await screen.findByLabelText('Valor pago')).toBeInTheDocument();
   expect(screen.getByLabelText('Data do pagamento')).toBeInTheDocument();
@@ -365,7 +365,7 @@ it('cancelar a correção fecha os campos sem gravar nada', async () => {
 
   render(<TelaHoje />);
   await abrirAba(/Pendentes/);
-  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
   await userEvent.click(await screen.findByRole('button', { name: 'Cancelar' }));
 
   await waitFor(() => expect(screen.queryByLabelText('Valor pago')).not.toBeInTheDocument());
@@ -378,7 +378,7 @@ it('abrir a correção de um item fecha a do outro', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-08-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
-  const net = await repo.salvarCategoria({ boxId: box.id, nome: 'internet', tipo: 'gasto', ordem: 0 });
+  const net = await repo.salvarCategoria({ boxId: box.id, nome: 'luz', tipo: 'gasto', ordem: 0 });
   const agua = await repo.salvarCategoria({ boxId: box.id, nome: 'agua', tipo: 'gasto', ordem: 1 });
   await repo.salvarLancamento({ boxId: box.id, categoriaId: net.id, data: '2026-08-27', valor: 12000, status: 'previsto' });
   await repo.salvarLancamento({ boxId: box.id, categoriaId: agua.id, data: '2026-08-27', valor: 8000, status: 'previsto' });
@@ -387,7 +387,7 @@ it('abrir a correção de um item fecha a do outro', async () => {
 
   render(<TelaHoje />);
   await abrirAba(/Pendentes/);
-  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
   await screen.findByLabelText('Valor pago');
   await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de agua' }));
 
@@ -401,7 +401,7 @@ não estiver, acrescente-o.
 - [ ] **Passo 2: Rodar e ver falhar**
 
 Rodar: `npx vitest run src/ui/TelaHoje.test.tsx -t "abre os campos de correção"`
-Esperado: FALHA — não existe botão com o nome acessível `Corrigir valor de internet`.
+Esperado: FALHA — não existe botão com o nome acessível `Corrigir valor de luz`.
 
 - [ ] **Passo 3: Implementar o gesto**
 
@@ -567,9 +567,9 @@ it('confirma o pendente com o valor corrigido e o tira da fila', async () => {
 
   render(<TelaHoje />);
   await abrirAba(/Pendentes/);
-  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
   await userEvent.type(await screen.findByLabelText('Valor pago'), '13700');
-  await userEvent.click(screen.getByRole('button', { name: 'Confirmar internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
 
   await screen.findByText('Nada a confirmar — tudo em dia.');
   const salvo = await db.lancamentos.get(lanc.id);
@@ -582,11 +582,11 @@ it('confirma o pendente com a data corrigida', async () => {
 
   render(<TelaHoje />);
   await abrirAba(/Pendentes/);
-  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
   const data = await screen.findByLabelText('Data do pagamento');
   await userEvent.clear(data);
   await userEvent.type(data, '2026-08-25');
-  await userEvent.click(screen.getByRole('button', { name: 'Confirmar internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
 
   await screen.findByText('Nada a confirmar — tudo em dia.');
   const salvo = await db.lancamentos.get(lanc.id);
@@ -598,9 +598,9 @@ it('previsto com valor negativo continua negativo depois de corrigido', async ()
 
   render(<TelaHoje />);
   await abrirAba(/Pendentes/);
-  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
   await userEvent.type(await screen.findByLabelText('Valor pago'), '5000');
-  await userEvent.click(screen.getByRole('button', { name: 'Confirmar internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
 
   await screen.findByText('Nada a confirmar — tudo em dia.');
   const salvo = await db.lancamentos.get(lanc.id);
@@ -634,7 +634,7 @@ não expõe `origem`/`cartaoId`/`faturaMes`. Antes de escrevê-lo, abra
 se houver caminho pronto e mais fiel (ex.: criar cartão e sincronizar), use-o.
 
 **Sobre digitar no `CampoValor`:** ele intercepta tecla a tecla e reformata, então digitar
-`13700` resulta em `R$ 137,00`. Veja em `src/ui/PagamentoFaturaSheet.test.tsx` como a suíte já
+`13700` resulta em `R$ 137`. Veja em `src/ui/PagamentoFaturaSheet.test.tsx` como a suíte já
 digita nesse campo e siga o mesmo jeito.
 
 - [ ] **Passo 2: Rodar e ver falhar**
@@ -722,7 +722,7 @@ exatamente dois espaços de indentação:
 - [ ] **Passo 4: Rodar o verificador de dados reais**
 
 Rodar: `node scripts/verificar-dados-reais.mjs`
-Esperado: nada apontado nos arquivos novos. Os testes usam `internet`, `agua` e valores
+Esperado: nada apontado nos arquivos novos. Os testes usam `luz`, `agua` e valores
 redondos — nada real.
 
 - [ ] **Passo 5: Commitar**

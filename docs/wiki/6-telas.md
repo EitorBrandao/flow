@@ -10,7 +10,7 @@ Tela inicial. Foco em "onde estou agora" e no que precisa de atenção. Três ab
 
 - **Visão:** saldo efetivo em destaque; se o projetado difere, aparece logo abaixo. Mini-gráfico da janela de 7 dias atrás a 28 dias à frente.
 - **Conferir:** campo para digitar o saldo que o app do banco mostra + data; o app calcula a diferença ("bate certinho", "falta inserir no app" ou "sobra no app — confira duplicado"). Se a box tiver bancos cadastrados, vira uma linha por banco, com o total informado abaixo — a diferença passa a ser calculada contra essa soma.
-- **Pendentes:** fila de previstos vencidos, com confirmar (✓) ou descartar (✕) em um toque. O rótulo da aba mostra quantos itens esperam. Se a conta veio com outro valor, toque no valor do item: ele abre os campos de valor e data ali mesmo, e confirmar grava o que você corrigiu. O ajuste vale só para aquela ocorrência — a recorrência que a gerou não muda.
+- **Pendentes:** fila de previstos vencidos, com confirmar (✓) ou descartar (✕) em um toque. O rótulo da aba mostra quantos itens esperam. Se a conta veio com outro valor, toque no valor do item: ele abre os campos de data e valor ali mesmo, e confirmar grava o que você corrigiu. O ajuste vale só para aquela ocorrência — a recorrência que a gerou não muda. Fatura de cartão segue por outro caminho, o do botão "Paguei outro valor" (veja o capítulo Cartão).
 - **Aviso de backup:** banner acima das abas, quando há mudanças e o último backup passou de 7 dias — toca e vai direto para Ajustes → Backup.
 
 **Conferência de saldo — obrigatório:** saldo real no banco. **Tem padrão:** data (hoje).

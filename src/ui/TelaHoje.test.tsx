@@ -545,7 +545,7 @@ async function cenarioPendenteComum(valor = 12000) {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-08-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
-  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'internet', tipo: 'gasto', ordem: 0 });
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'luz', tipo: 'gasto', ordem: 0 });
   const lanc = await repo.salvarLancamento({
     boxId: box.id, categoriaId: cat.id, data: '2026-08-27', valor, status: 'previsto',
   });
@@ -561,7 +561,7 @@ it('tocar no valor de um previsto comum abre os campos de correção', async () 
   await abrirAba(/Pendentes/);
   expect(screen.queryByLabelText('Valor pago')).not.toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
 
   expect(await screen.findByLabelText('Valor pago')).toBeInTheDocument();
   expect(screen.getByLabelText('Data do pagamento')).toBeInTheDocument();
@@ -573,7 +573,7 @@ it('cancelar a correção fecha os campos sem gravar nada', async () => {
 
   render(<TelaHoje />);
   await abrirAba(/Pendentes/);
-  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
   await userEvent.click(await screen.findByRole('button', { name: 'Cancelar' }));
 
   await waitFor(() => expect(screen.queryByLabelText('Valor pago')).not.toBeInTheDocument());
@@ -586,7 +586,7 @@ it('abrir a correção de um item fecha a do outro', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-08-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
-  const net = await repo.salvarCategoria({ boxId: box.id, nome: 'internet', tipo: 'gasto', ordem: 0 });
+  const net = await repo.salvarCategoria({ boxId: box.id, nome: 'luz', tipo: 'gasto', ordem: 0 });
   const agua = await repo.salvarCategoria({ boxId: box.id, nome: 'agua', tipo: 'gasto', ordem: 1 });
   await repo.salvarLancamento({ boxId: box.id, categoriaId: net.id, data: '2026-08-27', valor: 12000, status: 'previsto' });
   await repo.salvarLancamento({ boxId: box.id, categoriaId: agua.id, data: '2026-08-27', valor: 8000, status: 'previsto' });
@@ -595,7 +595,7 @@ it('abrir a correção de um item fecha a do outro', async () => {
 
   render(<TelaHoje />);
   await abrirAba(/Pendentes/);
-  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
   await screen.findByLabelText('Valor pago');
   await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de agua' }));
 
@@ -607,9 +607,9 @@ it('confirma o pendente com o valor corrigido e o tira da fila', async () => {
 
   render(<TelaHoje />);
   await abrirAba(/Pendentes/);
-  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
   await userEvent.type(await screen.findByLabelText('Valor pago'), '13700');
-  await userEvent.click(screen.getByRole('button', { name: 'Confirmar internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
 
   await screen.findByText('Nada a confirmar — tudo em dia.');
   const salvo = await db.lancamentos.get(lanc.id);
@@ -622,11 +622,11 @@ it('confirma o pendente com a data corrigida', async () => {
 
   render(<TelaHoje />);
   await abrirAba(/Pendentes/);
-  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
   const data = await screen.findByLabelText('Data do pagamento');
   await userEvent.clear(data);
   await userEvent.type(data, '2026-08-25');
-  await userEvent.click(screen.getByRole('button', { name: 'Confirmar internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
 
   await screen.findByText('Nada a confirmar — tudo em dia.');
   const salvo = await db.lancamentos.get(lanc.id);
@@ -638,9 +638,9 @@ it('previsto com valor negativo continua negativo depois de corrigido', async ()
 
   render(<TelaHoje />);
   await abrirAba(/Pendentes/);
-  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
   await userEvent.type(await screen.findByLabelText('Valor pago'), '5000');
-  await userEvent.click(screen.getByRole('button', { name: 'Confirmar internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
 
   await screen.findByText('Nada a confirmar — tudo em dia.');
   const salvo = await db.lancamentos.get(lanc.id);
@@ -652,9 +652,9 @@ it('confirma pendente de valor negativo sem mexer em nada, preservando valor e s
 
   render(<TelaHoje />);
   await abrirAba(/Pendentes/);
-  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de luz' }));
   await screen.findByLabelText('Valor pago'); // aguarda abertura dos campos
-  await userEvent.click(screen.getByRole('button', { name: 'Confirmar internet' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
 
   await screen.findByText('Nada a confirmar — tudo em dia.');
   const salvo = await db.lancamentos.get(lanc.id);
