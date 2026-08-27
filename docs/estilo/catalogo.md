@@ -1,4 +1,4 @@
-# Catálogo — classes e componentes existentes
+﻿# Catálogo — classes e componentes existentes
 
 Referência do que **já existe**. Reaproveite antes de criar qualquer coisa.
 **Quem cria, cataloga:** classe compartilhada nova (nível 2) e componente novo (nível 4)
@@ -24,6 +24,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.campo-data` / `.campo-data-input` | ver componente `CampoData.tsx` — botão com ícone de calendário sobre um `input[type=date]` nativo (oculto, mas funcional e acessível) |
 | `.chip` | pílula `--surface` no topo (seletor de box, botão de ajustes) e filtros |
 | `.valor-ganho`, `.valor-gasto` | valor monetário em pílula (listas/cards); sem pílula automaticamente dentro de `.tabela` ou em `<strong>` |
+| .editavel | modificador de .valor-ganho/.valor-gasto quando o valor é um <button> que abre a correção do lançamento (fila de Pendentes, TelaHoje); sublinhado pontilhado como pista, e altura mínima de alvo de toque |
 | `.saldo-grande` (+ `.positivo`/`.negativo`) | saldo em destaque (card herói) |
 | `.delta` (+ `.pos`/`.neg`) | badge de variação/projeção com seta ▲/▼ |
 | `.badge` | pílula neutra pequena (contagem, status) |

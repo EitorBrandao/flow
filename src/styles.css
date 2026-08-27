@@ -123,6 +123,14 @@ button { cursor: pointer; }
 }
 .valor-ganho { color: var(--pos); background: var(--pos-bg); }
 .valor-gasto { color: var(--neg); background: var(--neg-bg); }
+/* valor de um previsto que dá pra corrigir num toque (fila de Pendentes, TelaHoje): o
+   sublinhado pontilhado é a única pista de que o valor é tocável, e o min-height sobe a
+   pílula ao alvo mínimo de toque (38px, fundamentos.md). */
+.valor-ganho.editavel, .valor-gasto.editavel {
+  border: none; font-family: inherit; cursor: pointer;
+  min-height: 38px; display: inline-flex; align-items: center;
+  text-decoration: underline dotted; text-underline-offset: 3px;
+}
 /* lista do Fluxo: totalizador do dia (cabeçalho, fora de .item) fica em negrito por já ser
    <strong>; o valor de cada transação (dentro de .item) fica sem negrito pra diferenciar. */
 .lista-fluxo .item .valor-ganho, .lista-fluxo .item .valor-gasto { font-weight: 400; }
