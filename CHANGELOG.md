@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.24.0] - 2026-08-27
+
+### Alterado
+
+- Busca do Fluxo agora encontra a fatura do cartão pela descrição, categoria ou valor de uma compra dentro dela.
+
 ## [0.23.0] - 2026-08-21
 
 ### Alterado
