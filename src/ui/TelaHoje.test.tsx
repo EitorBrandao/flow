@@ -539,3 +539,65 @@ describe('fatura pendente na fila', () => {
     } finally { vi.useRealTimers(); }
   });
 });
+
+/** Monta uma box com um previsto comum de gasto na fila de Pendentes. */
+async function cenarioPendenteComum(valor = 12000) {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-08-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'internet', tipo: 'gasto', ordem: 0 });
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: cat.id, data: '2026-08-27', valor, status: 'previsto',
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-08-27' });
+  return { box, cat, lanc };
+}
+
+it('tocar no valor de um previsto comum abre os campos de correção', async () => {
+  await cenarioPendenteComum();
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  expect(screen.queryByLabelText('Valor pago')).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+
+  expect(await screen.findByLabelText('Valor pago')).toBeInTheDocument();
+  expect(screen.getByLabelText('Data do pagamento')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Descartar' })).not.toBeInTheDocument();
+});
+
+it('cancelar a correção fecha os campos sem gravar nada', async () => {
+  const { lanc } = await cenarioPendenteComum();
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Cancelar' }));
+
+  await waitFor(() => expect(screen.queryByLabelText('Valor pago')).not.toBeInTheDocument());
+  const salvo = await db.lancamentos.get(lanc.id);
+  expect(salvo?.status).toBe('previsto');
+  expect(salvo?.valor).toBe(12000);
+});
+
+it('abrir a correção de um item fecha a do outro', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-08-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const net = await repo.salvarCategoria({ boxId: box.id, nome: 'internet', tipo: 'gasto', ordem: 0 });
+  const agua = await repo.salvarCategoria({ boxId: box.id, nome: 'agua', tipo: 'gasto', ordem: 1 });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: net.id, data: '2026-08-27', valor: 12000, status: 'previsto' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: agua.id, data: '2026-08-27', valor: 8000, status: 'previsto' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-08-27' });
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await screen.findByLabelText('Valor pago');
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de agua' }));
+
+  await waitFor(() => expect(screen.getAllByLabelText('Valor pago')).toHaveLength(1));
+});
