@@ -91,8 +91,12 @@ export async function excluirLancamento(id: ID): Promise<void> {
   });
 }
 
-export async function confirmarPendente(id: ID, valorReal?: number): Promise<void> {
-  await atualizarLancamento(id, { status: 'efetivo', ...(valorReal != null ? { valor: valorReal } : {}) });
+export async function confirmarPendente(id: ID, valorReal?: number, dataReal?: ISODate): Promise<void> {
+  await atualizarLancamento(id, {
+    status: 'efetivo',
+    ...(valorReal != null ? { valor: valorReal } : {}),
+    ...(dataReal != null ? { data: dataReal } : {}),
+  });
 }
 
 export async function salvarBox(box: Box): Promise<void> {
