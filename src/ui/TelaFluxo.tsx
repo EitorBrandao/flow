@@ -1,6 +1,7 @@
 import { Suspense, lazy, useMemo, useState } from 'react';
 import { Maximize2, Search } from 'lucide-react';
 import { addDias } from '../domain/dates';
+import { calcularFaturas, type Fatura } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import { projetarBoxes } from '../domain/projection';
 import type { Lancamento } from '../domain/types';
@@ -51,6 +52,7 @@ export default function TelaFluxo() {
   const inicioLista = addDias(hoje, -diasAtras);
   const nomeCat = (id: string) => dados.categorias.find((c) => c.id === id)?.nome ?? '?';
   const tipoCat = (id: string) => dados.categorias.find((c) => c.id === id)?.tipo ?? 'gasto';
+  const nomeCatCartao = (id: string) => dados.categoriasCartao.find((c) => c.id === id)?.nome ?? '?';
   const q = busca.trim().toLowerCase();
   const buscaAtiva = q.length > 0;
   const dataAtiva = dataDe.length > 0;
@@ -58,11 +60,34 @@ export default function TelaFluxo() {
   const [dataDeFiltro, dataAteFiltro] = periodoAtivo && dataAte
     ? (dataAte < dataDe ? [dataAte, dataDe] : [dataDe, dataAte])
     : [dataDe, dataDe];
+  // Fatura do cartão não bate na busca pelos próprios campos (nunca tem `nota`, e a
+  // "categoria" mostrada é o nome do cartão) — cai para as compras que a compõem.
+  const faturasCache = new Map<string, Fatura[]>();
+  const faturasDoCartao = (cartaoId: string): Fatura[] => {
+    let f = faturasCache.get(cartaoId);
+    if (!f) {
+      const cartao = dados.cartoes.find((c) => c.id === cartaoId);
+      const compras = dados.comprasCartao.filter((c) => c.cartaoId === cartaoId);
+      f = cartao ? calcularFaturas(cartao, compras, dados.config.horizonteProjecao) : [];
+      faturasCache.set(cartaoId, f);
+    }
+    return f;
+  };
+  const bateFaturaCartao = (l: Lancamento): boolean => {
+    if (!l.cartaoId || !l.faturaMes) return false;
+    const fatura = faturasDoCartao(l.cartaoId).find((f) => f.mes === l.faturaMes);
+    if (!fatura) return false;
+    return fatura.itens.some((i) =>
+      (i.descricao != null && i.descricao.toLowerCase().includes(q))
+      || nomeCatCartao(i.categoriaCartaoId).toLowerCase().includes(q)
+      || formatarBRL(i.valorCent).toLowerCase().includes(q));
+  };
   const bate = (l: Lancamento) => {
     if (l.nota && l.nota.toLowerCase().includes(q)) return true;
     if (nomeCat(l.categoriaId).toLowerCase().includes(q)) return true;
     if (dataBonita(l.data).toLowerCase().includes(q)) return true;
-    return formatarBRL(Math.abs(l.valor)).toLowerCase().includes(q);
+    if (formatarBRL(Math.abs(l.valor)).toLowerCase().includes(q)) return true;
+    return l.origem === 'cartao' && bateFaturaCartao(l);
   };
   const porDia = new Map<string, Lancamento[]>();
   for (const l of dados.lancamentos) {

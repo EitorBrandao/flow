@@ -335,6 +335,70 @@ it('lançamento de fatura de cartão abre o resumo em vez do editor, e o link na
   } finally { vi.useRealTimers(); }
 });
 
+describe('busca alcança compras dentro da fatura do cartão', () => {
+  async function seedFaturaComDuasCompras() {
+    const { box } = await seedBoxComCategoria();
+    const cartao = await repo.salvarCartao({
+      boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
+    }, '2027-12-31');
+    const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-10',
+      valorTotal: 2513, parcelas: 1, descricao: 'Farmácia',
+    }, '2027-12-31');
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-12',
+      valorTotal: 5000, parcelas: 1, descricao: 'Padaria',
+    }, '2027-12-31');
+    const hoje = '2026-07-01';
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje });
+  }
+
+  it('busca por descrição de uma compra da fatura mostra o lançamento do cartão', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      await seedFaturaComDuasCompras();
+      render(<TelaFluxo />);
+      await abrirFiltros();
+
+      await userEvent.type(screen.getByPlaceholderText(/Buscar/), 'Farmácia');
+
+      expect(await screen.findByRole('button', { name: /Nubank/ })).toBeInTheDocument();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('busca pelo valor de uma compra da fatura mostra o lançamento do cartão', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      await seedFaturaComDuasCompras();
+      render(<TelaFluxo />);
+      await abrirFiltros();
+
+      // "25,13" bate na compra da Farmácia (R$ 25,13), não no total da fatura (R$ 75,13)
+      await userEvent.type(screen.getByPlaceholderText(/Buscar/), '25,13');
+
+      expect(await screen.findByRole('button', { name: /Nubank/ })).toBeInTheDocument();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('busca sem correspondência nas compras nem no próprio lançamento não mostra a fatura', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      await seedFaturaComDuasCompras();
+      render(<TelaFluxo />);
+      await abrirFiltros();
+
+      await userEvent.type(screen.getByPlaceholderText(/Buscar/), 'inexistente');
+
+      expect(screen.queryByRole('button', { name: /Nubank/ })).not.toBeInTheDocument();
+    } finally { vi.useRealTimers(); }
+  });
+});
+
 it('dia de hoje aparece na lista mesmo sem lançamentos, destacado e só com o cabeçalho', async () => {
   const { box } = await seedBoxComCategoria();
   const hoje = '2026-07-05';
