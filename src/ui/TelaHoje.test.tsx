@@ -601,3 +601,68 @@ it('abrir a correção de um item fecha a do outro', async () => {
 
   await waitFor(() => expect(screen.getAllByLabelText('Valor pago')).toHaveLength(1));
 });
+
+it('confirma o pendente com o valor corrigido e o tira da fila', async () => {
+  const { lanc } = await cenarioPendenteComum();
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.type(await screen.findByLabelText('Valor pago'), '13700');
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar internet' }));
+
+  await screen.findByText('Nada a confirmar — tudo em dia.');
+  const salvo = await db.lancamentos.get(lanc.id);
+  expect(salvo?.status).toBe('efetivo');
+  expect(salvo?.valor).toBe(13700);
+});
+
+it('confirma o pendente com a data corrigida', async () => {
+  const { lanc } = await cenarioPendenteComum();
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  const data = await screen.findByLabelText('Data do pagamento');
+  await userEvent.clear(data);
+  await userEvent.type(data, '2026-08-25');
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar internet' }));
+
+  await screen.findByText('Nada a confirmar — tudo em dia.');
+  const salvo = await db.lancamentos.get(lanc.id);
+  expect(salvo?.data).toBe('2026-08-25');
+});
+
+it('previsto com valor negativo continua negativo depois de corrigido', async () => {
+  const { lanc } = await cenarioPendenteComum(-4000);
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de internet' }));
+  await userEvent.type(await screen.findByLabelText('Valor pago'), '5000');
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar internet' }));
+
+  await screen.findByText('Nada a confirmar — tudo em dia.');
+  const salvo = await db.lancamentos.get(lanc.id);
+  expect(salvo?.valor).toBe(-5000);
+});
+
+it('a fatura de cartão não ganha o gesto e mantém "Paguei outro valor"', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-08-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'fatura cartao', tipo: 'gasto', ordem: 0 });
+  await db.lancamentos.add({
+    id: novoId(), boxId: box.id, categoriaId: cat.id, data: '2026-08-27', valor: 50000,
+    status: 'previsto', origem: 'cartao', cartaoId: novoId(), faturaMes: '2026-08',
+    criadoEm: agora, alteradoEm: agora,
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-08-27' });
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+
+  expect(screen.queryByRole('button', { name: 'Corrigir valor de fatura cartao' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Paguei outro valor/ })).toBeInTheDocument();
+});

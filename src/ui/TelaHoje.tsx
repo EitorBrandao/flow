@@ -242,8 +242,13 @@ export default function TelaHoje() {
     setDataCorrigida(l.data);
   }
 
-  async function confirmarCorrigido(_l: Lancamento) {
+  // O campo edita a magnitude; o sinal vem do previsto original, para um estorno negativo não
+  // virar positivo em silêncio. Trocar o sinal continua sendo trabalho do LancEditor.
+  async function confirmarCorrigido(l: Lancamento) {
+    const valor = l.valor < 0 ? -valorCorrigido : valorCorrigido;
     setCorrigindo(null);
+    await repo.confirmarPendente(l.id, valor, dataCorrigida);
+    await recarregar();
   }
 
   async function confirmar(id: string) {
