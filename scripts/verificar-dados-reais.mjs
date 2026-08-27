@@ -61,12 +61,6 @@ const EXCECOES_VALOR = [
 const EXCECOES_ARQUIVO = [
   'scripts/verificar-dados-reais.mjs',
   'scripts/verificar-dados-reais.test.mjs',
-  // Gerado por `npm run dossie` a partir de um roteiro sintético (src/dossie/roteiro.ts).
-  // Dado real não tem por onde entrar aqui: a saída é função pura da entrada, que é checada.
-  'docs/dossie/00-roteiro.md',
-  'docs/dossie/01-invariantes.md',
-  'docs/dossie/02-motor.md',
-  'docs/dossie/03-telas.md',
 ];
 
 // Binários e afins: não há texto para varrer e ler tudo em memória é desperdício.
@@ -85,6 +79,14 @@ const PADROES = [
 // CONTINUAM valendo em teste: nome de estabelecimento real num teste é vazamento igual, e
 // aquele padrão é preciso o bastante para não gerar ruído.
 const RE_ARQUIVO_TESTE = /\.test\.tsx?$/;
+
+// O dossiê de comportamento (`npm run dossie`) é gerado de um roteiro sintético
+// (`src/dossie/roteiro.ts`), e é feito de saldo projetado e total de fatura: os padrões
+// genéricos de moeda casam em quase toda linha. Recebe o mesmo tratamento do arquivo de
+// teste, e pela mesma razão — os termos da lista privada CONTINUAM valendo. A isenção é para
+// o ruído do padrão genérico, nunca para a rede de privacidade: estes quatro arquivos vão
+// para um repositório público, e são justamente os que mais precisam dela.
+const RE_ARQUIVO_GERADO = /^docs\/dossie\/\d{2}-[a-z]+\.md$/;
 
 // --- argumentos -------------------------------------------------------------
 
@@ -179,7 +181,8 @@ function varrer(raizProjeto) {
     if (EXCECOES_ARQUIVO.includes(arquivo)) continue;
     if (EXTENSOES_IGNORADAS.has(path.extname(arquivo).toLowerCase())) continue;
 
-    const padroes = RE_ARQUIVO_TESTE.test(arquivo) ? privados : [...PADROES, ...privados];
+    const soPrivados = RE_ARQUIVO_TESTE.test(arquivo) || RE_ARQUIVO_GERADO.test(arquivo);
+    const padroes = soPrivados ? privados : [...PADROES, ...privados];
     if (padroes.length === 0) continue;
 
     let conteudo;
