@@ -68,6 +68,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.frequentes-detalhe` | o valor dentro do chip, em `--muted` e `tabular-nums` |
 | `.frequentes-ponto` | ponto azul que marca atalho com destino de cartão |
 | `.versao-detalhes` | lista de detalhes recuada sob um tópico do changelog, na tela Versão (`Versao.tsx`) — `--muted`, 13px |
+| `.escanear-nota-video` | preview da câmera em `EscanearNotaSheet.tsx` |
 
 ## Componentes compartilhados (em `src/ui/`)
 
@@ -139,3 +140,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   box com saldo próprio ou sem categorias. Guia o usuário pelos primeiros passos: criar box,
   importar backup ou escolher categorias. Desaparece automaticamente quando os dados
   correspondem (sem flag persistido de conclusão).
+- **`EscanearNotaSheet.tsx`** — captura de compra por nota fiscal: câmera decodifica o
+  QR-code via `jsQR` (ou chave digitada à mão, sempre disponível); mostra a chave extraída;
+  aceita o XML da nota por upload ou colado, faz o parse (`domain/notaFiscal.ts`) e devolve o
+  resultado por `onConcluir`. Usado por `AdicionarSheet`.
