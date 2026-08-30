@@ -1,17 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Camera } from 'lucide-react';
 import type { Cartao } from '../domain/types';
 import { frequentes, type ChipFrequente } from '../domain/aggregations';
 import { formatarSemSimbolo } from '../domain/money';
+import type { NotaFiscalExtraida } from '../domain/notaFiscal';
 import { boxIdEfetivo, boxIdsSelecionadas, useApp } from '../state/store';
-import FormCompra from './FormCompra';
+import EscanearNotaSheet from './EscanearNotaSheet';
+import FormCompra, { type InicialCompra } from './FormCompra';
 import Sheet from './Sheet';
 
-type Passo = 'menu' | 'sem-cartao' | 'escolher-cartao' | 'form';
+type Passo = 'menu' | 'sem-cartao' | 'escolher-cartao' | 'escanear' | 'form';
 
 const ROTULOS: Record<Passo, string> = {
   menu: 'Adicionar',
   'sem-cartao': 'Nenhum cartão cadastrado',
   'escolher-cartao': 'Compra em qual cartão?',
+  escanear: 'Compra por nota fiscal',
   form: 'Nova compra',
 };
 
@@ -19,8 +23,7 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
   const { dados, boxSel, hoje, setAba, setRascunhoLancar } = useApp();
   const [passo, setPasso] = useState<Passo>('menu');
   const [cartaoEscolhido, setCartaoEscolhido] = useState<Cartao | null>(null);
-  const [inicialCompra, setInicialCompra] =
-    useState<{ valorTotal: number; categoriaCartaoId: string } | null>(null);
+  const [inicialCompra, setInicialCompra] = useState<InicialCompra | null>(null);
 
   const cartoesAtivos = useMemo(() => {
     if (!dados) return [];
@@ -76,6 +79,21 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
     setPasso('escolher-cartao');
   }
 
+  function irParaEscanear() {
+    setPasso('escanear');
+  }
+
+  function aoConcluirEscaneamento(resultado: NotaFiscalExtraida) {
+    setInicialCompra({
+      ...(resultado.valorTotal != null ? { valorTotal: resultado.valorTotal } : {}),
+      ...(resultado.data != null ? { data: resultado.data } : {}),
+      ...(resultado.descricao != null ? { descricao: resultado.descricao } : {}),
+    });
+    if (cartoesAtivos.length === 0) { setPasso('sem-cartao'); return; }
+    if (cartoesAtivos.length === 1) { setCartaoEscolhido(cartoesAtivos[0]); setPasso('form'); return; }
+    setPasso('escolher-cartao');
+  }
+
   function irParaAjustes() {
     onFechar();
     setAba('ajustes');
@@ -85,7 +103,12 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
     <Sheet aberto={aberto} onFechar={onFechar} rotulo={ROTULOS[passo]}>
       {passo === 'menu' && (
         <>
-          <h2 style={{ marginTop: 0 }}>Adicionar</h2>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h2 style={{ marginTop: 0 }}>Adicionar</h2>
+            <button className="chip" aria-label="Compra por nota fiscal" onClick={irParaEscanear}>
+              <Camera size={18} />
+            </button>
+          </div>
           {chips.length > 0 && (
             <>
               <p className="rotulo-grupo">Frequentes</p>
@@ -148,6 +171,9 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
             ))}
           </div>
         </>
+      )}
+      {passo === 'escanear' && (
+        <EscanearNotaSheet onConcluir={aoConcluirEscaneamento} onFechar={() => setPasso('menu')} />
       )}
       {passo === 'form' && cartaoEscolhido && (
         <FormCompra
