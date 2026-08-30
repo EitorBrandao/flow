@@ -1,5 +1,5 @@
 import {
-  addDias, addMeses, addMesesData, dataComDia, diasEntre, formatarDataBR, hojeISO, mesDe,
+  addDias, addMeses, addMesesData, dataComDia, dataDeISODatetime, diasEntre, formatarDataBR, hojeISO, mesDe,
   serialExcelParaISO, ultimoDiaDoMes,
 } from './dates';
 
@@ -51,4 +51,18 @@ it('serialExcelParaISO usa base 1899-12-30', () => {
   expect(serialExcelParaISO(46023)).toBe('2026-01-01'); // 1º dia do box (pessoa-a) 2026
   expect(serialExcelParaISO(45658)).toBe('2025-01-01');
   expect(serialExcelParaISO(45841)).toBe('2025-07-03'); // 1ª parcela Emprestimo A
+});
+
+it('dataDeISODatetime extrai a data de um datetime ISO 8601 com fuso', () => {
+  expect(dataDeISODatetime('2026-08-29T14:23:00-03:00')).toBe('2026-08-29');
+});
+
+it('dataDeISODatetime extrai a data de um datetime sem fuso', () => {
+  expect(dataDeISODatetime('2026-01-05T00:00:00')).toBe('2026-01-05');
+});
+
+it('dataDeISODatetime devolve undefined para texto que não começa com AAAA-MM-DDT', () => {
+  expect(dataDeISODatetime('29/08/2026')).toBeUndefined();
+  expect(dataDeISODatetime('')).toBeUndefined();
+  expect(dataDeISODatetime('2026-08-29')).toBeUndefined(); // sem o T — não é datetime
 });

@@ -64,3 +64,10 @@ export function addMesesData(d: ISODate, n: number): ISODate {
 export function serialExcelParaISO(serial: number): ISODate {
   return isoDeUTC(Date.UTC(1899, 11, 30) + Math.round(serial) * MS_DIA);
 }
+
+/** Primeiros 10 caracteres de um datetime ISO 8601 (ex. "2026-08-29T14:23:00-03:00" →
+ *  "2026-08-29"). `undefined` se o texto não tiver esse formato — não lança exceção. */
+export function dataDeISODatetime(texto: string): ISODate | undefined {
+  const m = /^(\d{4}-\d{2}-\d{2})T/.exec(texto.trim());
+  return m?.[1];
+}
