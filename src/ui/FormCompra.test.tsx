@@ -345,3 +345,23 @@ it('editando uma compra, inicial é ignorado', async () => {
   expect(screen.getByLabelText('Valor')).toHaveValue(formatarBRL(10000));
   expect(screen.getByLabelText('Parcelas')).toHaveValue(3);
 });
+
+it('inicial semeia também data e descrição, vindas de uma nota fiscal escaneada', async () => {
+  const { box, cartao } = await montarCartao();
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+  render(
+    <FormCompra
+      cartao={cartao}
+      inicial={{ valorTotal: 6240, data: '2026-06-15', descricao: 'Mercado Exemplo LTDA' }}
+      onFechar={() => {}}
+    />,
+  );
+
+  expect(screen.getByLabelText('Valor')).toHaveValue(formatarBRL(6240));
+  expect(screen.getByLabelText('Data')).toHaveValue('2026-06-15');
+  expect(screen.getByLabelText('Descrição (opcional)')).toHaveValue('Mercado Exemplo LTDA');
+  // sem categoriaCartaoId no inicial: a categoria existente não fica selecionada
+  expect(screen.getByRole('button', { name: 'mercado' })).not.toHaveClass('selecionada');
+});
