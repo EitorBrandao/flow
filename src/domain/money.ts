@@ -32,3 +32,12 @@ export function formatarSemSimbolo(centavos: number): string {
     minimumFractionDigits: 2, maximumFractionDigits: 2,
   });
 }
+
+/** Converte uma string decimal simples (formato do XML da NFe, ex. "123.45") em centavos
+ *  inteiros. `undefined` se o texto não casar com esse formato — não lança exceção. */
+export function parsearCentavosDecimal(texto: string): number | undefined {
+  const m = /^(\d+)(?:\.(\d{1,2}))?$/.exec(texto.trim());
+  if (!m) return undefined;
+  const fracao = (m[2] ?? '').padEnd(2, '0');
+  return Number(m[1]) * 100 + Number(fracao);
+}

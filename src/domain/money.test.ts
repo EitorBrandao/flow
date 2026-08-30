@@ -1,4 +1,4 @@
-import { formatarBRL, formatarSobraCompacta, empurrarDigito, apagarUltimoDigito, digitosParaCentavos, formatarSemSimbolo } from './money';
+import { formatarBRL, formatarSobraCompacta, empurrarDigito, apagarUltimoDigito, digitosParaCentavos, formatarSemSimbolo, parsearCentavosDecimal } from './money';
 
 describe('formatarBRL', () => {
   it('formata centavos como moeda pt-BR', () => {
@@ -77,4 +77,26 @@ it('formatarSemSimbolo mostra centavos e milhar, sem R$', () => {
   expect(formatarSemSimbolo(123456)).toBe('1.234,56');
   expect(formatarSemSimbolo(0)).toBe('0,00');
   expect(formatarSemSimbolo(100)).toBe('1,00'); // não '1'
+});
+
+describe('parsearCentavosDecimal', () => {
+  it('converte decimal com duas casas', () => {
+    expect(parsearCentavosDecimal('123.45')).toBe(12345);
+    expect(parsearCentavosDecimal('0.50')).toBe(50);
+  });
+
+  it('completa com zero quando falta a segunda casa', () => {
+    expect(parsearCentavosDecimal('10.5')).toBe(1050);
+  });
+
+  it('aceita inteiro sem ponto decimal', () => {
+    expect(parsearCentavosDecimal('10')).toBe(1000);
+  });
+
+  it('devolve undefined para texto que não é decimal simples', () => {
+    expect(parsearCentavosDecimal('abc')).toBeUndefined();
+    expect(parsearCentavosDecimal('')).toBeUndefined();
+    expect(parsearCentavosDecimal('-5.00')).toBeUndefined();
+    expect(parsearCentavosDecimal('1.234')).toBeUndefined();
+  });
 });
