@@ -19,6 +19,7 @@ export default function EscanearNotaSheet({ onConcluir, onFechar }: {
   const [chaveDigitada, setChaveDigitada] = useState('');
   const [xmlTexto, setXmlTexto] = useState('');
   const [erro, setErro] = useState<string | null>(null);
+  const [resultadoPendente, setResultadoPendente] = useState<NotaFiscalExtraida | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   // Calculado uma vez: em jsdom (testes) navigator.mediaDevices não existe, e o componente
@@ -84,16 +85,31 @@ export default function EscanearNotaSheet({ onConcluir, onFechar }: {
   async function onArquivoXml(e: ChangeEvent<HTMLInputElement>) {
     const arquivo = e.target.files?.[0];
     if (!arquivo) return;
-    setXmlTexto(await arquivo.text());
+    setErro(null);
+    setResultadoPendente(null);
+    try {
+      setXmlTexto(await arquivo.text());
+    } catch {
+      setErro('Não foi possível ler esse arquivo.');
+    }
   }
 
   function concluir() {
     if (!xmlTexto.trim()) { setErro('Cole o XML ou envie o arquivo.'); return; }
     const resultado = parsearNotaFiscal(xmlTexto);
-    if (resultado.valorTotal == null && resultado.data == null && resultado.descricao == null) {
+    const vazio = resultado.valorTotal == null && resultado.data == null && resultado.descricao == null;
+    if (vazio) {
       setErro('Não foi possível ler esse XML. Confira o formulário abaixo.');
+      setResultadoPendente(resultado);
+      return;
     }
+    setErro(null);
+    setResultadoPendente(null);
     onConcluir(resultado);
+  }
+
+  function continuarMesmoAssim() {
+    if (resultadoPendente) onConcluir(resultadoPendente);
   }
 
   if (etapa === 'chave') {
@@ -139,12 +155,19 @@ export default function EscanearNotaSheet({ onConcluir, onFechar }: {
         <label htmlFor="escanear-nota-texto">Ou cole o texto do XML</label>
         <textarea
           id="escanear-nota-texto" rows={5} value={xmlTexto}
-          onChange={(e) => setXmlTexto(e.target.value)}
+          onChange={(e) => {
+            setXmlTexto(e.target.value);
+            setErro(null);
+            setResultadoPendente(null);
+          }}
         />
       </div>
       {erro && <p className="aviso">{erro}</p>}
       <div className="linha">
         <button className="botao botao-primario" onClick={concluir}>Continuar</button>
+        {resultadoPendente && (
+          <button className="botao" onClick={continuarMesmoAssim}>Continuar mesmo assim</button>
+        )}
         <button className="botao" onClick={onFechar}>Cancelar</button>
       </div>
     </>

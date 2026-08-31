@@ -32,6 +32,7 @@ button { cursor: pointer; }
   padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 600;
   min-height: 38px;
 }
+.chip-elevado { background: var(--surface2); }
 
 .conteudo { flex: 1; padding: 12px 16px 96px; max-width: 720px; width: 100%; margin: 0 auto; }
 .tela { display: flex; flex-direction: column; gap: 14px; }

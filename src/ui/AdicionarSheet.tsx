@@ -73,10 +73,15 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
     setAba('lancar');
   }
 
-  function irParaCompra() {
+  function rotearParaCompra(inicial: InicialCompra | null) {
+    setInicialCompra(inicial);
     if (cartoesAtivos.length === 0) { setPasso('sem-cartao'); return; }
     if (cartoesAtivos.length === 1) { setCartaoEscolhido(cartoesAtivos[0]); setPasso('form'); return; }
     setPasso('escolher-cartao');
+  }
+
+  function irParaCompra() {
+    rotearParaCompra(null);
   }
 
   function irParaEscanear() {
@@ -84,14 +89,11 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
   }
 
   function aoConcluirEscaneamento(resultado: NotaFiscalExtraida) {
-    setInicialCompra({
-      ...(resultado.valorTotal != null ? { valorTotal: resultado.valorTotal } : {}),
-      ...(resultado.data != null ? { data: resultado.data } : {}),
-      ...(resultado.descricao != null ? { descricao: resultado.descricao } : {}),
+    rotearParaCompra({
+      valorTotal: resultado.valorTotal,
+      data: resultado.data,
+      descricao: resultado.descricao,
     });
-    if (cartoesAtivos.length === 0) { setPasso('sem-cartao'); return; }
-    if (cartoesAtivos.length === 1) { setCartaoEscolhido(cartoesAtivos[0]); setPasso('form'); return; }
-    setPasso('escolher-cartao');
   }
 
   function irParaAjustes() {
@@ -100,15 +102,19 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
   }
 
   return (
-    <Sheet aberto={aberto} onFechar={onFechar} rotulo={ROTULOS[passo]}>
+    <Sheet
+      aberto={aberto} onFechar={onFechar} rotulo={ROTULOS[passo]}
+      cabecalho={passo === 'menu' ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ marginTop: 0 }}>Adicionar</h2>
+          <button className="chip chip-elevado" aria-label="Compra por nota fiscal" onClick={irParaEscanear}>
+            <Camera size={18} />
+          </button>
+        </div>
+      ) : undefined}
+    >
       {passo === 'menu' && (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h2 style={{ marginTop: 0 }}>Adicionar</h2>
-            <button className="chip" aria-label="Compra por nota fiscal" onClick={irParaEscanear}>
-              <Camera size={18} />
-            </button>
-          </div>
           {chips.length > 0 && (
             <>
               <p className="rotulo-grupo">Frequentes</p>

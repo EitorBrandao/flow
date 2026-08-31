@@ -55,7 +55,7 @@ it('cola o XML e conclui com os campos extraídos', async () => {
   });
 });
 
-it('XML sem nenhum campo reconhecível mostra erro mas ainda conclui', async () => {
+it('XML sem nenhum campo reconhecível mostra erro e exige confirmar antes de concluir', async () => {
   const onConcluir = vi.fn();
   render(<EscanearNotaSheet onConcluir={onConcluir} onFechar={() => {}} />);
   await userEvent.type(screen.getByLabelText('Chave de acesso'), '3'.repeat(44));
@@ -67,6 +67,9 @@ it('XML sem nenhum campo reconhecível mostra erro mas ainda conclui', async () 
 
   expect(await screen.findByText('Não foi possível ler esse XML. Confira o formulário abaixo.'))
     .toBeInTheDocument();
+  expect(onConcluir).not.toHaveBeenCalled();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar mesmo assim' }));
   await waitFor(() => expect(onConcluir).toHaveBeenCalledWith({}));
 });
 
@@ -81,4 +84,37 @@ it('cancelar chama onFechar em qualquer etapa', async () => {
   render(<EscanearNotaSheet onConcluir={vi.fn()} onFechar={onFechar} />);
   await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
   expect(onFechar).toHaveBeenCalledOnce();
+});
+
+it('envia um arquivo XML válido e conclui com os campos extraídos', async () => {
+  const onConcluir = vi.fn();
+  render(<EscanearNotaSheet onConcluir={onConcluir} onFechar={() => {}} />);
+  await userEvent.type(screen.getByLabelText('Chave de acesso'), '3'.repeat(44));
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+  const arquivo = new File([XML_VALIDO], 'nota.xml', { type: 'text/xml' });
+  const input = await screen.findByLabelText('Arquivo XML');
+  await userEvent.upload(input, arquivo);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+  await waitFor(() => {
+    expect(onConcluir).toHaveBeenCalledWith({
+      valorTotal: 6240, data: '2026-08-29', descricao: 'Mercado Exemplo LTDA',
+    });
+  });
+});
+
+it('arquivo ilegível mostra mensagem de erro', async () => {
+  const espiao = vi.spyOn(File.prototype, 'text').mockRejectedValueOnce(new Error('boom'));
+  render(<EscanearNotaSheet onConcluir={vi.fn()} onFechar={() => {}} />);
+  await userEvent.type(screen.getByLabelText('Chave de acesso'), '3'.repeat(44));
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+  const arquivo = new File(['lixo'], 'nota.xml', { type: 'text/xml' });
+  const input = await screen.findByLabelText('Arquivo XML');
+  await userEvent.upload(input, arquivo);
+
+  expect(await screen.findByText('Não foi possível ler esse arquivo.')).toBeInTheDocument();
+  espiao.mockRestore();
 });
