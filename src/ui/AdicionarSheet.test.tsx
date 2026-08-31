@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
@@ -157,4 +157,62 @@ it('chip de cartão mostra o nome do cartão na folha, não só no aria-label', 
 
   expect(await screen.findByRole('heading', { name: 'Nova compra' })).toBeInTheDocument();
   expect(screen.getByText('Cartão A')).toBeInTheDocument();
+});
+
+async function montarComCartao() {
+  const box = await montarBox();
+  const cartao = await repo.salvarCartao({
+    boxId: box.id, nome: 'Cartão A', diaFechamento: 20, diaVencimento: 28,
+  }, '2027-12-31');
+  await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'Farmácia', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-08-20' });
+  return { box, cartao };
+}
+
+it('ícone de câmera no cabeçalho abre o escaneamento de nota fiscal', async () => {
+  await montarComCartao();
+  render(<AdicionarSheet aberto onFechar={() => {}} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Compra por nota fiscal' }));
+
+  expect(await screen.findByRole('heading', { name: 'Escanear nota fiscal' })).toBeInTheDocument();
+});
+
+it('nota fiscal escaneada, com um só cartão ativo, abre o formulário direto preenchido', async () => {
+  await montarComCartao();
+  render(<AdicionarSheet aberto onFechar={() => {}} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Compra por nota fiscal' }));
+
+  await userEvent.type(await screen.findByLabelText('Chave de acesso'), '3'.repeat(44));
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+  const textarea = await screen.findByLabelText('Ou cole o texto do XML');
+  fireEvent.change(textarea, {
+    target: {
+      value: '<nfeProc><NFe><infNFe>'
+        + '<ide><dhEmi>2026-08-15T10:00:00-03:00</dhEmi></ide>'
+        + '<emit><xNome>Mercado Exemplo LTDA</xNome></emit>'
+        + '<total><ICMSTot><vNF>62.40</vNF></ICMSTot></total>'
+        + '</infNFe></NFe></nfeProc>',
+    },
+  });
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+  expect(await screen.findByRole('heading', { name: 'Nova compra' })).toBeInTheDocument();
+  expect(screen.getByLabelText('Valor')).toHaveValue(formatarBRL(6240));
+  expect(screen.getByLabelText('Data')).toHaveValue('2026-08-15');
+  expect(screen.getByLabelText('Descrição (opcional)')).toHaveValue('Mercado Exemplo LTDA');
+  // nenhuma categoria vem do XML: a categoria existente não fica selecionada
+  expect(screen.getByRole('button', { name: 'Farmácia' })).not.toHaveClass('selecionada');
+});
+
+it('cancelar o escaneamento volta pro menu', async () => {
+  await montarComCartao();
+  render(<AdicionarSheet aberto onFechar={() => {}} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Compra por nota fiscal' }));
+  await screen.findByRole('heading', { name: 'Escanear nota fiscal' });
+
+  await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+  expect(await screen.findByRole('heading', { name: 'Adicionar' })).toBeInTheDocument();
 });

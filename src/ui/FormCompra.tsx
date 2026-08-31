@@ -2,29 +2,39 @@ import { useEffect, useId, useRef, useState } from 'react';
 import * as repo from '../db/repo';
 import { addMesesData } from '../domain/dates';
 import { categoriasCartaoReservadasIds } from '../domain/categorias';
-import type { Cartao, CompraCartao } from '../domain/types';
+import type { Cartao, CompraCartao, ID, ISODate } from '../domain/types';
 import { viagemAtivaEm } from '../domain/viagem';
 import { useApp } from '../state/store';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import SeletorCategoria from './SeletorCategoria';
 
+/** Semente de uma compra NOVA (atalho da sheet Adicionar ou nota fiscal escaneada). Cada
+ *  campo é opcional porque as duas origens preenchem subconjuntos diferentes: o atalho de
+ *  "Frequentes" sempre traz `categoriaCartaoId`, a nota fiscal nunca traz (não há categoria
+ *  no XML). `compra` (edição) tem precedência sobre `inicial` em todos os campos. */
+export interface InicialCompra {
+  valorTotal?: number;
+  categoriaCartaoId?: ID;
+  data?: ISODate;
+  descricao?: string;
+}
+
 export default function FormCompra({ cartao, compra, inicial, onFechar }: {
   cartao: Cartao;
   compra?: CompraCartao;
-  /** Semente de uma compra NOVA (atalho da sheet Adicionar). `compra` tem precedência. */
-  inicial?: { valorTotal: number; categoriaCartaoId: string };
+  inicial?: InicialCompra;
   onFechar: () => void;
 }) {
   const { dados, hoje, recarregar } = useApp();
   const [valor, setValor] = useState(compra?.valorTotal ?? inicial?.valorTotal ?? 0);
-  const [data, setData] = useState(compra?.data ?? hoje);
+  const [data, setData] = useState(compra?.data ?? inicial?.data ?? hoje);
   const [categoriaId, setCategoriaId] = useState<string | null>(
     compra?.categoriaCartaoId ?? inicial?.categoriaCartaoId ?? null,
   );
   const [parcelas, setParcelas] = useState(compra ? String(compra.parcelas) : '1');
   const [parcelasPagas, setParcelasPagas] = useState('');
-  const [descricao, setDescricao] = useState(compra?.descricao ?? '');
+  const [descricao, setDescricao] = useState(compra?.descricao ?? inicial?.descricao ?? '');
   const [viagemMarcada, setViagemMarcada] = useState(compra ? compra.viagemId != null : true);
   const montouRef = useRef(true);
   const uid = useId();

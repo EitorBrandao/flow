@@ -62,3 +62,16 @@ if (typeof global !== 'undefined' && !global.ClipboardEvent) {
     }
   } as unknown as typeof ClipboardEvent;
 }
+
+// jsdom não implementa Blob.text()/File.text() (usado no upload de arquivo em
+// EscanearNotaSheet); FileReader, esse sim, jsdom implementa — usa ele por baixo.
+if (typeof File !== 'undefined' && !File.prototype.text) {
+  File.prototype.text = function (this: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const leitor = new FileReader();
+      leitor.onload = () => resolve(String(leitor.result));
+      leitor.onerror = () => reject(leitor.error);
+      leitor.readAsText(this);
+    });
+  };
+}

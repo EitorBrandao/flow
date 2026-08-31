@@ -23,6 +23,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.botao.ativo` | modificador de `.botao` pra indicar estado ativo/aplicado (ex.: filtro de data com valor) — `--ac-dim`/`--ac`, mesmo padrão de aba/item ativo |
 | `.campo-data` / `.campo-data-input` | ver componente `CampoData.tsx` — botão com ícone de calendário sobre um `input[type=date]` nativo (oculto, mas funcional e acessível) |
 | `.chip` | pílula `--surface` no topo (seletor de box, botão de ajustes) e filtros |
+| `.chip-elevado` | modificador de `.chip` para quando o chip fica sobre uma superfície já `--surface` (ex.: dentro de uma sheet) — troca o fundo para `--surface2`, senão o chip some por falta de contraste. Usado no botão de câmera do passo `menu` em `AdicionarSheet.tsx` |
 | `.valor-ganho`, `.valor-gasto` | valor monetário em pílula (listas/cards); sem pílula automaticamente dentro de `.tabela` ou em `<strong>` |
 | `.editavel` | modificador de `.valor-ganho`/`.valor-gasto` quando o valor é um `<button>` que abre a correção do lançamento (fila de Pendentes, `TelaHoje`); sublinhado pontilhado como pista, e altura mínima de alvo de toque |
 | `.saldo-grande` (+ `.positivo`/`.negativo`) | saldo em destaque (card herói) |
@@ -68,6 +69,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.frequentes-detalhe` | o valor dentro do chip, em `--muted` e `tabular-nums` |
 | `.frequentes-ponto` | ponto azul que marca atalho com destino de cartão |
 | `.versao-detalhes` | lista de detalhes recuada sob um tópico do changelog, na tela Versão (`Versao.tsx`) — `--muted`, 13px |
+| `.escanear-nota-video` | preview da câmera em `EscanearNotaSheet.tsx` |
 
 ## Componentes compartilhados (em `src/ui/`)
 
@@ -139,3 +141,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   box com saldo próprio ou sem categorias. Guia o usuário pelos primeiros passos: criar box,
   importar backup ou escolher categorias. Desaparece automaticamente quando os dados
   correspondem (sem flag persistido de conclusão).
+- **`EscanearNotaSheet.tsx`** — captura de compra por nota fiscal: câmera decodifica o
+  QR-code via `jsQR` (ou chave digitada à mão, sempre disponível); mostra a chave extraída;
+  aceita o XML da nota por upload ou colado, faz o parse (`domain/notaFiscal.ts`) e devolve o
+  resultado por `onConcluir`. Usado por `AdicionarSheet`.

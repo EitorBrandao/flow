@@ -1,0 +1,3 @@
+- Compra no cartão a partir da nota fiscal: escaneie o QR-code da NFC-e, busque o XML fora do app e volte com ele para pré-preencher valor, data e descrição.
+  - Sem câmera, ou se o QR não for lido, dá pra digitar a chave de acesso à mão.
+  - Categoria e cartão continuam por sua conta — o XML não indica isso.
