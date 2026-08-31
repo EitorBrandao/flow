@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.26.0] - 2026-08-31
+
+### Adicionado
+
+- Compra no cartão a partir da nota fiscal: escaneie o QR-code da NFC-e, busque o XML fora do app e volte com ele para pré-preencher valor, data e descrição.
+  - Sem câmera, ou se o QR não for lido, dá pra digitar a chave de acesso à mão.
+  - Categoria e cartão continuam por sua conta — o XML não indica isso.
+
 ## [0.25.0] - 2026-08-27
 
 ### Alterado
