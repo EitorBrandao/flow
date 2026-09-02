@@ -169,6 +169,7 @@ export interface Dados {
   conferenciasFatura: ConferenciaFatura[];
   viagens: Viagem[];
   bancos: Banco[];
+  notasFiscais: NotaFiscalSalva[];
   config: Config;
 }
 

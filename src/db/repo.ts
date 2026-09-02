@@ -40,11 +40,13 @@ export async function carregarTudo(): Promise<Dados> {
   const [
     boxes, categorias, lancamentos, recorrencias, cenarios,
     cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, bancos,
+    notasFiscais,
   ] = await Promise.all([
     db.boxes.toArray(), db.categorias.toArray(), db.lancamentos.toArray(),
     db.recorrencias.toArray(), db.cenarios.toArray(),
     db.cartoes.toArray(), db.categoriasCartao.toArray(), db.comprasCartao.toArray(),
     db.recorrenciasCartao.toArray(), db.conferenciasFatura.toArray(), db.viagens.toArray(), db.bancos.toArray(),
+    db.notasFiscais.toArray(),
   ]);
   // ordem canônica na fonte: todo consumidor do snapshot herda a ordem de Ajustes
   categorias.sort(compararCategorias);
@@ -55,7 +57,8 @@ export async function carregarTudo(): Promise<Dados> {
   lancamentos.sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
   return {
     boxes, categorias, lancamentos, recorrencias, cenarios,
-    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, bancos, config,
+    cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, bancos,
+    notasFiscais, config,
   };
 }
 
@@ -234,7 +237,7 @@ export async function substituirTudo(d: Dados): Promise<void> {
   const tabelas = [
     db.boxes, db.categorias, db.lancamentos, db.recorrencias, db.cenarios,
     db.cartoes, db.categoriasCartao, db.comprasCartao, db.recorrenciasCartao,
-    db.conferenciasFatura, db.viagens, db.bancos, db.config,
+    db.conferenciasFatura, db.viagens, db.bancos, db.notasFiscais, db.config,
   ];
   await db.transaction('rw', tabelas, async () => {
     await Promise.all(tabelas.map((t) => t.clear()));
@@ -252,6 +255,7 @@ export async function substituirTudo(d: Dados): Promise<void> {
     await db.conferenciasFatura.bulkAdd(dedupConferencias(d.conferenciasFatura));
     await db.viagens.bulkAdd(d.viagens);
     await db.bancos.bulkAdd(d.bancos);
+    await db.notasFiscais.bulkAdd(d.notasFiscais);
     await db.config.put({ ...d.config, mudancasDesdeBackup: false });
   });
 }

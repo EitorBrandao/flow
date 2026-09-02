@@ -253,6 +253,7 @@ it('substituirTudo troca completamente os dados e reseta mudancasDesdeBackup', a
     conferenciasFatura: [],
     viagens: [],
     bancos: [],
+    notasFiscais: [],
     config: {
       id: 'config', boxPadraoId: 'nb1', ultimoBackupEm: agora,
       mudancasDesdeBackup: true, horizonteProjecao: `${new Date().getFullYear() + 1}-12-31`,
@@ -938,4 +939,17 @@ it('confirma um pendente só com data corrigida e mantém o valor do previsto', 
   expect(salvo?.status).toBe('efetivo');
   expect(salvo?.valor).toBe(12000);
   expect(salvo?.data).toBe('2026-08-28');
+});
+
+it('carregarTudo devolve notasFiscais e substituirTudo as regrava', async () => {
+  const agora = agoraISO();
+  await db.notasFiscais.add({
+    id: novoId(), compraCartaoId: 'c1', emitente: 'Mercado Exemplo LTDA',
+    itens: [{ descricao: 'Produto A', valorCent: 1000 }], criadoEm: agora, alteradoEm: agora,
+  });
+  const dados = await repo.carregarTudo();
+  expect(dados.notasFiscais).toHaveLength(1);
+
+  await repo.substituirTudo({ ...dados, notasFiscais: [] });
+  await expect(db.notasFiscais.count()).resolves.toBe(0);
 });

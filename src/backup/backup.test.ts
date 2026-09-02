@@ -6,7 +6,7 @@ function dados(): Dados {
     boxes: [{ id: 'b1', nome: 'eitor', saldoInicial: 100, dataSaldoInicial: '2026-01-01', criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' }],
     categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
     cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [], conferenciasFatura: [],
-    viagens: [], bancos: [],
+    viagens: [], bancos: [], notasFiscais: [],
     config: { id: 'config', boxPadraoId: null, ultimoBackupEm: null, mudancasDesdeBackup: false, horizonteProjecao: '2027-12-31' },
   };
 }
@@ -15,7 +15,7 @@ it('round-trip: gerar → serializar → validar', () => {
   const b = gerarBackup(dados());
   const volta = validarBackup(JSON.parse(JSON.stringify(b)));
   expect(volta.dados.boxes).toHaveLength(1);
-  expect(volta.schema).toBe(4);
+  expect(volta.schema).toBe(5);
 });
 
 it('validarBackup rejeita arquivo de outro app ou schema', () => {
@@ -44,9 +44,57 @@ it('mesclar une registros de ids diferentes', () => {
   expect(mesclar(atual, backup).boxes).toHaveLength(2);
 });
 
-it('gerarBackup emite schema 4', () => {
+it('gerarBackup emite schema 5', () => {
   const b = gerarBackup(dados());
-  expect(b.schema).toBe(4);
+  expect(b.schema).toBe(5);
+});
+
+it('gerarBackup emite schema 5 e leva as notas fiscais', () => {
+  const d = dados();
+  d.notasFiscais = [{
+    id: 'n1', compraCartaoId: 'c1', emitente: 'Mercado Exemplo LTDA', emissao: '2026-08-29',
+    totalNotaCent: 6240, itens: [{ descricao: 'Produto A', valorCent: 1000 }],
+    criadoEm: 'x', alteradoEm: '2026-08-29T00:00:00Z',
+  }];
+  const b = gerarBackup(d);
+  expect(b.schema).toBe(5);
+  const volta = validarBackup(JSON.parse(JSON.stringify(b)));
+  expect(volta.dados.notasFiscais).toHaveLength(1);
+  expect(volta.dados.notasFiscais[0].itens[0].valorCent).toBe(1000);
+});
+
+it('backup de schema 4 sem notasFiscais backfila lista vazia', () => {
+  const d = dados() as unknown as Record<string, unknown>;
+  delete d.notasFiscais;
+  const volta = validarBackup({ app: 'flow', schema: 4, exportadoEm: 'x', dados: d });
+  expect(volta.dados.notasFiscais).toEqual([]);
+  expect(volta.schema).toBe(5);
+});
+
+it('backup de schema 5 sem notasFiscais é recusado como corrompido', () => {
+  const d = dados() as unknown as Record<string, unknown>;
+  delete d.notasFiscais;
+  expect(() => validarBackup({ app: 'flow', schema: 5, exportadoEm: 'x', dados: d }))
+    .toThrow(/corrompido/);
+});
+
+it('mesclar une notas fiscais dos dois lados e resolve conflito pelo alteradoEm', () => {
+  const atual = dados();
+  const backup = dados();
+  atual.notasFiscais = [{
+    id: 'n1', compraCartaoId: 'c1', itens: [{ descricao: 'Produto A', valorCent: 1000 }],
+    criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z',
+  }];
+  backup.notasFiscais = [
+    {
+      id: 'n1', compraCartaoId: 'c1', itens: [{ descricao: 'Produto B', valorCent: 2000 }],
+      criadoEm: 'x', alteradoEm: '2026-06-01T00:00:00Z',
+    },
+    { id: 'n2', compraCartaoId: 'c2', itens: [], criadoEm: 'x', alteradoEm: 'x' },
+  ];
+  const m = mesclar(atual, backup);
+  expect(m.notasFiscais).toHaveLength(2);
+  expect(m.notasFiscais.find((n) => n.id === 'n1')!.itens[0].descricao).toBe('Produto B');
 });
 
 it('aceita backup schema 1 preenchendo as tabelas do cartão e viagens vazias', () => {
@@ -58,7 +106,7 @@ it('aceita backup schema 1 preenchendo as tabelas do cartão e viagens vazias', 
     },
   };
   const b = validarBackup(v1);
-  expect(b.schema).toBe(4);
+  expect(b.schema).toBe(5);
   expect(b.dados.cartoes).toEqual([]);
   expect(b.dados.conferenciasFatura).toEqual([]);
   expect(b.dados.viagens).toEqual([]);
@@ -90,7 +138,7 @@ it('aceita backup schema 2 preenchendo viagens vazia', () => {
     },
   };
   const b = validarBackup(v2);
-  expect(b.schema).toBe(4);
+  expect(b.schema).toBe(5);
   expect(b.dados.viagens).toEqual([]);
 });
 
@@ -103,7 +151,7 @@ it('aceita backup schema 3 preenchendo bancos vazia', () => {
       conferenciasFatura: [], viagens: [], config: { id: 'config' },
     },
   });
-  expect(b.schema).toBe(4);
+  expect(b.schema).toBe(5);
   expect(b.dados.bancos).toEqual([]);
 });
 
@@ -138,7 +186,7 @@ it('recusa backup schema 4 sem a tabela viagens ou com viagens que não é array
     dados: {
       boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
       cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
-      conferenciasFatura: [], bancos: [], config: { id: 'config' },
+      conferenciasFatura: [], bancos: [], notasFiscais: [], config: { id: 'config' },
     },
   };
   expect(() => validarBackup(base)).toThrow(/estrutura de dados inesperada/);
@@ -161,8 +209,7 @@ it('backup schema 3 com bancos real preserva o registro (não é apagado no back
     dados: {
       boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
       cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
-      conferenciasFatura: [], viagens: [], config: { id: 'config' },
-      bancos: [bancoReal],
+      conferenciasFatura: [], viagens: [], bancos: [bancoReal], notasFiscais: [], config: { id: 'config' },
     },
   });
   expect(b.dados.bancos).toEqual([bancoReal]);
