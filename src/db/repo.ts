@@ -5,7 +5,7 @@ import { materializar, ocorrencias } from '../domain/recurrence';
 import {
   agoraISO, novoId,
   type Banco, type Box, type Cartao, type Categoria, type CategoriaCartao, type Cenario, type CompraCartao,
-  type Config, type Dados, type ID, type ISODate, type Lancamento, type Recorrencia,
+  type Config, type Dados, type ID, type ISODate, type ItemNota, type Lancamento, type NotaFiscalSalva, type Recorrencia,
   type RecorrenciaCartao, type StatusLancamento, type TipoCategoria, type Viagem,
 } from '../domain/types';
 import { db } from './database';
@@ -517,11 +517,47 @@ export async function atualizarCompraCartao(
 }
 
 export async function excluirCompraCartao(id: ID, horizonte: ISODate): Promise<void> {
-  await db.transaction('rw', db.comprasCartao, db.config, async () => {
+  await db.transaction('rw', db.comprasCartao, db.notasFiscais, db.config, async () => {
     await db.comprasCartao.delete(id);
+    const notas = await db.notasFiscais.where('compraCartaoId').equals(id).primaryKeys();
+    await db.notasFiscais.bulkDelete(notas);
     await marcarMudanca();
   });
   await sincronizarCartoes(horizonte);
+}
+
+// ---------- Nota fiscal da compra ----------
+
+export interface NovaNotaFiscal {
+  compraCartaoId: ID;
+  emitente?: string;
+  emissao?: ISODate;
+  totalNotaCent?: number;
+  itens: ItemNota[];
+}
+
+/** Anexa a nota à compra, substituindo a anterior. Uma nota por compra: o índice do Dexie é
+ *  não-único de propósito (ver database.ts), então a unicidade é aplicada aqui, dentro da
+ *  mesma transação que grava a nova. Não mexe em projeção — nota não vira lançamento. */
+export async function salvarNotaFiscal(n: NovaNotaFiscal): Promise<NotaFiscalSalva> {
+  const agora = agoraISO();
+  const nota: NotaFiscalSalva = { id: novoId(), criadoEm: agora, alteradoEm: agora, ...n };
+  await db.transaction('rw', db.notasFiscais, db.config, async () => {
+    const antigas = await db.notasFiscais.where('compraCartaoId').equals(n.compraCartaoId).primaryKeys();
+    await db.notasFiscais.bulkDelete(antigas);
+    await db.notasFiscais.add(nota);
+    await marcarMudanca();
+  });
+  return nota;
+}
+
+export async function excluirNotaFiscalDaCompra(compraCartaoId: ID): Promise<void> {
+  await db.transaction('rw', db.notasFiscais, db.config, async () => {
+    const ids = await db.notasFiscais.where('compraCartaoId').equals(compraCartaoId).primaryKeys();
+    if (ids.length === 0) return;
+    await db.notasFiscais.bulkDelete(ids);
+    await marcarMudanca();
+  });
 }
 
 export interface NovaAssinatura {

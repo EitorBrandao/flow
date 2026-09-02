@@ -1,6 +1,6 @@
 import { dataDeISODatetime } from './dates';
 import { parsearCentavosDecimal } from './money';
-import type { ISODate, ItemNota } from './types';
+import type { ID, ISODate, ItemNota, NotaFiscalSalva } from './types';
 
 /** Dado extraído do XML de uma NFC-e. Cada campo falta quando o XML não o contém ou é
  *  irreconhecível — as funções deste arquivo nunca lançam exceção, porque XML malformado é
@@ -90,4 +90,18 @@ export function parsearNotaFiscal(xml: string): NotaFiscalExtraida {
     descricao: xNome,
     itens: extrairItens(doc),
   };
+}
+
+/** A nota anexada a uma compra. Um merge de backups pode deixar mais de uma da mesma compra
+ *  (o índice é não-único de propósito) — nesse caso vence a de `alteradoEm` mais recente, em
+ *  vez de quebrar. */
+export function notaDaCompra(
+  notas: NotaFiscalSalva[], compraCartaoId: ID,
+): NotaFiscalSalva | undefined {
+  let escolhida: NotaFiscalSalva | undefined;
+  for (const n of notas) {
+    if (n.compraCartaoId !== compraCartaoId) continue;
+    if (!escolhida || n.alteradoEm > escolhida.alteradoEm) escolhida = n;
+  }
+  return escolhida;
 }

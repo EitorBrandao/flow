@@ -1,4 +1,4 @@
-import { extrairChaveDoQrCode, parsearNotaFiscal } from './notaFiscal';
+import { extrairChaveDoQrCode, parsearNotaFiscal, notaDaCompra } from './notaFiscal';
 
 const CHAVE = '35240100000000000000000000000000000000000000';
 
@@ -116,5 +116,29 @@ describe('itens da nota (det/prod)', () => {
   it('XML malformado devolve lista vazia, sem lançar exceção', () => {
     expect(parsearNotaFiscal('<isto não fecha').itens).toEqual([]);
     expect(parsearNotaFiscal('').itens).toEqual([]);
+  });
+});
+
+describe('notaDaCompra', () => {
+  const base = { itens: [], criadoEm: 'x' };
+
+  it('devolve a nota da compra pedida', () => {
+    const notas = [
+      { id: 'n1', compraCartaoId: 'c1', alteradoEm: '2026-01-01T00:00:00Z', ...base },
+      { id: 'n2', compraCartaoId: 'c2', alteradoEm: '2026-01-01T00:00:00Z', ...base },
+    ];
+    expect(notaDaCompra(notas, 'c2')!.id).toBe('n2');
+  });
+
+  it('com duas notas da mesma compra (herança de merge), vence a de alteradoEm mais recente', () => {
+    const notas = [
+      { id: 'n1', compraCartaoId: 'c1', alteradoEm: '2026-01-01T00:00:00Z', ...base },
+      { id: 'n2', compraCartaoId: 'c1', alteradoEm: '2026-06-01T00:00:00Z', ...base },
+    ];
+    expect(notaDaCompra(notas, 'c1')!.id).toBe('n2');
+  });
+
+  it('devolve undefined quando a compra não tem nota', () => {
+    expect(notaDaCompra([], 'c1')).toBeUndefined();
   });
 });

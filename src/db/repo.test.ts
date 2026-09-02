@@ -953,3 +953,48 @@ it('carregarTudo devolve notasFiscais e substituirTudo as regrava', async () => 
   await repo.substituirTudo({ ...dados, notasFiscais: [] });
   await expect(db.notasFiscais.count()).resolves.toBe(0);
 });
+
+async function compraComCartao() {
+  const { box } = await boxECategoria();
+  const cartao = await repo.salvarCartao({
+    boxId: box.id, nome: 'cartão teste', diaFechamento: 20, diaVencimento: 27,
+  }, '2027-12-31');
+  const cat = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  const compra = await repo.salvarCompraCartao({
+    cartaoId: cartao.id, categoriaCartaoId: cat.id, data: '2026-07-05', valorTotal: 6240, parcelas: 1,
+  }, '2027-12-31');
+  return { compra };
+}
+
+it('salvarNotaFiscal grava a nota e marca mudança desde backup', async () => {
+  const { compra } = await compraComCartao();
+  const nota = await repo.salvarNotaFiscal({
+    compraCartaoId: compra.id, emitente: 'Mercado Exemplo LTDA', emissao: '2026-07-05',
+    totalNotaCent: 6240, itens: [{ descricao: 'Produto A', valorCent: 1000 }],
+  });
+  expect(await db.notasFiscais.get(nota.id)).toMatchObject({ compraCartaoId: compra.id });
+  expect((await db.config.get('config'))!.mudancasDesdeBackup).toBe(true);
+});
+
+it('anexar duas vezes deixa uma nota só: a última vence', async () => {
+  const { compra } = await compraComCartao();
+  await repo.salvarNotaFiscal({ compraCartaoId: compra.id, itens: [{ descricao: 'Produto A', valorCent: 1000 }] });
+  await repo.salvarNotaFiscal({ compraCartaoId: compra.id, itens: [{ descricao: 'Produto B', valorCent: 2000 }] });
+  const notas = await db.notasFiscais.where('compraCartaoId').equals(compra.id).toArray();
+  expect(notas).toHaveLength(1);
+  expect(notas[0].itens[0].descricao).toBe('Produto B');
+});
+
+it('excluirNotaFiscalDaCompra apaga a nota da compra', async () => {
+  const { compra } = await compraComCartao();
+  await repo.salvarNotaFiscal({ compraCartaoId: compra.id, itens: [] });
+  await repo.excluirNotaFiscalDaCompra(compra.id);
+  await expect(db.notasFiscais.where('compraCartaoId').equals(compra.id).count()).resolves.toBe(0);
+});
+
+it('excluirCompraCartao leva a nota fiscal junto', async () => {
+  const { compra } = await compraComCartao();
+  await repo.salvarNotaFiscal({ compraCartaoId: compra.id, itens: [] });
+  await repo.excluirCompraCartao(compra.id, '2027-12-31');
+  await expect(db.notasFiscais.count()).resolves.toBe(0);
+});
