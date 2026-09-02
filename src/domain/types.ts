@@ -84,6 +84,14 @@ export interface CategoriaCartao extends Entidade {
   arquivada: boolean;
 }
 
+/** Uma linha de produto de uma nota fiscal (`det/prod` no XML da NFC-e). */
+export interface ItemNota {
+  descricao: string;   // xProd
+  quantidade?: number; // qCom em décimos de milésimo (o schema da NFe dá 4 casas), inteiro
+  unidade?: string;    // uCom ("UN", "KG")
+  valorCent: number;   // vProd em centavos
+}
+
 export interface CompraCartao extends Entidade {
   cartaoId: ID;
   categoriaCartaoId: ID;

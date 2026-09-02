@@ -50,7 +50,7 @@ it('cola o XML e conclui com os campos extraídos', async () => {
 
   await waitFor(() => {
     expect(onConcluir).toHaveBeenCalledWith({
-      valorTotal: 6240, data: '2026-08-29', descricao: 'Mercado Exemplo LTDA',
+      valorTotal: 6240, data: '2026-08-29', descricao: 'Mercado Exemplo LTDA', itens: [],
     });
   });
 });
@@ -70,7 +70,7 @@ it('XML sem nenhum campo reconhecível mostra erro e exige confirmar antes de co
   expect(onConcluir).not.toHaveBeenCalled();
 
   await userEvent.click(screen.getByRole('button', { name: 'Continuar mesmo assim' }));
-  await waitFor(() => expect(onConcluir).toHaveBeenCalledWith({}));
+  await waitFor(() => expect(onConcluir).toHaveBeenCalledWith({ itens: [] }));
 });
 
 it('XML em branco não deixa continuar', async () => {
@@ -100,7 +100,7 @@ it('envia um arquivo XML válido e conclui com os campos extraídos', async () =
 
   await waitFor(() => {
     expect(onConcluir).toHaveBeenCalledWith({
-      valorTotal: 6240, data: '2026-08-29', descricao: 'Mercado Exemplo LTDA',
+      valorTotal: 6240, data: '2026-08-29', descricao: 'Mercado Exemplo LTDA', itens: [],
     });
   });
 });
