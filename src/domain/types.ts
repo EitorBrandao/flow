@@ -103,6 +103,18 @@ export interface CompraCartao extends Entidade {
   viagemId?: ID; // compra marcada como gasto de uma viagem
 }
 
+/** Itens de uma NFC-e anexada a uma compra do cartão. Só os itens são guardados, nunca o XML
+ *  original: um XML de NFC-e pesa dezenas de KB e o backup carregaria isso para sempre.
+ *  Uma nota por compra — a unicidade é aplicada em `repo.salvarNotaFiscal`, não por índice
+ *  único no Dexie (ver `src/db/database.ts`). */
+export interface NotaFiscalSalva extends Entidade {
+  compraCartaoId: ID;
+  emitente?: string;
+  emissao?: ISODate;
+  totalNotaCent?: number; // total declarado na nota; pode divergir do total da compra
+  itens: ItemNota[];
+}
+
 export interface RecorrenciaCartao extends Entidade {
   cartaoId: ID;
   categoriaCartaoId: ID;
