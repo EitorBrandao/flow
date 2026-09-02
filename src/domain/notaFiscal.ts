@@ -112,7 +112,7 @@ export interface LinhaDistribuicao {
   quantidade?: number;
   unidade?: string;
   valorCent: number;
-  percentual: number; // 0..100
+  percentual: number; // 0..100, negativo se é linha de desconto
   diferenca?: true;
 }
 

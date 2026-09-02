@@ -155,6 +155,16 @@ describe('distribuirItens', () => {
     expect(linhas.map((l) => l.descricao)).toEqual(['Produto B', 'Produto A', 'Produto C']);
   });
 
+  it('mantém a ordem da nota para itens de mesmo valor (ordenação estável)', () => {
+    const itemsIguais = [
+      { descricao: 'Primeiro', valorCent: 1000 },
+      { descricao: 'Segundo', valorCent: 5000 },
+      { descricao: 'Terceiro', valorCent: 1000 },
+    ];
+    const linhas = distribuirItens(itemsIguais, 7000);
+    expect(linhas.map((l) => l.descricao)).toEqual(['Segundo', 'Primeiro', 'Terceiro']);
+  });
+
   it('calcula o percentual sobre o total da compra', () => {
     const linhas = distribuirItens(itens, 6240);
     expect(linhas[0].percentual).toBeCloseTo(80.13, 2);
