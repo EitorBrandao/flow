@@ -78,6 +78,28 @@ it('backup de schema 5 sem notasFiscais é recusado como corrompido', () => {
     .toThrow(/corrompido/);
 });
 
+it('recusa backup schema 5 com notasFiscais que não é array', () => {
+  expect(() => validarBackup({
+    app: 'flow', schema: 5, exportadoEm: '2026-08-01T00:00:00.000Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
+      conferenciasFatura: [], viagens: [], bancos: [], config: { id: 'config' }, notasFiscais: { id: 'n1' },
+    },
+  })).toThrow(/estrutura de dados inesperada/);
+});
+
+it('recusa backup schema 4 com notasFiscais que não é array', () => {
+  expect(() => validarBackup({
+    app: 'flow', schema: 4, exportadoEm: '2026-08-01T00:00:00.000Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
+      conferenciasFatura: [], viagens: [], bancos: [], config: { id: 'config' }, notasFiscais: 'x',
+    },
+  })).toThrow(/estrutura de dados inesperada/);
+});
+
 it('mesclar une notas fiscais dos dois lados e resolve conflito pelo alteradoEm', () => {
   const atual = dados();
   const backup = dados();
