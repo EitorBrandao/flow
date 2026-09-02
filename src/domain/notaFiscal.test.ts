@@ -1,4 +1,4 @@
-import { extrairChaveDoQrCode, parsearNotaFiscal, notaDaCompra } from './notaFiscal';
+import { extrairChaveDoQrCode, parsearNotaFiscal, notaDaCompra, distribuirItens } from './notaFiscal';
 
 const CHAVE = '35240100000000000000000000000000000000000000';
 
@@ -140,5 +140,59 @@ describe('notaDaCompra', () => {
 
   it('devolve undefined quando a compra não tem nota', () => {
     expect(notaDaCompra([], 'c1')).toBeUndefined();
+  });
+});
+
+describe('distribuirItens', () => {
+  const itens = [
+    { descricao: 'Produto A', valorCent: 1000 },
+    { descricao: 'Produto B', valorCent: 5000 },
+    { descricao: 'Produto C', valorCent: 240 },
+  ];
+
+  it('ordena por valor decrescente, não pela ordem da nota', () => {
+    const linhas = distribuirItens(itens, 6240);
+    expect(linhas.map((l) => l.descricao)).toEqual(['Produto B', 'Produto A', 'Produto C']);
+  });
+
+  it('calcula o percentual sobre o total da compra', () => {
+    const linhas = distribuirItens(itens, 6240);
+    expect(linhas[0].percentual).toBeCloseTo(80.13, 2);
+    expect(linhas.reduce((s, l) => s + l.percentual, 0)).toBeCloseTo(100, 6);
+  });
+
+  it('sem diferença, não gera linha de diferença', () => {
+    expect(distribuirItens(itens, 6240).some((l) => l.diferenca)).toBe(false);
+  });
+
+  it('itens somando menos que a compra geram linha de frete ou acréscimo', () => {
+    const linhas = distribuirItens(itens, 7240);
+    expect(linhas[linhas.length - 1]).toMatchObject({
+      descricao: 'Frete ou acréscimo', valorCent: 1000, diferenca: true,
+    });
+    expect(linhas.reduce((s, l) => s + l.valorCent, 0)).toBe(7240);
+  });
+
+  it('itens somando mais que a compra geram linha de desconto, com valor negativo', () => {
+    const linhas = distribuirItens(itens, 5240);
+    expect(linhas[linhas.length - 1]).toMatchObject({
+      descricao: 'Desconto', valorCent: -1000, diferenca: true,
+    });
+    expect(linhas.reduce((s, l) => s + l.valorCent, 0)).toBe(5240);
+  });
+
+  it('lista de itens vazia devolve lista vazia, sem linha de diferença solta', () => {
+    expect(distribuirItens([], 6240)).toEqual([]);
+  });
+
+  it('total da compra zero não divide por zero: percentual é 0', () => {
+    expect(distribuirItens(itens, 0).every((l) => l.percentual === 0)).toBe(true);
+  });
+
+  it('preserva quantidade e unidade de cada item', () => {
+    const linhas = distribuirItens(
+      [{ descricao: 'Produto B', quantidade: 5675, unidade: 'KG', valorCent: 5240 }], 5240,
+    );
+    expect(linhas[0]).toMatchObject({ quantidade: 5675, unidade: 'KG' });
   });
 });

@@ -105,3 +105,45 @@ export function notaDaCompra(
   }
   return escolhida;
 }
+
+/** Uma linha da lista "item → valor → % do total". */
+export interface LinhaDistribuicao {
+  descricao: string;
+  quantidade?: number;
+  unidade?: string;
+  valorCent: number;
+  percentual: number; // 0..100
+  diferenca?: true;
+}
+
+/**
+ * Distribui o total da COMPRA entre os itens da nota. A compra manda: a soma dos `vProd`
+ * quase nunca bate com ela (desconto, frete, acréscimo, item de valor ilegível), e a sobra
+ * vira uma linha final em vez de sumir. Os percentuais são sempre do total da compra — nunca
+ * do total da nota, nunca da parcela.
+ */
+export function distribuirItens(itens: ItemNota[], totalCompraCent: number): LinhaDistribuicao[] {
+  if (itens.length === 0) return [];
+  const pct = (v: number) => (totalCompraCent === 0 ? 0 : (v / totalCompraCent) * 100);
+  // ordenação estável no ES2019+: itens de mesmo valor mantêm a ordem da nota
+  const linhas: LinhaDistribuicao[] = [...itens]
+    .sort((a, b) => b.valorCent - a.valorCent)
+    .map((i) => ({
+      descricao: i.descricao,
+      quantidade: i.quantidade,
+      unidade: i.unidade,
+      valorCent: i.valorCent,
+      percentual: pct(i.valorCent),
+    }));
+  const soma = itens.reduce((s, i) => s + i.valorCent, 0);
+  const resto = totalCompraCent - soma;
+  if (resto !== 0) {
+    linhas.push({
+      descricao: resto < 0 ? 'Desconto' : 'Frete ou acréscimo',
+      valorCent: resto,
+      percentual: pct(resto),
+      diferenca: true,
+    });
+  }
+  return linhas;
+}
