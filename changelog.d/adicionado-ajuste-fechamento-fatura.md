@@ -1,0 +1,3 @@
+- Ajuste excepcional do dia de fechamento de uma fatura.
+  - Fica na aba Conferência da fatura, logo abaixo da conferência de valor.
+  - Vale só para o mês daquela fatura — o dia de fechamento padrão do cartão não muda.
