@@ -1,14 +1,22 @@
 import { addMeses, dataComDia, mesDe } from './dates';
-import type { Cartao, CompraCartao, ConferenciaFatura, ID, ISODate, Lancamento, RecorrenciaCartao } from './types';
+import type {
+  AjusteFechamento, Cartao, CompraCartao, ConferenciaFatura, ID, ISODate, Lancamento, RecorrenciaCartao,
+} from './types';
 
 export type CicloCartao = Pick<Cartao, 'diaFechamento' | 'diaVencimento'>;
 
 /** Mês ('AAAA-MM') cujo fechamento recolhe a compra. Compra no dia do fechamento
- *  entra na fatura seguinte (o primeiro fechamento ESTRITAMENTE posterior à data). */
-export function mesFechamentoDaCompra(cartao: CicloCartao, data: ISODate): string {
+ *  entra na fatura seguinte (o primeiro fechamento ESTRITAMENTE posterior à data).
+ *  `ajustes` (mês calendário de fechamento → dia override, ver `ajustesDoCartao`) substitui
+ *  `cartao.diaFechamento` quando existe entrada para o mês da própria compra. */
+export function mesFechamentoDaCompra(
+  cartao: CicloCartao, data: ISODate, ajustes?: ReadonlyMap<string, number>,
+): string {
   const [ano, mes] = data.split('-').map(Number);
-  const fechamentoDoMes = dataComDia(ano, mes, cartao.diaFechamento);
-  return data < fechamentoDoMes ? mesDe(data) : addMeses(mesDe(data), 1);
+  const mesCompra = mesDe(data);
+  const diaFechamento = ajustes?.get(mesCompra) ?? cartao.diaFechamento;
+  const fechamentoDoMes = dataComDia(ano, mes, diaFechamento);
+  return data < fechamentoDoMes ? mesCompra : addMeses(mesCompra, 1);
 }
 
 /** Mês do vencimento da fatura que fecha no mês dado. */
@@ -17,22 +25,26 @@ export function mesVencimentoDoFechamento(cartao: CicloCartao, mesFechamento: st
 }
 
 /** Mês ('AAAA-MM' do vencimento — a chave da fatura) onde cai a parcela 1 da compra. */
-export function mesFaturaDaCompra(cartao: CicloCartao, data: ISODate): string {
-  return mesVencimentoDoFechamento(cartao, mesFechamentoDaCompra(cartao, data));
+export function mesFaturaDaCompra(
+  cartao: CicloCartao, data: ISODate, ajustes?: ReadonlyMap<string, number>,
+): string {
+  return mesVencimentoDoFechamento(cartao, mesFechamentoDaCompra(cartao, data, ajustes));
 }
 
-/** Datas de fechamento e vencimento da fatura cujo vencimento cai no mês dado. */
+/** Datas de fechamento e vencimento da fatura cujo vencimento cai no mês dado. O mês
+ *  calendário de fechamento é sempre calculado a partir do `diaVencimento`/`diaFechamento`
+ *  PADRÃO do cartão (não do override) — só o dia dentro desse mês pode vir de `ajustes`. */
 export function datasFaturaDoMes(
-  cartao: CicloCartao,
-  mesVencimento: string,
+  cartao: CicloCartao, mesVencimento: string, ajustes?: ReadonlyMap<string, number>,
 ): { dataFechamento: ISODate; dataVencimento: ISODate } {
   const mesFechamento = cartao.diaVencimento > cartao.diaFechamento
     ? mesVencimento
     : addMeses(mesVencimento, -1);
   const [anoF, mesF] = mesFechamento.split('-').map(Number);
   const [anoV, mesV] = mesVencimento.split('-').map(Number);
+  const diaFechamento = ajustes?.get(mesFechamento) ?? cartao.diaFechamento;
   return {
-    dataFechamento: dataComDia(anoF, mesF, cartao.diaFechamento),
+    dataFechamento: dataComDia(anoF, mesF, diaFechamento),
     dataVencimento: dataComDia(anoV, mesV, cartao.diaVencimento),
   };
 }
@@ -62,13 +74,15 @@ export function valorParcela(valorTotal: number, parcelas: number, n: number): n
 }
 
 /** Faturas derivadas das compras até `ate` (vencimento), ordenadas por mês. Função pura. */
-export function calcularFaturas(cartao: CicloCartao, compras: CompraCartao[], ate: ISODate): Fatura[] {
+export function calcularFaturas(
+  cartao: CicloCartao, compras: CompraCartao[], ate: ISODate, ajustes?: ReadonlyMap<string, number>,
+): Fatura[] {
   const porMes = new Map<string, Fatura>();
   for (const c of compras) {
-    const mesFech1 = mesFechamentoDaCompra(cartao, c.data);
+    const mesFech1 = mesFechamentoDaCompra(cartao, c.data, ajustes);
     for (let n = 1; n <= c.parcelas; n++) {
       const mes = mesVencimentoDoFechamento(cartao, addMeses(mesFech1, n - 1));
-      const { dataFechamento, dataVencimento } = datasFaturaDoMes(cartao, mes);
+      const { dataFechamento, dataVencimento } = datasFaturaDoMes(cartao, mes, ajustes);
       if (dataVencimento > ate) break;
       let f = porMes.get(mes);
       if (!f) {
@@ -147,6 +161,36 @@ export function dedupConferencias(cs: ConferenciaFatura[]): ConferenciaFatura[] 
       || c.alteradoEm > atual.alteradoEm
       || (c.alteradoEm === atual.alteradoEm && c.id > atual.id);
     if (vence) porCartaoMes.set(chave, c);
+  }
+  return [...porCartaoMes.values()];
+}
+
+/** Filtra os ajustes de fechamento de um cartão específico e converte para o formato que
+ *  `mesFechamentoDaCompra`/`datasFaturaDoMes`/`calcularFaturas` consultam: mês calendário
+ *  do fechamento → dia override. Assume a entrada já deduplicada (`dedupAjustesFechamento`) —
+ *  mesma divisão de responsabilidade de `valorSincronizado` em relação a `dedupConferencias`. */
+export function ajustesDoCartao(ajustes: AjusteFechamento[], cartaoId: ID): Map<string, number> {
+  const mapa = new Map<string, number>();
+  for (const a of ajustes) {
+    if (a.cartaoId === cartaoId) mapa.set(a.mes, a.diaFechamento);
+  }
+  return mapa;
+}
+
+/**
+ * Ajuste de fechamento é único por cartão e mês, mas o índice `[cartaoId+mes]` do Dexie não é
+ * unique — mesmo cuidado de `dedupConferencias`. Vence o `alteradoEm` mais recente; empate
+ * desempata pelo id. Aplicado em todo caminho que grava o snapshot inteiro.
+ */
+export function dedupAjustesFechamento(as: AjusteFechamento[]): AjusteFechamento[] {
+  const porCartaoMes = new Map<string, AjusteFechamento>();
+  for (const a of as) {
+    const chave = `${a.cartaoId}|${a.mes}`;
+    const atual = porCartaoMes.get(chave);
+    const vence = !atual
+      || a.alteradoEm > atual.alteradoEm
+      || (a.alteradoEm === atual.alteradoEm && a.id > atual.id);
+    if (vence) porCartaoMes.set(chave, a);
   }
   return [...porCartaoMes.values()];
 }
