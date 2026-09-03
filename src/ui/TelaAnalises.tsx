@@ -34,7 +34,9 @@ export default function TelaAnalises() {
   const resumo = resumoMensal(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
   const base = Math.max(resumo.totalGanhos, resumo.totalGastos, 1);
   const comparativo = compararMeses(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
-  const resumoAssinaturas = resumoAssinaturasDoMes(mes, ids, dados.cartoes, dados.comprasCartao, dados.recorrenciasCartao);
+  const resumoAssinaturas = resumoAssinaturasDoMes(
+    mes, ids, dados.cartoes, dados.comprasCartao, dados.recorrenciasCartao, dados.ajustesFechamento,
+  );
   // tendência: média móvel de 3 meses terminando no mês selecionado
   const meses = [-5, -4, -3, -2, -1, 0].map((n) => addMeses(mes, n));
   const serieEvolucao = serieMensalResumo(meses, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
@@ -43,7 +45,10 @@ export default function TelaAnalises() {
   const viagensNoMes = dados.viagens
     .map((v) => ({
       viagem: v,
-      total: totalViagemNoMes(v, mes, ids, dados.lancamentos, dados.comprasCartao, dados.cartoes, incluirPrevistos),
+      total: totalViagemNoMes(
+        v, mes, ids, dados.lancamentos, dados.comprasCartao, dados.cartoes, incluirPrevistos,
+        dados.ajustesFechamento,
+      ),
     }))
     .filter((x) => x.total !== 0);
   const linhasComposicao: LinhaComposicao[] = [

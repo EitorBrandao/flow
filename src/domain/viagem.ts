@@ -1,6 +1,6 @@
 import { mesDe } from './dates';
-import { calcularFaturas, datasFaturaDoMes } from './fatura';
-import type { Cartao, CompraCartao, ID, ISODate, Lancamento, Viagem } from './types';
+import { ajustesDoCartao, calcularFaturas, datasFaturaDoMes } from './fatura';
+import type { AjusteFechamento, Cartao, CompraCartao, ID, ISODate, Lancamento, Viagem } from './types';
 
 /** Viagem cujo período (inclusive) contém `data`. Como viagens não se sobrepõem, no
  *  máximo uma é retornada. */
@@ -95,6 +95,7 @@ export function totalViagemNoMes(
   comprasCartao: CompraCartao[],
   cartoes: Cartao[],
   incluirPrevistos: boolean,
+  ajustesFechamento: AjusteFechamento[] = [],
 ): number {
   const sel = new Set(boxIds);
   let total = 0;
@@ -108,8 +109,9 @@ export function totalViagemNoMes(
     if (!sel.has(cartao.boxId)) continue;
     const comprasDaViagem = comprasCartao.filter((c) => c.viagemId === viagem.id && c.cartaoId === cartao.id);
     if (comprasDaViagem.length === 0) continue;
-    const ate = datasFaturaDoMes(cartao, mes).dataVencimento;
-    const fatura = calcularFaturas(cartao, comprasDaViagem, ate).find((f) => f.mes === mes);
+    const ajustes = ajustesDoCartao(ajustesFechamento, cartao.id);
+    const ate = datasFaturaDoMes(cartao, mes, ajustes).dataVencimento;
+    const fatura = calcularFaturas(cartao, comprasDaViagem, ate, ajustes).find((f) => f.mes === mes);
     if (fatura) total += fatura.totalCent;
   }
   return total;
