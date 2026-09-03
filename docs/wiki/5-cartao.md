@@ -23,6 +23,8 @@ Um cartão **ativo** por box: cadastrar um segundo exige desativar o anterior pr
 
 Faturas passadas não ficam "congeladas": mudar o dia de fechamento reagrupa o detalhamento histórico. O que já foi confirmado no Flow (lançamento efetivo) não muda — só a "explicação" itemizada se reorganiza.
 
+Fechou num dia diferente do combinado, só naquele mês? A aba Conferência da fatura tem um ajuste pontual para isso, logo abaixo da conferência de valor: o campo **Fechou dia**, com os botões **Salvar fechamento** e **Remover fechamento**. O ajuste vale só para o mês daquela fatura — o dia de fechamento cadastrado no cartão não muda, e os meses seguintes continuam usando o padrão. Como qualquer mudança de fechamento, ele reagrupa o detalhamento daquele mês; lançamento já confirmado não muda.
+
 ## Sincronização com o Flow
 
 Para cada fatura com valor > 0, o app mantém um lançamento `previsto` na box do cartão, na categoria da fatura, com data = vencimento. O valor sincronizado é a soma dos itens — **a menos que** a conferência daquele mês tenha "usar valor do app" marcado, caso em que vale o valor digitado.
