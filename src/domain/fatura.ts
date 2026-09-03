@@ -265,8 +265,6 @@ export interface ResumoAssinaturas {
 
 /** Total e detalhamento (por cartão > assinatura) das compras geradas por assinatura que
  *  caem na fatura do mês dado, entre os cartões das boxes selecionadas. */
-/** Total e detalhamento (por cartão > assinatura) das compras geradas por assinatura que
- *  caem na fatura do mês dado, entre os cartões das boxes selecionadas. */
 export function resumoAssinaturasDoMes(
   mes: string,
   boxIds: readonly ID[],
