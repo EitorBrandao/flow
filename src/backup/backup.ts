@@ -1,15 +1,15 @@
-import { dedupConferencias } from '../domain/fatura';
+import { dedupAjustesFechamento, dedupConferencias } from '../domain/fatura';
 import type { Dados } from '../domain/types';
 
 export interface Backup {
   app: 'flow';
-  schema: 4;
+  schema: 5;
   exportadoEm: string;
   dados: Dados;
 }
 
 export function gerarBackup(dados: Dados): Backup {
-  return { app: 'flow', schema: 4, exportadoEm: new Date().toISOString(), dados };
+  return { app: 'flow', schema: 5, exportadoEm: new Date().toISOString(), dados };
 }
 
 const TABELAS_V1 = ['boxes', 'categorias', 'lancamentos', 'recorrencias', 'cenarios'] as const;
@@ -18,13 +18,14 @@ const TABELAS_CARTAO = [
 ] as const;
 const TABELAS_VIAGEM = ['viagens'] as const;
 const TABELAS_BANCO = ['bancos'] as const;
+const TABELAS_AJUSTE_FECHAMENTO = ['ajustesFechamento'] as const;
 
 export function validarBackup(json: unknown): Backup {
   const b = json as { app?: unknown; schema?: unknown; exportadoEm?: unknown; dados?: Record<string, unknown> } | null;
   if (!b || typeof b !== 'object' || b.app !== 'flow') {
     throw new Error('Este arquivo não é um backup do Flow.');
   }
-  if (b.schema !== 1 && b.schema !== 2 && b.schema !== 3 && b.schema !== 4) {
+  if (b.schema !== 1 && b.schema !== 2 && b.schema !== 3 && b.schema !== 4 && b.schema !== 5) {
     throw new Error(`Backup de versão incompatível (${String(b.schema)}). Atualize o app e tente de novo.`);
   }
   const d = b.dados;
@@ -40,9 +41,9 @@ export function validarBackup(json: unknown): Backup {
   if (b.schema >= 2 && TABELAS_CARTAO.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
-  // >= e não ===: schema 3 era o mais novo quando esta checagem nasceu, mas schema 4 (e
-  // qualquer futuro) também tem que ter viagens bem formada — do contrário um backup schema 4
-  // sem viagens passaria batido (não é < 3, não backfila; não é === 3, não valida).
+  // >= e não ===: schema 3 era o mais novo quando esta checagem nasceu, mas todo schema
+  // seguinte também tem que ter viagens bem formada — do contrário um backup mais novo sem
+  // viagens passaria batido (não é < 3, não backfila; não é === 3, não valida).
   if (b.schema >= 3 && TABELAS_VIAGEM.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
@@ -54,6 +55,13 @@ export function validarBackup(json: unknown): Backup {
   // assim, porque a entidade nasceu no código antes do schema subir — nesse caso ela é opcional
   // (backfill abaixo), mas se vier, tem que vir como array.
   if (d.bancos !== undefined && TABELAS_BANCO.some((t) => !Array.isArray(d[t]))) {
+    throw new Error('Backup corrompido: estrutura de dados inesperada.');
+  }
+  // ajustesFechamento nasceu no schema 5: a partir daqui é obrigatória e bem formada.
+  if (b.schema >= 5 && TABELAS_AJUSTE_FECHAMENTO.some((t) => !Array.isArray(d[t]))) {
+    throw new Error('Backup corrompido: estrutura de dados inesperada.');
+  }
+  if (d.ajustesFechamento !== undefined && TABELAS_AJUSTE_FECHAMENTO.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
   const dados = { ...d } as unknown as Dados;
@@ -78,8 +86,13 @@ export function validarBackup(json: unknown): Backup {
     const md = dados as unknown as Record<string, unknown[]>;
     for (const t of TABELAS_BANCO) md[t] = [];
   }
+  if (!Array.isArray(dados.ajustesFechamento)) {
+    // mesmo raciocínio de `bancos`: backfill por ausência do array, não por número de schema.
+    const md = dados as unknown as Record<string, unknown[]>;
+    for (const t of TABELAS_AJUSTE_FECHAMENTO) md[t] = [];
+  }
   return {
-    app: 'flow', schema: 4,
+    app: 'flow', schema: 5,
     exportadoEm: typeof b.exportadoEm === 'string' ? b.exportadoEm : new Date().toISOString(),
     dados,
   };
@@ -110,6 +123,9 @@ export function mesclar(atual: Dados, doBackup: Dados): Dados {
     ),
     viagens: mesclarTabela(atual.viagens, doBackup.viagens),
     bancos: mesclarTabela(atual.bancos, doBackup.bancos),
+    ajustesFechamento: dedupAjustesFechamento(
+      mesclarTabela(atual.ajustesFechamento, doBackup.ajustesFechamento),
+    ),
     config: atual.config,
   };
 }

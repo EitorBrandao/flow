@@ -15,7 +15,7 @@ it('round-trip: gerar → serializar → validar', () => {
   const b = gerarBackup(dados());
   const volta = validarBackup(JSON.parse(JSON.stringify(b)));
   expect(volta.dados.boxes).toHaveLength(1);
-  expect(volta.schema).toBe(4);
+  expect(volta.schema).toBe(5);
 });
 
 it('validarBackup rejeita arquivo de outro app ou schema', () => {
@@ -44,9 +44,9 @@ it('mesclar une registros de ids diferentes', () => {
   expect(mesclar(atual, backup).boxes).toHaveLength(2);
 });
 
-it('gerarBackup emite schema 4', () => {
+it('gerarBackup emite schema 5', () => {
   const b = gerarBackup(dados());
-  expect(b.schema).toBe(4);
+  expect(b.schema).toBe(5);
 });
 
 it('aceita backup schema 1 preenchendo as tabelas do cartão e viagens vazias', () => {
@@ -58,7 +58,7 @@ it('aceita backup schema 1 preenchendo as tabelas do cartão e viagens vazias', 
     },
   };
   const b = validarBackup(v1);
-  expect(b.schema).toBe(4);
+  expect(b.schema).toBe(5);
   expect(b.dados.cartoes).toEqual([]);
   expect(b.dados.conferenciasFatura).toEqual([]);
   expect(b.dados.viagens).toEqual([]);
@@ -90,7 +90,7 @@ it('aceita backup schema 2 preenchendo viagens vazia', () => {
     },
   };
   const b = validarBackup(v2);
-  expect(b.schema).toBe(4);
+  expect(b.schema).toBe(5);
   expect(b.dados.viagens).toEqual([]);
 });
 
@@ -103,7 +103,7 @@ it('aceita backup schema 3 preenchendo bancos vazia', () => {
       conferenciasFatura: [], viagens: [], config: { id: 'config' },
     },
   });
-  expect(b.schema).toBe(4);
+  expect(b.schema).toBe(5);
   expect(b.dados.bancos).toEqual([]);
 });
 
@@ -273,4 +273,67 @@ it('mesclar preserva conferências de meses e cartões diferentes', () => {
     { ...conferencia('cf3', '2026-03', 30_000, '2026-03-01'), cartaoId: 'k2' },
   ];
   expect(mesclar(a, b).conferenciasFatura.map((c) => c.id).sort()).toEqual(['cf1', 'cf2', 'cf3']);
+});
+
+// ---------- ajuste de fechamento: schema 5 ----------
+
+it('aceita backup schema 4 preenchendo ajustesFechamento vazia', () => {
+  const b = validarBackup({
+    app: 'flow', schema: 4, exportadoEm: '2026-09-01T00:00:00.000Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
+      conferenciasFatura: [], viagens: [], bancos: [], config: { id: 'config' },
+    },
+  });
+  expect(b.schema).toBe(5);
+  expect(b.dados.ajustesFechamento).toEqual([]);
+});
+
+it('recusa backup schema 5 sem a tabela ajustesFechamento', () => {
+  expect(() => validarBackup({
+    app: 'flow', schema: 5, exportadoEm: '2026-09-01T00:00:00.000Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
+      conferenciasFatura: [], viagens: [], bancos: [], config: { id: 'config' },
+    },
+  })).toThrow(/estrutura de dados inesperada/);
+});
+
+it('recusa backup schema 5 com ajustesFechamento que não é array', () => {
+  expect(() => validarBackup({
+    app: 'flow', schema: 5, exportadoEm: '2026-09-01T00:00:00.000Z',
+    dados: {
+      boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
+      cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
+      conferenciasFatura: [], viagens: [], bancos: [], config: { id: 'config' },
+      ajustesFechamento: { dia: 30 },
+    },
+  })).toThrow(/estrutura de dados inesperada/);
+});
+
+function ajuste(id: string, mes: string, diaFechamento: number, alteradoEm: string) {
+  return { id, cartaoId: 'k1', mes, diaFechamento, criadoEm: '2026-01-01', alteradoEm };
+}
+
+it('mesclar deixa um só ajuste de fechamento por cartão e mês, o mais recente', () => {
+  const a = dados();
+  const b = dados();
+  a.ajustesFechamento = [ajuste('af1', '2026-07', 28, '2026-07-01')];
+  b.ajustesFechamento = [ajuste('af2', '2026-07', 30, '2026-07-10')];
+  const m = mesclar(a, b).ajustesFechamento;
+  expect(m).toHaveLength(1);
+  expect(m[0]).toMatchObject({ id: 'af2', diaFechamento: 30 });
+});
+
+it('mesclar preserva ajustes de meses e cartões diferentes', () => {
+  const a = dados();
+  const b = dados();
+  a.ajustesFechamento = [ajuste('af1', '2026-07', 28, '2026-07-01')];
+  b.ajustesFechamento = [
+    ajuste('af2', '2026-08', 15, '2026-08-01'),
+    { ...ajuste('af3', '2026-07', 20, '2026-07-01'), cartaoId: 'k2' },
+  ];
+  expect(mesclar(a, b).ajustesFechamento.map((x) => x.id).sort()).toEqual(['af1', 'af2', 'af3']);
 });
