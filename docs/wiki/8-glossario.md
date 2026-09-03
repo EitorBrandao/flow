@@ -14,3 +14,4 @@
 : horizonte de projeção | Data até onde o motor projeta o saldo futuro (configurável em Ajustes → Boxes/Config).
 : atalho de lançamento | Combinação de categoria e destino (box ou cartão) que você mais repetiu nos últimos dois meses, mostrando o valor da última vez. Aparece assim que você toca no (+), para encurtar o caminho — o toque abre o formulário preenchido, sem gravar nada.
 : chave de acesso | Número de 44 dígitos que identifica uma nota fiscal eletrônica; extraído do QR-code, é usado para buscar o XML da nota fora do Flow.
+: item da nota | Uma linha de produto do XML da nota fiscal (nome e valor); o Flow usa os itens para mostrar como o total de uma compra do cartão se distribuiu.

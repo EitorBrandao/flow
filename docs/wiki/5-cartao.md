@@ -50,3 +50,11 @@ O parcelamento vira uma compra parcelada numa categoria reservada chamada "Parce
 
 - Parcelas cujo vencimento já passou não viram lançamento — registrar um parcelamento meses depois não ressuscita faturas antigas nem cobra duas vezes.
 - Excluir a compra do parcelamento remove as parcelas futuras, mas **não** devolve o valor original à fatura que já foi paga. Essa reversão é na mão.
+
+Cada compra pode ter uma nota fiscal anexada. No formulário da compra, "Anexar nota fiscal" aceita o XML da NFC-e — por arquivo ou colando o texto — e guarda a lista de itens.
+
+- A lista mostra item, valor e percentual do total da compra, do maior para o menor.
+- A compra manda: o valor dela não muda ao anexar a nota. Quando a soma dos itens não fecha com o valor da compra, uma linha final mostra a diferença (desconto, frete ou acréscimo).
+- Uma compra tem no máximo uma nota: anexar de novo substitui a anterior.
+- Só os itens ficam guardados; o arquivo XML não.
+- Excluir a compra apaga a nota junto.
