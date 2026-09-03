@@ -118,3 +118,51 @@ it('arquivo ilegível mostra mensagem de erro', async () => {
   expect(await screen.findByText('Não foi possível ler esse arquivo.')).toBeInTheDocument();
   espiao.mockRestore();
 });
+
+it('nota legível só pelos itens, sem total, data ou emissor, conclui normalmente', async () => {
+  const xmlComSoItens = `<?xml version="1.0"?>
+<nfeProc>
+  <NFe>
+    <infNFe>
+      <det>
+        <prod>
+          <xProd>Produto A</xProd>
+          <vProd>10.50</vProd>
+        </prod>
+      </det>
+      <det>
+        <prod>
+          <xProd>Produto B</xProd>
+          <vProd>25.75</vProd>
+        </prod>
+      </det>
+    </infNFe>
+  </NFe>
+</nfeProc>`;
+
+  const onConcluir = vi.fn();
+  render(<EscanearNotaSheet onConcluir={onConcluir} onFechar={() => {}} />);
+  await userEvent.type(screen.getByLabelText('Chave de acesso'), '3'.repeat(44));
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+  const textarea = await screen.findByLabelText('Ou cole o texto do XML');
+  fireEvent.change(textarea, { target: { value: xmlComSoItens } });
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+  await waitFor(() => {
+    expect(onConcluir).toHaveBeenCalledWith({
+      valorTotal: undefined,
+      data: undefined,
+      descricao: undefined,
+      itens: [
+        { descricao: 'Produto A', valorCent: 1050, quantidade: undefined, unidade: undefined },
+        { descricao: 'Produto B', valorCent: 2575, quantidade: undefined, unidade: undefined },
+      ],
+    });
+  });
+
+  expect(screen.queryByText('Não foi possível ler esse XML. Confira o formulário abaixo.'))
+    .not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Continuar mesmo assim' }))
+    .not.toBeInTheDocument();
+});
