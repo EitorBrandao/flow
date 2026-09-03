@@ -70,6 +70,8 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.frequentes-ponto` | ponto azul que marca atalho com destino de cartão |
 | `.versao-detalhes` | lista de detalhes recuada sob um tópico do changelog, na tela Versão (`Versao.tsx`) — `--muted`, 13px |
 | `.escanear-nota-video` | preview da câmera em `EscanearNotaSheet.tsx` |
+| `.nota-bloco` | resumo da nota fiscal anexada a uma compra do cartão (`FormCompra.tsx`) — emitente, data, total da nota e contagem de itens sobre `--surface2`; também envolve o painel de anexar o XML |
+| `.nota-itens` / `.nota-item` / `.nota-item-diferenca` | lista compacta "item → valor → % do total" dentro do `.nota-bloco`, com rolagem própria; `.nota-item-diferenca` marca a linha final de desconto/frete |
 
 ## Componentes compartilhados (em `src/ui/`)
 
@@ -127,8 +129,8 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   compra no cartão) que troca de tela via `passo`; escolhe o cartão automaticamente quando só
   há um ativo, senão mostra `.pills` pra escolher; renderiza `FormCompra` no passo final.
 - **`FormCompra.tsx`** — formulário de compra no cartão (valor, data, categoria, parcelas,
-  parcelas já pagas, descrição, viagem). Usado por `AdicionarSheet` (nova) e `TelaCartao`
-  (edição).
+  parcelas já pagas, descrição, viagem, nota fiscal anexada). Usado por `AdicionarSheet`
+  (nova) e `TelaCartao` (edição).
 - **`LancEditor.tsx`** — sheet de edição de um lançamento existente (valor, data, categoria,
   nota, sinal ganho/gasto); usa `Sheet`, `CampoData`, `CampoValor`, `SeletorCategoria`.
 - **`LancamentosSheet.tsx`** — sheet somente leitura com os lançamentos de uma categoria no

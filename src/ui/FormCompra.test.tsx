@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -364,4 +364,107 @@ it('inicial semeia também data e descrição, vindas de uma nota fiscal escanea
   expect(screen.getByLabelText('Descrição (opcional)')).toHaveValue('Mercado Exemplo LTDA');
   // sem categoriaCartaoId no inicial: a categoria existente não fica selecionada
   expect(screen.getByRole('button', { name: 'mercado' })).not.toHaveClass('selecionada');
+});
+
+const XML_NOTA = `<?xml version="1.0"?>
+<nfeProc><NFe><infNFe>
+  <ide><dhEmi>2026-07-01T10:00:00-03:00</dhEmi></ide>
+  <emit><xNome>Mercado Exemplo LTDA</xNome></emit>
+  <det><prod><xProd>Produto A</xProd><qCom>1.0000</qCom><uCom>UN</uCom><vProd>20.00</vProd></prod></det>
+  <det><prod><xProd>Produto B</xProd><qCom>2.0000</qCom><uCom>UN</uCom><vProd>60.00</vProd></prod></det>
+  <total><ICMSTot><vNF>80.00</vNF></ICMSTot></total>
+</infNFe></NFe></nfeProc>`;
+
+async function compraSalva() {
+  const { box, cartao, catCartao } = await montarCartao();
+  const compra = await repo.salvarCompraCartao({
+    cartaoId: cartao.id, categoriaCartaoId: catCartao.id,
+    data: '2026-07-01', valorTotal: 10000, parcelas: 1,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+  return { cartao, compra };
+}
+
+it('anexa nota a uma compra salva sem mexer em valor nem data', async () => {
+  const { cartao, compra } = await compraSalva();
+  render(<FormCompra cartao={cartao} compra={compra} onFechar={() => {}} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Anexar nota fiscal' }));
+  fireEvent.change(await screen.findByLabelText('Ou cole o texto do XML'), { target: { value: XML_NOTA } });
+  await userEvent.click(screen.getByRole('button', { name: 'Anexar' }));
+
+  expect(await screen.findByText('Mercado Exemplo LTDA')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(async () => {
+    await expect(db.notasFiscais.where('compraCartaoId').equals(compra.id).count()).resolves.toBe(1);
+  });
+  expect(await db.comprasCartao.get(compra.id)).toMatchObject({ valorTotal: 10000, data: '2026-07-01' });
+});
+
+it('a lista sai por valor decrescente e fecha com a linha de diferença', async () => {
+  const { cartao, compra } = await compraSalva(); // compra de 100,00; nota soma 80,00
+  await repo.salvarNotaFiscal({
+    compraCartaoId: compra.id, emitente: 'Mercado Exemplo LTDA', emissao: '2026-07-01',
+    totalNotaCent: 8000,
+    itens: [
+      { descricao: 'Produto A', valorCent: 2000 },
+      { descricao: 'Produto B', valorCent: 6000 },
+    ],
+  });
+  await useApp.getState().recarregar();
+
+  render(<FormCompra cartao={cartao} compra={compra} onFechar={() => {}} />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Ver itens' }));
+
+  const linhas = await screen.findAllByRole('listitem');
+  expect(linhas[0]).toHaveTextContent('Produto B');
+  expect(linhas[1]).toHaveTextContent('Produto A');
+  expect(linhas[2]).toHaveTextContent('Frete ou acréscimo');
+  expect(linhas[0]).toHaveTextContent('60,0%');
+});
+
+it('sem diferença, a linha de diferença não aparece', async () => {
+  const { cartao, compra } = await compraSalva();
+  await repo.salvarNotaFiscal({
+    compraCartaoId: compra.id, itens: [{ descricao: 'Produto A', valorCent: 10000 }],
+  });
+  await useApp.getState().recarregar();
+
+  render(<FormCompra cartao={cartao} compra={compra} onFechar={() => {}} />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Ver itens' }));
+
+  expect(screen.queryByText('Frete ou acréscimo')).not.toBeInTheDocument();
+  expect(screen.queryByText('Desconto')).not.toBeInTheDocument();
+});
+
+it('XML inválido mostra erro e não altera nada da compra', async () => {
+  const { cartao, compra } = await compraSalva();
+  render(<FormCompra cartao={cartao} compra={compra} onFechar={() => {}} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Anexar nota fiscal' }));
+  fireEvent.change(await screen.findByLabelText('Ou cole o texto do XML'), { target: { value: 'não é xml' } });
+  await userEvent.click(screen.getByRole('button', { name: 'Anexar' }));
+
+  expect(await screen.findByText('Não foi possível ler os itens desse XML.')).toBeInTheDocument();
+  await expect(db.notasFiscais.count()).resolves.toBe(0);
+  expect(await db.comprasCartao.get(compra.id)).toMatchObject({ valorTotal: 10000 });
+});
+
+it('remover a nota só vale depois de salvar', async () => {
+  const { cartao, compra } = await compraSalva();
+  await repo.salvarNotaFiscal({
+    compraCartaoId: compra.id, itens: [{ descricao: 'Produto A', valorCent: 10000 }],
+  });
+  await useApp.getState().recarregar();
+
+  render(<FormCompra cartao={cartao} compra={compra} onFechar={() => {}} />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Remover' }));
+  await expect(db.notasFiscais.count()).resolves.toBe(1); // ainda não
+
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  await waitFor(async () => {
+    await expect(db.notasFiscais.count()).resolves.toBe(0);
+  });
 });
