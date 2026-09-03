@@ -177,6 +177,7 @@ export default function TelaAnalises() {
           comprasCartao={dados.comprasCartao}
           categoriasCartao={dados.categoriasCartao}
           horizonteProjecao={dados.config.horizonteProjecao}
+          ajustesFechamento={dados.ajustesFechamento}
           onFechar={() => setCategoriaAberta(null)}
           onAbrirCartao={() => { setAba('cartao'); setCategoriaAberta(null); }}
         />
