@@ -35,6 +35,7 @@ function dadosComCartao(nomeCartao: string): Dados {
     conferenciasFatura: [],
     viagens: [],
     bancos: [],
+    ajustesFechamento: [],
     config: {
       id: 'config', boxPadraoId: null, ultimoBackupEm: null,
       mudancasDesdeBackup: false, horizonteProjecao: '2026-12-31',

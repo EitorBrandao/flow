@@ -253,6 +253,7 @@ it('substituirTudo troca completamente os dados e reseta mudancasDesdeBackup', a
     conferenciasFatura: [],
     viagens: [],
     bancos: [],
+    ajustesFechamento: [],
     config: {
       id: 'config', boxPadraoId: 'nb1', ultimoBackupEm: agora,
       mudancasDesdeBackup: true, horizonteProjecao: `${new Date().getFullYear() + 1}-12-31`,
