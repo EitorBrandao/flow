@@ -265,12 +265,15 @@ export interface ResumoAssinaturas {
 
 /** Total e detalhamento (por cartão > assinatura) das compras geradas por assinatura que
  *  caem na fatura do mês dado, entre os cartões das boxes selecionadas. */
+/** Total e detalhamento (por cartão > assinatura) das compras geradas por assinatura que
+ *  caem na fatura do mês dado, entre os cartões das boxes selecionadas. */
 export function resumoAssinaturasDoMes(
   mes: string,
   boxIds: readonly ID[],
   cartoes: Cartao[],
   comprasCartao: CompraCartao[],
   recorrenciasCartao: RecorrenciaCartao[],
+  ajustesFechamento: AjusteFechamento[] = [],
 ): ResumoAssinaturas {
   const itens: ItemResumoAssinaturas[] = [];
   for (const cartao of cartoes) {
@@ -279,8 +282,9 @@ export function resumoAssinaturasDoMes(
       (c) => c.cartaoId === cartao.id && c.recorrenciaCartaoId != null,
     );
     if (comprasDoCartao.length === 0) continue;
-    const ate = datasFaturaDoMes(cartao, mes).dataVencimento;
-    const fatura = calcularFaturas(cartao, comprasDoCartao, ate).find((f) => f.mes === mes);
+    const ajustes = ajustesDoCartao(ajustesFechamento, cartao.id);
+    const ate = datasFaturaDoMes(cartao, mes, ajustes).dataVencimento;
+    const fatura = calcularFaturas(cartao, comprasDoCartao, ate, ajustes).find((f) => f.mes === mes);
     if (!fatura) continue;
     const porAssinatura = new Map<ID, number>();
     for (const item of fatura.itens) {

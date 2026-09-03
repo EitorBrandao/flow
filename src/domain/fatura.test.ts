@@ -297,6 +297,19 @@ describe('resumoAssinaturasDoMes', () => {
     );
     expect(resumo).toEqual({ totalCent: 0, itens: [] });
   });
+
+  it('aplica o ajuste de fechamento do cartão ao agrupar a compra de assinatura', () => {
+    const compraAssinatura = { ...compra('2026-07-12', 3990), recorrenciaCartaoId: 'ass1' };
+    const ajustes = [ajusteFechamento('k1', '2026-07', 15)];
+    // cartaoNubank: diaFechamento 10 — sem ajuste, dia 12 já passou do fechamento e cai em agosto
+    const semAjuste = resumoAssinaturasDoMes('2026-07', ['b1'], [cartaoNubank], [compraAssinatura], [assNetflix]);
+    expect(semAjuste.totalCent).toBe(0);
+    // com o fechamento adiado pro dia 15, o dia 12 volta a cair em julho
+    const comAjuste = resumoAssinaturasDoMes(
+      '2026-07', ['b1'], [cartaoNubank], [compraAssinatura], [assNetflix], ajustes,
+    );
+    expect(comAjuste.totalCent).toBe(3990);
+  });
 });
 
 describe('resumoParcelamento', () => {
