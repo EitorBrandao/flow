@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { db } from '../db/database';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
@@ -215,4 +216,38 @@ it('cancelar o escaneamento volta pro menu', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
 
   expect(await screen.findByRole('heading', { name: 'Adicionar' })).toBeInTheDocument();
+});
+
+it('itens da nota escaneada chegam até a compra salva', async () => {
+  const XML_COM_ITENS = '<nfeProc><NFe><infNFe>'
+    + '<ide><dhEmi>2026-08-15T10:00:00-03:00</dhEmi></ide>'
+    + '<emit><xNome>Mercado Exemplo LTDA</xNome></emit>'
+    + '<det><prod><xProd>Produto A</xProd><vProd>10.00</vProd></prod></det>'
+    + '<det><prod><xProd>Produto B</xProd><vProd>52.40</vProd></prod></det>'
+    + '<total><ICMSTot><vNF>62.40</vNF></ICMSTot></total>'
+    + '</infNFe></NFe></nfeProc>';
+
+  await montarComCartao();
+  render(<AdicionarSheet aberto onFechar={() => {}} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Compra por nota fiscal' }));
+  await userEvent.type(await screen.findByLabelText('Chave de acesso'), '3'.repeat(44));
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+  fireEvent.change(await screen.findByLabelText('Ou cole o texto do XML'), { target: { value: XML_COM_ITENS } });
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+
+  expect(await screen.findByRole('heading', { name: 'Nova compra' })).toBeInTheDocument();
+  expect(screen.getByLabelText('Descrição (opcional)')).toHaveValue('Mercado Exemplo LTDA');
+  await userEvent.click(screen.getByRole('button', { name: 'Farmácia' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(async () => {
+    expect(await db.notasFiscais.count()).toBe(1);
+  });
+  const [nota] = await db.notasFiscais.toArray();
+  const [compraSalva] = await db.comprasCartao.toArray();
+  expect(nota.itens).toHaveLength(2);
+  expect(nota.emitente).toBe('Mercado Exemplo LTDA');
+  expect(nota.compraCartaoId).toBe(compraSalva.id);
 });

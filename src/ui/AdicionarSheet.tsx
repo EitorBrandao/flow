@@ -93,6 +93,8 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
       valorTotal: resultado.valorTotal,
       data: resultado.data,
       descricao: resultado.descricao,
+      // só anexa quando há itens: uma nota sem item legível não tem o que mostrar
+      nota: resultado.itens.length > 0 ? resultado : undefined,
     });
   }
 
