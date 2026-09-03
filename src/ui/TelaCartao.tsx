@@ -142,7 +142,9 @@ function BlocoAjusteFechamento({ cartao, mesFechamento }: { cartao: Cartao; mesF
 
 function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const { dados, hoje } = useApp();
-  const [mes, setMes] = useState(() => mesFaturaDaCompra(cartao, hoje));
+  const [mes, setMes] = useState(() =>
+    mesFaturaDaCompra(cartao, hoje, ajustesDoCartao(dados?.ajustesFechamento ?? [], cartao.id)),
+  );
   const [editando, setEditando] = useState<CompraCartao | null>(null);
   const [filtroCategoriaId, setFiltroCategoriaId] = useState<string | null>(null);
   const [busca, setBusca] = useState('');

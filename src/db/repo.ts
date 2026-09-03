@@ -461,6 +461,10 @@ export interface PagamentoFatura {
 export async function registrarPagamentoFatura(p: PagamentoFatura): Promise<void> {
   const cartao = await db.cartoes.get(p.cartaoId);
   if (!cartao) throw new Error(`cartão ${p.cartaoId} não encontrado`);
+  const ajustes = ajustesDoCartao(
+    await db.ajustesFechamento.where('cartaoId').equals(p.cartaoId).toArray(),
+    p.cartaoId,
+  );
 
   const parcelamento = p.parcelamento;
   // Criar a categoria reservada fora da transação do lançamento: `categoriaParcelamentoDe`
@@ -479,7 +483,7 @@ export async function registrarPagamentoFatura(p: PagamentoFatura): Promise<void
       const [ano, mes] = p.faturaMes.split('-');
       await db.comprasCartao.add({
         id: novoId(), cartaoId: p.cartaoId, categoriaCartaoId,
-        data: datasFaturaDoMes(cartao, p.faturaMes).dataFechamento,
+        data: datasFaturaDoMes(cartao, p.faturaMes, ajustes).dataFechamento,
         valorTotal: parcelamento.parcelas * parcelamento.valorParcelaCent,
         parcelas: parcelamento.parcelas,
         descricao: `Parcelamento da fatura de ${mes}/${ano}`,

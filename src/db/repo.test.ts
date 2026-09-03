@@ -992,6 +992,43 @@ describe('AjusteFechamento', () => {
     expect(dados.ajustesFechamento).toEqual([]);
   });
 
+  it('registrarPagamentoFatura usa o fechamento ajustado como data do parcelamento (fechamento adiado)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, catCartao } = await montarCartao(); // diaFechamento 28, diaVencimento 5
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-05',
+        valorTotal: 90000, parcelas: 1,
+      }, '2027-12-31');
+      // sem ajuste: compra de 05/08 fecha em 28/08 e cai na fatura de vencimento 2026-09
+      // adia o fechamento de agosto/2026 de 28 para 30
+      await repo.salvarAjusteFechamento(cartao.id, '2026-08', 30, '2027-12-31');
+      const fatura = (await db.lancamentos.toArray())
+        .find((l) => l.origem === 'cartao' && l.faturaMes === '2026-09')!;
+      expect(fatura.valor).toBe(90000);
+
+      await repo.registrarPagamentoFatura({
+        lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-09',
+        valorPagoCent: 30000, dataPagamento: fatura.data,
+        parcelamento: { parcelas: 3, valorParcelaCent: 20000 },
+        horizonte: '2027-12-31',
+      });
+
+      const parcelamento = (await db.comprasCartao.toArray())
+        .find((c) => c.categoriaCartaoId !== catCartao.id)!;
+      // fechamento ajustado (30), não o padrão do cartão (28)
+      expect(parcelamento.data).toBe('2026-08-30');
+
+      // consequência visível: a parcela 1 cai numa fatura futura, não de volta na que acabou
+      // de ser paga (que já está efetiva e não pode mais ser tocada)
+      const previstos = (await db.lancamentos.toArray())
+        .filter((l) => l.status === 'previsto' && l.origem === 'cartao')
+        .sort((a, b) => a.faturaMes!.localeCompare(b.faturaMes!));
+      expect(previstos.map((l) => l.faturaMes)).toEqual(['2026-10', '2026-11', '2026-12']);
+    } finally { vi.useRealTimers(); }
+  });
+
   it('substituirTudo deduplica ajustes de fechamento do mesmo cartão e mês', async () => {
     const dados = await repo.carregarTudo();
     const base = { cartaoId: 'k1', mes: '2026-07', criadoEm: '2026-07-01' };

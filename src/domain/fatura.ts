@@ -223,6 +223,7 @@ export function diffSincronizacao(
     }
     for (const c of confs) {
       if (c.usarValorApp && c.valorAppCent > 0 && !alvo.has(c.mes)) {
+        // sem `ajustes`: só `dataVencimento` é lido aqui, e o override nunca o move.
         alvo.set(c.mes, { valor: c.valorAppCent, data: datasFaturaDoMes(cartao, c.mes).dataVencimento });
       }
     }
