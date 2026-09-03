@@ -114,6 +114,16 @@ export interface ConferenciaFatura extends Entidade {
   usarValorApp: boolean; // marcado: o previsto no Flow usa valorAppCent no lugar da soma
 }
 
+/** Exceção pontual de fechamento: sobrescreve `Cartao.diaFechamento` só no mês calendário em
+ *  que o fechamento aconteceu (não no mês de vencimento da fatura resultante — ver
+ *  docs/superpowers/specs/2026-09-02-ajuste-fechamento-fatura-design.md). Única por
+ *  cartão+mês; vencimento nunca é afetado. */
+export interface AjusteFechamento extends Entidade {
+  cartaoId: ID;
+  mes: string; // 'AAAA-MM' — mês CALENDÁRIO em que o fechamento aconteceu
+  diaFechamento: number; // 1-31, clampado ao fim do mês
+}
+
 export interface Cenario extends Entidade {
   nome: string;
   ligado: boolean;
@@ -149,6 +159,7 @@ export interface Dados {
   conferenciasFatura: ConferenciaFatura[];
   viagens: Viagem[];
   bancos: Banco[];
+  ajustesFechamento: AjusteFechamento[];
   config: Config;
 }
 

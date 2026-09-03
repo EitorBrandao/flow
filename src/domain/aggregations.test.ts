@@ -136,7 +136,7 @@ function dadosF(p: Partial<Dados> = {}): Dados {
   return {
     boxes: [], categorias: catsF, lancamentos: [], recorrencias: [], cenarios: [],
     cartoes: cartoesF, categoriasCartao: catsCartaoF, comprasCartao: [],
-    recorrenciasCartao: [], conferenciasFatura: [], viagens: [], bancos: [],
+    recorrenciasCartao: [], conferenciasFatura: [], viagens: [], bancos: [], ajustesFechamento: [],
     config: {
       id: 'config', boxPadraoId: null, ultimoBackupEm: null,
       mudancasDesdeBackup: false, horizonteProjecao: '2027-12-31',

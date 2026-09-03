@@ -1,5 +1,9 @@
-import type { Cartao, CompraCartao, ConferenciaFatura, Lancamento, RecorrenciaCartao } from './types';
-import { calcularFaturas, categoriasFaturaIds, datasFaturaDoMes, diffSincronizacao, mesFaturaDaCompra, mesFechamentoDaCompra, resumoAssinaturasDoMes, resumoParcelamento, resumoPorCategoria, valorParcela } from './fatura';
+import type { AjusteFechamento, Cartao, CompraCartao, ConferenciaFatura, Lancamento, RecorrenciaCartao } from './types';
+import {
+  ajustesDoCartao, calcularFaturas, categoriasFaturaIds, datasFaturaDoMes, dedupAjustesFechamento,
+  diffSincronizacao, mesFaturaDaCompra, mesFechamentoDaCompra, resumoAssinaturasDoMes, resumoParcelamento,
+  resumoPorCategoria, valorParcela,
+} from './fatura';
 
 const nubank = { diaFechamento: 28, diaVencimento: 5 }; // vence no mês seguinte ao fechamento
 const outro = { diaFechamento: 10, diaVencimento: 20 }; // vence no mesmo mês do fechamento
@@ -32,6 +36,71 @@ describe('mesFaturaDaCompra e datasFaturaDoMes', () => {
   it('atravessa a virada de ano', () => {
     expect(mesFaturaDaCompra(nubank, '2026-12-28')).toBe('2027-02'); // fecha 2027-01-28, vence 2027-02-05
     expect(mesFaturaDaCompra(nubank, '2026-12-27')).toBe('2027-01');
+  });
+});
+
+function ajusteFechamento(cartaoId: string, mes: string, diaFechamento: number): AjusteFechamento {
+  return { id: `af-${cartaoId}-${mes}`, cartaoId, mes, diaFechamento, criadoEm: '', alteradoEm: '' };
+}
+
+describe('ajustesDoCartao e override de fechamento', () => {
+  it('sem ajuste, comportamento idêntico ao de hoje', () => {
+    expect(mesFechamentoDaCompra(nubank, '2026-07-29')).toBe('2026-08');
+  });
+
+  it('ajuste no mês da compra move o limite do fechamento', () => {
+    const ajustes = ajustesDoCartao([ajusteFechamento('k1', '2026-07', 30)], 'k1');
+    // sem ajuste, dia 29 já passou do fechamento padrão (28) e cairia em agosto
+    expect(mesFechamentoDaCompra(nubank, '2026-07-29', ajustes)).toBe('2026-07');
+    // dia 30 (o novo fechamento) ainda cai no ciclo seguinte, igual à regra do dia exato
+    expect(mesFechamentoDaCompra(nubank, '2026-07-30', ajustes)).toBe('2026-08');
+  });
+
+  it('ajustesDoCartao ignora ajustes de outro cartão', () => {
+    const ajustes = ajustesDoCartao([ajusteFechamento('k2', '2026-07', 30)], 'k1');
+    expect(ajustes.size).toBe(0);
+  });
+
+  it('datasFaturaDoMes usa o ajuste do mês de fechamento da fatura', () => {
+    const ajustes = ajustesDoCartao([ajusteFechamento('k1', '2026-07', 30)], 'k1');
+    // fatura de vencimento 2026-08 fecha em 2026-07 (nubank: diaVencimento 5 < diaFechamento 28)
+    expect(datasFaturaDoMes(nubank, '2026-08', ajustes))
+      .toEqual({ dataFechamento: '2026-07-30', dataVencimento: '2026-08-05' });
+  });
+
+  it('calcularFaturas reclassifica compra perto da virada quando o fechamento é adiado', () => {
+    const ajustes = ajustesDoCartao([ajusteFechamento('k1', '2026-07', 30)], 'k1');
+    const fs = calcularFaturas(nubank, [compra('2026-07-29', 5000)], '2026-12-31', ajustes);
+    // sem ajuste essa compra cairia em 2026-09 (fecha 07-28, rola pra fatura de vencimento 09);
+    // com o fechamento adiado pro dia 30, o dia 29 fica antes do fechamento e cai em 2026-08
+    expect(fs.map((f) => f.mes)).toEqual(['2026-08']);
+  });
+
+  it('ajuste que empurra o fechamento além do vencimento produz o ciclo invertido, sem travar', () => {
+    // outro: diaFechamento 10, diaVencimento 20 — ajuste move o fechamento de julho pro dia 25
+    const ajustes = ajustesDoCartao([ajusteFechamento('k1', '2026-07', 25)], 'k1');
+    expect(datasFaturaDoMes(outro, '2026-07', ajustes))
+      .toEqual({ dataFechamento: '2026-07-25', dataVencimento: '2026-07-20' });
+  });
+});
+
+describe('dedupAjustesFechamento', () => {
+  it('mesmo cartão e mês: vence o alteradoEm mais recente, empate pelo id', () => {
+    const a = { id: 'a1', cartaoId: 'k1', mes: '2026-07', diaFechamento: 28, criadoEm: '', alteradoEm: '2026-01-01' };
+    const b = { id: 'a2', cartaoId: 'k1', mes: '2026-07', diaFechamento: 30, criadoEm: '', alteradoEm: '2026-02-01' };
+    expect(dedupAjustesFechamento([a, b]).map((x) => x.id)).toEqual(['a2']);
+    const empateA = { ...a, alteradoEm: '2026-02-01' };
+    const empateB = { ...b, alteradoEm: '2026-02-01', id: 'a0' };
+    expect(dedupAjustesFechamento([empateA, empateB]).map((x) => x.id)).toEqual(['a1']);
+  });
+
+  it('cartões ou meses diferentes: nenhum é descartado', () => {
+    const a = ajusteFechamento('k1', '2026-07', 28);
+    const b = ajusteFechamento('k1', '2026-08', 28);
+    const c = ajusteFechamento('k2', '2026-07', 28);
+    expect(dedupAjustesFechamento([a, b, c]).map((x) => x.id).sort()).toEqual(
+      [a.id, b.id, c.id].sort(),
+    );
   });
 });
 
@@ -227,6 +296,19 @@ describe('resumoAssinaturasDoMes', () => {
       '2026-07', ['outra-box'], [cartaoNubank], [compraAssinatura], [assNetflix],
     );
     expect(resumo).toEqual({ totalCent: 0, itens: [] });
+  });
+
+  it('aplica o ajuste de fechamento do cartão ao agrupar a compra de assinatura', () => {
+    const compraAssinatura = { ...compra('2026-07-12', 3990), recorrenciaCartaoId: 'ass1' };
+    const ajustes = [ajusteFechamento('k1', '2026-07', 15)];
+    // cartaoNubank: diaFechamento 10 — sem ajuste, dia 12 já passou do fechamento e cai em agosto
+    const semAjuste = resumoAssinaturasDoMes('2026-07', ['b1'], [cartaoNubank], [compraAssinatura], [assNetflix]);
+    expect(semAjuste.totalCent).toBe(0);
+    // com o fechamento adiado pro dia 15, o dia 12 volta a cair em julho
+    const comAjuste = resumoAssinaturasDoMes(
+      '2026-07', ['b1'], [cartaoNubank], [compraAssinatura], [assNetflix], ajustes,
+    );
+    expect(comAjuste.totalCent).toBe(3990);
   });
 });
 
