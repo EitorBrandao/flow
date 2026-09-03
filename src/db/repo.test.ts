@@ -21,6 +21,17 @@ async function boxECategoria(): Promise<{ box: Box; ganho: Categoria; gasto: Cat
   return { box, ganho, gasto };
 }
 
+async function montarCartao() {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cartao = await repo.salvarCartao({
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
+  }, '2027-12-31');
+  const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  return { box, cartao, catCartao };
+}
+
 it('carregarTudo cria config default com horizonte no fim do ano seguinte', async () => {
   const dados = await repo.carregarTudo();
   expect(dados.config.horizonteProjecao).toBe(`${new Date().getFullYear() + 1}-12-31`);
@@ -313,17 +324,6 @@ describe('tabelas do cartão', () => {
 });
 
 describe('cartão de crédito', () => {
-  async function montarCartao() {
-    const agora = agoraISO();
-    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
-    await repo.salvarBox(box);
-    const cartao = await repo.salvarCartao({
-      boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
-    }, '2027-12-31');
-    const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
-    return { box, cartao, catCartao };
-  }
-
   it('cria a categoria da fatura automaticamente, oculta, com o nome do cartão', async () => {
     const { box, cartao } = await montarCartao();
     const categoria = await db.categorias.get(cartao.categoriaFaturaId);
@@ -939,4 +939,71 @@ it('confirma um pendente só com data corrigida e mantém o valor do previsto', 
   expect(salvo?.status).toBe('efetivo');
   expect(salvo?.valor).toBe(12000);
   expect(salvo?.data).toBe('2026-08-28');
+});
+
+describe('AjusteFechamento', () => {
+  it('salvarAjusteFechamento reclassifica a fatura; removerAjusteFechamento volta ao padrão', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, catCartao } = await montarCartao(); // diaFechamento 28, diaVencimento 5
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-29',
+        valorTotal: 5000, parcelas: 1,
+      }, '2027-12-31');
+      // sem ajuste: dia 29 já passou do fechamento (28) e a compra cai na fatura de 2026-09
+      let previstos = (await db.lancamentos.toArray()).filter((l) => l.origem === 'cartao');
+      expect(previstos.find((l) => l.faturaMes === '2026-09')?.valor).toBe(5000);
+      expect(previstos.find((l) => l.faturaMes === '2026-08')).toBeUndefined();
+
+      await repo.salvarAjusteFechamento(cartao.id, '2026-07', 30, '2027-12-31');
+      previstos = (await db.lancamentos.toArray()).filter((l) => l.origem === 'cartao');
+      expect(previstos.find((l) => l.faturaMes === '2026-08')?.valor).toBe(5000);
+      expect(previstos.find((l) => l.faturaMes === '2026-09')).toBeUndefined();
+
+      await repo.removerAjusteFechamento(cartao.id, '2026-07', '2027-12-31');
+      previstos = (await db.lancamentos.toArray()).filter((l) => l.origem === 'cartao');
+      expect(previstos.find((l) => l.faturaMes === '2026-09')?.valor).toBe(5000);
+      expect(previstos.find((l) => l.faturaMes === '2026-08')).toBeUndefined();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('sincronização depois do ajuste nunca reescreve um lançamento de fatura já efetivo', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { cartao, catCartao } = await montarCartao();
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-29',
+        valorTotal: 5000, parcelas: 1,
+      }, '2027-12-31');
+      const previsto = (await db.lancamentos.toArray()).find((l) => l.faturaMes === '2026-09')!;
+      await repo.atualizarLancamento(previsto.id, { status: 'efetivo' });
+
+      await repo.salvarAjusteFechamento(cartao.id, '2026-07', 30, '2027-12-31');
+
+      const efetivo = await db.lancamentos.get(previsto.id);
+      expect(efetivo).toMatchObject({ status: 'efetivo', faturaMes: '2026-09', valor: 5000 });
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('carregarTudo devolve a tabela nova (vazia num banco novo)', async () => {
+    const dados = await repo.carregarTudo();
+    expect(dados.ajustesFechamento).toEqual([]);
+  });
+
+  it('substituirTudo deduplica ajustes de fechamento do mesmo cartão e mês', async () => {
+    const dados = await repo.carregarTudo();
+    const base = { cartaoId: 'k1', mes: '2026-07', criadoEm: '2026-07-01' };
+    await repo.substituirTudo({
+      ...dados,
+      ajustesFechamento: [
+        { ...base, id: 'af1', diaFechamento: 28, alteradoEm: '2026-07-01' },
+        { ...base, id: 'af2', diaFechamento: 30, alteradoEm: '2026-07-10' },
+      ],
+    });
+    const depois = await db.ajustesFechamento.toArray();
+    expect(depois.map((a) => a.id)).toEqual(['af2']);
+    expect(depois[0].diaFechamento).toBe(30);
+  });
 });
