@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.27.0] - 2026-09-03
+
+### Adicionado
+
+- Ajuste excepcional do dia de fechamento de uma fatura.
+  - Fica na aba Conferência da fatura, logo abaixo da conferência de valor.
+  - Vale só para o mês daquela fatura — o dia de fechamento padrão do cartão não muda.
+
 ## [0.26.0] - 2026-08-31
 
 ### Adicionado
