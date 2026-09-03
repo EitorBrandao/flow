@@ -224,7 +224,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
           {erroNota && <p className="aviso">{erroNota}</p>}
           <div className="linha">
             <button className="botao botao-primario" onClick={anexarNota}>Anexar</button>
-            <button className="botao" onClick={() => { setAnexando(false); setErroNota(null); }}>Cancelar</button>
+            <button className="botao" onClick={() => { setAnexando(false); setXmlTexto(''); setErroNota(null); }}>Cancelar</button>
           </div>
         </div>
       ) : notaExibida ? (
@@ -251,12 +251,14 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
                 const quantidade = formatarQuantidade(l.quantidade, l.unidade);
                 return (
                   <li key={`${l.descricao}-${i}`} className={`nota-item${l.diferenca ? ' nota-item-diferenca' : ''}`}>
-                    <span className="cresce">
-                      {l.descricao}
-                      {quantidade && <span className="sub"> · {quantidade}</span>}
-                    </span>
-                    <span>{formatarBRL(l.valorCent)}</span>
-                    <span className="sub">{formatarPercentual(l.percentual)}</span>
+                    <div>
+                      <span>{l.descricao}</span>
+                      {quantidade && <span className="sub">{quantidade}</span>}
+                    </div>
+                    <div>
+                      <span>{formatarBRL(l.valorCent)}</span>
+                      <span className="sub">{formatarPercentual(l.percentual)}</span>
+                    </div>
                   </li>
                 );
               })}
@@ -264,7 +266,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
           )}
         </div>
       ) : (
-        <button className="botao" onClick={() => { setAnexando(true); setErroNota(null); }}>
+        <button className="botao" onClick={() => { setAnexando(true); setXmlTexto(''); setErroNota(null); }}>
           Anexar nota fiscal
         </button>
       )}

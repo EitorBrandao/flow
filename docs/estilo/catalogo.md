@@ -71,7 +71,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.versao-detalhes` | lista de detalhes recuada sob um tópico do changelog, na tela Versão (`Versao.tsx`) — `--muted`, 13px |
 | `.escanear-nota-video` | preview da câmera em `EscanearNotaSheet.tsx` |
 | `.nota-bloco` | resumo da nota fiscal anexada a uma compra do cartão (`FormCompra.tsx`) — emitente, data, total da nota e contagem de itens sobre `--surface2`; também envolve o painel de anexar o XML |
-| `.nota-itens` / `.nota-item` / `.nota-item-diferenca` | lista compacta "item → valor → % do total" dentro do `.nota-bloco`, com rolagem própria; `.nota-item-diferenca` marca a linha final de desconto/frete |
+| `.nota-itens` / `.nota-item` / `.nota-item-diferenca` | lista compacta "item → valor → % do total" dentro do `.nota-bloco`, com rolagem própria; cada `.nota-item` é uma linha de duas colunas (descrição e quantidade à esquerda, valor em negrito e percentual à direita); `.nota-item-diferenca` marca a linha final de desconto/frete |
 
 ## Componentes compartilhados (em `src/ui/`)
 

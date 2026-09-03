@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -385,6 +385,20 @@ async function compraSalva() {
   useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
   return { cartao, compra };
 }
+
+it('cancelar o painel de anexar limpa o texto do XML ao reabrir', async () => {
+  const { cartao, compra } = await compraSalva();
+  render(<FormCompra cartao={cartao} compra={compra} onFechar={() => {}} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Anexar nota fiscal' }));
+  const textarea = await screen.findByLabelText('Ou cole o texto do XML');
+  fireEvent.change(textarea, { target: { value: 'texto abandonado' } });
+  const painel = textarea.closest('.nota-bloco') as HTMLElement;
+  await userEvent.click(within(painel).getByRole('button', { name: 'Cancelar' }));
+
+  await userEvent.click(screen.getByRole('button', { name: 'Anexar nota fiscal' }));
+  expect(await screen.findByLabelText('Ou cole o texto do XML')).toHaveValue('');
+});
 
 it('anexa nota a uma compra salva sem mexer em valor nem data', async () => {
   const { cartao, compra } = await compraSalva();
