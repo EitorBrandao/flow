@@ -34,10 +34,16 @@ export function formatarSemSimbolo(centavos: number): string {
 }
 
 /** Converte uma string decimal simples (formato do XML da NFe, ex. "123.45") em centavos
- *  inteiros. `undefined` se o texto não casar com esse formato — não lança exceção. */
+ *  inteiros. `undefined` se o texto não casar com esse formato — não lança exceção. A
+ *  regex não limita a quantidade de dígitos, então um `vProd` absurdo (nenhuma NFC-e real
+ *  chega perto disso) estouraria `Number.MAX_SAFE_INTEGER` e viraria `Infinity`; esse valor
+ *  vai para o IndexedDB e para o backup, onde `JSON.stringify(Infinity)` é `null` — e um
+ *  re-import traria `valorCent: null`, quebrando `distribuirItens` em `NaN` na lista
+ *  inteira. Por isso o resultado só é aceito quando é um inteiro seguro. */
 export function parsearCentavosDecimal(texto: string): number | undefined {
   const m = /^(\d+)(?:\.(\d{1,2}))?$/.exec(texto.trim());
   if (!m) return undefined;
   const fracao = (m[2] ?? '').padEnd(2, '0');
-  return Number(m[1]) * 100 + Number(fracao);
+  const centavos = Number(m[1]) * 100 + Number(fracao);
+  return Number.isSafeInteger(centavos) ? centavos : undefined;
 }

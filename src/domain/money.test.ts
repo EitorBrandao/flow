@@ -99,4 +99,12 @@ describe('parsearCentavosDecimal', () => {
     expect(parsearCentavosDecimal('-5.00')).toBeUndefined();
     expect(parsearCentavosDecimal('1.234')).toBeUndefined();
   });
+
+  it('devolve undefined quando o valor estoura um inteiro seguro', () => {
+    // a regex não limita dígitos; um vProd absurdo (nenhuma NFC-e real chega nem perto)
+    // não pode virar Infinity — JSON.stringify(Infinity) é null, e um re-import do
+    // backup traria valorCent: null, quebrando distribuirItens em NaN.
+    expect(parsearCentavosDecimal('99999999999999999999.99')).toBeUndefined();
+    expect(Number.isSafeInteger(parsearCentavosDecimal('90071992547409.91') ?? 0)).toBe(true);
+  });
 });

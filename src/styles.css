@@ -495,7 +495,7 @@ table.tabela th:first-child, table.tabela td:first-child {
 .nota-bloco strong { font-size: 14.5px; }
 .nota-itens {
   list-style: none; margin: 0; padding: 0;
-  max-height: 240px; overflow-y: auto;
+  max-height: 240px; overflow-y: auto; overscroll-behavior: contain;
   display: flex; flex-direction: column; gap: 2px;
 }
 /* separador entre linhas: exceção deliberada à regra 7 de nivel-2-nova-classe.md — esta

@@ -30,7 +30,11 @@ type EstadoNota =
   | { tipo: 'nova'; nota: NotaFiscalExtraida }
   | { tipo: 'removida' };
 
-function formatarPercentual(p: number): string {
+/** Abaixo de meio décimo, o arredondamento de `toFixed(1)` gera "0,0%" (ou "−0,0%",
+ *  no caso de sinal negativo com valor absoluto ínfimo) — um percentual que não informa
+ *  nada e ainda confunde com o sinal errado. Omitir é mais honesto que mostrar isso. */
+function formatarPercentual(p: number): string | null {
+  if (Math.abs(p) < 0.05) return null;
   return `${p.toFixed(1).replace('.', ',')}%`;
 }
 
@@ -239,7 +243,9 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
             )}
           </div>
           <div className="linha">
-            <span className="sub cresce">{notaExibida.itens.length} itens</span>
+            <span className="sub cresce">
+              {notaExibida.itens.length} {notaExibida.itens.length === 1 ? 'item' : 'itens'}
+            </span>
             <button className="botao-ver-mais" onClick={() => setVerItens((v) => !v)}>
               {verItens ? 'Ocultar itens' : 'Ver itens'}
             </button>
@@ -249,6 +255,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
             <ul className="nota-itens">
               {linhas.map((l, i) => {
                 const quantidade = formatarQuantidade(l.quantidade, l.unidade);
+                const percentual = formatarPercentual(l.percentual);
                 return (
                   <li key={`${l.descricao}-${i}`} className={`nota-item${l.diferenca ? ' nota-item-diferenca' : ''}`}>
                     <div>
@@ -257,7 +264,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
                     </div>
                     <div>
                       <span>{formatarBRL(l.valorCent)}</span>
-                      <span className="sub">{formatarPercentual(l.percentual)}</span>
+                      {percentual && <span className="sub">{percentual}</span>}
                     </div>
                   </li>
                 );
