@@ -583,10 +583,12 @@ export async function salvarAssinatura(
 
 export async function excluirAssinatura(id: ID, horizonte: ISODate): Promise<void> {
   const hoje = hojeISO();
-  await db.transaction('rw', db.recorrenciasCartao, db.comprasCartao, db.config, async () => {
+  await db.transaction('rw', db.recorrenciasCartao, db.comprasCartao, db.notasFiscais, db.config, async () => {
     const futuras = await db.comprasCartao.where('recorrenciaCartaoId').equals(id)
       .filter((c) => c.data > hoje).primaryKeys();
     await db.comprasCartao.bulkDelete(futuras);
+    // Cascata: remover notas das compras deletadas
+    await db.notasFiscais.where('compraCartaoId').anyOf(futuras).delete();
     await db.recorrenciasCartao.delete(id);
     await marcarMudanca();
   });
@@ -640,7 +642,11 @@ async function materializarAssinatura(
     }
   }
   const agora = agoraISO();
-  await db.comprasCartao.bulkDelete(diff.excluirIds);
+  if (diff.excluirIds.length > 0) {
+    await db.comprasCartao.bulkDelete(diff.excluirIds);
+    // Cascata: remover notas das compras deletadas
+    await db.notasFiscais.where('compraCartaoId').anyOf(diff.excluirIds).delete();
+  }
   await db.comprasCartao.bulkAdd(diff.criarDatas.map((data): CompraCartao => ({
     id: novoId(), cartaoId: ass.cartaoId, categoriaCartaoId: ass.categoriaCartaoId,
     data, valorTotal: ass.valor, parcelas: 1,
@@ -665,7 +671,7 @@ export async function sincronizarCartoes(
 ): Promise<void> {
   const hoje = hojeISO();
   await db.transaction('rw', [
-    db.cartoes, db.comprasCartao, db.recorrenciasCartao, db.conferenciasFatura, db.lancamentos,
+    db.cartoes, db.comprasCartao, db.recorrenciasCartao, db.conferenciasFatura, db.lancamentos, db.notasFiscais,
   ], async () => {
     for (const ass of await db.recorrenciasCartao.toArray()) {
       await materializarAssinatura(ass, hoje, horizonte, {
