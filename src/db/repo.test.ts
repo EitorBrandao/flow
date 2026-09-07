@@ -966,7 +966,7 @@ async function compraComCartao() {
   return { compra };
 }
 
-async function montarCartaoTopLevel() {
+async function montarCartaoComCategoria() {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
@@ -1014,7 +1014,7 @@ it('excluirAssinatura remove as notas das compras futuras', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
     vi.setSystemTime(new Date('2026-07-01T12:00:00'));
-    const { cartao, catCartao } = await montarCartaoTopLevel();
+    const { cartao, catCartao } = await montarCartaoComCategoria();
     const ass = await repo.salvarAssinatura({
       cartaoId: cartao.id, categoriaCartaoId: catCartao.id, valor: 4990,
       dataInicio: '2026-07-15', diaDoMes: 15, parcelas: null, descricao: 'Netflix',
@@ -1039,7 +1039,7 @@ it('re-materializar assinatura e remover ocorrência remove a nota', async () =>
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
     vi.setSystemTime(new Date('2026-07-01T12:00:00'));
-    const { cartao, catCartao } = await montarCartaoTopLevel();
+    const { cartao, catCartao } = await montarCartaoComCategoria();
     const ass = await repo.salvarAssinatura({
       cartaoId: cartao.id, categoriaCartaoId: catCartao.id, valor: 4990,
       dataInicio: '2026-07-15', diaDoMes: 15, parcelas: null, descricao: 'Netflix',

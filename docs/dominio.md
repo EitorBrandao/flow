@@ -421,17 +421,13 @@ Confirmadas no código:
     à mesma compra antes de sincronizar, os dois registros têm ids distintos e o merge
     mantém as duas linhas. A UI não quebra: `notaDaCompra` (`src/domain/notaFiscal.ts`)
     escolhe a de `alteradoEm` mais recente e ignora a outra, que fica sobrando no banco.
-  - **Uma nota pode ficar órfã, sem compra correspondente.** A causa não é o merge em si —
-    `mesclar` nunca remove uma chave presente num dos dois lados, então uma compra e a nota
-    que aponta pra ela sobrevivem juntas por qualquer backup gerado pelo próprio app. A
-    causa real está em `src/db/repo.ts`: `excluirCompraCartao` apaga a compra **e** as notas
-    dela na mesma transação, mas os outros dois caminhos que também apagam `CompraCartao`
-    — `excluirAssinatura` (cancelar uma assinatura remove as compras futuras dela) e o diff
-    de `materializarAssinatura` (a regra muda e uma ocorrência futura já gerada é
-    recriada com outro id) — não tocam `notasFiscais`. Anexar nota a uma compra futura
-    gerada por assinatura é incomum, mas o formulário não impede; se a assinatura for
-    cancelada ou editada depois, a nota fica órfã **no mesmo dispositivo**, sem precisar de
-    backup nenhum — e, se esse estado for depois exportado, o merge só carrega a
-    inconsistência adiante, não a cria. Uma nota órfã fica invisível — nenhuma tela busca
-    nota sem compra correspondente — e não afeta nenhum cálculo (nota nunca entra em
-    projeção). Não há varredura de limpeza para esse caso nesta entrega.
+  - **Uma nota órfã ainda é possível, mas só por merge.** Os três caminhos que apagam
+    `CompraCartao` em `src/db/repo.ts` apagam as notas dela na mesma transação:
+    `excluirCompraCartao`, `excluirAssinatura` (cancelar uma assinatura remove as compras
+    futuras dela) e o diff de `materializarAssinatura` (a regra muda e uma ocorrência
+    futura já gerada é recriada com outro id). Nenhum deles deixa nota para trás no próprio
+    dispositivo. Sobra um caso: dois dispositivos. Um exclui a compra, o outro anexa a nota
+    a ela antes de sincronizar; o merge une por `id` e nunca remove uma chave presente num
+    dos lados, então a nota chega sem a compra. Uma nota órfã fica invisível — nenhuma tela
+    busca nota sem compra correspondente — e não afeta nenhum cálculo, porque nota nunca
+    entra em projeção. Não há varredura de limpeza para esse caso nesta entrega.
