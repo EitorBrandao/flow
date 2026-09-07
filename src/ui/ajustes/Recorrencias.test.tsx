@@ -12,34 +12,42 @@ beforeEach(async () => {
   await limparDb();
 });
 
+// Relógio fixo: a recorrência ocorre em 2026-07-05, 08-05 e 09-05, e o teste exige que ao
+// menos uma continue `previsto`. Fixar só o `hoje` do store não basta — o repo materializa
+// pelo relógio real, então com a data real depois de 2026-09-05 as três viravam `efetivo` e
+// o teste passava a falhar sozinho, por passagem de tempo e não por mudança de código.
 it('edita o valor de uma recorrência existente e atualiza os previstos remanescentes', async () => {
-  const agora = agoraISO();
-  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
-  await repo.salvarBox(box);
-  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
-  const rec = await repo.salvarRecorrencia({
-    boxId: box.id, categoriaId: cat.id, valor: 5000, dataInicio: '2026-07-01',
-    diaDoMes: 5, parcelas: 3,
-  }, '2027-12-31');
-  await useApp.getState().iniciar();
-  useApp.setState({ hoje: '2026-07-02' });
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-02T12:00:00'));
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
+    const rec = await repo.salvarRecorrencia({
+      boxId: box.id, categoriaId: cat.id, valor: 5000, dataInicio: '2026-07-01',
+      diaDoMes: 5, parcelas: 3,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ hoje: '2026-07-02' });
 
-  render(<Recorrencias />);
-  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
-  const valorInput = screen.getByLabelText('Valor');
-  await userEvent.clear(valorInput);
-  await userEvent.type(valorInput, '75,00');
-  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    render(<Recorrencias />);
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    const valorInput = screen.getByLabelText('Valor');
+    await userEvent.clear(valorInput);
+    await userEvent.type(valorInput, '75,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
-  expect(await screen.findByText('R$ 75,00')).toBeInTheDocument();
-  const atualizada = await db.recorrencias.get(rec.id);
-  expect(atualizada?.id).toBe(rec.id);
-  expect(atualizada?.valor).toBe(7500);
+    expect(await screen.findByText('R$ 75,00')).toBeInTheDocument();
+    const atualizada = await db.recorrencias.get(rec.id);
+    expect(atualizada?.id).toBe(rec.id);
+    expect(atualizada?.valor).toBe(7500);
 
-  const previstos = await db.lancamentos.where('recorrenciaId').equals(rec.id)
-    .filter((l) => l.status === 'previsto').toArray();
-  expect(previstos.length).toBeGreaterThan(0);
-  expect(previstos.every((l) => l.valor === 7500)).toBe(true);
+    const previstos = await db.lancamentos.where('recorrenciaId').equals(rec.id)
+      .filter((l) => l.status === 'previsto').toArray();
+    expect(previstos.length).toBeGreaterThan(0);
+    expect(previstos.every((l) => l.valor === 7500)).toBe(true);
+  } finally { vi.useRealTimers(); }
 });
 
 it('categoria da fatura de um cartão não aparece no grid de categoria da recorrência', async () => {
