@@ -8,8 +8,9 @@ import { materializar, ocorrencias } from '../domain/recurrence';
 import {
   agoraISO, novoId,
   type Banco, type Box, type Cartao, type Categoria, type CategoriaCartao,
-  type Cenario, type CompraCartao, type Config, type Dados, type ID, type ISODate, type Lancamento,
-  type Recorrencia, type RecorrenciaCartao, type StatusLancamento, type TipoCategoria, type Viagem,
+  type Cenario, type CompraCartao, type Config, type Dados, type ID, type ISODate, type ItemNota,
+  type Lancamento, type NotaFiscalSalva, type Recorrencia, type RecorrenciaCartao,
+  type StatusLancamento, type TipoCategoria, type Viagem,
 } from '../domain/types';
 import { db } from './database';
 
@@ -43,13 +44,13 @@ export async function carregarTudo(): Promise<Dados> {
   const [
     boxes, categorias, lancamentos, recorrencias, cenarios,
     cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, bancos,
-    ajustesFechamento,
+    ajustesFechamento, notasFiscais,
   ] = await Promise.all([
     db.boxes.toArray(), db.categorias.toArray(), db.lancamentos.toArray(),
     db.recorrencias.toArray(), db.cenarios.toArray(),
     db.cartoes.toArray(), db.categoriasCartao.toArray(), db.comprasCartao.toArray(),
     db.recorrenciasCartao.toArray(), db.conferenciasFatura.toArray(), db.viagens.toArray(), db.bancos.toArray(),
-    db.ajustesFechamento.toArray(),
+    db.ajustesFechamento.toArray(), db.notasFiscais.toArray(),
   ]);
   // ordem canônica na fonte: todo consumidor do snapshot herda a ordem de Ajustes
   categorias.sort(compararCategorias);
@@ -61,7 +62,7 @@ export async function carregarTudo(): Promise<Dados> {
   return {
     boxes, categorias, lancamentos, recorrencias, cenarios,
     cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, bancos,
-    ajustesFechamento, config,
+    ajustesFechamento, notasFiscais, config,
   };
 }
 
@@ -240,7 +241,7 @@ export async function substituirTudo(d: Dados): Promise<void> {
   const tabelas = [
     db.boxes, db.categorias, db.lancamentos, db.recorrencias, db.cenarios,
     db.cartoes, db.categoriasCartao, db.comprasCartao, db.recorrenciasCartao,
-    db.conferenciasFatura, db.viagens, db.bancos, db.ajustesFechamento, db.config,
+    db.conferenciasFatura, db.viagens, db.bancos, db.ajustesFechamento, db.notasFiscais, db.config,
   ];
   await db.transaction('rw', tabelas, async () => {
     await Promise.all(tabelas.map((t) => t.clear()));
@@ -259,6 +260,7 @@ export async function substituirTudo(d: Dados): Promise<void> {
     await db.viagens.bulkAdd(d.viagens);
     await db.bancos.bulkAdd(d.bancos);
     await db.ajustesFechamento.bulkAdd(dedupAjustesFechamento(d.ajustesFechamento));
+    await db.notasFiscais.bulkAdd(d.notasFiscais);
     await db.config.put({ ...d.config, mudancasDesdeBackup: false });
   });
 }
@@ -524,11 +526,47 @@ export async function atualizarCompraCartao(
 }
 
 export async function excluirCompraCartao(id: ID, horizonte: ISODate): Promise<void> {
-  await db.transaction('rw', db.comprasCartao, db.config, async () => {
+  await db.transaction('rw', db.comprasCartao, db.notasFiscais, db.config, async () => {
     await db.comprasCartao.delete(id);
+    const notas = await db.notasFiscais.where('compraCartaoId').equals(id).primaryKeys();
+    await db.notasFiscais.bulkDelete(notas);
     await marcarMudanca();
   });
   await sincronizarCartoes(horizonte);
+}
+
+// ---------- Nota fiscal da compra ----------
+
+export interface NovaNotaFiscal {
+  compraCartaoId: ID;
+  emitente?: string;
+  emissao?: ISODate;
+  totalNotaCent?: number;
+  itens: ItemNota[];
+}
+
+/** Anexa a nota à compra, substituindo a anterior. Uma nota por compra: o índice do Dexie é
+ *  não-único de propósito (ver database.ts), então a unicidade é aplicada aqui, dentro da
+ *  mesma transação que grava a nova. Não mexe em projeção — nota não vira lançamento. */
+export async function salvarNotaFiscal(n: NovaNotaFiscal): Promise<NotaFiscalSalva> {
+  const agora = agoraISO();
+  const nota: NotaFiscalSalva = { id: novoId(), criadoEm: agora, alteradoEm: agora, ...n };
+  await db.transaction('rw', db.notasFiscais, db.config, async () => {
+    const antigas = await db.notasFiscais.where('compraCartaoId').equals(n.compraCartaoId).primaryKeys();
+    await db.notasFiscais.bulkDelete(antigas);
+    await db.notasFiscais.add(nota);
+    await marcarMudanca();
+  });
+  return nota;
+}
+
+export async function excluirNotaFiscalDaCompra(compraCartaoId: ID): Promise<void> {
+  await db.transaction('rw', db.notasFiscais, db.config, async () => {
+    const ids = await db.notasFiscais.where('compraCartaoId').equals(compraCartaoId).primaryKeys();
+    if (ids.length === 0) return;
+    await db.notasFiscais.bulkDelete(ids);
+    await marcarMudanca();
+  });
 }
 
 export interface NovaAssinatura {
@@ -554,10 +592,12 @@ export async function salvarAssinatura(
 
 export async function excluirAssinatura(id: ID, horizonte: ISODate): Promise<void> {
   const hoje = hojeISO();
-  await db.transaction('rw', db.recorrenciasCartao, db.comprasCartao, db.config, async () => {
+  await db.transaction('rw', db.recorrenciasCartao, db.comprasCartao, db.notasFiscais, db.config, async () => {
     const futuras = await db.comprasCartao.where('recorrenciaCartaoId').equals(id)
       .filter((c) => c.data > hoje).primaryKeys();
     await db.comprasCartao.bulkDelete(futuras);
+    // Cascata: remover notas das compras deletadas
+    await db.notasFiscais.where('compraCartaoId').anyOf(futuras).delete();
     await db.recorrenciasCartao.delete(id);
     await marcarMudanca();
   });
@@ -637,7 +677,11 @@ async function materializarAssinatura(
     }
   }
   const agora = agoraISO();
-  await db.comprasCartao.bulkDelete(diff.excluirIds);
+  if (diff.excluirIds.length > 0) {
+    await db.comprasCartao.bulkDelete(diff.excluirIds);
+    // Cascata: remover notas das compras deletadas
+    await db.notasFiscais.where('compraCartaoId').anyOf(diff.excluirIds).delete();
+  }
   await db.comprasCartao.bulkAdd(diff.criarDatas.map((data): CompraCartao => ({
     id: novoId(), cartaoId: ass.cartaoId, categoriaCartaoId: ass.categoriaCartaoId,
     data, valorTotal: ass.valor, parcelas: 1,
@@ -663,7 +707,7 @@ export async function sincronizarCartoes(
   const hoje = hojeISO();
   await db.transaction('rw', [
     db.cartoes, db.comprasCartao, db.recorrenciasCartao, db.conferenciasFatura, db.ajustesFechamento,
-    db.lancamentos,
+    db.lancamentos, db.notasFiscais,
   ], async () => {
     for (const ass of await db.recorrenciasCartao.toArray()) {
       await materializarAssinatura(ass, hoje, horizonte, {

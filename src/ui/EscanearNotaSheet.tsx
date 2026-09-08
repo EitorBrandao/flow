@@ -97,7 +97,8 @@ export default function EscanearNotaSheet({ onConcluir, onFechar }: {
   function concluir() {
     if (!xmlTexto.trim()) { setErro('Cole o XML ou envie o arquivo.'); return; }
     const resultado = parsearNotaFiscal(xmlTexto);
-    const vazio = resultado.valorTotal == null && resultado.data == null && resultado.descricao == null;
+    const vazio = resultado.valorTotal == null && resultado.data == null
+      && resultado.descricao == null && resultado.itens.length === 0;
     if (vazio) {
       setErro('Não foi possível ler esse XML. Confira o formulário abaixo.');
       setResultadoPendente(resultado);

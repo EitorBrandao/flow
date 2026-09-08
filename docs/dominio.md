@@ -72,6 +72,21 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
 - **Config** — singleton (`id: 'config'`) com o horizonte da projeção
   (`horizonteProjecao`), a box padrão do seletor (`boxPadraoId`) e o estado do lembrete de
   backup (`mudancasDesdeBackup`, `ultimoBackupEm`).
+- **NotaFiscalSalva** — os itens (`ItemNota[]`) de uma NFC-e anexada a uma `CompraCartao`,
+  vinda do XML lido pelo scanner. **Só os itens ficam guardados — o XML original nunca é
+  salvo**: um XML de nota pesa dezenas de KB, e o backup carregaria isso para sempre. O
+  valor da compra continua sendo a fonte da verdade: anexar uma nota nunca muda
+  `valorTotal` nem `data` de `CompraCartao`, e os percentuais da lista "item → valor → %
+  do total" (`distribuirItens`, `src/domain/notaFiscal.ts`) são derivados do valor da
+  compra, não do total declarado na nota (`totalNotaCent`, guardado à parte, só para
+  referência). Uma compra tem no máximo uma nota — mas essa regra é aplicada em
+  `repo.salvarNotaFiscal` (busca-então-substitui, dentro da mesma transação que grava a
+  nova), **não** por índice único do Dexie: o índice `compraCartaoId`
+  (`src/db/database.ts`) é comum de propósito, porque um índice `&compraCartaoId` faria o
+  merge de dois backups com notas diferentes para a mesma compra estourar
+  `ConstraintError` no meio da transação — derrubando a importação inteira, num app onde
+  importar backup é caminho crítico. Ver a ressalva sobre isso na seção de invariantes,
+  abaixo.
 
 ### A box `'casa'`: dois significados do mesmo nome
 
@@ -314,22 +329,26 @@ sinal `+/−` também conta como edição. Há testes para os três caminhos.
 **O que `validarBackup` garante:** `app === 'flow'`; `schema` é `1`, `2`, `3`, `4` ou `5`;
 para cada schema, as tabelas correspondentes existem e são arrays (`TABELAS_V1` sempre;
 `TABELAS_CARTAO` a partir do schema 2; `TABELAS_VIAGEM` a partir do schema 3;
-`TABELAS_BANCO` a partir do schema 4; `TABELAS_AJUSTE_FECHAMENTO` (`ajustesFechamento`) a
-partir do schema 5); backups de
+**O que `validarBackup` garante:** `app === 'flow'`; `schema` é `1`, `2`, `3`, `4`, `5` ou `6`;
+para cada schema, as tabelas correspondentes existem e são arrays (`TABELAS_V1` sempre;
+`TABELAS_CARTAO` a partir do schema 2; `TABELAS_VIAGEM` a partir do schema 3;
+`TABELAS_BANCO` a partir do schema 4; `TABELAS_AJUSTE_FECHAMENTO` — `ajustesFechamento` — a
+partir do schema 5; `TABELAS_NOTA` — `notasFiscais` — a partir do schema 6); backups de
 schema antigo recebem as tabelas novas como array vazio; `dados.config` é um objeto de
 verdade — `null`, array e primitivo são rejeitados com mensagem própria — e sai de
 `validarBackup` sempre com `id: 'config'`, a chave primária do registro único. `mesclar`
 sempre mantém a `config` local (`atual.config`), nunca a do backup.
 
-**Exceção deliberada no preenchimento de `bancos` e `ajustesFechamento`.** As demais
-tabelas novas são preenchidas com `[]` conforme o **número do schema**; `bancos` e
-`ajustesFechamento` são preenchidas conforme a **chave não ser um array**. A diferença
-nasceu com `bancos`, porque circularam builds intermediários que já gravavam `bancos` num
-backup ainda marcado como `schema: 3` — condicionar ao schema apagaria esses bancos reais,
-trocando-os por lista vazia, em silêncio. `ajustesFechamento` seguiu o mesmo raciocínio por
-precaução, embora sem um build intermediário conhecido que o exija. Há teste dedicado a
-`bancos` (`src/backup/backup.test.ts`): se alguém trocar a condição pelo número do schema,
-ele falha.
+**Exceção deliberada no preenchimento de `bancos`, `ajustesFechamento` e `notasFiscais`.** As
+demais tabelas novas são preenchidas com `[]` conforme o **número do schema**; estas três são
+preenchidas conforme a **chave não ser um array**. A diferença nasceu com `bancos`, porque
+circularam builds intermediários que já gravavam `bancos` num backup ainda marcado como
+`schema: 3` — condicionar ao schema apagaria esses bancos reais, trocando-os por lista vazia,
+em silêncio. `ajustesFechamento` seguiu o mesmo raciocínio por precaução. Para `notasFiscais`
+o risco é concreto: a entidade nasceu num branch que carimbava os backups como `schema: 5`, e
+o número só subiu para 6 na integração — existem arquivos de schema 5 com notas reais dentro.
+Há teste dedicado a `bancos` e a `notasFiscais` (`src/backup/backup.test.ts`): se alguém
+trocar a condição pelo número do schema, ele falha.
 
 **O que `validarBackup` não garante** (validação rasa, por desenho — CLAUDE.md já registra
 isso; aqui é a leitura precisa do código):
@@ -405,3 +424,26 @@ Confirmadas no código:
   sobreposição, `viagemAtivaEm` devolve a primeira viagem do array cujo intervalo contém a
   data, e `TelaLancar.tsx` usa esse valor para marcar `viagemId` automaticamente no
   lançamento.
+- **No máximo uma `NotaFiscalSalva` por `compraCartaoId`** — mantida por código, não pelo
+  schema: `compraCartaoId` (`src/db/database.ts`) é índice comum, sem prefixo `&`. Ao
+  contrário do padrão usado para `ConferenciaFatura` (acima), aqui a unicidade **não** é
+  reforçada no import de backup — só no caminho de escrita manual,
+  `repo.salvarNotaFiscal`, que apaga qualquer nota existente da mesma compra dentro da
+  transação antes de gravar a nova. Duas consequências, honestas e sem correção nesta
+  entrega:
+  - **Um merge de backup pode deixar duas notas para a mesma compra.** `mesclar`
+    (`src/backup/backup.ts`) funde `notasFiscais` como qualquer outra tabela — por `id` — e
+    `id` de nota não carrega `compraCartaoId`; se dois dispositivos anexam notas diferentes
+    à mesma compra antes de sincronizar, os dois registros têm ids distintos e o merge
+    mantém as duas linhas. A UI não quebra: `notaDaCompra` (`src/domain/notaFiscal.ts`)
+    escolhe a de `alteradoEm` mais recente e ignora a outra, que fica sobrando no banco.
+  - **Uma nota órfã ainda é possível, mas só por merge.** Os três caminhos que apagam
+    `CompraCartao` em `src/db/repo.ts` apagam as notas dela na mesma transação:
+    `excluirCompraCartao`, `excluirAssinatura` (cancelar uma assinatura remove as compras
+    futuras dela) e o diff de `materializarAssinatura` (a regra muda e uma ocorrência
+    futura já gerada é recriada com outro id). Nenhum deles deixa nota para trás no próprio
+    dispositivo. Sobra um caso: dois dispositivos. Um exclui a compra, o outro anexa a nota
+    a ela antes de sincronizar; o merge une por `id` e nunca remove uma chave presente num
+    dos lados, então a nota chega sem a compra. Uma nota órfã fica invisível — nenhuma tela
+    busca nota sem compra correspondente — e não afeta nenhum cálculo, porque nota nunca
+    entra em projeção. Não há varredura de limpeza para esse caso nesta entrega.

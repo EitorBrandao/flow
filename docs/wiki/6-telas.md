@@ -37,6 +37,7 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 - O cabeçalho da tela Adicionar tem um ícone de câmera: escaneia o QR-code de uma nota fiscal (NFC-e) e extrai a chave de acesso.
 - Com a chave, você busca o XML fora do app (num site de consulta de NFC-e) e volta com ele — por upload de arquivo ou colando o texto.
 - O Flow lê o XML e pré-preenche valor, data e descrição da compra; categoria e cartão continuam por sua conta.
+- A nota também traz seus itens: no formulário da compra, "Ver itens" mostra a lista de produtos com valor e percentual do total.
 - Sem câmera disponível, ou se o QR não for lido, dá pra digitar a chave de 44 dígitos à mão.
 
 **Obrigatórios:** valor, categoria. **Têm padrão:** data (hoje). **Opcionais:** nota, marcar como previsto.

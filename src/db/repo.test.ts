@@ -265,6 +265,7 @@ it('substituirTudo troca completamente os dados e reseta mudancasDesdeBackup', a
     viagens: [],
     bancos: [],
     ajustesFechamento: [],
+    notasFiscais: [],
     config: {
       id: 'config', boxPadraoId: 'nb1', ultimoBackupEm: agora,
       mudancasDesdeBackup: true, horizonteProjecao: `${new Date().getFullYear() + 1}-12-31`,
@@ -939,6 +940,128 @@ it('confirma um pendente só com data corrigida e mantém o valor do previsto', 
   expect(salvo?.status).toBe('efetivo');
   expect(salvo?.valor).toBe(12000);
   expect(salvo?.data).toBe('2026-08-28');
+});
+
+it('carregarTudo devolve notasFiscais e substituirTudo as regrava', async () => {
+  const agora = agoraISO();
+  await db.notasFiscais.add({
+    id: novoId(), compraCartaoId: 'c1', emitente: 'Mercado Exemplo LTDA',
+    itens: [{ descricao: 'Produto A', valorCent: 1000 }], criadoEm: agora, alteradoEm: agora,
+  });
+  const dados = await repo.carregarTudo();
+  expect(dados.notasFiscais).toHaveLength(1);
+
+  await repo.substituirTudo({ ...dados, notasFiscais: [] });
+  await expect(db.notasFiscais.count()).resolves.toBe(0);
+});
+
+async function compraComCartao() {
+  const { box } = await boxECategoria();
+  const cartao = await repo.salvarCartao({
+    boxId: box.id, nome: 'cartão teste', diaFechamento: 20, diaVencimento: 27,
+  }, '2027-12-31');
+  const cat = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  const compra = await repo.salvarCompraCartao({
+    cartaoId: cartao.id, categoriaCartaoId: cat.id, data: '2026-07-05', valorTotal: 6240, parcelas: 1,
+  }, '2027-12-31');
+  return { compra };
+}
+
+async function montarCartaoComCategoria() {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cartao = await repo.salvarCartao({
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
+  }, '2027-12-31');
+  const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  return { box, cartao, catCartao };
+}
+
+it('salvarNotaFiscal grava a nota e marca mudança desde backup', async () => {
+  const { compra } = await compraComCartao();
+  const nota = await repo.salvarNotaFiscal({
+    compraCartaoId: compra.id, emitente: 'Mercado Exemplo LTDA', emissao: '2026-07-05',
+    totalNotaCent: 6240, itens: [{ descricao: 'Produto A', valorCent: 1000 }],
+  });
+  expect(await db.notasFiscais.get(nota.id)).toMatchObject({ compraCartaoId: compra.id });
+  expect((await db.config.get('config'))!.mudancasDesdeBackup).toBe(true);
+});
+
+it('anexar duas vezes deixa uma nota só: a última vence', async () => {
+  const { compra } = await compraComCartao();
+  await repo.salvarNotaFiscal({ compraCartaoId: compra.id, itens: [{ descricao: 'Produto A', valorCent: 1000 }] });
+  await repo.salvarNotaFiscal({ compraCartaoId: compra.id, itens: [{ descricao: 'Produto B', valorCent: 2000 }] });
+  const notas = await db.notasFiscais.where('compraCartaoId').equals(compra.id).toArray();
+  expect(notas).toHaveLength(1);
+  expect(notas[0].itens[0].descricao).toBe('Produto B');
+});
+
+it('excluirNotaFiscalDaCompra apaga a nota da compra', async () => {
+  const { compra } = await compraComCartao();
+  await repo.salvarNotaFiscal({ compraCartaoId: compra.id, itens: [] });
+  await repo.excluirNotaFiscalDaCompra(compra.id);
+  await expect(db.notasFiscais.where('compraCartaoId').equals(compra.id).count()).resolves.toBe(0);
+});
+
+it('excluirCompraCartao leva a nota fiscal junto', async () => {
+  const { compra } = await compraComCartao();
+  await repo.salvarNotaFiscal({ compraCartaoId: compra.id, itens: [] });
+  await repo.excluirCompraCartao(compra.id, '2027-12-31');
+  await expect(db.notasFiscais.count()).resolves.toBe(0);
+});
+
+it('excluirAssinatura remove as notas das compras futuras', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { cartao, catCartao } = await montarCartaoComCategoria();
+    const ass = await repo.salvarAssinatura({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, valor: 4990,
+      dataInicio: '2026-07-15', diaDoMes: 15, parcelas: null, descricao: 'Netflix',
+    }, '2026-12-31');
+    const compras = await db.comprasCartao.where('recorrenciaCartaoId').equals(ass.id).toArray();
+    expect(compras).toHaveLength(6); // materializadas de 07-15 até 12-15
+    // Anexar nota a todas as compras futuras
+    for (const compra of compras) {
+      await repo.salvarNotaFiscal({
+        compraCartaoId: compra.id,
+        itens: [{ descricao: `Compra ${compra.data}`, valorCent: 1000 }],
+      });
+    }
+    expect(await db.notasFiscais.count()).toBe(6);
+    // Excluir a assinatura — deve remover as compras futuras E suas notas
+    await repo.excluirAssinatura(ass.id, '2026-12-31');
+    await expect(db.notasFiscais.count()).resolves.toBe(0);
+  } finally { vi.useRealTimers(); }
+});
+
+it('re-materializar assinatura e remover ocorrência remove a nota', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { cartao, catCartao } = await montarCartaoComCategoria();
+    const ass = await repo.salvarAssinatura({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, valor: 4990,
+      dataInicio: '2026-07-15', diaDoMes: 15, parcelas: null, descricao: 'Netflix',
+    }, '2026-12-31');
+    const compras = await db.comprasCartao.where('recorrenciaCartaoId').equals(ass.id).toArray();
+    // Anexar nota a uma compra futura específica
+    const umaCompra = compras[2]; // terceira ocorrência (2026-09-15)
+    await repo.salvarNotaFiscal({
+      compraCartaoId: umaCompra.id,
+      itens: [{ descricao: 'Streaming de setembro', valorCent: 4990 }],
+    });
+    expect(await db.notasFiscais.count()).toBe(1);
+    // Editar assinatura para que ela termine antes dessa ocorrência
+    // Mudando para diaDoMes 10 manterá só as de dias 10 de cada mês
+    // As de dia 15 serão removidas
+    await repo.salvarAssinatura({ ...ass, diaDoMes: 10 }, '2026-12-31');
+    // A compra de 2026-09-15 deve ter sido removida, junto com sua nota
+    const compraAindaExiste = await db.comprasCartao.get(umaCompra.id);
+    expect(compraAindaExiste).toBeUndefined();
+    await expect(db.notasFiscais.count()).resolves.toBe(0);
+  } finally { vi.useRealTimers(); }
 });
 
 describe('AjusteFechamento', () => {

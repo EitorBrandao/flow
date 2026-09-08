@@ -1,7 +1,7 @@
 import Dexie, { type Table } from 'dexie';
 import type {
   AjusteFechamento, Banco, Box, Cartao, Categoria, CategoriaCartao, Cenario, CompraCartao, Config,
-  ConferenciaFatura, Lancamento, Recorrencia, RecorrenciaCartao, Viagem,
+  ConferenciaFatura, Lancamento, NotaFiscalSalva, Recorrencia, RecorrenciaCartao, Viagem,
 } from '../domain/types';
 
 export class FlowDB extends Dexie {
@@ -19,6 +19,7 @@ export class FlowDB extends Dexie {
   viagens!: Table<Viagem, string>;
   bancos!: Table<Banco, string>;
   ajustesFechamento!: Table<AjusteFechamento, string>;
+  notasFiscais!: Table<NotaFiscalSalva, string>;
 
   constructor(nome = 'flow') {
     super(nome);
@@ -87,6 +88,27 @@ export class FlowDB extends Dexie {
       viagens: 'id, dataInicio, dataFim',
       bancos: 'id, boxId',
       ajustesFechamento: 'id, cartaoId, [cartaoId+mes]',
+    });
+    // `compraCartaoId` é índice NÃO-único de propósito. `&compraCartaoId` seria a expressão
+    // natural de "uma nota por compra", mas faria o merge de dois backups com notas
+    // diferentes da mesma compra estourar ConstraintError no meio da transação — e a
+    // importação inteira falharia, num app onde importar backup é caminho crítico.
+    this.version(6).stores({
+      boxes: 'id',
+      categorias: 'id, boxId',
+      lancamentos: 'id, boxId, data, recorrenciaId, cenarioId, origem, cartaoId, viagemId',
+      recorrencias: 'id, boxId, origem',
+      cenarios: 'id',
+      config: 'id',
+      cartoes: 'id, boxId',
+      categoriasCartao: 'id, cartaoId',
+      comprasCartao: 'id, cartaoId, recorrenciaCartaoId, viagemId',
+      recorrenciasCartao: 'id, cartaoId',
+      conferenciasFatura: 'id, cartaoId, [cartaoId+mes]',
+      viagens: 'id, dataInicio, dataFim',
+      bancos: 'id, boxId',
+      ajustesFechamento: 'id, cartaoId, [cartaoId+mes]',
+      notasFiscais: 'id, compraCartaoId',
     });
   }
 }
