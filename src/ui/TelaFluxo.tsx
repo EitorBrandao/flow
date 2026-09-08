@@ -1,7 +1,7 @@
 import { Suspense, lazy, useMemo, useState } from 'react';
 import { Maximize2, Search } from 'lucide-react';
 import { addDias } from '../domain/dates';
-import { calcularFaturas, type Fatura } from '../domain/fatura';
+import { ajustesDoCartao, calcularFaturas, type Fatura } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import { projetarBoxes } from '../domain/projection';
 import type { Lancamento } from '../domain/types';
@@ -68,7 +68,9 @@ export default function TelaFluxo() {
     if (!f) {
       const cartao = dados.cartoes.find((c) => c.id === cartaoId);
       const compras = dados.comprasCartao.filter((c) => c.cartaoId === cartaoId);
-      f = cartao ? calcularFaturas(cartao, compras, dados.config.horizonteProjecao) : [];
+      f = cartao
+        ? calcularFaturas(cartao, compras, dados.config.horizonteProjecao, ajustesDoCartao(dados.ajustesFechamento, cartaoId))
+        : [];
       faturasCache.set(cartaoId, f);
     }
     return f;

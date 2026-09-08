@@ -55,6 +55,10 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   `cartaoId`+`mes`, com a opção de a projeção usar esse valor no lugar da soma das compras
   (`valorSincronizado`, `src/domain/fatura.ts`). Ver nota sobre unicidade na seção de
   invariantes.
+- **AjusteFechamento** — ajuste excepcional do dia de fechamento de um `cartaoId`+`mes`,
+  que substitui `Cartao.diaFechamento` só naquele mês calendário (`ajustesDoCartao`,
+  `datasFaturaDoMes`, `src/domain/fatura.ts`). Ver nota sobre unicidade na seção de
+  invariantes.
 - **Cenário** — um grupo de lançamentos hipotéticos, ligável/desligável
   (`ligado`), que só entram no `saldoComCenarios` da projeção quando ligado. Nunca deveria
   virar `efetivo` — ver a ressalva na matriz abaixo.
@@ -158,7 +162,8 @@ vencimento é maior que o dia de fechamento, vencimento e fechamento caem no mes
 calendário; senão, o vencimento é no mês seguinte (`mesVencimentoDoFechamento`). Dia 31 em
 mês curto é clampado ao último dia do mês por `dataComDia` (`src/domain/dates.ts`) —
 testado explicitamente em `fatura.test.ts` ("clampa o fechamento ao fim do mês (dia 31 em
-fevereiro)").
+fevereiro)"). Um `AjusteFechamento` pode substituir o dia de fechamento num mês calendário
+específico, sem alterar o `diaFechamento` padrão gravado no cartão.
 
 Parcelamento: `valorParcela` divide em centavos inteiros por `Math.floor`, e o resto da
 divisão vai inteiro para a parcela 1 — nenhuma parcela nunca é maior que a primeira.
@@ -210,7 +215,9 @@ faturas seguintes como qualquer compra parcelada.
 A data dessa compra é a **data de fechamento da fatura paga**. Isso não é arbitrário: pela
 regra de `mesFechamentoDaCompra`, compra no dia exato do fechamento cai na fatura seguinte —
 que é onde a parcela 1 deve estar. Vale nas duas configurações de ciclo, sem aritmética de
-data nova.
+data nova. Essa data também respeita um `AjusteFechamento` do mês, se houver um: usar o
+`diaFechamento` padrão do cartão quando o mês tem um ajuste faria a parcela 1 cair na fatura
+errada.
 
 O app **não calcula juros**. Quem digita o número de parcelas e o valor de cada uma é o
 usuário, lendo o que o banco mostrou; se houver juros, eles já estão embutidos na parcela.
@@ -322,21 +329,26 @@ sinal `+/−` também conta como edição. Há testes para os três caminhos.
 **O que `validarBackup` garante:** `app === 'flow'`; `schema` é `1`, `2`, `3`, `4` ou `5`;
 para cada schema, as tabelas correspondentes existem e são arrays (`TABELAS_V1` sempre;
 `TABELAS_CARTAO` a partir do schema 2; `TABELAS_VIAGEM` a partir do schema 3;
-`TABELAS_BANCO` a partir do schema 4; `TABELAS_NOTA` — `notasFiscais` — a partir do schema
-5); backups de schema antigo recebem as tabelas novas como array vazio; `dados.config` é um
-objeto de verdade — `null`, array e primitivo são rejeitados com mensagem própria — e sai de
+**O que `validarBackup` garante:** `app === 'flow'`; `schema` é `1`, `2`, `3`, `4`, `5` ou `6`;
+para cada schema, as tabelas correspondentes existem e são arrays (`TABELAS_V1` sempre;
+`TABELAS_CARTAO` a partir do schema 2; `TABELAS_VIAGEM` a partir do schema 3;
+`TABELAS_BANCO` a partir do schema 4; `TABELAS_AJUSTE_FECHAMENTO` — `ajustesFechamento` — a
+partir do schema 5; `TABELAS_NOTA` — `notasFiscais` — a partir do schema 6); backups de
+schema antigo recebem as tabelas novas como array vazio; `dados.config` é um objeto de
+verdade — `null`, array e primitivo são rejeitados com mensagem própria — e sai de
 `validarBackup` sempre com `id: 'config'`, a chave primária do registro único. `mesclar`
 sempre mantém a `config` local (`atual.config`), nunca a do backup.
 
-**Exceção deliberada no preenchimento de `bancos`.** As demais tabelas novas são preenchidas
-com `[]` conforme o **número do schema**; `bancos` é preenchida conforme a **chave não ser um
-array**. A diferença existe porque circularam builds intermediários que já gravavam `bancos`
-num backup ainda marcado como `schema: 3` — condicionar ao schema apagaria esses bancos
-reais, trocando-os por lista vazia, em silêncio. Há teste dedicado a isto
-(`src/backup/backup.test.ts`): se alguém trocar a condição pelo número do schema, ele falha.
-`notasFiscais` (schema 5) segue a mesma exceção, pelo mesmo motivo: um backup de schema < 5
-gerado por um build intermediário pode já trazer a chave, e o preenchimento condiciona à
-chave não ser array, não ao número do schema.
+**Exceção deliberada no preenchimento de `bancos`, `ajustesFechamento` e `notasFiscais`.** As
+demais tabelas novas são preenchidas com `[]` conforme o **número do schema**; estas três são
+preenchidas conforme a **chave não ser um array**. A diferença nasceu com `bancos`, porque
+circularam builds intermediários que já gravavam `bancos` num backup ainda marcado como
+`schema: 3` — condicionar ao schema apagaria esses bancos reais, trocando-os por lista vazia,
+em silêncio. `ajustesFechamento` seguiu o mesmo raciocínio por precaução. Para `notasFiscais`
+o risco é concreto: a entidade nasceu num branch que carimbava os backups como `schema: 5`, e
+o número só subiu para 6 na integração — existem arquivos de schema 5 com notas reais dentro.
+Há teste dedicado a `bancos` e a `notasFiscais` (`src/backup/backup.test.ts`): se alguém
+trocar a condição pelo número do schema, ele falha.
 
 **O que `validarBackup` não garante** (validação rasa, por desenho — CLAUDE.md já registra
 isso; aqui é a leitura precisa do código):
@@ -393,15 +405,19 @@ Confirmadas no código:
   (`src/domain/fatura.ts`) tocam um lançamento com `status: 'efetivo'`. A única forma de um
   `efetivo` mudar é edição manual explícita (`LancEditor` → `repo.atualizarLancamento`) ou
   exclusão manual (`repo.excluirLancamento`).
-- **No máximo uma `ConferenciaFatura` por `cartaoId`+`mes`** — mantida por código nos dois
-  caminhos de escrita, não pelo schema: o índice composto `[cartaoId+mes]` em
-  `src/db/database.ts` **não** é declarado único (sem prefixo `&` no schema Dexie). A
-  escrita manual passa por `salvarConferenciaFatura` (`src/db/repo.ts`, busca-então-grava),
-  e o import de backup passa por `dedupConferencias` (`src/domain/fatura.ts`) nos **dois**
-  modos: dentro de `mesclar` no modo "mesclar", e dentro de `substituirTudo` no modo
-  "substituir", que não passa por `mesclar`. A regra é a mesma nos dois: vence o
-  `alteradoEm` mais recente, empate desempata pelo `id` maior — resultado independente da
-  ordem de entrada.
+- **No máximo uma `ConferenciaFatura` por `cartaoId`+`mes`, e no máximo um
+  `AjusteFechamento` por `cartaoId`+`mes`** — mantida por código nos dois caminhos de
+  escrita, não pelo schema: o índice composto `[cartaoId+mes]` em `src/db/database.ts`
+  **não** é declarado único (sem prefixo `&` no schema Dexie), em nenhuma das duas tabelas.
+  Para `ConferenciaFatura`, a escrita manual passa por `salvarConferenciaFatura`
+  (`src/db/repo.ts`, busca-então-grava), e o import de backup passa por `dedupConferencias`
+  (`src/domain/fatura.ts`). Para `AjusteFechamento`, a escrita manual passa por
+  `salvarAjusteFechamento` (mesmo padrão busca-então-grava), e o import de backup passa por
+  `dedupAjustesFechamento` (`src/domain/fatura.ts`). Os dois `dedup*` rodam nos **dois**
+  modos de import: dentro de `mesclar` no modo "mesclar", e dentro de `substituirTudo` no
+  modo "substituir", que não passa por `mesclar`. A regra é a mesma nos quatro caminhos:
+  vence o `alteradoEm` mais recente, empate desempata pelo `id` maior — resultado
+  independente da ordem de entrada.
 - **Viagens não se sobrepõem** — expectativa, não garantida pelo schema nem pelo repo: só
   `ajustes/Viagens.tsx` chama `viagensSobrepoem` antes de salvar. `repo.salvarViagem`,
   `repo.atualizarViagem` e `substituirTudo` (import de backup) não checam nada; havendo

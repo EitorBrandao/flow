@@ -1,15 +1,15 @@
-import { dedupConferencias } from '../domain/fatura';
+import { dedupAjustesFechamento, dedupConferencias } from '../domain/fatura';
 import type { Dados } from '../domain/types';
 
 export interface Backup {
   app: 'flow';
-  schema: 5;
+  schema: 6;
   exportadoEm: string;
   dados: Dados;
 }
 
 export function gerarBackup(dados: Dados): Backup {
-  return { app: 'flow', schema: 5, exportadoEm: new Date().toISOString(), dados };
+  return { app: 'flow', schema: 6, exportadoEm: new Date().toISOString(), dados };
 }
 
 const TABELAS_V1 = ['boxes', 'categorias', 'lancamentos', 'recorrencias', 'cenarios'] as const;
@@ -18,6 +18,7 @@ const TABELAS_CARTAO = [
 ] as const;
 const TABELAS_VIAGEM = ['viagens'] as const;
 const TABELAS_BANCO = ['bancos'] as const;
+const TABELAS_AJUSTE_FECHAMENTO = ['ajustesFechamento'] as const;
 const TABELAS_NOTA = ['notasFiscais'] as const;
 
 export function validarBackup(json: unknown): Backup {
@@ -25,7 +26,7 @@ export function validarBackup(json: unknown): Backup {
   if (!b || typeof b !== 'object' || b.app !== 'flow') {
     throw new Error('Este arquivo não é um backup do Flow.');
   }
-  if (b.schema !== 1 && b.schema !== 2 && b.schema !== 3 && b.schema !== 4 && b.schema !== 5) {
+  if (b.schema !== 1 && b.schema !== 2 && b.schema !== 3 && b.schema !== 4 && b.schema !== 5 && b.schema !== 6) {
     throw new Error(`Backup de versão incompatível (${String(b.schema)}). Atualize o app e tente de novo.`);
   }
   const d = b.dados;
@@ -41,9 +42,9 @@ export function validarBackup(json: unknown): Backup {
   if (b.schema >= 2 && TABELAS_CARTAO.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
-  // >= e não ===: schema 3 era o mais novo quando esta checagem nasceu, mas schema 4 (e
-  // qualquer futuro) também tem que ter viagens bem formada — do contrário um backup schema 4
-  // sem viagens passaria batido (não é < 3, não backfila; não é === 3, não valida).
+  // >= e não ===: schema 3 era o mais novo quando esta checagem nasceu, mas todo schema
+  // seguinte também tem que ter viagens bem formada — do contrário um backup mais novo sem
+  // viagens passaria batido (não é < 3, não backfila; não é === 3, não valida).
   if (b.schema >= 3 && TABELAS_VIAGEM.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
@@ -57,11 +58,18 @@ export function validarBackup(json: unknown): Backup {
   if (d.bancos !== undefined && TABELAS_BANCO.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
-  // notasFiscais nasceu no schema 5: a partir daqui é obrigatória e bem formada.
-  if (b.schema >= 5 && TABELAS_NOTA.some((t) => !Array.isArray(d[t]))) {
+  // ajustesFechamento nasceu no schema 5: a partir daqui é obrigatória e bem formada.
+  if (b.schema >= 5 && TABELAS_AJUSTE_FECHAMENTO.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
-  // num backup de schema < 5 a chave pode vir mesmo assim (a entidade nasceu no código antes
+  if (d.ajustesFechamento !== undefined && TABELAS_AJUSTE_FECHAMENTO.some((t) => !Array.isArray(d[t]))) {
+    throw new Error('Backup corrompido: estrutura de dados inesperada.');
+  }
+  // notasFiscais nasceu no schema 6: a partir daqui é obrigatória e bem formada.
+  if (b.schema >= 6 && TABELAS_NOTA.some((t) => !Array.isArray(d[t]))) {
+    throw new Error('Backup corrompido: estrutura de dados inesperada.');
+  }
+  // num backup de schema < 6 a chave pode vir mesmo assim (a entidade nasceu no código antes
   // de o schema subir): aí é opcional, mas se vier, tem que vir como array.
   if (d.notasFiscais !== undefined && TABELAS_NOTA.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
@@ -88,14 +96,19 @@ export function validarBackup(json: unknown): Backup {
     const md = dados as unknown as Record<string, unknown[]>;
     for (const t of TABELAS_BANCO) md[t] = [];
   }
+  if (!Array.isArray(dados.ajustesFechamento)) {
+    // mesmo raciocínio de `bancos`: backfill por ausência do array, não por número de schema.
+    const md = dados as unknown as Record<string, unknown[]>;
+    for (const t of TABELAS_AJUSTE_FECHAMENTO) md[t] = [];
+  }
   if (!Array.isArray(dados.notasFiscais)) {
-    // backup de schema < 5 sem a chave notasFiscais: backfill. A condição é por array, e não por schema,
-    // para não sobrescrever com [] um notasFiscais real já presente num backup antigo.
+    // backup de schema < 6 sem a chave notasFiscais: backfill. A condição é por array, e não por
+    // schema, para não sobrescrever com [] um notasFiscais real já presente num backup antigo.
     const md = dados as unknown as Record<string, unknown[]>;
     for (const t of TABELAS_NOTA) md[t] = [];
   }
   return {
-    app: 'flow', schema: 5,
+    app: 'flow', schema: 6,
     exportadoEm: typeof b.exportadoEm === 'string' ? b.exportadoEm : new Date().toISOString(),
     dados,
   };
@@ -126,6 +139,9 @@ export function mesclar(atual: Dados, doBackup: Dados): Dados {
     ),
     viagens: mesclarTabela(atual.viagens, doBackup.viagens),
     bancos: mesclarTabela(atual.bancos, doBackup.bancos),
+    ajustesFechamento: dedupAjustesFechamento(
+      mesclarTabela(atual.ajustesFechamento, doBackup.ajustesFechamento),
+    ),
     notasFiscais: mesclarTabela(atual.notasFiscais, doBackup.notasFiscais),
     config: atual.config,
   };

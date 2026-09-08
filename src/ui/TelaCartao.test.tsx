@@ -137,6 +137,45 @@ it('botão Remover remove a conferência salva', async () => {
   } finally { vi.useRealTimers(); }
 });
 
+it('bloco de fechamento: salvar reclassifica a fatura, remover volta ao padrão', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao, catCartao } = await montarCartao(); // fecha dia 28
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-29',
+      valorTotal: 5000, parcelas: 1,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    render(<TelaCartao />);
+
+    // sem ajuste, a fatura mostrada por padrão (a próxima a vencer, calculada só a partir de
+    // `hoje`) é a de agosto — a compra de 29/07 cai na fatura de setembro (fecha depois do
+    // padrão dia 28), mas isso não muda qual fatura abre por padrão.
+    expect(screen.getByText(/fatura 08\/2026/)).toBeInTheDocument();
+    await abrirAba(/Conferência/);
+
+    await userEvent.clear(screen.getByLabelText('Fechou dia'));
+    await userEvent.type(screen.getByLabelText('Fechou dia'), '30');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar fechamento' }));
+
+    await waitFor(async () => {
+      const ajustes = await db.ajustesFechamento.toArray();
+      expect(ajustes).toHaveLength(1);
+      expect(ajustes[0]).toMatchObject({ cartaoId: cartao.id, mes: '2026-07', diaFechamento: 30 });
+    });
+
+    // findByRole (não getByRole): o `waitFor` acima só garante a escrita no banco — o
+    // `recarregar()` que reflete o ajuste salvo na UI (e revela o botão Remover) é um
+    // await separado, posterior, dentro de `salvar()`.
+    await userEvent.click(await screen.findByRole('button', { name: 'Remover fechamento' }));
+    await waitFor(async () => {
+      expect(await db.ajustesFechamento.count()).toBe(0);
+    });
+  } finally { vi.useRealTimers(); }
+});
+
 it('agrupa lançamentos em À vista/Parceladas, mais recentes primeiro', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {

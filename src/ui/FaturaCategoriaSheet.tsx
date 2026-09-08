@@ -1,6 +1,6 @@
-import { calcularFaturas, datasFaturaDoMes, resumoPorCategoria } from '../domain/fatura';
+import { ajustesDoCartao, calcularFaturas, datasFaturaDoMes, resumoPorCategoria } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
-import type { Cartao, CategoriaCartao, CompraCartao, ISODate } from '../domain/types';
+import type { AjusteFechamento, Cartao, CategoriaCartao, CompraCartao, ISODate } from '../domain/types';
 import Sheet from './Sheet';
 
 interface Props {
@@ -10,18 +10,21 @@ interface Props {
   comprasCartao: CompraCartao[];
   categoriasCartao: CategoriaCartao[];
   horizonteProjecao: ISODate;
+  ajustesFechamento?: AjusteFechamento[];
   onFechar: () => void;
   onAbrirCartao: () => void;
 }
 
 export default function FaturaCategoriaSheet({
-  aberto, cartao, mes, comprasCartao, categoriasCartao, horizonteProjecao, onFechar, onAbrirCartao,
+  aberto, cartao, mes, comprasCartao, categoriasCartao, horizonteProjecao, ajustesFechamento = [],
+  onFechar, onAbrirCartao,
 }: Props) {
   if (!cartao) return null;
   const compras = comprasCartao.filter((c) => c.cartaoId === cartao.id);
-  const { dataVencimento } = datasFaturaDoMes(cartao, mes);
+  const ajustes = ajustesDoCartao(ajustesFechamento, cartao.id);
+  const { dataVencimento } = datasFaturaDoMes(cartao, mes, ajustes);
   const ate = dataVencimento > horizonteProjecao ? dataVencimento : horizonteProjecao;
-  const fatura = calcularFaturas(cartao, compras, ate).find((f) => f.mes === mes)
+  const fatura = calcularFaturas(cartao, compras, ate, ajustes).find((f) => f.mes === mes)
     ?? { mes, dataFechamento: dataVencimento, dataVencimento, itens: [], totalCent: 0 };
   const resumo = resumoPorCategoria(fatura);
   const nomeCat = (id: string) => categoriasCartao.find((c) => c.id === id)?.nome ?? '?';

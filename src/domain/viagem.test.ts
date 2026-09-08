@@ -1,5 +1,5 @@
 import { itensDaViagem, totalViagemNoMes, viagemAtivaEm, viagensSobrepoem } from './viagem';
-import type { Cartao, CompraCartao, Lancamento, Viagem } from './types';
+import type { AjusteFechamento, Cartao, CompraCartao, Lancamento, Viagem } from './types';
 import { agoraISO, novoId } from './types';
 
 function viagem(dataInicio: string, dataFim: string, nome = 'Praia'): Viagem {
@@ -162,6 +162,27 @@ describe('totalViagemNoMes', () => {
       compra({ data: '2026-01-31', valorTotal: 6000, parcelas: 2, viagemId: v.id, cartaoId: c.id }),
     ];
     expect(totalViagemNoMes(v, '2026-04', ['box1'], [], comprasCartao, [c], false)).toBe(3000);
+  });
+
+  it('totalViagemNoMes aplica o ajuste de fechamento do cartão', () => {
+    const v: Viagem = { id: 'v1', nome: 'x', dataInicio: '2026-07-01', dataFim: '2026-07-31', criadoEm: '', alteradoEm: '' };
+    const cartao: Cartao = {
+      id: 'k1', boxId: 'box1', nome: 'Nu', diaFechamento: 28, diaVencimento: 5,
+      categoriaFaturaId: 'catFlow', ativo: true, criadoEm: '', alteradoEm: '',
+    };
+    const c: CompraCartao = {
+      id: 'c1', cartaoId: 'k1', categoriaCartaoId: 'cat1', viagemId: 'v1',
+      data: '2026-07-29', valorTotal: 5000, parcelas: 1, criadoEm: '', alteradoEm: '',
+    };
+    const ajustes: AjusteFechamento[] = [
+      { id: 'af1', cartaoId: 'k1', mes: '2026-07', diaFechamento: 30, criadoEm: '', alteradoEm: '' },
+    ];
+    // sem ajuste: dia 29 já passou do fechamento (28), cai na fatura de vencimento 2026-09
+    expect(totalViagemNoMes(v, '2026-09', ['box1'], [], [c], [cartao], true)).toBe(5000);
+    expect(totalViagemNoMes(v, '2026-08', ['box1'], [], [c], [cartao], true)).toBe(0);
+    // com o ajuste: fechamento adiado pro dia 30, cai na fatura de vencimento 2026-08
+    expect(totalViagemNoMes(v, '2026-08', ['box1'], [], [c], [cartao], true, ajustes)).toBe(5000);
+    expect(totalViagemNoMes(v, '2026-09', ['box1'], [], [c], [cartao], true, ajustes)).toBe(0);
   });
 
   it('respeita incluirPrevistos para o lado débito', () => {

@@ -1,12 +1,16 @@
 import { compararCategorias, compararCategoriasCartao } from '../domain/categorias';
 import { hojeISO } from '../domain/dates';
-import { calcularFaturas, datasFaturaDoMes, dedupConferencias, diffSincronizacao, type PlanoParcelamento } from '../domain/fatura';
+import {
+  ajustesDoCartao, calcularFaturas, datasFaturaDoMes, dedupAjustesFechamento, dedupConferencias,
+  diffSincronizacao, type PlanoParcelamento,
+} from '../domain/fatura';
 import { materializar, ocorrencias } from '../domain/recurrence';
 import {
   agoraISO, novoId,
-  type Banco, type Box, type Cartao, type Categoria, type CategoriaCartao, type Cenario, type CompraCartao,
-  type Config, type Dados, type ID, type ISODate, type ItemNota, type Lancamento, type NotaFiscalSalva, type Recorrencia,
-  type RecorrenciaCartao, type StatusLancamento, type TipoCategoria, type Viagem,
+  type Banco, type Box, type Cartao, type Categoria, type CategoriaCartao,
+  type Cenario, type CompraCartao, type Config, type Dados, type ID, type ISODate, type ItemNota,
+  type Lancamento, type NotaFiscalSalva, type Recorrencia, type RecorrenciaCartao,
+  type StatusLancamento, type TipoCategoria, type Viagem,
 } from '../domain/types';
 import { db } from './database';
 
@@ -40,13 +44,13 @@ export async function carregarTudo(): Promise<Dados> {
   const [
     boxes, categorias, lancamentos, recorrencias, cenarios,
     cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, bancos,
-    notasFiscais,
+    ajustesFechamento, notasFiscais,
   ] = await Promise.all([
     db.boxes.toArray(), db.categorias.toArray(), db.lancamentos.toArray(),
     db.recorrencias.toArray(), db.cenarios.toArray(),
     db.cartoes.toArray(), db.categoriasCartao.toArray(), db.comprasCartao.toArray(),
     db.recorrenciasCartao.toArray(), db.conferenciasFatura.toArray(), db.viagens.toArray(), db.bancos.toArray(),
-    db.notasFiscais.toArray(),
+    db.ajustesFechamento.toArray(), db.notasFiscais.toArray(),
   ]);
   // ordem canônica na fonte: todo consumidor do snapshot herda a ordem de Ajustes
   categorias.sort(compararCategorias);
@@ -58,7 +62,7 @@ export async function carregarTudo(): Promise<Dados> {
   return {
     boxes, categorias, lancamentos, recorrencias, cenarios,
     cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, bancos,
-    notasFiscais, config,
+    ajustesFechamento, notasFiscais, config,
   };
 }
 
@@ -237,7 +241,7 @@ export async function substituirTudo(d: Dados): Promise<void> {
   const tabelas = [
     db.boxes, db.categorias, db.lancamentos, db.recorrencias, db.cenarios,
     db.cartoes, db.categoriasCartao, db.comprasCartao, db.recorrenciasCartao,
-    db.conferenciasFatura, db.viagens, db.bancos, db.notasFiscais, db.config,
+    db.conferenciasFatura, db.viagens, db.bancos, db.ajustesFechamento, db.notasFiscais, db.config,
   ];
   await db.transaction('rw', tabelas, async () => {
     await Promise.all(tabelas.map((t) => t.clear()));
@@ -255,6 +259,7 @@ export async function substituirTudo(d: Dados): Promise<void> {
     await db.conferenciasFatura.bulkAdd(dedupConferencias(d.conferenciasFatura));
     await db.viagens.bulkAdd(d.viagens);
     await db.bancos.bulkAdd(d.bancos);
+    await db.ajustesFechamento.bulkAdd(dedupAjustesFechamento(d.ajustesFechamento));
     await db.notasFiscais.bulkAdd(d.notasFiscais);
     await db.config.put({ ...d.config, mudancasDesdeBackup: false });
   });
@@ -458,6 +463,10 @@ export interface PagamentoFatura {
 export async function registrarPagamentoFatura(p: PagamentoFatura): Promise<void> {
   const cartao = await db.cartoes.get(p.cartaoId);
   if (!cartao) throw new Error(`cartão ${p.cartaoId} não encontrado`);
+  const ajustes = ajustesDoCartao(
+    await db.ajustesFechamento.where('cartaoId').equals(p.cartaoId).toArray(),
+    p.cartaoId,
+  );
 
   const parcelamento = p.parcelamento;
   // Criar a categoria reservada fora da transação do lançamento: `categoriaParcelamentoDe`
@@ -476,7 +485,7 @@ export async function registrarPagamentoFatura(p: PagamentoFatura): Promise<void
       const [ano, mes] = p.faturaMes.split('-');
       await db.comprasCartao.add({
         id: novoId(), cartaoId: p.cartaoId, categoriaCartaoId,
-        data: datasFaturaDoMes(cartao, p.faturaMes).dataFechamento,
+        data: datasFaturaDoMes(cartao, p.faturaMes, ajustes).dataFechamento,
         valorTotal: parcelamento.parcelas * parcelamento.valorParcelaCent,
         parcelas: parcelamento.parcelas,
         descricao: `Parcelamento da fatura de ${mes}/${ano}`,
@@ -621,6 +630,32 @@ export async function removerConferenciaFatura(cartaoId: ID, mes: string, horizo
   await sincronizarCartoes(horizonte);
 }
 
+export async function salvarAjusteFechamento(
+  cartaoId: ID, mes: string, diaFechamento: number, horizonte: ISODate,
+): Promise<void> {
+  await db.transaction('rw', db.ajustesFechamento, db.config, async () => {
+    const agora = agoraISO();
+    const ex = await db.ajustesFechamento.where('[cartaoId+mes]').equals([cartaoId, mes]).first();
+    if (ex) await db.ajustesFechamento.update(ex.id, { diaFechamento, alteradoEm: agora });
+    else {
+      await db.ajustesFechamento.add({
+        id: novoId(), cartaoId, mes, diaFechamento, criadoEm: agora, alteradoEm: agora,
+      });
+    }
+    await marcarMudanca();
+  });
+  await sincronizarCartoes(horizonte);
+}
+
+export async function removerAjusteFechamento(cartaoId: ID, mes: string, horizonte: ISODate): Promise<void> {
+  await db.transaction('rw', db.ajustesFechamento, db.config, async () => {
+    const ex = await db.ajustesFechamento.where('[cartaoId+mes]').equals([cartaoId, mes]).first();
+    if (ex) await db.ajustesFechamento.delete(ex.id);
+    await marcarMudanca();
+  });
+  await sincronizarCartoes(horizonte);
+}
+
 /** Materializa CompraCartao futuras da assinatura (reusa o diff de recorrências:
  *  compra passada é história ≈ efetivo; futura acompanha a regra ≈ previsto).
  *  `permitirCicloAtual` força a criação do ciclo mais recente (<= hoje) quando ele ainda não
@@ -671,7 +706,8 @@ export async function sincronizarCartoes(
 ): Promise<void> {
   const hoje = hojeISO();
   await db.transaction('rw', [
-    db.cartoes, db.comprasCartao, db.recorrenciasCartao, db.conferenciasFatura, db.lancamentos, db.notasFiscais,
+    db.cartoes, db.comprasCartao, db.recorrenciasCartao, db.conferenciasFatura, db.ajustesFechamento,
+    db.lancamentos, db.notasFiscais,
   ], async () => {
     for (const ass of await db.recorrenciasCartao.toArray()) {
       await materializarAssinatura(ass, hoje, horizonte, {
@@ -679,12 +715,13 @@ export async function sincronizarCartoes(
       });
     }
     for (const cartao of await db.cartoes.toArray()) {
-      const [compras, conferencias, existentes] = await Promise.all([
+      const [compras, conferencias, ajustes, existentes] = await Promise.all([
         db.comprasCartao.where('cartaoId').equals(cartao.id).toArray(),
         db.conferenciasFatura.where('cartaoId').equals(cartao.id).toArray(),
+        db.ajustesFechamento.where('cartaoId').equals(cartao.id).toArray(),
         db.lancamentos.where('cartaoId').equals(cartao.id).toArray(),
       ]);
-      const faturas = calcularFaturas(cartao, compras, horizonte);
+      const faturas = calcularFaturas(cartao, compras, horizonte, ajustesDoCartao(ajustes, cartao.id));
       const diff = diffSincronizacao(cartao, faturas, conferencias, existentes, hoje);
       const agora = agoraISO();
       await db.lancamentos.bulkDelete(diff.excluirIds);

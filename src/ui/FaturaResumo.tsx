@@ -1,4 +1,4 @@
-import { calcularFaturas, type Fatura } from '../domain/fatura';
+import { ajustesDoCartao, calcularFaturas, type Fatura } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
@@ -25,7 +25,8 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
   const cartao = dados.cartoes.find((c) => c.id === lanc.cartaoId);
   if (!cartao) return null;
   const compras = dados.comprasCartao.filter((c) => c.cartaoId === cartao.id);
-  const fatura = calcularFaturas(cartao, compras, dados.config.horizonteProjecao)
+  const ajustes = ajustesDoCartao(dados.ajustesFechamento, cartao.id);
+  const fatura = calcularFaturas(cartao, compras, dados.config.horizonteProjecao, ajustes)
     .find((f) => f.mes === lanc.faturaMes);
   const itens = fatura?.itens ?? [];
   const nomeCatCartao = (id: string) => dados.categoriasCartao.find((c) => c.id === id)?.nome ?? '?';

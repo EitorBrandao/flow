@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import * as repo from '../db/repo';
 import { addMeses } from '../domain/dates';
 import {
-  calcularFaturas, datasFaturaDoMes, mesFaturaDaCompra, resumoPorCategoria, type Fatura,
+  ajustesDoCartao, calcularFaturas, datasFaturaDoMes, mesFaturaDaCompra, resumoPorCategoria, type Fatura,
 } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import type { Cartao, CompraCartao } from '../domain/types';
@@ -89,9 +89,62 @@ function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: str
   );
 }
 
+/** Exceção pontual do dia de fechamento — mesmo idioma de `BlocoConferencia`, mas chaveada
+ *  pelo mês CALENDÁRIO de fechamento (derivado de `fatura.dataFechamento`), não pelo mês de
+ *  vencimento: é essa a chave que `AjusteFechamento` usa (ver docs/superpowers/specs/
+ *  2026-09-02-ajuste-fechamento-fatura-design.md). */
+function BlocoAjusteFechamento({ cartao, mesFechamento }: { cartao: Cartao; mesFechamento: string }) {
+  const { dados, recarregar } = useApp();
+  const existente = dados?.ajustesFechamento.find((a) => a.cartaoId === cartao.id && a.mes === mesFechamento);
+  const [dia, setDia] = useState<string>(String(existente?.diaFechamento ?? cartao.diaFechamento));
+  const uid = useId();
+  if (!dados) return null;
+  const horizonte = dados.config.horizonteProjecao;
+
+  function clampDia(t: string): number {
+    return Math.min(31, Math.max(1, Math.round(Number(t) || 1)));
+  }
+
+  async function salvar() {
+    await repo.salvarAjusteFechamento(cartao.id, mesFechamento, clampDia(dia), horizonte);
+    await recarregar();
+  }
+
+  async function remover() {
+    if (existente) {
+      await repo.removerAjusteFechamento(cartao.id, mesFechamento, horizonte);
+      await recarregar();
+      setDia(String(cartao.diaFechamento));
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div className="linha">
+        <div className="campo">
+          <label htmlFor={`${uid}-fecha`}>Fechou dia</label>
+          <input id={`${uid}-fecha`} type="number" min={1} max={31} value={dia}
+            onChange={(e) => setDia(e.target.value)} style={{ width: 64 }} />
+        </div>
+        <button className="botao" style={{ alignSelf: 'flex-end' }} aria-label="Salvar fechamento" onClick={salvar}>Salvar fechamento</button>
+        {existente && (
+          <button className="botao botao-perigo" style={{ alignSelf: 'flex-end' }} aria-label="Remover fechamento" onClick={remover}>Remover fechamento</button>
+        )}
+      </div>
+      <p className="sub" style={{ margin: '4px 0 0' }}>
+        {existente
+          ? `Este mês fechou dia ${existente.diaFechamento} em vez do padrão (dia ${cartao.diaFechamento}).`
+          : `Padrão do cartão: dia ${cartao.diaFechamento}. Preencha só se este mês fechou num dia diferente.`}
+      </p>
+    </div>
+  );
+}
+
 function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const { dados, hoje } = useApp();
-  const [mes, setMes] = useState(() => mesFaturaDaCompra(cartao, hoje));
+  const [mes, setMes] = useState(() =>
+    mesFaturaDaCompra(cartao, hoje, ajustesDoCartao(dados?.ajustesFechamento ?? [], cartao.id)),
+  );
   const [editando, setEditando] = useState<CompraCartao | null>(null);
   const [filtroCategoriaId, setFiltroCategoriaId] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
@@ -99,11 +152,15 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const [abaCartao, setAbaCartao] = useState<AbaCartao>('resumo');
   if (!dados) return null;
 
+  const ajustes = ajustesDoCartao(dados.ajustesFechamento, cartao.id);
   const compras = dados.comprasCartao.filter((c) => c.cartaoId === cartao.id);
-  const { dataFechamento, dataVencimento } = datasFaturaDoMes(cartao, mes);
+  const { dataFechamento, dataVencimento } = datasFaturaDoMes(cartao, mes, ajustes);
   const ate = dataVencimento > dados.config.horizonteProjecao ? dataVencimento : dados.config.horizonteProjecao;
-  const fatura: Fatura = calcularFaturas(cartao, compras, ate).find((f) => f.mes === mes)
+  const fatura: Fatura = calcularFaturas(cartao, compras, ate, ajustes).find((f) => f.mes === mes)
     ?? { mes, dataFechamento, dataVencimento, itens: [], totalCent: 0 };
+  // prefixo de 7 caracteres de um ISODate = mês calendário (mesma conta de `mesDe`, sem
+  // precisar importar de dates.ts aqui) — é essa a chave que `AjusteFechamento.mes` indexa.
+  const mesFechamento = fatura.dataFechamento.slice(0, 7);
 
   const nomeCat = (id: string) => dados.categoriasCartao.find((c) => c.id === id)?.nome ?? '?';
   const resumo = resumoPorCategoria(fatura);
@@ -222,6 +279,7 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
       {abaCartao === 'conferencia' && (
         <div style={{ marginTop: 12 }}>
           <BlocoConferencia key={`${cartao.id}:${mes}`} cartao={cartao} mes={mes} totalCent={fatura.totalCent} />
+          <BlocoAjusteFechamento key={`${cartao.id}:${mesFechamento}`} cartao={cartao} mesFechamento={mesFechamento} />
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import { calcularFaturas, type Fatura } from '../domain/fatura';
+import { ajustesDoCartao, calcularFaturas, type Fatura } from '../domain/fatura';
 import { projetarBoxes, type DiaSaldo } from '../domain/projection';
 import type { Cartao, Dados, ID, ISODate } from '../domain/types';
 
@@ -50,6 +50,7 @@ export function faturasPorCartao(dados: Dados): FaturaDeCartao[] {
       cartao,
       dados.comprasCartao.filter((c) => c.cartaoId === cartao.id),
       dados.config.horizonteProjecao,
+      ajustesDoCartao(dados.ajustesFechamento, cartao.id),
     ).map((fatura) => ({ cartao, fatura })));
 }
 
