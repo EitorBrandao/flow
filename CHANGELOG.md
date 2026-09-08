@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.28.0] - 2026-09-08
+
+### Adicionado
+
+- Itens da nota fiscal na compra do cartão.
+  - Anexe o XML da NFC-e a uma compra, nova ou já salva, e veja a lista de produtos com valor e percentual do total.
+  - A lista vem do maior para o menor valor; quando a soma dos itens não fecha com a compra, uma linha final mostra a diferença.
+  - O valor e a data da compra nunca mudam ao anexar a nota.
+  - Só os itens ficam guardados, nunca o arquivo XML; excluir a compra apaga a nota junto.
+
 ## [0.27.0] - 2026-09-03
 
 ### Adicionado

@@ -1,5 +1,0 @@
-- Itens da nota fiscal na compra do cartão.
-  - Anexe o XML da NFC-e a uma compra, nova ou já salva, e veja a lista de produtos com valor e percentual do total.
-  - A lista vem do maior para o menor valor; quando a soma dos itens não fecha com a compra, uma linha final mostra a diferença.
-  - O valor e a data da compra nunca mudam ao anexar a nota.
-  - Só os itens ficam guardados, nunca o arquivo XML; excluir a compra apaga a nota junto.
