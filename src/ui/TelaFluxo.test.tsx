@@ -413,6 +413,21 @@ it('dia de hoje aparece na lista mesmo sem lançamentos, destacado e só com o c
   expect(screen.queryByText('Nenhum lançamento no período.')).not.toBeInTheDocument();
 });
 
+it('clicar num lançamento de transferência abre o sheet de detalhe, não o editor genérico', async () => {
+  const { box } = await seedBoxComCategoria();
+  const bancoA = await repo.salvarBanco({ boxId: box.id, nome: 'Bradesco', ordem: 0 });
+  const bancoB = await repo.salvarBanco({ boxId: box.id, nome: 'Nubank', ordem: 1 });
+  await repo.transferirEntreBancos(bancoA.id, bancoB.id, 50000, '2026-07-05');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-05' });
+
+  render(<TelaFluxo />);
+  await userEvent.click(screen.getAllByText('Bradesco → Nubank')[0]);
+
+  expect(await screen.findByRole('dialog', { name: 'Transferência' })).toBeInTheDocument();
+  expect(screen.queryByRole('dialog', { name: 'Lançamento' })).not.toBeInTheDocument();
+});
+
 it('filtro de data ativo não força hoje a aparecer se não tiver lançamento no filtro', async () => {
   const { box, catMercado } = await seedBoxComCategoria();
   const hoje = '2026-07-05';
