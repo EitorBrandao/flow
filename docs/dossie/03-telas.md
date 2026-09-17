@@ -478,6 +478,14 @@ Fluxo
 tab: Lista
 tab: Gráfico
 Mostrando desde qua. 14/01/2026
+seg. 26/01/2026
+R$ 4.300,00
+Transferência
+banco azul → banco amarelo
+−R$ 500,00
+Transferência
+banco azul → banco amarelo
++R$ 500,00
 qua. 28/01/2026 · hoje
 R$ 4.300,00
 qui. 05/02/2026

@@ -31,6 +31,14 @@ Uma citação marca cada corte, no instante em que o dossiê tira o retrato. Qua
 
 > **Corte: antes do primeiro fechamento.** O dossiê tira o retrato aqui.
 
+## 2026-01-25
+
+1. Abre um segundo banco na box "carteira", "banco amarelo".
+
+## 2026-01-26
+
+1. Transfere R$ 500,00 do banco azul para o banco amarelo, dentro da box "carteira".
+
 ## 2026-01-28
 
 > **Corte: entre fechamento e vencimento.** O dossiê tira o retrato aqui.

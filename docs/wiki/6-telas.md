@@ -19,6 +19,10 @@ Tela inicial. Foco em "onde estou agora" e no que precisa de atenção. Três ab
 
 Cada linha de banco tem o botão de sinal, então conta no cheque especial se informa como negativa. Salvar grava só os bancos cujo valor você realmente mudou — encostar num campo e desistir não mexe no que já estava lá.
 
+Com dois ou mais bancos na box, cada linha ganha também o botão ↔, que abre um formulário curto para transferir saldo para outro banco da mesma box (destino, valor, data). Confirmar ajusta o saldo dos dois bancos na hora e aparece como um lançamento de saída e outro de entrada na aba Fluxo — sem contar como ganho ou gasto real em Análises, já que é só redistribuição do seu próprio dinheiro. Excluir a transferência (pelo Fluxo) apaga os dois lançamentos, mas não desfaz o ajuste de saldo nos bancos.
+
+**Transferência entre bancos — obrigatórios:** banco de destino, valor. **Tem padrão:** data (hoje).
+
 > As três abas ficam disponíveis mesmo antes do primeiro uso terminar: uma fatura de cartão pendente aparece em Pendentes mesmo com a Visão ainda mostrando o convite para escolher categorias.
 
 ## Lançar
@@ -48,7 +52,7 @@ A linha do tempo do dinheiro. Duas abas: Lista (padrão) e Gráfico.
 
 - **Lista** mostra por padrão os últimos 14 dias para frente; o ícone de lupa abre busca e filtros (texto, data única ou período; botão "+30 dias atrás" estende a janela). A busca por texto também alcança as compras dentro da fatura de um cartão: bater numa delas (descrição, categoria do cartão ou valor) mostra o lançamento da fatura na lista. Cada dia mostra seu saldo projetado no cabeçalho.
 - **Gráfico** mostra o histórico e a projeção completa até o horizonte configurado, numa área maior que o mini-gráfico de Hoje; linha extra tracejada quando há cenário ligado; toque no card abre em tela cheia.
-- Tocar num lançamento, na Lista, abre o editor (valor, data, categoria, nota); previstos podem ser confirmados ali mesmo; previstos vindos de recorrência avisam para editar a regra em Ajustes se for para mudar valor/data permanentemente.
+- Tocar num lançamento, na Lista, abre o editor (valor, data, categoria, nota); previstos podem ser confirmados ali mesmo; previstos vindos de recorrência avisam para editar a regra em Ajustes se for para mudar valor/data permanentemente. Uma transferência entre bancos (feita em Hoje → Conferir) abre, em vez disso, um resumo só de leitura com os dois bancos, a data e o valor, e um botão para excluir as duas pernas — não dá para editar valor/data/categoria de uma transferência, só apagar e refazer.
 
 **Editor de lançamento — obrigatórios:** valor, data, categoria. **Opcional:** nota.
 

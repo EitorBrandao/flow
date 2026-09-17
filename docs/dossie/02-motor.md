@@ -117,6 +117,7 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 | Combinação | Quantos |
 |---|---|
 | efetivo/manual | 1 |
+| efetivo/transferencia | 2 |
 | previsto/cartao | 6 |
 | previsto/recorrencia | 46 |
 
@@ -192,6 +193,7 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 | Combinação | Quantos |
 |---|---|
 | efetivo/manual | 1 |
+| efetivo/transferencia | 2 |
 | previsto/cartao | 23 |
 | previsto/recorrencia | 46 |
 
@@ -269,6 +271,7 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 | efetivo/cartao | 1 |
 | efetivo/manual | 1 |
 | efetivo/recorrencia | 2 |
+| efetivo/transferencia | 2 |
 | previsto/cartao | 22 |
 | previsto/recorrencia | 44 |
 
@@ -346,6 +349,7 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 | efetivo/cartao | 1 |
 | efetivo/manual | 2 |
 | efetivo/recorrencia | 2 |
+| efetivo/transferencia | 2 |
 | previsto/cartao | 22 |
 | previsto/recorrencia | 44 |
 
@@ -423,6 +427,7 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 | efetivo/cartao | 2 |
 | efetivo/manual | 2 |
 | efetivo/recorrencia | 2 |
+| efetivo/transferencia | 2 |
 | previsto/cartao | 21 |
 | previsto/recorrencia | 44 |
 
@@ -500,6 +505,7 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 | efetivo/cartao | 2 |
 | efetivo/manual | 2 |
 | efetivo/recorrencia | 2 |
+| efetivo/transferencia | 2 |
 | previsto/cartao | 21 |
 | previsto/manual | 1 |
 | previsto/recorrencia | 44 |
@@ -578,6 +584,7 @@ Os números que o motor de projeção e de fatura calculou, um corte por vez.
 | efetivo/cartao | 2 |
 | efetivo/manual | 2 |
 | efetivo/recorrencia | 2 |
+| efetivo/transferencia | 2 |
 | previsto/cartao | 21 |
 | previsto/manual | 1 |
 | previsto/recorrencia | 44 |

@@ -18,12 +18,22 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   saldo próprio": é o caso da box especial de nome `"casa"`, autocriada por
   `iniciar()` (`src/state/store.ts`) se não existir nenhuma box chamada `"casa"`. Ver
   seção própria abaixo — `'casa'` é ao mesmo tempo o nome dessa box e um sentinela de
-  seleção com dois significados diferentes.
+  seleção com dois significados diferentes. Uma `Box` também guarda duas **categorias
+  ocultas de transferência** (`categoriaTransferenciaSaidaId`, de gasto, e
+  `categoriaTransferenciaEntradaId`, de ganho) que recebem as duas pernas de uma
+  transferência entre bancos da própria box. Elas nascem sob demanda, na primeira
+  transferência (`transferirEntreBancos`, `src/db/repo.ts`) e são escondidas de qualquer
+  seletor manual por `categoriasTransferenciaIds` (`src/domain/transferencia.ts`).
 - **Banco** — conta bancária **dentro** de uma box, com `nome`, `ordem` e o par
   `saldoDeclaradoCent`/`dataSaldoDeclarado`. Existe porque a box modela a *pessoa*, e uma
   pessoa costuma ter várias contas. **O saldo do banco é informado pelo usuário, não
-  calculado**: lançamento ainda não aponta para banco, então nada aqui se atualiza sozinho
-  ao lançar (ver a seção de conferência, abaixo). Um `Cartao` pode apontar para um banco
+  calculado**: fora da transferência entre bancos (abaixo), lançamento ainda não aponta
+  para banco — `Lancamento.bancoId` de uso geral é a entrega 2, ainda aberta, do item 12 do
+  backlog (`TODO.md`) — então nada aqui se atualiza sozinho ao lançar (ver a seção de
+  conferência, abaixo). Os dois lançamentos que `transferirEntreBancos` (`src/db/repo.ts`)
+  cria são a exceção: eles carregam `bancoId`, só para amarrar cada perna ao banco certo — o
+  saldo dos dois bancos é escrito à parte, na mesma transação, não derivado do lançamento.
+  Um `Cartao` pode apontar para um banco
   (`bancoId`, opcional e sem índice); excluir o banco desliga esse vínculo
   (`excluirBanco`, `src/db/repo.ts`), para não sobrar cartão apontando para banco
   inexistente.
@@ -116,6 +126,7 @@ Combinações que o código realmente produz, hoje:
 | `recorrencia` | não | sempre `previsto` | `materializarRecorrencia` (`src/db/repo.ts`) | "Confirmar" em `LancEditor.tsx` (ajusta valor e status juntos); depois de `efetivo`, `materializar` (`src/domain/recurrence.ts`) nunca mais toca o registro |
 | `recorrencia` | sim | sempre `previsto` | `TelaSimulador.tsx` (`FormHipotetico`, ≥2 parcelas) → `repo.salvarRecorrencia` com `cenarioId`, materializado do mesmo jeito | ver ressalva abaixo |
 | `cartao` | não | sempre `previsto` | `sincronizarCartoes` (`src/db/repo.ts`) | fila de pendentes da `TelaHoje` (`pendentes`, `src/domain/projection.ts`) não filtra por `origem`, então uma fatura vencida cai na mesma fila manual/recorrência e é confirmada por `repo.confirmarPendente`; depois de `efetivo`, `diffSincronizacao` (`src/domain/fatura.ts`) nunca mais toca o registro |
+| `transferencia` | não | sempre `efetivo` | `transferirEntreBancos` (`src/db/repo.ts`) | não existe: as duas pernas nascem `efetivo` e nunca são revisitadas — não há "transferência prevista" nem confirmação; `excluirTransferencia` (`src/db/repo.ts`) só apaga as duas, nunca muda `status` |
 
 O checkbox "Marcar como previsto" (`TelaLancar.tsx`) força `status: 'previsto'` mesmo com
 `data` de hoje ou passada. É o único caminho, para lançamento manual, que alimenta a fila de
@@ -130,7 +141,7 @@ As duas linhas com `cenarioId` só são produzidas por `TelaSimulador.tsx`, que 
 alcançável na navegação (`ABAS`, `Shell.tsx`); lançamentos de cenário existentes em uma base
 real são dado legado ou vindos de um backup importado.
 
-Existe um **quarto** escritor de lançamentos que a matriz acima não lista:
+Existe um **quinto** escritor de lançamentos que a matriz acima não lista:
 `substituirTudo` (`src/db/repo.ts`, import de backup em modo "substituir"). Como
 `validarBackup` não valida o conteúdo dos registros (ver seção de Backup, abaixo), o import
 pode gravar combinações `status`×`origem` que o app nunca produz sozinho — inclusive as que
@@ -150,8 +161,10 @@ então um item de cenário que já exista na base abre `LancEditor` normalmente.
 **Nenhum teste cobre esse caminho.** Tratar como regra desejada, não como algo que o código
 impede.
 
-`origem: 'import'` não existe mais: `OrigemLancamento` (`src/domain/types.ts`) só tem
-`'manual' | 'recorrencia' | 'cartao'` desde que o importador de planilha saiu do app.
+`origem: 'import'` não existe mais: `OrigemLancamento` (`src/domain/types.ts`) tem
+`'manual' | 'recorrencia' | 'cartao' | 'transferencia'`. O valor `'import'` saiu junto com o
+importador de planilha; `'transferencia'` entrou com `transferirEntreBancos` (`src/db/repo.ts`,
+ver a linha própria na matriz acima).
 
 ## O ciclo da fatura (`src/domain/fatura.ts`)
 

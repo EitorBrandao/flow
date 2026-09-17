@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import * as repo from '../db/repo';
 import { categoriasFaturaIds } from '../domain/fatura';
+import { categoriasTransferenciaIds } from '../domain/transferencia';
 import { formatarBRL } from '../domain/money';
 import { agoraISO, novoId, type Cenario } from '../domain/types';
 import { boxIdEfetivo, useApp } from '../state/store';
@@ -20,7 +21,7 @@ function FormHipotetico({ cenario }: { cenario: Cenario }) {
   if (boxId == null) {
     return <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>;
   }
-  const ocultas = categoriasFaturaIds(dados.cartoes);
+  const ocultas = new Set([...categoriasFaturaIds(dados.cartoes), ...categoriasTransferenciaIds(dados.boxes)]);
   const categorias = dados.categorias.filter((c) => c.boxId === boxId && !c.arquivada && !ocultas.has(c.id));
 
   async function adicionar() {

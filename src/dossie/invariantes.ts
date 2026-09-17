@@ -1,6 +1,7 @@
 import { gerarBackup, validarBackup } from '../backup/backup';
 import { categoriasCartaoReservadasIds } from '../domain/categorias';
 import { categoriasFaturaIds, valorSincronizado } from '../domain/fatura';
+import { categoriasTransferenciaIds } from '../domain/transferencia';
 import { projetarBoxes } from '../domain/projection';
 import type { Dados, ISODate } from '../domain/types';
 import { viagensSobrepoem } from '../domain/viagem';
@@ -246,6 +247,35 @@ export const INVARIANTES: Invariante[] = [
         if (!categoriasCartao.has(id)) {
           return { ok: false, detalhe: `categoria de cartão reservada ${id} não existe mais em categoriasCartao` };
         }
+      }
+      return OK;
+    },
+  },
+
+  // Mesma ideia do invariante acima, para a outra categoria oculta que o app cria: a de
+  // transferência entre bancos. Confirma que as duas categorias (saída e entrada) da box
+  // continuam existindo e que nenhum lançamento fora da origem 'transferencia' usa uma
+  // delas — o vazamento que faria a categoria oculta aparecer na seleção manual da box.
+  {
+    nome: 'categoria de transferência só é usada pela transferência',
+    classe: 'garantido',
+    checar(r) {
+      const idsCategoria = categoriasTransferenciaIds(r.dados.boxes);
+      const categorias = new Set(r.dados.categorias.map((c) => c.id));
+      for (const id of idsCategoria) {
+        if (!categorias.has(id)) {
+          return { ok: false, detalhe: `categoria de transferência ${id} não existe mais em categorias` };
+        }
+      }
+      const vazamento = r.dados.lancamentos.find(
+        (l) => l.origem !== 'transferencia' && idsCategoria.has(l.categoriaId),
+      );
+      if (vazamento) {
+        return {
+          ok: false,
+          detalhe: `lançamento ${vazamento.id} (origem ${vazamento.origem}) usa a categoria de transferência `
+            + `${vazamento.categoriaId}, que deveria ficar escondida da seleção manual`,
+        };
       }
       return OK;
     },

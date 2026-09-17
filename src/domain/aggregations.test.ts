@@ -39,6 +39,18 @@ it('resumoMensal com previstos inclui o previsto mas nunca o cenário', () => {
   expect(r.totalGastos).toBe(240000); // 110000 + 80000 + 50000; cenário fora
 });
 
+it('resumoMensal ignora lançamentos de transferência entre bancos', () => {
+  const comTransferencia = [
+    ...lancs,
+    lanc({ id: 't1', data: '2026-07-15', valor: 20000, categoriaId: 'car', origem: 'transferencia' }),
+    lanc({ id: 't2', data: '2026-07-15', valor: 20000, categoriaId: 'sal', origem: 'transferencia' }),
+  ];
+  const semTransferencia = resumoMensal('2026-07', ['be'], cats, lancs, false);
+  const r = resumoMensal('2026-07', ['be'], cats, comTransferencia, false);
+  expect(r.totalGanhos).toBe(semTransferencia.totalGanhos);
+  expect(r.totalGastos).toBe(semTransferencia.totalGastos);
+});
+
 it('compararMeses traz mês anterior e mesmo mês do ano anterior', () => {
   const c = compararMeses('2026-07', ['be'], cats, lancs, false);
   const cartao = c.find((x) => x.categoriaId === 'car')!;

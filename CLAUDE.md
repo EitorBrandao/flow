@@ -103,7 +103,7 @@ Convenções do domínio:
 
 - Valores monetários são **centavos inteiros**.
 - Datas são strings ISO `"AAAA-MM-DD"`.
-- Lançamentos têm `status` (`efetivo` ou `previsto`) e `origem` (`manual`, `recorrencia` ou `cartao` — tipo `OrigemLancamento`, em `src/domain/types.ts`). O antigo valor `import` saiu junto com a importação de xlsx.
+- Lançamentos têm `status` (`efetivo` ou `previsto`) e `origem` (`manual`, `recorrencia`, `cartao` ou `transferencia` — tipo `OrigemLancamento`, em `src/domain/types.ts`). O antigo valor `import` saiu junto com a importação de xlsx.
 - Cenários são lançamentos hipotéticos. Podem ser ligados ou desligados na projeção, mas nunca têm `status: efetivo`.
 
 ## Regras do repositório

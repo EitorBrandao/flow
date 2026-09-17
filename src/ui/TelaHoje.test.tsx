@@ -431,6 +431,65 @@ describe('conferência por banco', () => {
     // é isto que torna a entrega reversível: o valor antigo nunca foi apagado
     expect(await screen.findByLabelText('Saldo real no banco')).toHaveValue(formatarBRL(12300));
   });
+
+  it('duas contas mostram o botão de transferir; uma conta só, não', async () => {
+    const box = await comBoxESaldo();
+    await repo.salvarBanco({ boxId: box.id, nome: 'Bradesco', ordem: 0 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    const { unmount } = render(<TelaHoje />);
+    await abrirAba('Conferir');
+    expect(screen.queryByRole('button', { name: /Transferir de/ })).not.toBeInTheDocument();
+    unmount();
+
+    await repo.salvarBanco({ boxId: box.id, nome: 'Nubank', ordem: 1 });
+    await useApp.getState().recarregar();
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+    expect(screen.getByRole('button', { name: 'Transferir de Bradesco' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Transferir de Nubank' })).toBeInTheDocument();
+  });
+
+  it('confirmar a transferência ajusta os dois saldos e cria os dois lançamentos ligados', async () => {
+    const box = await comBoxESaldo();
+    const bancoA = await repo.salvarBanco({ boxId: box.id, nome: 'Bradesco', ordem: 0 });
+    const bancoB = await repo.salvarBanco({ boxId: box.id, nome: 'Nubank', ordem: 1 });
+    await repo.atualizarBanco(bancoA.id, { saldoDeclaradoCent: 300000, dataSaldoDeclarado: '2026-07-01' });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+    await userEvent.click(screen.getByRole('button', { name: 'Transferir de Bradesco' }));
+    await userEvent.click(screen.getByLabelText('Valor'));
+    await userEvent.keyboard('50000');
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar transferência' }));
+
+    await vi.waitFor(async () => {
+      expect((await db.bancos.get(bancoA.id))?.saldoDeclaradoCent).toBe(250000);
+    });
+    expect((await db.bancos.get(bancoB.id))?.saldoDeclaradoCent).toBe(50000);
+    const pernas = (await db.lancamentos.toArray()).filter((l) => l.origem === 'transferencia');
+    expect(pernas).toHaveLength(2);
+    expect(pernas[0].transferenciaId).toBe(pernas[1].transferenciaId);
+  });
+
+  it('cancelar fecha o formulário sem transferir nada', async () => {
+    const box = await comBoxESaldo();
+    const bancoA = await repo.salvarBanco({ boxId: box.id, nome: 'Bradesco', ordem: 0 });
+    await repo.salvarBanco({ boxId: box.id, nome: 'Nubank', ordem: 1 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+    await userEvent.click(screen.getByRole('button', { name: 'Transferir de Bradesco' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    expect(screen.queryByRole('button', { name: 'Confirmar transferência' })).not.toBeInTheDocument();
+    expect((await db.bancos.get(bancoA.id))?.saldoDeclaradoCent).toBeNull();
+  });
 });
 
 describe('fatura pendente na fila', () => {

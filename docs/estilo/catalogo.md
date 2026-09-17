@@ -147,3 +147,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   QR-code via `jsQR` (ou chave digitada à mão, sempre disponível); mostra a chave extraída;
   aceita o XML da nota por upload ou colado, faz o parse (`domain/notaFiscal.ts`) e devolve o
   resultado por `onConcluir`. Usado por `AdicionarSheet`.
+- **`TransferenciaSheet.tsx`** — sheet somente leitura com o detalhe de uma transferência
+  entre bancos (a nota do lançamento, "banco origem → banco destino", mais valor e data), com
+  o botão que exclui as duas pernas ligadas por `transferenciaId`. Mesmo padrão do
+  `FaturaResumo.tsx`. Usado pela `TelaFluxo` ao clicar num lançamento `origem: 'transferencia'`.

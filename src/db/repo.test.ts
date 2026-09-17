@@ -1167,3 +1167,120 @@ describe('AjusteFechamento', () => {
     expect(depois[0].diaFechamento).toBe(30);
   });
 });
+
+describe('transferirEntreBancos', () => {
+  it('cria as duas categorias ocultas, grava os dois lançamentos ligados e ajusta os dois saldos', async () => {
+    const { box } = await boxECategoria();
+    const origem = await repo.salvarBanco({ boxId: box.id, nome: 'Bradesco', ordem: 0 });
+    const destino = await repo.salvarBanco({ boxId: box.id, nome: 'Nubank', ordem: 1 });
+    await repo.atualizarBanco(origem.id, { saldoDeclaradoCent: 300000, dataSaldoDeclarado: '2026-07-01' });
+
+    await repo.transferirEntreBancos(origem.id, destino.id, 50000, '2026-07-05');
+
+    const boxAtualizado = await db.boxes.get(box.id);
+    expect(boxAtualizado?.categoriaTransferenciaSaidaId).toBeTruthy();
+    expect(boxAtualizado?.categoriaTransferenciaEntradaId).toBeTruthy();
+    const catSaida = await db.categorias.get(boxAtualizado!.categoriaTransferenciaSaidaId!);
+    const catEntrada = await db.categorias.get(boxAtualizado!.categoriaTransferenciaEntradaId!);
+    expect(catSaida).toMatchObject({ nome: 'Transferência', tipo: 'gasto', boxId: box.id });
+    expect(catEntrada).toMatchObject({ nome: 'Transferência', tipo: 'ganho', boxId: box.id });
+
+    const pernas = (await db.lancamentos.toArray()).filter((l) => l.origem === 'transferencia');
+    expect(pernas).toHaveLength(2);
+    const saida = pernas.find((l) => l.bancoId === origem.id)!;
+    const entrada = pernas.find((l) => l.bancoId === destino.id)!;
+    expect(saida).toMatchObject({
+      categoriaId: catSaida!.id, valor: 50000, data: '2026-07-05',
+      status: 'efetivo', boxId: box.id, nota: 'Bradesco → Nubank',
+    });
+    expect(entrada).toMatchObject({
+      categoriaId: catEntrada!.id, valor: 50000, data: '2026-07-05',
+      status: 'efetivo', boxId: box.id, nota: 'Bradesco → Nubank',
+    });
+    expect(saida.transferenciaId).toBe(entrada.transferenciaId);
+
+    expect((await db.bancos.get(origem.id))?.saldoDeclaradoCent).toBe(250000);
+    expect((await db.bancos.get(origem.id))?.dataSaldoDeclarado).toBe('2026-07-05');
+    expect((await db.bancos.get(destino.id))?.saldoDeclaradoCent).toBe(50000);
+    expect((await db.bancos.get(destino.id))?.dataSaldoDeclarado).toBe('2026-07-05');
+  });
+
+  it('reaproveita as categorias ocultas já criadas nas transferências seguintes', async () => {
+    const { box } = await boxECategoria();
+    const a = await repo.salvarBanco({ boxId: box.id, nome: 'A', ordem: 0 });
+    const b = await repo.salvarBanco({ boxId: box.id, nome: 'B', ordem: 1 });
+
+    await repo.transferirEntreBancos(a.id, b.id, 10000, '2026-07-05');
+    await repo.transferirEntreBancos(b.id, a.id, 5000, '2026-07-06');
+
+    // 2 categorias de boxECategoria (ganho/gasto) + 2 ocultas de transferência, nunca mais
+    expect(await db.categorias.count()).toBe(4);
+  });
+
+  it('trata saldo não informado como zero', async () => {
+    const { box } = await boxECategoria();
+    const a = await repo.salvarBanco({ boxId: box.id, nome: 'A', ordem: 0 });
+    const b = await repo.salvarBanco({ boxId: box.id, nome: 'B', ordem: 1 });
+
+    await repo.transferirEntreBancos(a.id, b.id, 10000, '2026-07-05');
+
+    expect((await db.bancos.get(a.id))?.saldoDeclaradoCent).toBe(-10000);
+    expect((await db.bancos.get(b.id))?.saldoDeclaradoCent).toBe(10000);
+  });
+
+  it('recusa origem igual a destino', async () => {
+    const { box } = await boxECategoria();
+    const a = await repo.salvarBanco({ boxId: box.id, nome: 'A', ordem: 0 });
+    await expect(repo.transferirEntreBancos(a.id, a.id, 10000, '2026-07-05')).rejects.toThrow();
+  });
+
+  it('recusa bancos de boxes diferentes', async () => {
+    const { box } = await boxECategoria();
+    const agora = agoraISO();
+    const outraBox: Box = {
+      id: novoId(), nome: 'ju', saldoInicial: 0, dataSaldoInicial: '2026-01-01',
+      criadoEm: agora, alteradoEm: agora,
+    };
+    await repo.salvarBox(outraBox);
+    const a = await repo.salvarBanco({ boxId: box.id, nome: 'A', ordem: 0 });
+    const b = await repo.salvarBanco({ boxId: outraBox.id, nome: 'B', ordem: 0 });
+    await expect(repo.transferirEntreBancos(a.id, b.id, 10000, '2026-07-05')).rejects.toThrow();
+  });
+
+  it('recusa valor zero ou negativo', async () => {
+    const { box } = await boxECategoria();
+    const a = await repo.salvarBanco({ boxId: box.id, nome: 'A', ordem: 0 });
+    const b = await repo.salvarBanco({ boxId: box.id, nome: 'B', ordem: 1 });
+    await expect(repo.transferirEntreBancos(a.id, b.id, 0, '2026-07-05')).rejects.toThrow();
+    await expect(repo.transferirEntreBancos(a.id, b.id, -100, '2026-07-05')).rejects.toThrow();
+  });
+});
+
+describe('excluirTransferencia', () => {
+  it('apaga as duas pernas e não mexe no saldo declarado', async () => {
+    const { box } = await boxECategoria();
+    const a = await repo.salvarBanco({ boxId: box.id, nome: 'A', ordem: 0 });
+    const b = await repo.salvarBanco({ boxId: box.id, nome: 'B', ordem: 1 });
+    await repo.transferirEntreBancos(a.id, b.id, 10000, '2026-07-05');
+    const perna = (await db.lancamentos.toArray()).find((l) => l.origem === 'transferencia')!;
+
+    await repo.excluirTransferencia(perna.transferenciaId!);
+
+    expect((await db.lancamentos.toArray()).filter((l) => l.origem === 'transferencia')).toHaveLength(0);
+    expect((await db.bancos.get(a.id))?.saldoDeclaradoCent).toBe(-10000);
+    expect((await db.bancos.get(b.id))?.saldoDeclaradoCent).toBe(10000);
+  });
+
+  it('não mexe em outra transferência', async () => {
+    const { box } = await boxECategoria();
+    const a = await repo.salvarBanco({ boxId: box.id, nome: 'A', ordem: 0 });
+    const b = await repo.salvarBanco({ boxId: box.id, nome: 'B', ordem: 1 });
+    await repo.transferirEntreBancos(a.id, b.id, 10000, '2026-07-05');
+    await repo.transferirEntreBancos(a.id, b.id, 20000, '2026-07-06');
+    const primeira = (await db.lancamentos.toArray()).find((l) => l.origem === 'transferencia')!;
+
+    await repo.excluirTransferencia(primeira.transferenciaId!);
+
+    expect((await db.lancamentos.toArray()).filter((l) => l.origem === 'transferencia')).toHaveLength(2);
+  });
+});

@@ -4,6 +4,7 @@ import { GripVertical, Pencil } from 'lucide-react';
 import * as repo from '../../db/repo';
 import { diffOrdem, proximaOrdem } from '../../domain/categorias';
 import { categoriasFaturaIds } from '../../domain/fatura';
+import { categoriasTransferenciaIds } from '../../domain/transferencia';
 import { CATEGORIAS_SUGERIDAS } from '../../domain/categoriasSugeridas';
 import type { Categoria, TipoCategoria } from '../../domain/types';
 import { boxIdEfetivo, useApp } from '../../state/store';
@@ -78,7 +79,7 @@ export default function Categorias() {
       </div>
     );
   }
-  const ocultas = categoriasFaturaIds(dados.cartoes);
+  const ocultas = new Set([...categoriasFaturaIds(dados.cartoes), ...categoriasTransferenciaIds(dados.boxes)]);
   const cats = dados.categorias.filter((c) => c.boxId === boxId && !ocultas.has(c.id));
   const ganhos = cats.filter((c) => c.tipo === 'ganho' && !c.arquivada);
   const gastos = cats.filter((c) => c.tipo === 'gasto' && !c.arquivada);
