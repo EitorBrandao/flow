@@ -29,6 +29,7 @@ function filtrar(
     (l) =>
       sel.has(l.boxId) &&
       !l.cenarioId &&
+      l.origem !== 'transferencia' &&
       mesDe(l.data) === mes &&
       (l.status === 'efetivo' || incluirPrevistos),
   );
