@@ -7,7 +7,7 @@ import type { ISODate } from '../domain/types';
 export function parsearValorExtrato(texto: string): number | undefined {
   let limpo = texto.trim()
     .replace(/R\$/gi, '')
-    .replace(/ /g, '')
+    .replace(/ /g, '')
     .replace(/\s/g, '');
   if (limpo === '' || limpo === '-') return undefined;
 
@@ -25,7 +25,9 @@ export function parsearValorExtrato(texto: string): number | undefined {
   if (!/^\d+(\.\d{1,2})?$/.test(limpo)) return undefined;
   const [inteiro, fracao = ''] = limpo.split('.');
   const centavos = Number(inteiro) * 100 + Number(fracao.padEnd(2, '0'));
-  return negativo ? -centavos : centavos;
+  // Mesmo risco que `parsearCentavosDecimal` documenta em src/domain/money.ts: valor absurdo
+  // viraria Infinity, e JSON.stringify(Infinity) é null — o backup voltaria quebrado.
+  return Number.isSafeInteger(Math.abs(centavos)) ? (negativo ? -centavos : centavos) : undefined;
 }
 
 function montar(ano: number, mes: number, dia: number): ISODate | undefined {

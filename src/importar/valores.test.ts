@@ -16,7 +16,13 @@ describe('parsearValorExtrato', () => {
 
   it('aceita R$ e espaço não separável', () => {
     expect(parsearValorExtrato('R$ 1.234,56')).toBe(123456);
-    expect(parsearValorExtrato('R$ 1.234,56')).toBe(123456);
+    expect(parsearValorExtrato('R$ 1.234,56')).toBe(123456);
+  });
+
+  // Mesmo risco que `parsearCentavosDecimal` documenta em src/domain/money.ts: valor absurdo
+  // viraria Infinity, e JSON.stringify(Infinity) é null — o backup voltaria quebrado.
+  it('recusa valor grande demais para um inteiro seguro', () => {
+    expect(parsearValorExtrato('99999999999999999999,99')).toBeUndefined();
   });
 
   // A regra do finance.py lê "1.234" como um inteiro e duzentos e trinta e quatro milésimos.
