@@ -2,6 +2,7 @@ import { gerarBackup, mesclar, validarBackup } from '../backup/backup';
 import * as repo from '../db/repo';
 import { diffOrdem } from '../domain/categorias';
 import { categoriasFaturaIds } from '../domain/fatura';
+import { categoriasTransferenciaIds } from '../domain/transferencia';
 import { agoraISO, novoId, type Dados } from '../domain/types';
 import type { Roteiro } from './executar';
 
@@ -137,6 +138,23 @@ export const ROTEIRO: Roteiro = {
       },
     },
     {
+      data: '2026-01-25',
+      descricao: 'Abre um segundo banco na box "carteira", "banco amarelo".',
+      async executar(dados) {
+        const carteira = dados.boxes.find((b) => b.nome === 'carteira')!;
+        await repo.salvarBanco({ boxId: carteira.id, nome: 'banco amarelo', ordem: 1 });
+      },
+    },
+    {
+      data: '2026-01-26',
+      descricao: 'Transfere R$ 500,00 do banco azul para o banco amarelo, dentro da box "carteira".',
+      async executar(dados) {
+        const bancoAzul = dados.bancos.find((b) => b.nome === 'banco azul')!;
+        const bancoAmarelo = dados.bancos.find((b) => b.nome === 'banco amarelo')!;
+        await repo.transferirEntreBancos(bancoAzul.id, bancoAmarelo.id, 50_000, '2026-01-26');
+      },
+    },
+    {
       data: '2026-02-01',
       descricao: 'Assina um serviço de streaming, R$ 39,90 por mês, sem data para acabar.',
       async executar(dados) {
@@ -159,11 +177,12 @@ export const ROTEIRO: Roteiro = {
         // uma lista, `diffOrdem` diz quais posições mudaram, e cada uma vira um update. Um
         // passo que gravasse `ordem` na mão exercitaria o Dexie, não o app.
         //
-        // A lista é montada com os mesmos dois filtros da tela (`Categorias.tsx:81-82`):
-        // fora as categorias de fatura e fora as arquivadas. Sem o primeiro filtro o passo
-        // reordena a categoria de fatura, que a tela esconde de todo mundo — o dossiê
-        // passaria a mostrar um estado que nenhum usuário consegue produzir.
-        const ocultas = categoriasFaturaIds(dados.cartoes);
+        // A lista é montada com os mesmos três filtros da tela (`Categorias.tsx:82-85`): fora
+        // as categorias de fatura, fora as de transferência, e fora as arquivadas. Sem os dois
+        // primeiros filtros o passo reordenaria uma categoria oculta, que a tela esconde de
+        // todo mundo — o dossiê passaria a mostrar um estado que nenhum usuário consegue
+        // produzir.
+        const ocultas = new Set([...categoriasFaturaIds(dados.cartoes), ...categoriasTransferenciaIds(dados.boxes)]);
         const gastos = dados.categorias
           .filter((c) => c.boxId === 'box-carteira' && c.tipo === 'gasto'
             && !ocultas.has(c.id) && !c.arquivada)

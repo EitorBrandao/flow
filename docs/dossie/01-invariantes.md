@@ -31,6 +31,14 @@ aparece aqui: o `docs/dominio.md` diz que o código não o promete.
 | categoria de fatura só é usada pelo cartão | garantido | depois da volta do backup | passa | — |
 | categoria de fatura só é usada pelo cartão | garantido | com o cenário ligado | passa | — |
 | categoria de fatura só é usada pelo cartão | garantido | fim do roteiro | passa | — |
+| categoria de transferência só é usada pela transferência | garantido | antes do primeiro fechamento | passa | — |
+| categoria de transferência só é usada pela transferência | garantido | entre fechamento e vencimento | passa | — |
+| categoria de transferência só é usada pela transferência | garantido | depois do primeiro vencimento | passa | — |
+| categoria de transferência só é usada pela transferência | garantido | depois do pagamento parcial | passa | — |
+| categoria de transferência só é usada pela transferência | garantido | no meio da viagem | passa | — |
+| categoria de transferência só é usada pela transferência | garantido | depois da volta do backup | passa | — |
+| categoria de transferência só é usada pela transferência | garantido | com o cenário ligado | passa | — |
+| categoria de transferência só é usada pela transferência | garantido | fim do roteiro | passa | — |
 | cenário nunca é efetivo | expectativa | antes do primeiro fechamento | passa | — |
 | cenário nunca é efetivo | expectativa | entre fechamento e vencimento | passa | — |
 | cenário nunca é efetivo | expectativa | depois do primeiro vencimento | passa | — |
