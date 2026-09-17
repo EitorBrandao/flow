@@ -1226,7 +1226,7 @@ describe('conferir', () => {
     expect(itens[0].acao).toEqual({ tipo: 'adicionarLancamento', categoriaId: CAT });
   });
 
-  it('marca sobra o que está no app e não no arquivo, dentro do período', () => {
+  it('não marca sobra para lançamento fora do período, mesmo por um dia', () => {
     const d = dadosCom([
       lancamento({ id: 'sobrando', data: '2026-08-16', valor: 1000, nota: 'POSTO BETA' }),
     ]);
@@ -1268,17 +1268,6 @@ describe('conferir', () => {
       .toBe('confere');
     expect(conferir([bruto({ data: '2026-08-19', valorCent: -4500 })], d, OPCOES)[0].estado)
       .toBe('novo');
-  });
-
-  it('deixa o externalId vencer o casamento por data e valor', () => {
-    const d = dadosCom([
-      lancamento({ id: 'certo', data: '2026-08-10', valor: 9900, nota: 'ref:abc' }),
-    ]);
-    const itens = conferir([
-      bruto({ data: '2026-08-15', valorCent: -4500, externalId: 'abc' }),
-    ], d, OPCOES);
-    expect(itens[0].estado).toBe('confere');
-    expect(itens[0].lancamentoId).toBe('certo');
   });
 
   it('marca o resgate como interno e ignora, sem perguntar', () => {
@@ -1420,6 +1409,9 @@ function candidatosDoCartao(dados: Dados, cartaoId: ID | undefined): Candidato[]
  * lançamentos iguais no mesmo dia casam os dois com o mesmo registro — um vira `confere`, o
  * outro vira `novo`, e os dois estão errados.
  *
+ * O `externalId` do bruto é lido do arquivo mas NÃO casa nada nesta entrega: `Lancamento` não
+ * tem onde guardá-lo, então o app nunca tem um para comparar. Ver a entrega 3 na spec.
+ *
  * Função pura: nada de IndexedDB, React ou arquivo. Todos os testes vivem disso.
  */
 export function conferir(
@@ -1489,16 +1481,6 @@ export function conferir(
     const valorCent = Math.abs(b.valorCent);
     const chave = chaveDoBruto(b);
 
-    // 3a. externalId vence tudo: é identidade, não semelhança.
-    const porId = b.externalId
-      ? universo.find((c) => !usados.has(c.id) && c.chave.includes(b.externalId!.toLowerCase()))
-      : undefined;
-    if (porId) {
-      usados.add(porId.id);
-      itens.push({ estado: 'confere', bruto: b, ...refDe(porId), acao: { tipo: 'ignorar' } });
-      continue;
-    }
-
     const perto = universo
       .filter((c) => !usados.has(c.id)
         && c.chave === chave
@@ -1556,11 +1538,7 @@ function refDe(c: Candidato): { lancamentoId: ID } | { compraCartaoId: ID } {
 - [ ] **Passo 4: Rodar o teste e confirmar que passa**
 
 Rodar: `npx vitest run src/importar/conferencia.test.ts`
-Esperado: PASSA, 16 testes.
-
-O teste do `externalId` usa a nota `ref:abc`. Se o casamento por `externalId` não passar,
-ajuste `chaveDe`/`porId` para comparar contra a nota do lançamento diretamente, mantendo a
-regra: identidade vence semelhança.
+Esperado: PASSA, 15 testes.
 
 - [ ] **Passo 5: Commitar**
 

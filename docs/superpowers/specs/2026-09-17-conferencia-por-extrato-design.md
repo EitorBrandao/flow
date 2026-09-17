@@ -70,7 +70,8 @@ segue é a descrição da forma, com todo conteúdo trocado por dado sintético.
 | Identificador | UUID de 36 caracteres, hexadecimal minúsculo |
 | Colunas | 4 em todas as linhas; nenhuma linha que não seja transação |
 
-O `Identificador` é o `externalId`. É a melhor chave de casamento que esta entrega tem.
+O `Identificador` vira o `externalId` do `LancamentoBruto`. Ele ainda não casa nada — ver
+"Casamento".
 
 **Moldes de descrição.** O Nubank monta a descrição por template. Os moldes vistos:
 
@@ -409,11 +410,18 @@ Gravar estorno vira item próprio, e o pré-requisito dele é `CampoValor` aceit
 
 A ordem importa. Cada regra só roda sobre o que a anterior não resolveu.
 
-1. **Por `externalId`.** O `Identificador` do Nubank é um UUID estável entre exportações. Quando
-   ele existe e já foi visto, o casamento é exato e não admite dúvida.
-2. **Por data, valor e descrição.** Data com tolerância de ±3 dias, valor exato, descrição
+1. **Por data, valor e descrição.** Data com tolerância de ±3 dias, valor exato, descrição
    normalizada igual. O banco posta em D+1, e às vezes em D+3 depois de um fim de semana.
-3. **Por data e descrição, valor diferente.** Mesma tolerância de data. Resulta em `divergente`.
+2. **Por data e descrição, valor diferente.** Mesma tolerância de data. Resulta em `divergente`.
+
+**O `externalId` fica de fora desta entrega.** O `Identificador` do Nubank é um UUID estável
+entre exportações, e seria a melhor chave possível — mas `Lancamento` não tem campo para
+guardá-lo. Sem gravar, o app nunca tem um `externalId` para comparar, e a regra casaria sempre
+zero. Guardá-lo exigiria uma versão nova do schema Dexie e mudança em `src/backup/`, na camada
+onde erro custa dados, por um ganho que só aparece ao reimportar um período já importado. O
+adapter continua lendo o campo e pondo no `LancamentoBruto`: quando a entrega 3 criar onde
+guardá-lo, o dado já está no lugar certo. Enquanto isso, quem pega a reimportação é a própria
+lista de conferência.
 
 **Normalizar a descrição** é: minúscula, sem acento, sem pontuação, sem espaço duplicado. Para o
 Nubank, `descricao.ts` aplica antes os moldes conhecidos e extrai a contraparte — o `{NOME}` do
@@ -543,7 +551,6 @@ Os casos que importam:
 - Dois lançamentos iguais no mesmo dia, para provar o casamento um-para-um.
 - Casamento dentro e fora da tolerância de ±3 dias.
 - `sobra` fora do período do arquivo, que não deve aparecer.
-- `externalId` vencendo o casamento por data e valor.
 - Parcelada reconstruída, e a mesma parcelada reconhecida no mês seguinte.
 - `Resgate RDB` sempre interno; `Aplicação RDB` interno com a troca para saída disponível.
 - Pagamento de fatura nos quatro casos da tabela.
@@ -599,7 +606,9 @@ contraparte extraída pelos moldes do Nubank (`descricao.ts`) é a chave do hist
 **Entrega 3 — alcance.** Aviso de "X dias sem lançamentos" na tela Hoje, com atalho para a
 conferência. Web Share Target, para receber o arquivo pelo menu Compartilhar do Android. Adapter
 da fatura do cartão Nubank (CSV). Adapter OFX genérico. Descompactação do zip do Nubank. Detecção
-automática de banco e mapeamento manual de colunas, como último recurso.
+automática de banco e mapeamento manual de colunas, como último recurso. Campo para guardar o
+`externalId` do banco no `Lancamento`, com a versão nova do schema Dexie e o ajuste em
+`src/backup/` que ela exige.
 
 **Itens soltos que esta spec abriu:**
 
