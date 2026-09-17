@@ -300,9 +300,13 @@ lista oferece, ali mesmo, trocar para "é uma saída de verdade" e escolher a ca
 de você não querer o resgate no fluxo. Se um dia o saldo passar a contar só a conta, esta regra
 se inverte e precisa ser revista.
 
-Esta entrega **não** depende do branch `transferencia-bancos`. Ela nunca cria o par de
-lançamentos em categorias ocultas; ela apenas não grava nada. Quando aquele branch entrar na
-`main`, ligar os dois vira melhoria, não retrabalho.
+**Por que não virar uma transferência de verdade.** A v0.29.0 trouxe
+`repo.registrarTransferencia`, que liga dois `Banco` da mesma box por um par de lançamentos
+`origem: 'transferencia'` em categorias ocultas. Seria o modelo certo para a caixinha — mas
+exige que a caixinha exista como `Banco` cadastrado, e ela não existe hoje. Criar bancos por
+conta própria, a partir de um rótulo de CSV, seria a importação decidindo o cadastro do
+usuário. Na entrega 1 o `interno` não grava nada. Ligar os dois é melhoria da entrega 2, e o
+desenho não precisa mudar para isso acontecer.
 
 ## Pagamento da fatura
 
