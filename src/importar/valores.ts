@@ -30,7 +30,12 @@ export function parsearValorExtrato(texto: string): number | undefined {
   return Number.isSafeInteger(Math.abs(centavos)) ? (negativo ? -centavos : centavos) : undefined;
 }
 
-function montar(ano: number, mes: number, dia: number): ISODate | undefined {
+/** Monta um `ISODate` a partir de ano, mês (1-12) e dia, com zero à esquerda. Devolve
+ *  `undefined` quando a data não existe no calendário — 31 de abril, 29 de fevereiro em ano
+ *  não bissexto. A checagem é de ida e volta: `Date.UTC` normaliza silenciosamente um dia que
+ *  estoura o mês, então comparar o mês e o dia de volta é o que pega o caso. */
+export function montarISODate(ano: number, mes: number, dia: number): ISODate | undefined {
+  if (!Number.isInteger(ano) || !Number.isInteger(mes) || !Number.isInteger(dia)) return undefined;
   if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return undefined;
   const d = new Date(Date.UTC(ano, mes - 1, dia));
   if (d.getUTCMonth() !== mes - 1 || d.getUTCDate() !== dia) return undefined;
@@ -45,12 +50,12 @@ function montar(ano: number, mes: number, dia: number): ISODate | undefined {
 export function parsearDataExtrato(texto: string): ISODate | undefined {
   const t = texto.trim();
   let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
-  if (m) return montar(Number(m[1]), Number(m[2]), Number(m[3]));
+  if (m) return montarISODate(Number(m[1]), Number(m[2]), Number(m[3]));
   m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t);
-  if (m) return montar(Number(m[3]), Number(m[2]), Number(m[1]));
+  if (m) return montarISODate(Number(m[3]), Number(m[2]), Number(m[1]));
   m = /^(\d{2})\/(\d{2})\/(\d{2})$/.exec(t);
-  if (m) return montar(2000 + Number(m[3]), Number(m[2]), Number(m[1]));
+  if (m) return montarISODate(2000 + Number(m[3]), Number(m[2]), Number(m[1]));
   m = /^(\d{4})(\d{2})(\d{2})$/.exec(t);
-  if (m) return montar(Number(m[1]), Number(m[2]), Number(m[3]));
+  if (m) return montarISODate(Number(m[1]), Number(m[2]), Number(m[3]));
   return undefined;
 }

@@ -21,8 +21,9 @@ describe('reconstruirCompra', () => {
       diaMes: '02/05', parcelaN: 10, parcelaTotal: 12,
       valorParcelaCent: 12345, mesFatura: '2026-02',
     });
-    expect(c.data).toBe('2025-05-02');
-    expect(c.anoDeduzidoComAviso).toBe(false);
+    expect(c).toBeDefined();
+    expect(c!.data).toBe('2025-05-02');
+    expect(c!.anoDeduzidoComAviso).toBe(false);
   });
 
   it('avisa quando a data deduzida cai longe do mês esperado', () => {
@@ -30,7 +31,8 @@ describe('reconstruirCompra', () => {
       diaMes: '02/01', parcelaN: 3, parcelaTotal: 10,
       valorParcelaCent: 10000, mesFatura: '2026-09',
     });
-    expect(c.anoDeduzidoComAviso).toBe(true);
+    expect(c).toBeDefined();
+    expect(c!.anoDeduzidoComAviso).toBe(true);
   });
 
   it('trata a compra à vista como parcela 1 de 1', () => {
@@ -41,5 +43,46 @@ describe('reconstruirCompra', () => {
     expect(c).toEqual({
       data: '2026-09-07', valorTotalCent: 4500, parcelas: 1, anoDeduzidoComAviso: false,
     });
+  });
+
+  it('recusa dia que não existe no mês', () => {
+    expect(reconstruirCompra({
+      diaMes: '31/04', parcelaN: 1, parcelaTotal: 1,
+      valorParcelaCent: 10000, mesFatura: '2026-04',
+    })).toBeUndefined();
+  });
+
+  // 29/02 só existe em ano bissexto. O ano mais perto pode não ser — e aí o candidato
+  // seguinte salva a linha, em vez de descartá-la.
+  it('escolhe um ano bissexto quando a data é 29 de fevereiro', () => {
+    const c = reconstruirCompra({
+      diaMes: '29/02', parcelaN: 1, parcelaTotal: 1,
+      valorParcelaCent: 10000, mesFatura: '2027-02',
+    });
+    expect(c).toBeDefined();
+    expect(c!.data).toBe('2028-02-29');
+  });
+
+  it('recusa DD/MM ilegível em vez de montar texto sem sentido', () => {
+    for (const diaMes of ['abc', '', '7', '13/13/2026']) {
+      expect(reconstruirCompra({
+        diaMes, parcelaN: 1, parcelaTotal: 1,
+        valorParcelaCent: 10000, mesFatura: '2026-09',
+      })).toBeUndefined();
+    }
+  });
+
+  it('recusa numeração de parcela impossível', () => {
+    const base = { diaMes: '07/09', valorParcelaCent: 10000, mesFatura: '2026-09' };
+    expect(reconstruirCompra({ ...base, parcelaN: 1, parcelaTotal: 0 })).toBeUndefined();
+    expect(reconstruirCompra({ ...base, parcelaN: 15, parcelaTotal: 10 })).toBeUndefined();
+  });
+
+  it('aceita DD/MM com zero à esquerda e devolve ISODate bem formado', () => {
+    const c = reconstruirCompra({
+      diaMes: '07/09', parcelaN: 1, parcelaTotal: 1,
+      valorParcelaCent: 10000, mesFatura: '2026-09',
+    });
+    expect(c!.data).toBe('2026-09-07');
   });
 });
