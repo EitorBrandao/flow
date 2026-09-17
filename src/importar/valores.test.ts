@@ -23,6 +23,7 @@ describe('parsearValorExtrato', () => {
   // viraria Infinity, e JSON.stringify(Infinity) é null — o backup voltaria quebrado.
   it('recusa valor grande demais para um inteiro seguro', () => {
     expect(parsearValorExtrato('99999999999999999999,99')).toBeUndefined();
+    expect(parsearValorExtrato('-99999999999999999999,99')).toBeUndefined();
   });
 
   // A regra do finance.py lê "1.234" como um inteiro e duzentos e trinta e quatro milésimos.
