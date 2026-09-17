@@ -15,3 +15,4 @@
 : atalho de lançamento | Combinação de categoria e destino (box ou cartão) que você mais repetiu nos últimos dois meses, mostrando o valor da última vez. Aparece assim que você toca no (+), para encurtar o caminho — o toque abre o formulário preenchido, sem gravar nada.
 : chave de acesso | Número de 44 dígitos que identifica uma nota fiscal eletrônica; extraído do QR-code, é usado para buscar o XML da nota fora do Flow.
 : item da nota | Uma linha de produto do XML da nota fiscal (nome e valor); o Flow usa os itens para mostrar como o total de uma compra do cartão se distribuiu.
+: transferência entre bancos | Mover saldo declarado de um banco para outro da mesma box (Hoje → Conferir). Ajusta o saldo dos dois na hora e cria um lançamento de saída e um de entrada, visíveis no Fluxo mas fora dos totais de Análises — não é ganho nem gasto real.
