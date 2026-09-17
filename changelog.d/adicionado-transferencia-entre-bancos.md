@@ -1,5 +1,0 @@
-- Transferir saldo entre bancos da mesma conta, direto na Hoje → Conferir.
-  - Aparece o botão ↔ em cada banco quando a conta tem dois ou mais cadastrados.
-  - Ajusta o saldo dos dois bancos na hora, sem precisar conferir os dois separadamente.
-  - Aparece no Fluxo como uma saída e uma entrada, mas não conta como ganho ou gasto em Análises.
-  - Dá pra ver o detalhe e excluir a transferência clicando nela no Fluxo.

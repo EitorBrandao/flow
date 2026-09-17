@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.29.0] - 2026-09-17
+
+### Adicionado
+
+- Transferir saldo entre bancos da mesma conta, direto na Hoje → Conferir.
+  - Aparece o botão ↔ em cada banco quando a conta tem dois ou mais cadastrados.
+  - Ajusta o saldo dos dois bancos na hora, sem precisar conferir os dois separadamente.
+  - Aparece no Fluxo como uma saída e uma entrada, mas não conta como ganho ou gasto em Análises.
+  - Dá pra ver o detalhe e excluir a transferência clicando nela no Fluxo.
+
 ## [0.28.0] - 2026-09-08
 
 ### Adicionado
