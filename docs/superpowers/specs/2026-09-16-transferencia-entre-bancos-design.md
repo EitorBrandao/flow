@@ -104,9 +104,9 @@ Dentro de uma transação (`db.bancos`, `db.categorias`, `db.boxes`, `db.lancame
    - saída: `boxId`, `categoriaId: categoriaTransferenciaSaidaId`, `bancoId: bancoOrigemId`.
    - entrada: `boxId`, `categoriaId: categoriaTransferenciaEntradaId`, `bancoId:
      bancoDestinoId`.
-4. Atualiza `saldoDeclaradoCent` dos dois bancos (`(atual ?? 0) ∓ valorCent`) e
-   `dataSaldoDeclarado: data` nos dois — o mesmo efeito de editar os dois bancos à mão em
-   Ajustes → Bancos, feito numa tacada.
+4. Atualiza `saldoDeclaradoCent` dos dois bancos — origem: `(atual ?? 0) - valorCent`;
+   destino: `(atual ?? 0) + valorCent` — e `dataSaldoDeclarado: data` nos dois. O mesmo
+   efeito de editar os dois bancos à mão em Ajustes → Bancos, feito numa tacada.
 5. `marcarMudanca()`.
 
 `excluirTransferencia(transferenciaId: ID)` apaga os dois lançamentos que compartilham o id
