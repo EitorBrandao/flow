@@ -20,10 +20,19 @@ export type NaturezaBruto =
   | 'pagamentoFatura'
   | 'estornoCartao';
 
+/** Um bloco de cartão da fatura. A fatura pode ter titular, adicional e virtual; as linhas
+ *  não trazem os dígitos do cartão, elas herdam do cabeçalho do bloco. */
+export interface BlocoCartao {
+  rotulo: string;
+  brutos: LancamentoBruto[];
+  totalDeclaradoCent?: number;
+}
+
 export interface LeituraAdapter {
   brutos: LancamentoBruto[];
   linhasIgnoradas: number;
   avisos: string[];
+  blocos?: BlocoCartao[];
 }
 
 export interface Adapter {
