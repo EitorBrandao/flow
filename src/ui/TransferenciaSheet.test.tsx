@@ -38,8 +38,10 @@ it('mostra os bancos, a data e o valor, e exclui as duas pernas ao confirmar', a
 
   await userEvent.click(screen.getByRole('button', { name: 'Excluir transferência' }));
 
-  await waitFor(async () => expect(await db.lancamentos.toArray()).toHaveLength(0));
-  expect(onFechar).toHaveBeenCalledOnce();
+  await waitFor(() => {
+    expect(onFechar).toHaveBeenCalledOnce();
+  });
+  expect((await db.lancamentos.toArray())).toHaveLength(0);
 });
 
 it('cancelar a confirmação de exclusão não apaga nada', async () => {
