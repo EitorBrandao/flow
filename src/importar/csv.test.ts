@@ -25,4 +25,15 @@ describe('lerCsv', () => {
   it('aceita fim de linha do Windows e ignora linha vazia', () => {
     expect(lerCsv('a,b\r\n1,2\r\n\r\n')).toEqual([['a', 'b'], ['1', '2']]);
   });
+
+  // Campo entre aspas pode conter quebra de linha: ela fica DENTRO do campo e não parte o
+  // registro em dois. É o caso que mais quebra parser de CSV escrito à mão.
+  it('mantém a quebra de linha que está dentro de aspas', () => {
+    expect(lerCsv('a,"b\nc",d')).toEqual([['a', 'b\nc', 'd']]);
+  });
+
+  // Arquivo truncado é entrada esperada: aproveita o que deu para ler, sem lançar.
+  it('não lança quando as aspas nunca fecham', () => {
+    expect(lerCsv('"a')).toEqual([['a']]);
+  });
 });
