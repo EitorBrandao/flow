@@ -20,3 +20,21 @@ export const FATURA_SANTANDER = [
   'VALOR TOTAL 236,80 0,00',
   '2/4',
 ].join('\n');
+
+/** Duas faturas de cartão no mesmo PDF: titular e um cartão virtual (prefixo "@ ").
+ *  O cabeçalho de colunas do segundo bloco vem COLADO à transação, de propósito: é o formato
+ *  que a extração do PDF real produziu, e foi o caso que um filtro de ruído mal ancorado
+ *  chegou a engolir por inteiro. */
+export const FATURA_DOIS_CARTOES = [
+  'Detalhamento da Fatura',
+  'FULANO DE TAL - 0000 XXXX XXXX 0000',
+  'Despesas',
+  'Compra Data Descrição Parcela R$ US$',
+  '3 07/08 MERCADO ALFA 45,00',
+  'VALOR TOTAL 45,00 0,00',
+  '@ FULANO DE TAL - 1234 5678 9012 3456',
+  'Despesas',
+  'Compra Data Descrição Parcela R$ US$ 3 19/08 POSTO BETA 51,90',
+  'VALOR TOTAL 51,90 0,00',
+  '3/4',
+].join('\n');

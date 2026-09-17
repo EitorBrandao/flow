@@ -47,10 +47,11 @@ function extrairTransacoes(linha: string): TransacaoLida[] {
 const CABECALHO_BLOCO = /^@?\s*.+ - \d{4} [X\d]{4} [X\d]{4} \d{4}$/;
 const RUIDO = [
   /^Detalhamento da Fatura$/i,
-  // "Descrição" com escape: nenhum caractere não-ASCII colado dentro de regex.
-  /^Compra Data Descrição Parcela/i,
-  /^\d\/\d$/,
-  /^(Pagamento e Demais Créditos|Parcelamentos|Despesas)$/i,
+  // "Descrição" com escape: nenhum caractere não-ASCII colado dentro de regex. Ancorado nas
+  // duas pontas: sem o "$" final, um cabeçalho colado a uma transação (a extração do PDF faz
+  // isso) casava a linha inteira e engolia a transação, sem contar em `linhasIgnoradas`.
+  /^Compra Data Descri[çc][ãa]o Parcela R\$ US\$$/i,
+  /^\d{1,2}\/\d{1,2}$/,
 ];
 
 type Subsecao = 'creditos' | 'parcelamentos' | 'despesas';
@@ -76,6 +77,13 @@ function naturezaDe(descricao: string, subsecao: Subsecao): NaturezaBruto | unde
  * `mesFatura` é o "AAAA-MM" do vencimento, necessário para deduzir o ano das datas "DD/MM".
  */
 export function lerSantanderFatura(texto: string, mesFatura: string): LeituraAdapter {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mesFatura)) {
+    return {
+      brutos: [], linhasIgnoradas: 0, blocos: [],
+      avisos: ['Mês de vencimento da fatura não reconhecido; nada foi lido.'],
+    };
+  }
+
   const blocos: BlocoCartao[] = [];
   const avisos: string[] = [];
   let linhasIgnoradas = 0;
@@ -103,7 +111,15 @@ export function lerSantanderFatura(texto: string, mesFatura: string): LeituraAda
     }
 
     if (RUIDO.some((re) => re.test(linha))) continue;
-    if (!atual) continue;
+
+    if (!atual) {
+      // Nenhum cabeçalho de bloco visto ainda. Se a linha der alguma transação, ela é dado
+      // perdido — conta como ignorada. Se não der nenhuma, é só texto solto antes do primeiro
+      // cartão, e não precisa de contagem.
+      const antesDoBloco = extrairTransacoes(linha);
+      if (antesDoBloco.length > 0) linhasIgnoradas += antesDoBloco.length;
+      continue;
+    }
 
     const transacoes = extrairTransacoes(linha);
     if (transacoes.length === 0) { linhasIgnoradas++; continue; }
@@ -129,8 +145,11 @@ export function lerSantanderFatura(texto: string, mesFatura: string): LeituraAda
       }
 
       const natureza = naturezaDe(t.descricao, subsecao);
-      // O sinal do LancamentoBruto é o do banco: gasto de cartão é saída.
-      const sinalizado = valorCent > 0 ? -valorCent : valorCent;
+      // O arquivo do cartão escreve compra como positivo e crédito como negativo — o oposto
+      // da convenção do LancamentoBruto, onde negativo é saída. Inverter sempre acerta os
+      // quatro casos: compra e parcela viram saída, estorno e pagamento viram entrada no
+      // extrato do cartão.
+      const sinalizado = -valorCent;
       atual.brutos.push({
         data: compra.data,
         valorCent: sinalizado,

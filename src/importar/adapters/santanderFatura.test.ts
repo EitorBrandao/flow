@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FATURA_SANTANDER } from '../fixtures/santander-fatura';
+import { FATURA_DOIS_CARTOES, FATURA_SANTANDER } from '../fixtures/santander-fatura';
 import { lerSantanderFatura } from './santanderFatura';
 
 describe('lerSantanderFatura', () => {
@@ -53,5 +53,45 @@ describe('lerSantanderFatura', () => {
     const torto = FATURA_SANTANDER.replace('VALOR TOTAL 236,80', 'VALOR TOTAL 999,00');
     const r = lerSantanderFatura(torto, '2026-09');
     expect(r.avisos.join(' ')).toContain('VALOR TOTAL');
+  });
+
+  it('separa os lançamentos por cartão e aceita o cartão virtual', () => {
+    const r = lerSantanderFatura(FATURA_DOIS_CARTOES, '2026-09');
+    expect(r.blocos).toHaveLength(2);
+    expect(r.blocos![0].rotulo).toBe('FULANO DE TAL - 0000 XXXX XXXX 0000');
+    expect(r.blocos![1].rotulo).toBe('@ FULANO DE TAL - 1234 5678 9012 3456');
+    expect(r.blocos![0].brutos.map((b) => b.descricao)).toEqual(['MERCADO ALFA']);
+    expect(r.blocos![1].brutos.map((b) => b.descricao)).toEqual(['POSTO BETA']);
+    expect(r.linhasIgnoradas).toBe(0);
+    expect(r.avisos).toEqual([]);
+  });
+
+  // O cabeçalho de colunas colado à transação não pode levar a transação junto.
+  it('lê a transação colada ao cabeçalho de colunas', () => {
+    const r = lerSantanderFatura(FATURA_DOIS_CARTOES, '2026-09');
+    expect(r.brutos.some((b) => b.descricao === 'POSTO BETA')).toBe(true);
+  });
+
+  it('conta a transação que aparece antes de qualquer cartão, em vez de perdê-la', () => {
+    const r = lerSantanderFatura('3 07/08 MERCADO ALFA 45,00', '2026-09');
+    expect(r.brutos).toHaveLength(0);
+    expect(r.linhasIgnoradas).toBe(1);
+  });
+
+  it('não lança com mês de fatura malformado', () => {
+    expect(() => lerSantanderFatura(FATURA_SANTANDER, 'abc')).not.toThrow();
+    const r = lerSantanderFatura(FATURA_SANTANDER, 'abc');
+    expect(r.brutos).toHaveLength(0);
+    expect(r.avisos).toHaveLength(1);
+  });
+
+  it('devolve estorno e pagamento como entrada, e compra como saída', () => {
+    const r = lerSantanderFatura(FATURA_SANTANDER, '2026-09');
+    const estorno = r.brutos.find((b) => b.natureza === 'estornoCartao');
+    const pagamento = r.brutos.find((b) => b.natureza === 'pagamentoFatura');
+    const compra = r.brutos.find((b) => b.descricao === 'MERCADO ALFA 103');
+    expect(estorno!.valorCent).toBeGreaterThan(0);
+    expect(pagamento!.valorCent).toBeGreaterThan(0);
+    expect(compra!.valorCent).toBeLessThan(0);
   });
 });
