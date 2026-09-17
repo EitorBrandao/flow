@@ -1,0 +1,212 @@
+import { diasEntre } from '../domain/dates';
+import type { CompraCartao, Dados, ID, ISODate, Lancamento } from '../domain/types';
+import { contraparteNubank, normalizarDescricao } from './descricao';
+import type { ItemConferencia, LancamentoBruto } from './tipos';
+
+export interface OpcoesConferencia {
+  boxId: ID;
+  cartaoId?: ID;
+  categoriaPadraoId: ID;
+  categoriaCartaoPadraoId?: ID;
+  toleranciaDias?: number;
+}
+
+/** Candidato do lado do app: um lançamento da box, ou uma compra de cartão. */
+interface Candidato {
+  id: ID;
+  data: ISODate;
+  valorCent: number;
+  chave: string;
+  ehPrevisto: boolean;
+  ehCompra: boolean;
+}
+
+function diferencaEmDias(a: ISODate, b: ISODate): number {
+  const [menor, maior] = a <= b ? [a, b] : [b, a];
+  return diasEntre(menor, maior).length - 1;
+}
+
+function chaveDe(texto: string): string {
+  return normalizarDescricao(contraparteNubank(texto));
+}
+
+/** O que identifica um bruto do lado do app. Para cartão, a nota da compra; para conta, a
+ *  nota do lançamento. */
+function chaveDoBruto(b: LancamentoBruto): string {
+  return chaveDe(b.descricao);
+}
+
+function candidatosDaConta(dados: Dados, boxId: ID): Candidato[] {
+  return dados.lancamentos
+    .filter((l) => l.boxId === boxId && l.origem !== 'cartao' && l.origem !== 'transferencia')
+    .map((l: Lancamento) => ({
+      id: l.id, data: l.data, valorCent: l.valor,
+      chave: chaveDe(l.nota ?? ''), ehPrevisto: l.status === 'previsto', ehCompra: false,
+    }));
+}
+
+function candidatosDoCartao(dados: Dados, cartaoId: ID | undefined): Candidato[] {
+  if (!cartaoId) return [];
+  return dados.comprasCartao
+    .filter((c) => c.cartaoId === cartaoId)
+    .map((c: CompraCartao) => ({
+      id: c.id, data: c.data, valorCent: c.valorTotal,
+      chave: chaveDe(c.descricao ?? ''), ehPrevisto: false, ehCompra: true,
+    }));
+}
+
+/**
+ * Compara o que o banco mandou com o que o app tem, e devolve um item por decisão.
+ *
+ * O casamento é UM-PARA-UM e guloso: cada candidato casa no máximo uma vez. Sem isso, dois
+ * lançamentos iguais no mesmo dia casam os dois com o mesmo registro — um vira `confere`, o
+ * outro vira `novo`, e os dois estão errados.
+ *
+ * O `externalId` do bruto é lido do arquivo mas NÃO casa nada nesta entrega: `Lancamento` não
+ * tem onde guardá-lo, então o app nunca tem um para comparar. Ver a entrega 3 na spec.
+ *
+ * Função pura: nada de IndexedDB, React ou arquivo. Todos os testes vivem disso.
+ */
+export function conferir(
+  brutos: LancamentoBruto[], dados: Dados, opcoes: OpcoesConferencia,
+): ItemConferencia[] {
+  const tolerancia = opcoes.toleranciaDias ?? 3;
+  const itens: ItemConferencia[] = [];
+  const usados = new Set<ID>();
+
+  const daConta = candidatosDaConta(dados, opcoes.boxId);
+  const doCartao = candidatosDoCartao(dados, opcoes.cartaoId);
+
+  const faturas = dados.lancamentos.filter(
+    (l) => l.origem === 'cartao' && l.cartaoId === opcoes.cartaoId,
+  );
+
+  for (const b of brutos) {
+    // 1. Movimento interno e estorno: reconhecidos, nunca gravados.
+    if (b.natureza === 'resgateInterno') {
+      itens.push({ estado: 'interno', bruto: b, acao: { tipo: 'ignorar' } });
+      continue;
+    }
+    if (b.natureza === 'aplicacaoInterna') {
+      itens.push({
+        estado: 'interno', bruto: b, acao: { tipo: 'ignorar' },
+        aviso: 'Guardar na caixinha é movimento interno. Se este dinheiro foi para uma '
+          + 'reserva que você não conta, marque como saída de verdade.',
+      });
+      continue;
+    }
+    if (b.natureza === 'estornoCartao') {
+      itens.push({
+        estado: 'interno', bruto: b, acao: { tipo: 'ignorar' },
+        aviso: 'Estorno reconhecido. Esta versão ainda não grava estorno de cartão.',
+      });
+      continue;
+    }
+
+    // 2. Pagamento da fatura: casa contra o lançamento da fatura, nunca vira compra.
+    if (b.natureza === 'pagamentoFatura') {
+      const alvo = faturas
+        .filter((f) => !usados.has(f.id))
+        .sort((x, y) => diferencaEmDias(x.data, b.data) - diferencaEmDias(y.data, b.data))[0];
+      if (!alvo) {
+        itens.push({
+          estado: 'novo', bruto: b, acao: { tipo: 'ignorar' },
+          aviso: 'Pagamento sem fatura correspondente no Flow. Confira se o cartão está '
+            + 'cadastrado e se o ciclo está certo.',
+        });
+        continue;
+      }
+      usados.add(alvo.id);
+      const valorCent = Math.abs(b.valorCent);
+      const igual = alvo.status === 'efetivo' && alvo.valor === valorCent;
+      itens.push({
+        estado: igual ? 'confere' : alvo.status === 'previsto' ? 'previsto' : 'divergente',
+        bruto: b, lancamentoId: alvo.id,
+        acao: igual
+          ? { tipo: 'ignorar' }
+          : { tipo: 'confirmarComValor', valorCent, data: b.data },
+      });
+      continue;
+    }
+
+    // 3. Casamento comum.
+    const universo = b.fonte === 'cartao' ? doCartao : daConta;
+    const valorCent = Math.abs(b.valorCent);
+    const chave = chaveDoBruto(b);
+
+    const perto = universo
+      .filter((c) => !usados.has(c.id)
+        && c.chave === chave
+        && diferencaEmDias(c.data, b.data) <= tolerancia)
+      .sort((x, y) => diferencaEmDias(x.data, b.data) - diferencaEmDias(y.data, b.data));
+
+    const exato = perto.find((c) => c.valorCent === valorCent);
+    if (exato) {
+      usados.add(exato.id);
+      itens.push({
+        estado: exato.ehPrevisto ? 'previsto' : 'confere',
+        bruto: b, ...refDe(exato),
+        acao: exato.ehPrevisto ? { tipo: 'confirmar' } : { tipo: 'ignorar' },
+      });
+      continue;
+    }
+
+    const divergente = perto[0];
+    if (divergente) {
+      usados.add(divergente.id);
+      itens.push({
+        estado: 'divergente', bruto: b, ...refDe(divergente),
+        acao: { tipo: 'confirmarComValor', valorCent, data: b.data },
+      });
+      continue;
+    }
+
+    if (b.fonte === 'cartao') {
+      const categoriaCartaoId = opcoes.categoriaCartaoPadraoId;
+      if (categoriaCartaoId === undefined) {
+        throw new Error(
+          'categoriaCartaoPadraoId é obrigatório quando há bruto com fonte \'cartao\'.',
+        );
+      }
+      // O bruto já traz a data da compra original, resolvida pelo adapter da fatura, e o
+      // valor de UMA parcela. O total da compra é a parcela vezes o número de parcelas —
+      // é a única estimativa possível, porque a fatura informa uma parcela só.
+      // Sem isto, `aplicar` grava o valor da parcela como se fosse o total da compra.
+      const compraReconstruida = b.parcela
+        ? {
+            data: b.data,
+            valorTotalCent: Math.abs(b.valorCent) * b.parcela.total,
+            parcelas: b.parcela.total,
+            anoDeduzidoComAviso: false,
+          }
+        : undefined;
+      itens.push({
+        estado: 'novo', bruto: b,
+        acao: { tipo: 'adicionarCompra', categoriaCartaoId },
+        ...(compraReconstruida ? { compraReconstruida } : {}),
+      });
+    } else {
+      itens.push({
+        estado: 'novo', bruto: b,
+        acao: { tipo: 'adicionarLancamento', categoriaId: opcoes.categoriaPadraoId },
+      });
+    }
+  }
+
+  // 4. Sobra: o que o app tem, dentro do período do arquivo, e o arquivo não tem.
+  const datas = brutos.map((b) => b.data).sort();
+  if (datas.length > 0) {
+    const [inicio, fim] = [datas[0], datas[datas.length - 1]];
+    for (const c of [...daConta, ...doCartao]) {
+      if (usados.has(c.id)) continue;
+      if (c.data < inicio || c.data > fim) continue;
+      itens.push({ estado: 'sobra', ...refDe(c), acao: { tipo: 'ignorar' } });
+    }
+  }
+
+  return itens;
+}
+
+function refDe(c: Candidato): { lancamentoId: ID } | { compraCartaoId: ID } {
+  return c.ehCompra ? { compraCartaoId: c.id } : { lancamentoId: c.id };
+}
