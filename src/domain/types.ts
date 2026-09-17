@@ -2,7 +2,7 @@ export type ID = string;
 export type ISODate = string; // "AAAA-MM-DD"
 export type TipoCategoria = 'ganho' | 'gasto';
 export type StatusLancamento = 'efetivo' | 'previsto';
-export type OrigemLancamento = 'manual' | 'recorrencia' | 'cartao';
+export type OrigemLancamento = 'manual' | 'recorrencia' | 'cartao' | 'transferencia';
 
 interface Entidade {
   id: ID;
@@ -17,6 +17,8 @@ export interface Box extends Entidade {
   dono?: string; // multi-pessoa futura; não usado na v1
   saldoDeclaradoCent?: number | null; // último saldo real do banco informado pelo usuário
   dataSaldoDeclarado?: ISODate | null;
+  categoriaTransferenciaSaidaId?: ID;   // categoria oculta "Transferência" (gasto), criada sob demanda
+  categoriaTransferenciaEntradaId?: ID; // categoria oculta "Transferência" (ganho), criada sob demanda
 }
 
 /** Conta bancária dentro de uma box. Nesta entrega o saldo é informado pelo usuário, não
@@ -50,6 +52,8 @@ export interface Lancamento extends Entidade {
   cartaoId?: ID;     // lançamento de fatura: cartão dono
   faturaMes?: string; // 'AAAA-MM' do vencimento — chave estável da fatura
   viagemId?: ID; // lançamento marcado como gasto de uma viagem
+  bancoId?: ID;          // qual banco esta perna afeta (só em lançamentos de transferência)
+  transferenciaId?: ID;  // liga as duas pernas do mesmo movimento
 }
 
 export interface Recorrencia extends Entidade {
