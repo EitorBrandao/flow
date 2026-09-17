@@ -4,6 +4,7 @@ import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import SeletorCategoria from './SeletorCategoria';
 import { categoriasFaturaIds } from '../domain/fatura';
+import { categoriasTransferenciaIds } from '../domain/transferencia';
 import type { TipoCategoria } from '../domain/types';
 import { viagemAtivaEm } from '../domain/viagem';
 import { boxIdEfetivo, useApp } from '../state/store';
@@ -49,7 +50,13 @@ export default function TelaLancar() {
 
   const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
 
-  const ocultas = useMemo(() => categoriasFaturaIds(dados?.cartoes ?? []), [dados]);
+  const ocultas = useMemo(
+    () => new Set([
+      ...categoriasFaturaIds(dados?.cartoes ?? []),
+      ...categoriasTransferenciaIds(dados?.boxes ?? []),
+    ]),
+    [dados],
+  );
   const categorias = useMemo(
     () => (dados?.categorias ?? [])
       .filter((c) => c.boxId === boxId && c.tipo === tipo && !c.arquivada && !ocultas.has(c.id)),

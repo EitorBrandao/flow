@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import * as repo from '../db/repo';
 import { categoriasFaturaIds } from '../domain/fatura';
+import { categoriasTransferenciaIds } from '../domain/transferencia';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
 import CampoData from './CampoData';
@@ -18,7 +19,7 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
   const [erro, setErro] = useState('');
   if (!dados) return null;
 
-  const ocultas = categoriasFaturaIds(dados.cartoes);
+  const ocultas = new Set([...categoriasFaturaIds(dados.cartoes), ...categoriasTransferenciaIds(dados.boxes)]);
   const categorias = dados.categorias
     .filter((c) => c.boxId === lanc.boxId && !c.arquivada && !ocultas.has(c.id));
 

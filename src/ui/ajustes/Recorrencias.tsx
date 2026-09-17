@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { categoriasFaturaIds } from '../../domain/fatura';
+import { categoriasTransferenciaIds } from '../../domain/transferencia';
 import { formatarBRL } from '../../domain/money';
 import type { TipoCategoria } from '../../domain/types';
 import { boxIdEfetivo, useApp } from '../../state/store';
@@ -37,7 +38,7 @@ export default function Recorrencias() {
   const recs = dados.recorrencias.filter((r) => !r.cenarioId && r.boxId === boxId);
   const nomeCat = (id: string) => dados.categorias.find((c) => c.id === id)?.nome ?? '?';
   const tipoCat = (id: string) => dados.categorias.find((c) => c.id === id)?.tipo;
-  const ocultas = categoriasFaturaIds(dados.cartoes);
+  const ocultas = new Set([...categoriasFaturaIds(dados.cartoes), ...categoriasTransferenciaIds(dados.boxes)]);
   const categoriasDaBox = dados.categorias
     .filter((c) => c.boxId === boxId && c.tipo === tipo && !c.arquivada && !ocultas.has(c.id));
 
