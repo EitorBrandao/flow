@@ -737,3 +737,87 @@ export async function sincronizarCartoes(
     }
   });
 }
+
+// ---------- Transferência entre bancos ----------
+
+async function categoriaTransferenciaSaidaDe(boxId: ID): Promise<ID> {
+  const box = (await db.boxes.get(boxId))!;
+  if (box.categoriaTransferenciaSaidaId) return box.categoriaTransferenciaSaidaId;
+  const agora = agoraISO();
+  const categoriaId = novoId();
+  await db.categorias.add({
+    id: categoriaId, boxId, nome: 'Transferência', tipo: 'gasto', ordem: 0,
+    arquivada: false, criadoEm: agora, alteradoEm: agora,
+  });
+  await db.boxes.update(boxId, { categoriaTransferenciaSaidaId: categoriaId, alteradoEm: agora });
+  return categoriaId;
+}
+
+async function categoriaTransferenciaEntradaDe(boxId: ID): Promise<ID> {
+  const box = (await db.boxes.get(boxId))!;
+  if (box.categoriaTransferenciaEntradaId) return box.categoriaTransferenciaEntradaId;
+  const agora = agoraISO();
+  const categoriaId = novoId();
+  await db.categorias.add({
+    id: categoriaId, boxId, nome: 'Transferência', tipo: 'ganho', ordem: 0,
+    arquivada: false, criadoEm: agora, alteradoEm: agora,
+  });
+  await db.boxes.update(boxId, { categoriaTransferenciaEntradaId: categoriaId, alteradoEm: agora });
+  return categoriaId;
+}
+
+/** Move saldo declarado de um banco para outro DA MESMA BOX, gravando dois lançamentos
+ *  ligados (`transferenciaId` compartilhado) numa categoria oculta "Transferência" — um de
+ *  saída (gasto) na origem, um de entrada (ganho) no destino — e ajustando o saldo declarado
+ *  dos dois bancos na mesma transação. Ver `docs/superpowers/specs/2026-09-16-transferencia-
+ *  entre-bancos-design.md`. */
+export async function transferirEntreBancos(
+  bancoOrigemId: ID, bancoDestinoId: ID, valorCent: number, data: ISODate,
+): Promise<void> {
+  if (bancoOrigemId === bancoDestinoId) throw new Error('Escolha dois bancos diferentes.');
+  if (valorCent <= 0) throw new Error('O valor da transferência precisa ser maior que zero.');
+  const origem = await db.bancos.get(bancoOrigemId);
+  const destino = await db.bancos.get(bancoDestinoId);
+  if (!origem || !destino) throw new Error('Banco não encontrado.');
+  if (origem.boxId !== destino.boxId) throw new Error('Transferência só entre bancos da mesma box.');
+
+  await db.transaction('rw', db.bancos, db.categorias, db.boxes, db.lancamentos, db.config, async () => {
+    const categoriaSaidaId = await categoriaTransferenciaSaidaDe(origem.boxId);
+    const categoriaEntradaId = await categoriaTransferenciaEntradaDe(origem.boxId);
+    const agora = agoraISO();
+    const transferenciaId = novoId();
+    const nota = `${origem.nome} → ${destino.nome}`;
+    const lancamentos: Lancamento[] = [
+      {
+        id: novoId(), boxId: origem.boxId, categoriaId: categoriaSaidaId, data, valor: valorCent,
+        nota, status: 'efetivo', origem: 'transferencia', bancoId: origem.id, transferenciaId,
+        criadoEm: agora, alteradoEm: agora,
+      },
+      {
+        id: novoId(), boxId: destino.boxId, categoriaId: categoriaEntradaId, data, valor: valorCent,
+        nota, status: 'efetivo', origem: 'transferencia', bancoId: destino.id, transferenciaId,
+        criadoEm: agora, alteradoEm: agora,
+      },
+    ];
+    await db.lancamentos.bulkAdd(lancamentos);
+    await db.bancos.update(origem.id, {
+      saldoDeclaradoCent: (origem.saldoDeclaradoCent ?? 0) - valorCent,
+      dataSaldoDeclarado: data, alteradoEm: agora,
+    });
+    await db.bancos.update(destino.id, {
+      saldoDeclaradoCent: (destino.saldoDeclaradoCent ?? 0) + valorCent,
+      dataSaldoDeclarado: data, alteradoEm: agora,
+    });
+    await marcarMudanca();
+  });
+}
+
+/** Apaga as duas pernas de uma transferência. Não toca em `saldoDeclaradoCent` dos bancos —
+ *  reverter exigiria saber se o banco já foi conferido de novo depois; corrigir o saldo é
+ *  manual, em Ajustes → Bancos. `transferenciaId` não é índice: `.filter()`, não `.where()`. */
+export async function excluirTransferencia(transferenciaId: ID): Promise<void> {
+  await db.transaction('rw', db.lancamentos, db.config, async () => {
+    await db.lancamentos.filter((l) => l.transferenciaId === transferenciaId).delete();
+    await marcarMudanca();
+  });
+}
