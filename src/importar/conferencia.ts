@@ -7,6 +7,8 @@ export interface OpcoesConferencia {
   boxId: ID;
   cartaoId?: ID;
   categoriaPadraoId: ID;
+  /** Só é exigida quando um bruto de cartão vira `novo` com `adicionarCompra`. Se ele casar
+   *  como `confere`, `previsto` ou `divergente`, este campo nunca é lido. */
   categoriaCartaoPadraoId?: ID;
   toleranciaDias?: number;
 }
@@ -20,6 +22,12 @@ interface Candidato {
   ehPrevisto: boolean;
   ehCompra: boolean;
 }
+
+/** Uma fatura é mensal, então um pagamento nunca está a mais de um mês do vencimento dela.
+ *  Sem este teto, um pagamento casaria com uma fatura vencida de meses atrás e a marcaria
+ *  como paga. É um teto mais largo que o do casamento comum de propósito: pagar fatura
+ *  adiantado ou atrasado é normal, comprar com trinta dias de defasagem não é. */
+const TOLERANCIA_DIAS_FATURA = 31;
 
 function diferencaEmDias(a: ISODate, b: ISODate): number {
   const [menor, maior] = a <= b ? [a, b] : [b, a];
@@ -106,7 +114,7 @@ export function conferir(
     // 2. Pagamento da fatura: casa contra o lançamento da fatura, nunca vira compra.
     if (b.natureza === 'pagamentoFatura') {
       const alvo = faturas
-        .filter((f) => !usados.has(f.id))
+        .filter((f) => !usados.has(f.id) && diferencaEmDias(f.data, b.data) <= TOLERANCIA_DIAS_FATURA)
         .sort((x, y) => diferencaEmDias(x.data, b.data) - diferencaEmDias(y.data, b.data))[0];
       if (!alvo) {
         itens.push({
@@ -163,10 +171,13 @@ export function conferir(
 
     if (b.fonte === 'cartao') {
       const categoriaCartaoId = opcoes.categoriaCartaoPadraoId;
-      if (categoriaCartaoId === undefined) {
-        throw new Error(
-          'categoriaCartaoPadraoId é obrigatório quando há bruto com fonte \'cartao\'.',
-        );
+      if (categoriaCartaoId == null) {
+        itens.push({
+          estado: 'novo', bruto: b, acao: { tipo: 'ignorar' },
+          aviso: 'Compra de cartão sem categoria de destino. Escolha o cartão na tela de '
+            + 'conferência antes de confirmar.',
+        });
+        continue;
       }
       // O bruto já traz a data da compra original, resolvida pelo adapter da fatura, e o
       // valor de UMA parcela. O total da compra é a parcela vezes o número de parcelas —

@@ -186,4 +186,53 @@ describe('conferir', () => {
       data: '2026-07-02', valorTotalCent: 100000, parcelas: 10, anoDeduzidoComAviso: false,
     });
   });
+
+  // O candidato de valor exato vence mesmo estando mais longe em data. Sem isso, um previsto
+  // de valor errado no dia certo sequestraria o casamento do lançamento certo.
+  it('prefere o candidato de valor exato ao mais próximo em data', () => {
+    const d = dadosCom([
+      lancamento({ id: 'perto-errado', data: '2026-08-15', valor: 9900, nota: 'LOJA GAMA' }),
+      lancamento({ id: 'longe-certo', data: '2026-08-17', valor: 4500, nota: 'LOJA GAMA' }),
+    ]);
+    const itens = conferir([bruto({ data: '2026-08-15', valorCent: -4500 })], d, OPCOES);
+    expect(itens[0].estado).toBe('confere');
+    expect(itens[0].lancamentoId).toBe('longe-certo');
+  });
+
+  it('não preenche compraReconstruida para compra à vista', () => {
+    const itens = conferir([
+      bruto({ data: '2026-08-15', valorCent: -4500, fonte: 'cartao' }),
+    ], dadosCom([]), OPCOES);
+    expect(itens[0].acao).toEqual({ tipo: 'adicionarCompra', categoriaCartaoId: CAT_CARTAO });
+    expect(itens[0].compraReconstruida).toBeUndefined();
+  });
+
+  it('não casa pagamento com fatura de meses atrás', () => {
+    const d = dadosCom([
+      lancamento({
+        id: 'fatura-velha', data: '2026-02-05', valor: 123456, status: 'previsto',
+        origem: 'cartao', cartaoId: CARTAO, faturaMes: '2026-02',
+      }),
+    ]);
+    const itens = conferir([
+      bruto({ data: '2026-08-03', valorCent: -123456, fonte: 'cartao',
+              descricao: 'PAGAMENTO DE FATURA-INTERNET', natureza: 'pagamentoFatura' }),
+    ], d, OPCOES);
+    expect(itens[0].estado).toBe('novo');
+    expect(itens[0].acao.tipo).toBe('ignorar');
+    expect(itens[0].lancamentoId).toBeUndefined();
+  });
+
+  // Um bruto sem destino não pode derrubar a classificação dos outros.
+  it('avisa em vez de lançar quando falta a categoria padrão do cartão', () => {
+    const semCategoria = { boxId: BOX, categoriaPadraoId: CAT, cartaoId: CARTAO };
+    const itens = conferir([
+      bruto({ data: '2026-08-15', valorCent: -4500, fonte: 'cartao' }),
+      bruto({ data: '2026-08-16', valorCent: -5190, fonte: 'conta', descricao: 'POSTO BETA' }),
+    ], dadosCom([]), semCategoria);
+    expect(itens).toHaveLength(2);
+    expect(itens[0].acao.tipo).toBe('ignorar');
+    expect(itens[0].aviso).toBeDefined();
+    expect(itens[1].estado).toBe('novo');
+  });
 });
