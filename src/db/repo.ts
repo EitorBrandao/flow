@@ -1,4 +1,4 @@
-import { compararCategorias, compararCategoriasCartao } from '../domain/categorias';
+import { compararCategorias, compararCategoriasCartao, proximaOrdem } from '../domain/categorias';
 import { hojeISO } from '../domain/dates';
 import {
   ajustesDoCartao, calcularFaturas, datasFaturaDoMes, dedupAjustesFechamento, dedupConferencias,
@@ -426,6 +426,41 @@ export async function categoriaParcelamentoDe(cartaoId: ID): Promise<ID> {
     await marcarMudanca();
   });
   return categoriaId;
+}
+
+function nomeCategoriaAClassificar(tipo: TipoCategoria): string {
+  return tipo === 'ganho' ? 'A classificar (entrada)' : 'A classificar';
+}
+
+/**
+ * Categoria comum e visível da box, achada pelo nome ou criada sob demanda — mesmo padrão de
+ * `categoriaAssinaturasDe`, mas sem campo novo no schema: a busca é pelo nome. Não é reservada
+ * nem oculta; o usuário reclassifica quando quiser.
+ *
+ * O nome depende do `tipo`, porque no Flow é o tipo da categoria que decide se o valor soma ou
+ * subtrai no saldo (`projection.ts`) — não dá para usar a mesma categoria para entrada e saída.
+ */
+export async function categoriaAClassificarDe(boxId: ID, tipo: TipoCategoria): Promise<ID> {
+  const nome = nomeCategoriaAClassificar(tipo);
+  const daBox = await db.categorias.where('boxId').equals(boxId).toArray();
+  const existente = daBox.find((c) => c.tipo === tipo && !c.arquivada && c.nome === nome);
+  if (existente) return existente.id;
+
+  const irmas = daBox.filter((c) => c.tipo === tipo && !c.arquivada);
+  const categoria = await salvarCategoria({ boxId, nome, tipo, ordem: proximaOrdem(irmas) });
+  return categoria.id;
+}
+
+/** O mesmo que `categoriaAClassificarDe`, para `CategoriaCartao`. */
+export async function categoriaCartaoAClassificarDe(cartaoId: ID): Promise<ID> {
+  const nome = 'A classificar';
+  const doCartao = await db.categoriasCartao.where('cartaoId').equals(cartaoId).toArray();
+  const existente = doCartao.find((c) => !c.arquivada && c.nome === nome);
+  if (existente) return existente.id;
+
+  const irmas = doCartao.filter((c) => !c.arquivada);
+  const categoria = await salvarCategoriaCartao({ cartaoId, nome, ordem: proximaOrdem(irmas) });
+  return categoria.id;
 }
 
 export interface PagamentoFatura {

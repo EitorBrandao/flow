@@ -696,6 +696,96 @@ describe('categoriaAssinaturasDe', () => {
   });
 });
 
+describe('categoriaAClassificarDe', () => {
+  it('cria "A classificar" na primeira chamada, de tipo gasto', async () => {
+    const { box } = await boxECategoria();
+    const categoriaId = await repo.categoriaAClassificarDe(box.id, 'gasto');
+
+    const categoria = await db.categorias.get(categoriaId);
+    expect(categoria).toMatchObject({
+      boxId: box.id, nome: 'A classificar', tipo: 'gasto', arquivada: false,
+    });
+  });
+
+  it('cria "A classificar (entrada)" na primeira chamada, de tipo ganho', async () => {
+    const { box } = await boxECategoria();
+    const categoriaId = await repo.categoriaAClassificarDe(box.id, 'ganho');
+
+    const categoria = await db.categorias.get(categoriaId);
+    expect(categoria).toMatchObject({
+      boxId: box.id, nome: 'A classificar (entrada)', tipo: 'ganho', arquivada: false,
+    });
+  });
+
+  it('devolve o mesmo id nas chamadas seguintes, sem duplicar', async () => {
+    const { box } = await boxECategoria();
+    const primeira = await repo.categoriaAClassificarDe(box.id, 'gasto');
+    const segunda = await repo.categoriaAClassificarDe(box.id, 'gasto');
+
+    expect(segunda).toBe(primeira);
+    const daBox = (await db.categorias.where('boxId').equals(box.id).toArray())
+      .filter((c) => c.nome === 'A classificar');
+    expect(daBox).toHaveLength(1);
+  });
+
+  it('cria categorias diferentes para ganho e gasto', async () => {
+    const { box } = await boxECategoria();
+    const idGasto = await repo.categoriaAClassificarDe(box.id, 'gasto');
+    const idGanho = await repo.categoriaAClassificarDe(box.id, 'ganho');
+
+    expect(idGasto).not.toBe(idGanho);
+  });
+
+  it('ignora uma homônima arquivada e cria outra', async () => {
+    const { box } = await boxECategoria();
+    const arquivada = await repo.salvarCategoria({
+      boxId: box.id, nome: 'A classificar', tipo: 'gasto', ordem: 0,
+    });
+    await repo.atualizarCategoria(arquivada.id, { arquivada: true });
+
+    const categoriaId = await repo.categoriaAClassificarDe(box.id, 'gasto');
+
+    expect(categoriaId).not.toBe(arquivada.id);
+    const categoria = await db.categorias.get(categoriaId);
+    expect(categoria?.arquivada).toBe(false);
+  });
+});
+
+describe('categoriaCartaoAClassificarDe', () => {
+  it('cria "A classificar" do cartão na primeira chamada', async () => {
+    const { cartao } = await montarCartao();
+    const categoriaId = await repo.categoriaCartaoAClassificarDe(cartao.id);
+
+    const categoria = await db.categoriasCartao.get(categoriaId);
+    expect(categoria).toMatchObject({ cartaoId: cartao.id, nome: 'A classificar', arquivada: false });
+  });
+
+  it('devolve o mesmo id nas chamadas seguintes, sem duplicar', async () => {
+    const { cartao } = await montarCartao();
+    const primeira = await repo.categoriaCartaoAClassificarDe(cartao.id);
+    const segunda = await repo.categoriaCartaoAClassificarDe(cartao.id);
+
+    expect(segunda).toBe(primeira);
+    const doCartao = (await db.categoriasCartao.where('cartaoId').equals(cartao.id).toArray())
+      .filter((c) => c.nome === 'A classificar');
+    expect(doCartao).toHaveLength(1);
+  });
+
+  it('ignora uma homônima arquivada e cria outra', async () => {
+    const { cartao } = await montarCartao();
+    const arquivada = await repo.salvarCategoriaCartao({
+      cartaoId: cartao.id, nome: 'A classificar', ordem: 0,
+    });
+    await repo.atualizarCategoriaCartao(arquivada.id, { arquivada: true });
+
+    const categoriaId = await repo.categoriaCartaoAClassificarDe(cartao.id);
+
+    expect(categoriaId).not.toBe(arquivada.id);
+    const categoria = await db.categoriasCartao.get(categoriaId);
+    expect(categoria?.arquivada).toBe(false);
+  });
+});
+
 describe('registrarPagamentoFatura', () => {
   // Monta um cartão com o ciclo pedido e uma fatura já projetada no Flow.
   async function comFatura(diaFechamento: number, diaVencimento: number, totalCent: number) {
