@@ -398,6 +398,52 @@ describe('cartão de crédito', () => {
     } finally { vi.useRealTimers(); }
   });
 
+  it('salva compras em lote e sincroniza os cartões uma vez só', async () => {
+    const { cartao, catCartao } = await montarCartao();
+
+    await repo.salvarComprasCartaoEmLote([
+      { cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-10',
+        valorTotal: 4500, parcelas: 1, descricao: 'MERCADO ALFA' },
+      { cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-11',
+        valorTotal: 5190, parcelas: 3, descricao: 'POSTO BETA' },
+    ], '2027-12-31');
+
+    const dados = await repo.carregarTudo();
+    expect(dados.comprasCartao).toHaveLength(2);
+    // A fatura projetada existe: prova de que sincronizarCartoes rodou depois do lote.
+    expect(dados.lancamentos.some((l) => l.origem === 'cartao')).toBe(true);
+  });
+
+  // `sincronizarCartoes` sempre gira num único `db.transaction`, mesmo com vários cartões
+  // (ver a função em repo.ts). Por isso, contar chamadas de `db.transaction` distingue o lote
+  // real (uma transação para gravar + uma para sincronizar, não importa quantas compras) de
+  // uma implementação ingênua em laço, que chamaria `salvarCompraCartao` por compra — e cada
+  // chamada dele soma mais duas transações (uma para gravar, uma para sincronizar).
+  it('faz uma única sincronização para o lote inteiro, não uma por compra', async () => {
+    const { cartao, catCartao } = await montarCartao();
+    const spy = vi.spyOn(db, 'transaction');
+    try {
+      await repo.salvarComprasCartaoEmLote([
+        { cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-10',
+          valorTotal: 4500, parcelas: 1, descricao: 'MERCADO ALFA' },
+        { cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-11',
+          valorTotal: 5190, parcelas: 3, descricao: 'POSTO BETA' },
+      ], '2027-12-31');
+
+      // 1 transação para o bulkAdd das compras + 1 para sincronizarCartoes.
+      // Um laço de salvarCompraCartao teria gerado 4 (duas por compra).
+      expect(spy).toHaveBeenCalledTimes(2);
+    } finally { spy.mockRestore(); }
+  });
+
+  it('não grava nada nem sincroniza quando a lista de compras é vazia', async () => {
+    const { cartao } = await montarCartao();
+    await repo.salvarComprasCartaoEmLote([], '2027-12-31');
+    const dados = await repo.carregarTudo();
+    expect(dados.comprasCartao).toHaveLength(0);
+    expect(cartao.id).toBeDefined();
+  });
+
   it('assinatura materializa compras futuras e pausar remove as não passadas', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     try {
@@ -647,6 +693,96 @@ describe('categoriaAssinaturasDe', () => {
 
     expect(segunda).toBe(primeira);
     expect(await db.categoriasCartao.count()).toBe(1);
+  });
+});
+
+describe('categoriaAClassificarDe', () => {
+  it('cria "A classificar" na primeira chamada, de tipo gasto', async () => {
+    const { box } = await boxECategoria();
+    const categoriaId = await repo.categoriaAClassificarDe(box.id, 'gasto');
+
+    const categoria = await db.categorias.get(categoriaId);
+    expect(categoria).toMatchObject({
+      boxId: box.id, nome: 'A classificar', tipo: 'gasto', arquivada: false,
+    });
+  });
+
+  it('cria "A classificar (entrada)" na primeira chamada, de tipo ganho', async () => {
+    const { box } = await boxECategoria();
+    const categoriaId = await repo.categoriaAClassificarDe(box.id, 'ganho');
+
+    const categoria = await db.categorias.get(categoriaId);
+    expect(categoria).toMatchObject({
+      boxId: box.id, nome: 'A classificar (entrada)', tipo: 'ganho', arquivada: false,
+    });
+  });
+
+  it('devolve o mesmo id nas chamadas seguintes, sem duplicar', async () => {
+    const { box } = await boxECategoria();
+    const primeira = await repo.categoriaAClassificarDe(box.id, 'gasto');
+    const segunda = await repo.categoriaAClassificarDe(box.id, 'gasto');
+
+    expect(segunda).toBe(primeira);
+    const daBox = (await db.categorias.where('boxId').equals(box.id).toArray())
+      .filter((c) => c.nome === 'A classificar');
+    expect(daBox).toHaveLength(1);
+  });
+
+  it('cria categorias diferentes para ganho e gasto', async () => {
+    const { box } = await boxECategoria();
+    const idGasto = await repo.categoriaAClassificarDe(box.id, 'gasto');
+    const idGanho = await repo.categoriaAClassificarDe(box.id, 'ganho');
+
+    expect(idGasto).not.toBe(idGanho);
+  });
+
+  it('ignora uma homônima arquivada e cria outra', async () => {
+    const { box } = await boxECategoria();
+    const arquivada = await repo.salvarCategoria({
+      boxId: box.id, nome: 'A classificar', tipo: 'gasto', ordem: 0,
+    });
+    await repo.atualizarCategoria(arquivada.id, { arquivada: true });
+
+    const categoriaId = await repo.categoriaAClassificarDe(box.id, 'gasto');
+
+    expect(categoriaId).not.toBe(arquivada.id);
+    const categoria = await db.categorias.get(categoriaId);
+    expect(categoria?.arquivada).toBe(false);
+  });
+});
+
+describe('categoriaCartaoAClassificarDe', () => {
+  it('cria "A classificar" do cartão na primeira chamada', async () => {
+    const { cartao } = await montarCartao();
+    const categoriaId = await repo.categoriaCartaoAClassificarDe(cartao.id);
+
+    const categoria = await db.categoriasCartao.get(categoriaId);
+    expect(categoria).toMatchObject({ cartaoId: cartao.id, nome: 'A classificar', arquivada: false });
+  });
+
+  it('devolve o mesmo id nas chamadas seguintes, sem duplicar', async () => {
+    const { cartao } = await montarCartao();
+    const primeira = await repo.categoriaCartaoAClassificarDe(cartao.id);
+    const segunda = await repo.categoriaCartaoAClassificarDe(cartao.id);
+
+    expect(segunda).toBe(primeira);
+    const doCartao = (await db.categoriasCartao.where('cartaoId').equals(cartao.id).toArray())
+      .filter((c) => c.nome === 'A classificar');
+    expect(doCartao).toHaveLength(1);
+  });
+
+  it('ignora uma homônima arquivada e cria outra', async () => {
+    const { cartao } = await montarCartao();
+    const arquivada = await repo.salvarCategoriaCartao({
+      cartaoId: cartao.id, nome: 'A classificar', ordem: 0,
+    });
+    await repo.atualizarCategoriaCartao(arquivada.id, { arquivada: true });
+
+    const categoriaId = await repo.categoriaCartaoAClassificarDe(cartao.id);
+
+    expect(categoriaId).not.toBe(arquivada.id);
+    const categoria = await db.categoriasCartao.get(categoriaId);
+    expect(categoria?.arquivada).toBe(false);
   });
 });
 

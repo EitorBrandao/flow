@@ -75,3 +75,16 @@ if (typeof File !== 'undefined' && !File.prototype.text) {
     });
   };
 }
+
+// jsdom também não implementa File.prototype.arrayBuffer() (usado na leitura do arquivo
+// importado em Importar.tsx); mesma solução do polyfill de .text() acima, via FileReader.
+if (typeof File !== 'undefined' && !File.prototype.arrayBuffer) {
+  File.prototype.arrayBuffer = function (this: File): Promise<ArrayBuffer> {
+    return new Promise((resolve, reject) => {
+      const leitor = new FileReader();
+      leitor.onload = () => resolve(leitor.result as ArrayBuffer);
+      leitor.onerror = () => reject(leitor.error);
+      leitor.readAsArrayBuffer(this);
+    });
+  };
+}

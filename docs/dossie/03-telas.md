@@ -429,6 +429,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -862,6 +863,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -1359,6 +1361,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -1800,6 +1803,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -2256,6 +2260,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -2663,6 +2668,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -3062,6 +3068,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -3431,6 +3438,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```

@@ -8,7 +8,7 @@ import { agoraISO, novoId, type Dados, type ID, type ISODate } from '../domain/t
 export type Aba = 'hoje' | 'fluxo' | 'lancar' | 'cartao' | 'analises' | 'simulador' | 'ajustes';
 export type BoxSelecionada = ID | 'casa';
 export type SecaoAjustes = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'bancos' | 'cartoes'
-  | 'categoriasCartao' | 'assinaturas' | 'viagens' | 'backup' | 'wiki' | 'versao';
+  | 'categoriasCartao' | 'assinaturas' | 'viagens' | 'backup' | 'importar' | 'wiki' | 'versao';
 
 /** Semente de um lançamento vinda dos atalhos da sheet Adicionar; de uso único. */
 export interface RascunhoLancar { categoriaId: ID; valorCent: number }

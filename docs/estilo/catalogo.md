@@ -72,6 +72,11 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.escanear-nota-video` | preview da câmera em `EscanearNotaSheet.tsx` |
 | `.nota-bloco` | resumo da nota fiscal anexada a uma compra do cartão (`FormCompra.tsx`) — emitente, data, total da nota e contagem de itens sobre `--surface2`; também envolve o painel de anexar o XML |
 | `.nota-itens` / `.nota-item` / `.nota-item-diferenca` | lista compacta "item → valor → % do total" dentro do `.nota-bloco`, com rolagem própria; cada `.nota-item` é uma linha de duas colunas (descrição e quantidade à esquerda, valor em negrito e percentual à direita); `.nota-item-diferenca` marca a linha final de desconto/frete |
+| `.selecionar-arquivo` | wrapper de um seletor de arquivo estilizado como `.botao`: um botão decorativo (`aria-hidden`, `tabIndex={-1}`) chama `input.click()`, e o `input[type=file]` real fica por cima dele com opacity 0 (não `display:none`), como o alvo de toque de verdade — mesma técnica de `.campo-data`/`.campo-data-input` (`CampoData.tsx`). Usado em `Importar.tsx` |
+| `.importar-resumo` / `.importar-contagem` | resumo de contagens por estado no topo da conferência (`ListaConferencia.tsx`): `.importar-resumo` é a linha de pílulas, `.importar-contagem` cada pílula (ponto colorido + número + rótulo) |
+| `.importar-ponto` | ponto colorido de 8px que marca o estado de um item da conferência; usado sozinho no resumo (`.importar-contagem`) e junto de `.importar-estado` em cada linha (`LinhaConferencia.tsx`). Seis modificadores compostos, um por `EstadoItem` (confere/previsto/divergente/novo/sobra/interno), dão a cor de fundo — `--pos`/`--ac`/`--aviso-fg`/`--estado-novo`/`--neg`/`--muted`, nessa ordem |
+| `.importar-estado` | nome do estado de um item da conferência (`LinhaConferencia.tsx`), com os mesmos seis modificadores compostos do `.importar-ponto` acima dando a cor do texto |
+| `.importar-rodape` | rodapé fixo do passo 3 da conferência (`Importar.tsx`) — `position: sticky`, grudado acima da barra de navegação (`bottom: 96px` mobile, `24px` desktop); reúne o botão Confirmar, a contagem de itens sem mudança e o aviso de erro; degradê pro `--bg` evita corte seco no texto que rola por baixo |
 
 ## Componentes compartilhados (em `src/ui/`)
 
@@ -151,3 +156,11 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   entre bancos (a nota do lançamento, "banco origem → banco destino", mais valor e data), com
   o botão que exclui as duas pernas ligadas por `transferenciaId`. Mesmo padrão do
   `FaturaResumo.tsx`. Usado pela `TelaFluxo` ao clicar num lançamento `origem: 'transferencia'`.
+
+`Importar.tsx` (subtela "Importar e conferir" de Ajustes) e seus dois auxiliares só dela,
+`ListaConferencia.tsx` e `LinhaConferencia.tsx`, não entram nesta lista: os três vivem em
+`src/ui/ajustes/`, mesmo caso já registrado no topo desta seção (varredura do verificador não
+desce a subpastas). `Importar.tsx` orquestra os três passos (arquivo, destino, conferir);
+`ListaConferencia.tsx` monta o resumo de contagens (`.importar-resumo`) e a lista em ordem de
+data; `LinhaConferencia.tsx` renderiza uma linha (etiqueta `.importar-ponto`/`.importar-estado`,
+detalhe, valor, botões de ação).

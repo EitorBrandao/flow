@@ -8,6 +8,7 @@
   --aviso-bg: #423306; --aviso-fg: #fcd34d;
   --hoje-bg: #0d4a32;
   --alca: #ffffff;
+  --estado-novo: #a78bfa;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -52,7 +53,9 @@ button { cursor: pointer; }
   display: inline-flex; align-items: center; gap: 4px;
 }
 .secao { display: flex; align-items: baseline; justify-content: space-between; padding: 0 2px; }
-.secao .acao { color: var(--ac); font-size: 13px; font-weight: 600; }
+.secao .acao {
+  background: none; border: none; padding: 0; color: var(--ac); font-size: 13px; font-weight: 600;
+}
 
 .navegacao {
   position: fixed; bottom: 0; left: 0; right: 0; display: flex; align-items: center;
@@ -106,6 +109,15 @@ button { cursor: pointer; }
 .campo-data-input {
   position: absolute; inset: 0; width: 100%; height: 100%;
   opacity: 0; margin: 0; padding: 0; border: none; background: none;
+}
+
+/* input[type=file] real, mas visualmente escondido, sobre um `.botao` decorativo (aria-hidden,
+   tabIndex -1) — mesma técnica de `.campo-data`/`.campo-data-input`: o input fica com opacity 0
+   por cima do botão, não com display:none, então é ele quem recebe foco e toque de verdade. */
+.selecionar-arquivo { position: relative; display: flex; }
+.selecionar-arquivo input {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; margin: 0; padding: 0; border: none; cursor: pointer;
 }
 
 .grade-categorias { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -276,6 +288,7 @@ table.tabela th:first-child, table.tabela td:first-child {
   .shell-corpo { flex: 1; display: flex; flex-direction: column; }
   .sheet-backdrop { align-items: center; }
   .sheet { border-radius: 24px; }
+  .importar-rodape { bottom: 24px; }
 }
 
 /* ---- Gráfico expandido (FluxoChartModal) ---- */
@@ -517,5 +530,37 @@ table.tabela th:first-child, table.tabela td:first-child {
 }
 .nota-item .sub { font-size: 12px; }
 .nota-item-diferenca { font-style: italic; }
+
+/* ---- Conferência da importação (Importar.tsx, ListaConferencia.tsx, LinhaConferencia.tsx) ---- */
+.importar-resumo { display: flex; gap: 8px; flex-wrap: wrap; }
+.importar-contagem {
+  display: flex; align-items: baseline; gap: 6px;
+  background: var(--surface2); border-radius: 999px; padding: 6px 12px; font-size: 13px;
+}
+.importar-contagem b { font-variant-numeric: tabular-nums; font-size: 14.5px; }
+.importar-ponto {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle;
+}
+.importar-ponto.confere { background: var(--pos); }
+.importar-ponto.previsto { background: var(--ac); }
+.importar-ponto.divergente { background: var(--aviso-fg); }
+.importar-ponto.novo { background: var(--estado-novo); }
+.importar-ponto.sobra { background: var(--neg); }
+.importar-ponto.interno { background: var(--muted); }
+.importar-estado { font-weight: 600; }
+.importar-estado.confere { color: var(--pos); }
+.importar-estado.previsto { color: var(--ac); }
+.importar-estado.divergente { color: var(--aviso-fg); }
+.importar-estado.novo { color: var(--estado-novo); }
+.importar-estado.sobra { color: var(--neg); }
+.importar-estado.interno { color: var(--muted); }
+/* rodapé fixo do passo 3: acompanha a rolagem, grudado acima da barra de navegação (mobile) ou
+   da borda da tela (desktop). O degradê evita um corte seco no texto que rola por baixo. */
+.importar-rodape {
+  position: sticky; bottom: 96px; z-index: 5;
+  display: flex; flex-direction: column; gap: 8px;
+  padding-top: 20px;
+  background: linear-gradient(to bottom, transparent, var(--bg) 40%);
+}
 .nota-item-diferenca > div:first-child > span:first-child,
 .nota-item-diferenca > div:last-child > span:first-child { color: var(--muted); font-weight: 400; }

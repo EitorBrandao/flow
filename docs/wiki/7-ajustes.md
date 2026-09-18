@@ -71,3 +71,52 @@ Excluir mantém as compras passadas geradas pela assinatura; só as futuras some
 - Backup antigo (de antes da aba Cartão) restaura normalmente; as tabelas novas entram vazias.
 
 **Restaurar — obrigatório:** selecionar um arquivo `.json` de backup do Flow.
+
+## Importar e conferir
+
+Serve para dois casos: você passou uns dias sem lançar, ou quer conferir o Flow contra o
+banco. Em vez de digitar tudo de novo, você entrega o arquivo do banco e o Flow compara cada
+linha com o que já está lançado.
+
+Hoje o Flow lê dois arquivos: o extrato da conta Nubank, em CSV, e a fatura do cartão
+Santander, em PDF. Baixe o arquivo direto no site ou no aplicativo do banco.
+
+A tela tem três passos, e nada é gravado antes do terceiro:
+
+- **Arquivo.** Escolher o CSV ou o PDF. O Flow reconhece o formato sozinho; se não reconhecer, você escolhe manualmente.
+- **Destino.** Para o extrato de conta: a box, e o banco, se a box tiver mais de um cadastrado. Para a fatura: o cartão de cada bloco — a fatura pode trazer mais de um cartão, e "Não importar" é uma resposta válida para um bloco.
+- **Conferir.** A lista mostra cada linha do arquivo já comparada com o Flow. Só ao tocar em "Confirmar" algo é gravado.
+
+Cada item da lista chega classificado num destes seis estados:
+
+: Confere | Já existe um lançamento igual no Flow. Sem botão: não há nada a fazer.
+: Previsto | Casa com um previsto ou uma recorrência ainda não confirmada. "Confirmar" dá baixa nele; "Descartar" ignora a linha.
+: Divergente | Casa por data e descrição, mas o valor é outro. "Confirmar", que já mostra o valor do banco, grava esse valor; "Descartar" ignora a linha.
+: Novo | Não existe nada parecido no Flow. "Adicionar" cria o lançamento ou a compra do cartão; "Descartar" ignora a linha. Algumas linhas novas vêm sem botão, só com um aviso — como um pagamento de fatura sem fatura correspondente no Flow, que pede para você olhar o cadastro do cartão em vez de criar algo solto.
+: Sobra | Está lançado no Flow, dentro do período do arquivo, mas não aparece no banco. "Manter" deixa como está; "Excluir do app" apaga. A ação padrão é sempre manter — excluir nunca é automático, porque o banco pode simplesmente não ter processado ainda.
+: Interno | Movimento que não é ganho nem gasto de verdade. "Ignorar" não grava nada.
+
+> Um botão no topo da lista, "Marcar todos como ignorar", zera as decisões de uma vez, para você escolher só o que quer aceitar.
+
+**A aplicação na caixinha do Nubank** aparece como Interno, com um botão a mais: "É saída de
+verdade". O Flow não sabe se você só guardou o dinheiro — que continua seu, é movimento interno
+— ou mandou para uma reserva que não entra mais no saldo — que é uma saída de verdade. Por
+isso ele pergunta, em vez de decidir sozinho. O resgate da caixinha, ao contrário, é sempre
+interno, sem pergunta: o dinheiro sai dela para ser gasto, e esse gasto já aparece como outra
+linha do extrato.
+
+**Uma compra parcelada** da fatura volta a ser a compra original: o Flow lê a data da compra e
+o total de parcelas, remonta o valor cheio, e passa a projetar sozinho as parcelas futuras —
+como se você tivesse lançado a compra inteira no dia em que ela aconteceu. Se o total remontado
+não bater com a fatura por causa de arredondamento, "Corrigir total" deixa ajustar o valor
+antes de confirmar.
+
+**Um lançamento novo** entra na categoria "A classificar" — ou "A classificar (entrada)",
+quando é uma entrada de dinheiro na box. É uma categoria comum e visível, igual a qualquer
+outra: reclassifique quando quiser, em Categorias ou em Categorias do cartão.
+
+O que esta versão não faz:
+
+- Não grava estorno de cartão — ele aparece como Interno, com a explicação na lista.
+- Não deixa escolher o banco de um lançamento de conta.
+- Não lê a fatura do cartão Nubank, nem arquivo OFX ou zip.

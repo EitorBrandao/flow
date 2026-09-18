@@ -1,4 +1,4 @@
-import { compararCategorias, compararCategoriasCartao } from '../domain/categorias';
+import { compararCategorias, compararCategoriasCartao, proximaOrdem } from '../domain/categorias';
 import { hojeISO } from '../domain/dates';
 import {
   ajustesDoCartao, calcularFaturas, datasFaturaDoMes, dedupAjustesFechamento, dedupConferencias,
@@ -428,6 +428,41 @@ export async function categoriaParcelamentoDe(cartaoId: ID): Promise<ID> {
   return categoriaId;
 }
 
+function nomeCategoriaAClassificar(tipo: TipoCategoria): string {
+  return tipo === 'ganho' ? 'A classificar (entrada)' : 'A classificar';
+}
+
+/**
+ * Categoria comum e visível da box, achada pelo nome ou criada sob demanda — mesmo padrão de
+ * `categoriaAssinaturasDe`, mas sem campo novo no schema: a busca é pelo nome. Não é reservada
+ * nem oculta; o usuário reclassifica quando quiser.
+ *
+ * O nome depende do `tipo`, porque no Flow é o tipo da categoria que decide se o valor soma ou
+ * subtrai no saldo (`projection.ts`) — não dá para usar a mesma categoria para entrada e saída.
+ */
+export async function categoriaAClassificarDe(boxId: ID, tipo: TipoCategoria): Promise<ID> {
+  const nome = nomeCategoriaAClassificar(tipo);
+  const daBox = await db.categorias.where('boxId').equals(boxId).toArray();
+  const existente = daBox.find((c) => c.tipo === tipo && !c.arquivada && c.nome === nome);
+  if (existente) return existente.id;
+
+  const irmas = daBox.filter((c) => c.tipo === tipo && !c.arquivada);
+  const categoria = await salvarCategoria({ boxId, nome, tipo, ordem: proximaOrdem(irmas) });
+  return categoria.id;
+}
+
+/** O mesmo que `categoriaAClassificarDe`, para `CategoriaCartao`. */
+export async function categoriaCartaoAClassificarDe(cartaoId: ID): Promise<ID> {
+  const nome = 'A classificar';
+  const doCartao = await db.categoriasCartao.where('cartaoId').equals(cartaoId).toArray();
+  const existente = doCartao.find((c) => !c.arquivada && c.nome === nome);
+  if (existente) return existente.id;
+
+  const irmas = doCartao.filter((c) => !c.arquivada);
+  const categoria = await salvarCategoriaCartao({ cartaoId, nome, ordem: proximaOrdem(irmas) });
+  return categoria.id;
+}
+
 export interface PagamentoFatura {
   lancamentoId: ID;      // o lançamento da fatura no Flow (origem 'cartao')
   cartaoId: ID;
@@ -511,6 +546,30 @@ export async function salvarCompraCartao(n: NovaCompraCartao, horizonte: ISODate
   });
   await sincronizarCartoes(horizonte);
   return c;
+}
+
+/**
+ * Grava várias compras numa transação só e sincroniza os cartões UMA vez, no fim.
+ *
+ * `salvarCompraCartao` chama `sincronizarCartoes` a cada compra, e cada chamada recalcula
+ * todas as faturas de todos os cartões. Numa conferência de fatura são dezenas de compras —
+ * dezenas de recálculos completos, com o app travado. Este caminho existe só para isso.
+ *
+ * A transação é única de propósito: gravar metade faria a próxima conferência mentir sobre o
+ * que já entrou.
+ */
+export async function salvarComprasCartaoEmLote(
+  compras: NovaCompraCartao[], horizonte: ISODate,
+): Promise<void> {
+  if (compras.length === 0) return;
+  const agora = agoraISO();
+  await db.transaction('rw', db.comprasCartao, db.config, async () => {
+    await db.comprasCartao.bulkAdd(compras.map((n): CompraCartao => ({
+      id: novoId(), criadoEm: agora, alteradoEm: agora, ...n,
+    })));
+    await marcarMudanca();
+  });
+  await sincronizarCartoes(horizonte);
 }
 
 export async function atualizarCompraCartao(
