@@ -76,6 +76,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.importar-resumo` / `.importar-contagem` | resumo de contagens por estado no topo da conferência (`ListaConferencia.tsx`): `.importar-resumo` é a linha de pílulas, `.importar-contagem` cada pílula (ponto colorido + número + rótulo) |
 | `.importar-ponto` | ponto colorido de 8px que marca o estado de um item da conferência; usado sozinho no resumo (`.importar-contagem`) e junto de `.importar-estado` em cada linha (`LinhaConferencia.tsx`). Seis modificadores compostos, um por `EstadoItem` (confere/previsto/divergente/novo/sobra/interno), dão a cor de fundo — `--pos`/`--ac`/`--aviso-fg`/`--estado-novo`/`--neg`/`--muted`, nessa ordem |
 | `.importar-estado` | nome do estado de um item da conferência (`LinhaConferencia.tsx`), com os mesmos seis modificadores compostos do `.importar-ponto` acima dando a cor do texto |
+| `.importar-rodape` | rodapé fixo do passo 3 da conferência (`Importar.tsx`) — `position: sticky`, grudado acima da barra de navegação (`bottom: 96px` mobile, `24px` desktop); reúne o botão Confirmar, a contagem de itens sem mudança e o aviso de erro; degradê pro `--bg` evita corte seco no texto que rola por baixo |
 
 ## Componentes compartilhados (em `src/ui/`)
 

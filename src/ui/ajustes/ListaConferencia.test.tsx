@@ -42,9 +42,9 @@ describe('ListaConferencia', () => {
     const itemSobra: ItemConferencia = { estado: 'sobra', lancamentoId: 'l-sobra', acao: { tipo: 'ignorar' } };
 
     const itens: ItemComContexto[] = [
-      { item: itemNovo, boxId: 'b1' },
-      { item: itemConfere, boxId: 'b1' },
-      { item: itemSobra, boxId: 'b1' },
+      { item: itemNovo, boxId: 'b1', chave: 'bruto:0' },
+      { item: itemConfere, boxId: 'b1', chave: 'bruto:1' },
+      { item: itemSobra, boxId: 'b1', chave: 'sobra:l-sobra' },
     ];
     const leitura: LeituraAdapter = { brutos: [], linhasIgnoradas: 0, avisos: [] };
 

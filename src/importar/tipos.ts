@@ -70,3 +70,25 @@ export interface ItemConferencia {
   acao: AcaoItem;
   aviso?: string;
 }
+
+/**
+ * Decisão do usuário sobre um item, guardada junto do `estado` em que ele estava quando a
+ * decisão foi tomada.
+ *
+ * A UI chaveia as decisões por uma identidade estável do item (`chaveDoItem`, em
+ * `conferencia.ts`), não pelo índice dele na lista — trocar o destino de um bloco refaz a
+ * lista e desloca índices. Mas a identidade estável não basta sozinha: recalcular o item pode
+ * mudar o `estado` dele (trocar a box pode transformar um `novo` em `confere`), e nesse caso a
+ * decisão antiga não faz mais sentido para o item novo. Guardar o `estado` junto permite
+ * invalidar a decisão quando isso acontece.
+ */
+export interface DecisaoTroca {
+  estado: EstadoItem;
+  acao: AcaoItem;
+}
+
+/** Mesmo tratamento de `DecisaoTroca`, para a correção do total de uma compra reconstruída. */
+export interface DecisaoTotal {
+  estado: EstadoItem;
+  valorCent: number;
+}

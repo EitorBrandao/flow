@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Dados, Lancamento } from '../domain/types';
-import { conferir } from './conferencia';
-import type { LancamentoBruto } from './tipos';
+import {
+  acaoEfetiva, chaveDoItem, conferir, totalCorrigidoValido, totalEfetivo,
+} from './conferencia';
+import type { ItemConferencia, LancamentoBruto, LeituraAdapter } from './tipos';
 
 const BOX = 'box-1';
 const CAT = 'cat-1';
@@ -246,5 +248,93 @@ describe('conferir', () => {
     expect(itens[0].acao.tipo).toBe('ignorar');
     expect(itens[0].aviso).toBeDefined();
     expect(itens[1].estado).toBe('novo');
+  });
+
+  // IMPORTANTE 5: uma linha de valor zero não é gasto nem ganho — virar lançamento de
+  // R$ 0,00 numa categoria de gasto não serve a nada, e a categoria nem decidiria se soma ou
+  // subtrai no saldo.
+  it('marca a linha de valor zero como interno e nunca a grava', () => {
+    const itens = conferir([
+      bruto({ data: '2026-08-15', valorCent: 0, descricao: 'LOJA GAMA' }),
+    ], dadosCom([]), OPCOES);
+    expect(itens[0].estado).toBe('interno');
+    expect(itens[0].acao.tipo).toBe('ignorar');
+    expect(itens[0].aviso).toBe('Linha de valor zero; não entra no fluxo.');
+  });
+});
+
+describe('chaveDoItem', () => {
+  function leituraCom(brutos: LancamentoBruto[]): LeituraAdapter {
+    return { brutos, linhasIgnoradas: 0, avisos: [] };
+  }
+
+  it('chaveia um item com bruto pela posição dele em leitura.brutos, não pela posição na lista exibida', () => {
+    const b0 = bruto({ data: '2026-08-15', valorCent: -1000, descricao: 'LOJA GAMA' });
+    const b1 = bruto({ data: '2026-08-16', valorCent: -2000, descricao: 'POSTO BETA' });
+    const leitura = leituraCom([b0, b1]);
+    const item0: ItemConferencia = { estado: 'novo', bruto: b0, acao: { tipo: 'adicionarLancamento', categoriaId: CAT } };
+    const item1: ItemConferencia = { estado: 'novo', bruto: b1, acao: { tipo: 'adicionarLancamento', categoriaId: CAT } };
+
+    // A ordem em que os itens aparecem numa lista (já ordenada, ou reagrupada por um
+    // `flatMap` de blocos) não influencia a chave — ela só olha `leitura.brutos`.
+    expect(chaveDoItem(item1, leitura)).toBe('bruto:1');
+    expect(chaveDoItem(item0, leitura)).toBe('bruto:0');
+  });
+
+  it('chaveia uma sobra pelo que ela referencia do lado do app, não por bruto', () => {
+    const leitura = leituraCom([]);
+    const sobraLancamento: ItemConferencia = { estado: 'sobra', lancamentoId: 'l-1', acao: { tipo: 'ignorar' } };
+    const sobraCompra: ItemConferencia = { estado: 'sobra', compraCartaoId: 'c-1', acao: { tipo: 'ignorar' } };
+    expect(chaveDoItem(sobraLancamento, leitura)).toBe('sobra:l-1');
+    expect(chaveDoItem(sobraCompra, leitura)).toBe('sobra:c-1');
+  });
+});
+
+describe('acaoEfetiva / totalEfetivo', () => {
+  it('usa a decisão só quando ela foi tomada para o MESMO estado do item recalculado', () => {
+    const item: ItemConferencia = {
+      estado: 'confere', bruto: bruto({ data: '2026-08-15', valorCent: -1000 }),
+      acao: { tipo: 'ignorar' },
+    };
+    // Decisão tomada quando o item ainda era "novo": não vale mais pro item recalculado como
+    // "confere" (ex.: trocar a box mudou o que casa no app).
+    expect(acaoEfetiva(item, { estado: 'novo', acao: { tipo: 'excluir' } })).toEqual({ tipo: 'ignorar' });
+    // Decisão tomada para o estado atual: vale.
+    expect(acaoEfetiva(item, { estado: 'confere', acao: { tipo: 'excluir' } })).toEqual({ tipo: 'excluir' });
+    // Sem decisão nenhuma: a ação padrão do item.
+    expect(acaoEfetiva(item, undefined)).toEqual({ tipo: 'ignorar' });
+  });
+
+  it('mesmo critério vale para o total corrigido', () => {
+    const item: ItemConferencia = { estado: 'novo', acao: { tipo: 'ignorar' } };
+    expect(totalEfetivo(item, { estado: 'sobra', valorCent: 5000 })).toBeUndefined();
+    expect(totalEfetivo(item, { estado: 'novo', valorCent: 5000 })).toBe(5000);
+    expect(totalEfetivo(item, undefined)).toBeUndefined();
+  });
+});
+
+describe('totalCorrigidoValido', () => {
+  // IMPORTANTE 4: um total corrigido menor que o valor de UMA parcela não faz sentido — nem
+  // zero. `aplicar` precisa ignorar a correção nesse caso e gravar o total reconstruído.
+  it('rejeita um total corrigido menor que o valor de uma parcela, inclusive zero', () => {
+    const item: ItemConferencia = {
+      estado: 'novo',
+      bruto: bruto({ data: '2026-07-02', valorCent: -10000, fonte: 'cartao', parcela: { n: 3, total: 10 } }),
+      acao: { tipo: 'adicionarCompra', categoriaCartaoId: CAT_CARTAO },
+      compraReconstruida: { data: '2026-07-02', valorTotalCent: 100000, parcelas: 10, anoDeduzidoComAviso: false },
+    };
+    expect(totalCorrigidoValido(item, 0)).toBeUndefined();
+    expect(totalCorrigidoValido(item, 9999)).toBeUndefined();
+    expect(totalCorrigidoValido(item, 10000)).toBe(10000);
+    expect(totalCorrigidoValido(item, 150000)).toBe(150000);
+  });
+
+  it('sem correção nenhuma, devolve undefined', () => {
+    const item: ItemConferencia = {
+      estado: 'novo',
+      bruto: bruto({ data: '2026-07-02', valorCent: -10000, fonte: 'cartao' }),
+      acao: { tipo: 'adicionarCompra', categoriaCartaoId: CAT_CARTAO },
+    };
+    expect(totalCorrigidoValido(item, undefined)).toBeUndefined();
   });
 });

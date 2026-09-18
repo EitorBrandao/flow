@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import { formatarDataBR } from '../../domain/dates';
 import { formatarBRL } from '../../domain/money';
 import type { Dados, ISODate } from '../../domain/types';
-import { CATEGORIA_A_CLASSIFICAR } from '../../importar/conferencia';
+import { CATEGORIA_A_CLASSIFICAR, totalCorrigidoValido } from '../../importar/conferencia';
 import { contraparteNubank } from '../../importar/descricao';
 import type { AcaoItem, EstadoItem, ItemConferencia } from '../../importar/tipos';
 import CampoValor from '../CampoValor';
@@ -222,6 +222,9 @@ export default function LinhaConferencia({
             valorCentavos={totalCorrigidoCent ?? item.compraReconstruida.valorTotalCent}
             onChange={onCorrigirTotal}
           />
+          {totalCorrigidoCent != null && totalCorrigidoValido(item, totalCorrigidoCent) == null && (
+            <p className="sub">O total não pode ser menor que uma parcela.</p>
+          )}
         </div>
       )}
     </div>

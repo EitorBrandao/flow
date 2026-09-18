@@ -1,14 +1,20 @@
 import { useMemo } from 'react';
 import type { Dados, ID } from '../../domain/types';
-import type { AcaoItem, EstadoItem, ItemConferencia, LeituraAdapter } from '../../importar/tipos';
+import { acaoEfetiva, totalEfetivo } from '../../importar/conferencia';
+import type {
+  AcaoItem, DecisaoTotal, DecisaoTroca, EstadoItem, ItemConferencia, LeituraAdapter,
+} from '../../importar/tipos';
 import LinhaConferencia, { dataDoItem } from './LinhaConferencia';
 
 /** Um item classificado junto com o destino (box e, se for cartão, o cartão) do grupo a que
- *  ele pertence — é o que `Importar.tsx` usa depois para agrupar a gravação por `aplicar`. */
+ *  ele pertence — é o que `Importar.tsx` usa depois para agrupar a gravação por `aplicar`.
+ *  `chave` é a identidade estável do item (`chaveDoItem`, em `conferencia.ts`), usada para
+ *  chavear `trocas`/`totaisCorrigidos` em vez do índice na lista. */
 export interface ItemComContexto {
   item: ItemConferencia;
   boxId: ID;
   cartaoId?: ID;
+  chave: string;
 }
 
 const ORDEM_ESTADOS: EstadoItem[] = ['confere', 'previsto', 'divergente', 'novo', 'sobra', 'interno'];
@@ -26,21 +32,19 @@ interface Props {
   leitura: LeituraAdapter;
   itens: ItemComContexto[];
   dados: Dados;
-  trocas: Record<number, AcaoItem>;
-  onTrocar: (indice: number, acao: AcaoItem) => void;
-  totaisCorrigidos: Record<number, number>;
-  onCorrigirTotal: (indice: number, valorCent: number) => void;
+  trocas: Record<string, DecisaoTroca>;
+  onTrocar: (chave: string, estado: EstadoItem, acao: AcaoItem) => void;
+  totaisCorrigidos: Record<string, DecisaoTotal>;
+  onCorrigirTotal: (chave: string, estado: EstadoItem, valorCent: number) => void;
 }
 
 export default function ListaConferencia({
   leitura, itens, dados, trocas, onTrocar, totaisCorrigidos, onCorrigirTotal,
 }: Props) {
-  // O índice guardado é o do array ORIGINAL (não o da ordenação): é essa posição que chaveia
-  // `trocas` e `totaisCorrigidos`, e ela precisa ser estável mesmo depois de ordenar por data.
+  // `chave` já é a identidade estável do item (ver `ItemComContexto`), então basta ordenar uma
+  // cópia por data — sem precisar remontar nenhum índice depois.
   const ordenados = useMemo(() => (
-    itens
-      .map((item, indiceOriginal) => ({ ...item, indiceOriginal }))
-      .sort((a, b) => dataDoItem(a.item, dados).localeCompare(dataDoItem(b.item, dados)))
+    [...itens].sort((a, b) => dataDoItem(a.item, dados).localeCompare(dataDoItem(b.item, dados)))
   ), [itens, dados]);
 
   const contagens = useMemo(() => {
@@ -74,15 +78,15 @@ export default function ListaConferencia({
       </div>
 
       <div className="lista">
-        {ordenados.map(({ item, indiceOriginal }) => (
+        {ordenados.map((ic) => (
           <LinhaConferencia
-            key={indiceOriginal}
-            item={item}
+            key={ic.chave}
+            item={ic.item}
             dados={dados}
-            acaoAtual={trocas[indiceOriginal] ?? item.acao}
-            onTrocarAcao={(acao) => onTrocar(indiceOriginal, acao)}
-            totalCorrigidoCent={totaisCorrigidos[indiceOriginal]}
-            onCorrigirTotal={(v) => onCorrigirTotal(indiceOriginal, v)}
+            acaoAtual={acaoEfetiva(ic.item, trocas[ic.chave])}
+            onTrocarAcao={(acao) => onTrocar(ic.chave, ic.item.estado, acao)}
+            totalCorrigidoCent={totalEfetivo(ic.item, totaisCorrigidos[ic.chave])}
+            onCorrigirTotal={(v) => onCorrigirTotal(ic.chave, ic.item.estado, v)}
           />
         ))}
       </div>

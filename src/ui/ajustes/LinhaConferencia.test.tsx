@@ -63,6 +63,51 @@ describe('LinhaConferencia', () => {
     expect(onCorrigirTotal).toHaveBeenCalledWith(5);
   });
 
+  // IMPORTANTE 4: um total corrigido menor que o valor de uma parcela não faz sentido.
+  it('total corrigido abaixo do valor de uma parcela: mostra aviso', async () => {
+    const item: ItemConferencia = {
+      estado: 'novo',
+      bruto: {
+        data: '2026-07-02', valorCent: -10000, descricao: 'LOJA GAMA', fonte: 'cartao',
+        parcela: { n: 3, total: 10 },
+      },
+      acao: { tipo: 'adicionarCompra', categoriaCartaoId: 'cat-cartao' },
+      compraReconstruida: { data: '2026-05-02', valorTotalCent: 100000, parcelas: 10, anoDeduzidoComAviso: false },
+    };
+    const onTrocarAcao = vi.fn();
+    const onCorrigirTotal = vi.fn();
+    render(
+      <LinhaConferencia
+        item={item} dados={dadosVazios()} acaoAtual={item.acao} totalCorrigidoCent={9999}
+        onTrocarAcao={onTrocarAcao} onCorrigirTotal={onCorrigirTotal}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Corrigir total' }));
+    expect(screen.getByText('O total não pode ser menor que uma parcela.')).toBeInTheDocument();
+  });
+
+  it('total corrigido igual ao valor de uma parcela: sem aviso', async () => {
+    const item: ItemConferencia = {
+      estado: 'novo',
+      bruto: {
+        data: '2026-07-02', valorCent: -10000, descricao: 'LOJA GAMA', fonte: 'cartao',
+        parcela: { n: 3, total: 10 },
+      },
+      acao: { tipo: 'adicionarCompra', categoriaCartaoId: 'cat-cartao' },
+      compraReconstruida: { data: '2026-05-02', valorTotalCent: 100000, parcelas: 10, anoDeduzidoComAviso: false },
+    };
+    render(
+      <LinhaConferencia
+        item={item} dados={dadosVazios()} acaoAtual={item.acao} totalCorrigidoCent={10000}
+        onTrocarAcao={vi.fn()} onCorrigirTotal={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Corrigir total' }));
+    expect(screen.queryByText('O total não pode ser menor que uma parcela.')).not.toBeInTheDocument();
+  });
+
   it('previsto: mostra Confirmar e Descartar', () => {
     const item: ItemConferencia = {
       estado: 'previsto',

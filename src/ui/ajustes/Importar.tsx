@@ -1,9 +1,12 @@
 import { useId, useMemo, useRef, useState } from 'react';
 import { ADAPTERS, detectarAdapter } from '../../importar/adapters';
 import { aplicar, type ContextoAplicar, type ResumoAplicacao } from '../../importar/aplicar';
-import { CATEGORIA_A_CLASSIFICAR, conferir, type OpcoesConferencia } from '../../importar/conferencia';
+import {
+  CATEGORIA_A_CLASSIFICAR, acaoEfetiva, chaveDoItem, conferir, totalCorrigidoValido, totalEfetivo,
+  type OpcoesConferencia,
+} from '../../importar/conferencia';
 import type {
-  AcaoItem, Adapter, ItemConferencia, LeituraAdapter,
+  Adapter, DecisaoTotal, DecisaoTroca, ItemConferencia, LeituraAdapter,
 } from '../../importar/tipos';
 import type { ID } from '../../domain/types';
 import { boxIdEfetivo, useApp } from '../../state/store';
@@ -16,6 +19,9 @@ export default function Importar() {
   const { dados, boxSel, recarregar } = useApp();
   const uid = useId();
   const inputArquivoRef = useRef<HTMLInputElement>(null);
+  // Trava síncrona contra o duplo toque: `aplicando` (estado) só vale depois do re-render, e
+  // dois cliques seguidos acontecem antes disso. Sem esta ref, os dois disparam `aplicar`.
+  const aplicandoRef = useRef(false);
 
   const [nomeArquivo, setNomeArquivo] = useState('');
   const [buf, setBuf] = useState<ArrayBuffer | null>(null);
@@ -28,8 +34,8 @@ export default function Importar() {
   const [boxIdEscolhida, setBoxIdEscolhida] = useState<ID | null>(null);
   const [destinoBlocos, setDestinoBlocos] = useState<Record<number, DestinoBloco>>({});
 
-  const [trocas, setTrocas] = useState<Record<number, AcaoItem>>({});
-  const [totaisCorrigidos, setTotaisCorrigidos] = useState<Record<number, number>>({});
+  const [trocas, setTrocas] = useState<Record<string, DecisaoTroca>>({});
+  const [totaisCorrigidos, setTotaisCorrigidos] = useState<Record<string, DecisaoTotal>>({});
 
   const [resumoAplicado, setResumoAplicado] = useState<ResumoAplicacao | null>(null);
   const [erroAplicar, setErroAplicar] = useState('');
@@ -52,7 +58,9 @@ export default function Importar() {
           categoriaCartaoPadraoId: CATEGORIA_A_CLASSIFICAR.cartao,
         };
         return conferir(bloco.brutos, dados, opcoes)
-          .map((item) => ({ item, boxId: cartao.boxId, cartaoId: cartao.id }));
+          .map((item) => ({
+            item, boxId: cartao.boxId, cartaoId: cartao.id, chave: chaveDoItem(item, leitura),
+          }));
       });
     }
     if (!boxIdEscolhida) return [];
@@ -60,7 +68,8 @@ export default function Importar() {
       boxId: boxIdEscolhida,
       categoriasPadrao: { ganho: CATEGORIA_A_CLASSIFICAR.ganho, gasto: CATEGORIA_A_CLASSIFICAR.gasto },
     };
-    return conferir(leitura.brutos, dados, opcoes).map((item) => ({ item, boxId: boxIdEscolhida }));
+    return conferir(leitura.brutos, dados, opcoes)
+      .map((item) => ({ item, boxId: boxIdEscolhida, chave: chaveDoItem(item, leitura) }));
   }, [leitura, dados, destinoBlocos, boxIdEscolhida]);
 
   const destinoCompleto = leitura
@@ -70,7 +79,7 @@ export default function Importar() {
     : false;
 
   const mudancas = itensComContexto
-    .filter((ic, i) => (trocas[i] ?? ic.item.acao).tipo !== 'ignorar').length;
+    .filter((ic) => acaoEfetiva(ic.item, trocas[ic.chave]).tipo !== 'ignorar').length;
   const semMudanca = itensComContexto.length - mudancas;
   const podeConfirmar = destinoCompleto && mudancas > 0 && !aplicando;
 
@@ -135,16 +144,30 @@ export default function Importar() {
     void lerComAdapter(adapter, buf);
   }
 
+  /** Marca toda a lista para ignorar — inclusive itens que já tinham outra decisão. É um
+   *  jeito rápido de "esvaziar" a conferência antes de escolher, item a item, o que entra. */
+  function marcarTodosComoIgnorar() {
+    setTrocas((t) => {
+      const novo = { ...t };
+      for (const ic of itensComContexto) novo[ic.chave] = { estado: ic.item.estado, acao: { tipo: 'ignorar' } };
+      return novo;
+    });
+  }
+
   async function confirmar() {
     if (!leitura) return;
+    // Trava síncrona: sem ela, um segundo clique disparado antes do re-render (que traria
+    // `aplicando: true` pro DOM) passaria pela guarda e chamaria `aplicar` de novo.
+    if (aplicandoRef.current) return;
+    aplicandoRef.current = true;
     setAplicando(true);
     setErroAplicar('');
     try {
       // Junta a ação final de cada item (default ou trocada) e, se houve correção do total
-      // de uma parcelada reconstruída, aplica ela antes de gravar.
-      const finais: ItemConferencia[] = itensComContexto.map((ic, i) => {
-        const acao = trocas[i] ?? ic.item.acao;
-        const totalCorrigido = totaisCorrigidos[i];
+      // de uma parcelada reconstruída, aplica ela antes de gravar — só quando válida.
+      const finais: ItemConferencia[] = itensComContexto.map((ic) => {
+        const acao = acaoEfetiva(ic.item, trocas[ic.chave]);
+        const totalCorrigido = totalCorrigidoValido(ic.item, totalEfetivo(ic.item, totaisCorrigidos[ic.chave]));
         const compraReconstruida = ic.item.compraReconstruida && totalCorrigido != null
           ? { ...ic.item.compraReconstruida, valorTotalCent: totalCorrigido }
           : ic.item.compraReconstruida;
@@ -155,10 +178,10 @@ export default function Importar() {
       // sincronização de cartões rode uma vez por grupo, não item a item.
       const grupos = new Map<string, { boxId: ID; cartaoId?: ID; itens: ItemConferencia[] }>();
       itensComContexto.forEach((ic, i) => {
-        const chave = `${ic.boxId}::${ic.cartaoId ?? ''}`;
-        const grupo = grupos.get(chave) ?? { boxId: ic.boxId, cartaoId: ic.cartaoId, itens: [] };
+        const chaveGrupo = `${ic.boxId}::${ic.cartaoId ?? ''}`;
+        const grupo = grupos.get(chaveGrupo) ?? { boxId: ic.boxId, cartaoId: ic.cartaoId, itens: [] };
         grupo.itens.push(finais[i]);
-        grupos.set(chave, grupo);
+        grupos.set(chaveGrupo, grupo);
       });
 
       const total: ResumoAplicacao = {
@@ -176,13 +199,21 @@ export default function Importar() {
         total.invalidos += resumo.invalidos;
       }
 
-      await recarregar();
       limparTudo();
       setResumoAplicado(total);
-    } catch (e) {
-      setErroAplicar(e instanceof Error ? e.message : 'Falha ao aplicar a conferência.');
+    } catch {
+      // Um grupo pode já ter gravado antes de outro falhar. Não se limpa a leitura nem as
+      // trocas: o `recarregar` no `finally` traz os dados atualizados, e a lista se refaz
+      // sozinha contra eles — o que já entrou aparece como `confere`, e uma nova tentativa
+      // não duplica nada.
+      setErroAplicar(
+        'A gravação parou no meio. O que já entrou foi salvo, e a lista foi atualizada: '
+        + 'confira de novo antes de confirmar.',
+      );
     } finally {
+      await recarregar();
       setAplicando(false);
+      aplicandoRef.current = false;
     }
   }
 
@@ -257,6 +288,9 @@ export default function Importar() {
               </div>
             )}
             {erro && <p className="aviso">{erro}</p>}
+            <button type="button" className="botao-ver-mais" onClick={limparTudo}>
+              Escolher outro arquivo
+            </button>
           </>
         )}
       </section>
@@ -311,21 +345,30 @@ export default function Importar() {
 
       {temConferencia && (
         <>
-          <div className="secao"><h3>3. Conferir</h3></div>
+          <div className="secao">
+            <h3>3. Conferir</h3>
+            {itensComContexto.length > 0 && (
+              <button type="button" className="acao" onClick={marcarTodosComoIgnorar}>
+                Marcar todos como ignorar
+              </button>
+            )}
+          </div>
           <ListaConferencia
             leitura={leitura!}
             itens={itensComContexto}
             dados={dados}
             trocas={trocas}
-            onTrocar={(i, acao) => setTrocas((t) => ({ ...t, [i]: acao }))}
+            onTrocar={(chave, estado, acao) => setTrocas((t) => ({ ...t, [chave]: { estado, acao } }))}
             totaisCorrigidos={totaisCorrigidos}
-            onCorrigirTotal={(i, v) => setTotaisCorrigidos((t) => ({ ...t, [i]: v }))}
+            onCorrigirTotal={(chave, estado, v) => setTotaisCorrigidos((t) => ({ ...t, [chave]: { estado, valorCent: v } }))}
           />
-          {erroAplicar && <p className="aviso">{erroAplicar}</p>}
-          <button className="botao botao-primario" disabled={!podeConfirmar} onClick={() => void confirmar()}>
-            {aplicando ? 'Aplicando…' : `Confirmar — ${mudancas} mudanças`}
-          </button>
-          <p className="sub">{semMudanca} itens não geram mudança.</p>
+          <div className="importar-rodape">
+            {erroAplicar && <p className="aviso">{erroAplicar}</p>}
+            <button className="botao botao-primario" disabled={!podeConfirmar} onClick={() => void confirmar()}>
+              {aplicando ? 'Aplicando…' : `Confirmar — ${mudancas} mudanças`}
+            </button>
+            <p className="sub">{semMudanca} itens não geram mudança.</p>
+          </div>
         </>
       )}
     </div>

@@ -1,7 +1,9 @@
 import { diasEntre } from '../domain/dates';
 import type { CompraCartao, Dados, ID, ISODate, Lancamento } from '../domain/types';
 import { contraparteNubank, normalizarDescricao } from './descricao';
-import type { ItemConferencia, LancamentoBruto } from './tipos';
+import type {
+  AcaoItem, DecisaoTotal, DecisaoTroca, ItemConferencia, LancamentoBruto, LeituraAdapter,
+} from './tipos';
 
 /**
  * Sentinelas usadas no lugar da categoria real em `conferir`. No Flow, quem decide se um
@@ -106,6 +108,17 @@ export function conferir(
   );
 
   for (const b of brutos) {
+    // 0. Linha de valor zero: não é gasto nem ganho, e virar lançamento de R$ 0,00 não serve
+    // a nada — a categoria dele nem decidiria se soma ou subtrai no saldo. Fica visível, mas
+    // nunca é gravada.
+    if (b.valorCent === 0) {
+      itens.push({
+        estado: 'interno', bruto: b, acao: { tipo: 'ignorar' },
+        aviso: 'Linha de valor zero; não entra no fluxo.',
+      });
+      continue;
+    }
+
     // 1. Movimento interno e estorno: reconhecidos, nunca gravados.
     if (b.natureza === 'resgateInterno') {
       itens.push({ estado: 'interno', bruto: b, acao: { tipo: 'ignorar' } });
@@ -239,4 +252,46 @@ export function conferir(
 
 function refDe(c: Candidato): { lancamentoId: ID } | { compraCartaoId: ID } {
   return c.ehCompra ? { compraCartaoId: c.id } : { lancamentoId: c.id };
+}
+
+/**
+ * Identidade estável de um item de conferência, usada para chavear as decisões do usuário
+ * (`DecisaoTroca`, `DecisaoTotal`) em vez do índice dele na lista exibida.
+ *
+ * A lista se refaz a cada troca de destino — trocar o cartão de um bloco desloca o `flatMap`
+ * de todos os blocos seguintes —, mas esta chave não muda enquanto o arquivo lido não mudar.
+ *
+ * Para item com `bruto`, a chave é a posição dele em `leitura.brutos`: é a MESMA referência de
+ * objeto usada para montar o item, então `indexOf` acha a posição certa, e essa posição nunca
+ * muda porque `leitura` só é recriada quando um novo arquivo é lido. Para "sobra" (sem
+ * `bruto`), a chave é o que o item referencia do lado do app.
+ */
+export function chaveDoItem(item: ItemConferencia, leitura: LeituraAdapter): string {
+  if (item.bruto) return `bruto:${leitura.brutos.indexOf(item.bruto)}`;
+  if (item.compraCartaoId) return `sobra:${item.compraCartaoId}`;
+  if (item.lancamentoId) return `sobra:${item.lancamentoId}`;
+  return 'sobra:desconhecido';
+}
+
+/** A ação a aplicar de fato: a da decisão do usuário, só se ela foi tomada para o MESMO
+ *  `estado` em que o item está agora; senão, a ação padrão que `conferir` propôs. */
+export function acaoEfetiva(item: ItemConferencia, decisao: DecisaoTroca | undefined): AcaoItem {
+  return decisao && decisao.estado === item.estado ? decisao.acao : item.acao;
+}
+
+/** Mesmo critério de `acaoEfetiva`, para a correção do total de uma compra reconstruída. */
+export function totalEfetivo(item: ItemConferencia, decisao: DecisaoTotal | undefined): number | undefined {
+  return decisao && decisao.estado === item.estado ? decisao.valorCent : undefined;
+}
+
+/**
+ * Um total corrigido menor que o valor de UMA parcela não faz sentido — nem zero. Abaixo do
+ * mínimo, a correção não é aplicada: `aplicar` grava o total reconstruído original.
+ */
+export function totalCorrigidoValido(
+  item: ItemConferencia, totalCorrigidoCent: number | undefined,
+): number | undefined {
+  if (totalCorrigidoCent == null) return undefined;
+  const minimoParcela = item.bruto ? Math.abs(item.bruto.valorCent) : 0;
+  return totalCorrigidoCent >= minimoParcela ? totalCorrigidoCent : undefined;
 }
