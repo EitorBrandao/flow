@@ -47,6 +47,25 @@ it('sem cartão cadastrado: "Compra no cartão" mostra aviso e leva para Ajustes
   expect(useApp.getState().aba).toBe('ajustes');
 });
 
+it('cartão único bloqueado para compra mostra aviso específico, não "nenhum cartão cadastrado"', async () => {
+  const box = await montarBox();
+  const nubank = await repo.salvarCartao({
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
+  }, '2027-12-31');
+  await repo.salvarCartao({ ...nubank, permiteCompra: false }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+  const onFechar = vi.fn();
+  render(<AdicionarSheet aberto onFechar={onFechar} />);
+
+  await userEvent.click(screen.getByText('Compra no cartão'));
+  expect(await screen.findByRole('heading', { name: 'Nenhum cartão liberado para compra' })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Ir para Ajustes' }));
+  expect(onFechar).toHaveBeenCalledOnce();
+  expect(useApp.getState().aba).toBe('ajustes');
+});
+
 it('1 cartão ativo: "Compra no cartão" pula direto para o formulário', async () => {
   const box = await montarBox();
   await repo.salvarCartao({
