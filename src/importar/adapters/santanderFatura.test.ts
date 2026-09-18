@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FATURA_DOIS_CARTOES, FATURA_SANTANDER } from '../fixtures/santander-fatura';
-import { lerSantanderFatura } from './santanderFatura';
+import { lerSantanderFatura, mesFaturaDoTexto } from './santanderFatura';
 
 describe('lerSantanderFatura', () => {
   it('lê as seis transações do bloco único', () => {
@@ -93,5 +93,19 @@ describe('lerSantanderFatura', () => {
     expect(estorno!.valorCent).toBeGreaterThan(0);
     expect(pagamento!.valorCent).toBeGreaterThan(0);
     expect(compra!.valorCent).toBeLessThan(0);
+  });
+});
+
+describe('mesFaturaDoTexto', () => {
+  it('lê o vencimento quando está na mesma linha do rótulo', () => {
+    expect(mesFaturaDoTexto('Vencimento 15/09/2026')).toBe('2026-09');
+  });
+
+  it('lê o vencimento quando o valor vem na linha seguinte ao rótulo', () => {
+    expect(mesFaturaDoTexto('Vencimento\n15/09/2026')).toBe('2026-09');
+  });
+
+  it('devolve undefined sem o rótulo "Vencimento"', () => {
+    expect(mesFaturaDoTexto('Fatura sem data nenhuma')).toBeUndefined();
   });
 });

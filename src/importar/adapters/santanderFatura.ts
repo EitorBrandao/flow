@@ -1,6 +1,7 @@
 import { reconstruirCompra } from '../parcelas';
-import type { BlocoCartao, LancamentoBruto, LeituraAdapter, NaturezaBruto } from '../tipos';
+import type { Adapter, BlocoCartao, LancamentoBruto, LeituraAdapter, NaturezaBruto } from '../tipos';
 import { parsearValorExtrato } from '../valores';
+import { extrairTextoPdf } from './textoPdf';
 
 /**
  * Uma transação inteira: ícone opcional, data DD/MM, descrição, parcela NN/NN opcional, e o
@@ -176,3 +177,32 @@ export function lerSantanderFatura(texto: string, mesFatura: string): LeituraAda
 
   return { brutos: blocos.flatMap((b) => b.brutos), linhasIgnoradas, avisos, blocos };
 }
+
+const VENCIMENTO = /Vencimento\s+(\d{2})\/(\d{2})\/(\d{4})/;
+
+/**
+ * Lê o "AAAA-MM" do vencimento da fatura, para deduzir o ano das datas "DD/MM" do
+ * detalhamento. O `\s+` cobre tanto o rótulo e o valor na mesma linha quanto o valor numa
+ * linha seguinte — a extração do PDF às vezes quebra ali.
+ *
+ * Sem o rótulo, devolve `undefined`. NUNCA cai no mês corrente: inventar um mês em silêncio
+ * deduziria o ano errado de toda parcela (ver `reconstruirCompra`, em `parcelas.ts`).
+ */
+export function mesFaturaDoTexto(texto: string): string | undefined {
+  const m = VENCIMENTO.exec(texto);
+  if (!m) return undefined;
+  return `${m[3]}-${m[2]}`;
+}
+
+export const santanderFatura: Adapter = {
+  id: 'santander-fatura-pdf',
+  rotulo: 'Santander — fatura do cartão (PDF)',
+  detectar: (_nome, inicio) => inicio.startsWith('%PDF'),
+  ler: async (conteudo) => {
+    const texto = await extrairTextoPdf(conteudo);
+    // Sem "Vencimento" reconhecido, `mesFaturaDoTexto` devolve `undefined` e a string vazia
+    // faz `lerSantanderFatura` recusar o mês e devolver o aviso, sem ler nada — é o
+    // comportamento certo: nunca se deduz o ano das parcelas a partir de um mês inventado.
+    return lerSantanderFatura(texto, mesFaturaDoTexto(texto) ?? '');
+  },
+};
