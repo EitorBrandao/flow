@@ -16,3 +16,6 @@
 : chave de acesso | Número de 44 dígitos que identifica uma nota fiscal eletrônica; extraído do QR-code, é usado para buscar o XML da nota fora do Flow.
 : item da nota | Uma linha de produto do XML da nota fiscal (nome e valor); o Flow usa os itens para mostrar como o total de uma compra do cartão se distribuiu.
 : transferência entre bancos | Mover saldo declarado de um banco para outro da mesma box (Hoje → Conferir). Ajusta o saldo dos dois na hora e cria um lançamento de saída e um de entrada, visíveis no Fluxo mas fora dos totais de Análises — não é ganho nem gasto real.
+: conferência por extrato | Importar o extrato do banco ou a fatura do cartão em Ajustes e comparar cada linha com o que já está lançado no Flow, item a item, antes de decidir o que gravar. Diferente da conferência manual: aqui é o Flow que classifica cada linha, e você só ajusta o que discorda.
+: sobra | Num extrato importado, um lançamento que está no Flow mas não aparece no arquivo do banco, dentro do período que o arquivo cobre. Chama atenção para um lançamento duplicado ou inventado; a ação padrão é manter, nunca excluir.
+: a classificar | Categoria criada sob demanda, na box ou no cartão, para o lançamento novo de uma conferência por extrato — "a classificar (entrada)" quando é entrada na box. Reclassifique quando quiser, em Categorias ou em Categorias do cartão.
