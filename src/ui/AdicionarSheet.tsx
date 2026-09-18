@@ -9,11 +9,12 @@ import EscanearNotaSheet from './EscanearNotaSheet';
 import FormCompra, { type InicialCompra } from './FormCompra';
 import Sheet from './Sheet';
 
-type Passo = 'menu' | 'sem-cartao' | 'escolher-cartao' | 'escanear' | 'form';
+type Passo = 'menu' | 'sem-cartao' | 'sem-cartao-liberado' | 'escolher-cartao' | 'escanear' | 'form';
 
 const ROTULOS: Record<Passo, string> = {
   menu: 'Adicionar',
   'sem-cartao': 'Nenhum cartão cadastrado',
+  'sem-cartao-liberado': 'Nenhum cartão liberado para compra',
   'escolher-cartao': 'Compra em qual cartão?',
   escanear: 'Compra por nota fiscal',
   form: 'Nova compra',
@@ -28,7 +29,7 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
   const cartoesAtivos = useMemo(() => {
     if (!dados) return [];
     const ids = boxIdsSelecionadas(dados, boxSel);
-    return dados.cartoes.filter((c) => c.ativo && ids.includes(c.boxId));
+    return dados.cartoes.filter((c) => c.ativo && c.permiteCompra !== false && ids.includes(c.boxId));
   }, [dados, boxSel]);
 
   const chips = useMemo(() => {
@@ -75,7 +76,14 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
 
   function rotearParaCompra(inicial: InicialCompra | null) {
     setInicialCompra(inicial);
-    if (cartoesAtivos.length === 0) { setPasso('sem-cartao'); return; }
+    if (cartoesAtivos.length === 0) {
+      const ids = boxIdsSelecionadas(dados!, boxSel);
+      const algumBloqueado = dados!.cartoes.some(
+        (c) => c.ativo && c.permiteCompra === false && ids.includes(c.boxId),
+      );
+      setPasso(algumBloqueado ? 'sem-cartao-liberado' : 'sem-cartao');
+      return;
+    }
     if (cartoesAtivos.length === 1) { setCartaoEscolhido(cartoesAtivos[0]); setPasso('form'); return; }
     setPasso('escolher-cartao');
   }
@@ -166,6 +174,13 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
           <h2 style={{ marginTop: 0 }}>Nenhum cartão cadastrado</h2>
           <p className="sub">Cadastre um cartão em Ajustes antes de lançar uma compra parcelada.</p>
           <button className="botao botao-primario" onClick={irParaAjustes}>Cadastrar cartão</button>
+        </>
+      )}
+      {passo === 'sem-cartao-liberado' && (
+        <>
+          <h2 style={{ marginTop: 0 }}>Nenhum cartão liberado para compra</h2>
+          <p className="sub">Libere um cartão em Ajustes → Cartões antes de lançar uma compra parcelada.</p>
+          <button className="botao botao-primario" onClick={irParaAjustes}>Ir para Ajustes</button>
         </>
       )}
       {passo === 'escolher-cartao' && (

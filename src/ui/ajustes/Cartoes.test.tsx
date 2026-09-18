@@ -150,3 +150,29 @@ it('trocar de box na tela de Cartões mostra só os cartões daquela box', async
   expect(screen.getByText('Santander', { exact: false })).toBeInTheDocument();
   expect(screen.queryByText('Nubank', { exact: false })).not.toBeInTheDocument();
 });
+
+it('bloquear compras não desativa o cartão, só o esconde do fluxo de nova compra', async () => {
+  const box = await montarBox();
+  await repo.salvarCartao({
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Cartoes />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Bloquear' }));
+
+  await waitFor(async () => {
+    const [cartao] = await db.cartoes.toArray();
+    expect(cartao.permiteCompra).toBe(false);
+    expect(cartao.ativo).toBe(true);
+  });
+  expect(await screen.findByRole('button', { name: 'Permitir' })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Permitir' }));
+
+  await waitFor(async () => {
+    const [cartao] = await db.cartoes.toArray();
+    expect(cartao.permiteCompra).toBe(true);
+  });
+});

@@ -62,6 +62,13 @@ export default function Cartoes() {
     await recarregar();
   }
 
+  async function alternarPermiteCompra(id: string) {
+    const c = dados!.cartoes.find((x) => x.id === id)!;
+    const novoPermite = c.permiteCompra === false; // estava bloqueado ⇒ passa a permitir
+    await repo.salvarCartao({ ...c, permiteCompra: novoPermite }, horizonte);
+    await recarregar();
+  }
+
   return (
     <div className="tela">
       <h2>{editandoId ? 'Editar cartão' : 'Novo cartão'}</h2>
@@ -111,6 +118,9 @@ export default function Cartoes() {
             <button className="botao" onClick={() => editar(c.id)}>Editar</button>
             <button className="botao" onClick={() => alternarAtivo(c.id)}>
               {c.ativo ? 'Desativar' : 'Ativar'}
+            </button>
+            <button className="botao" onClick={() => alternarPermiteCompra(c.id)}>
+              {c.permiteCompra === false ? 'Permitir' : 'Bloquear'}
             </button>
           </div>
         ))}

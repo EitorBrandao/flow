@@ -12,7 +12,7 @@ Quatro entidades novas. Nenhuma "fatura" é gravada — ela é sempre recalculad
 : `RecorrenciaCartao` | uma assinatura — mesma lógica de materialização das recorrências do Flow, gerando `CompraCartao` futuras
 : `ConferenciaFatura` | valor digitado a partir do app do banco, por cartão + mês, com a opção de **usar esse valor** no lugar da soma dos itens
 
-Um cartão **ativo** por box: cadastrar um segundo exige desativar o anterior primeiro.
+Uma box pode ter vários cartões **ativos** ao mesmo tempo. "Ativo" controla a sincronização da fatura com o Flow (ver "Sincronização com o Flow", abaixo). Um segundo controle, independente do primeiro, bloqueia só as compras avulsas novas — a fatura e as assinaturas continuam funcionando; ver capítulo Ajustes, seção Cartões.
 
 Cada compra pode ter uma nota fiscal anexada. No formulário da compra, "Anexar nota fiscal" aceita o XML da NFC-e — por arquivo ou colando o texto — e guarda a lista de itens.
 
