@@ -1,5 +1,5 @@
-- Conferência por extrato, em Ajustes: envie o extrato da conta Nubank (CSV) ou a fatura do
-  cartão Santander (PDF), e o app compara cada linha com o que você já lançou.
+- Conferência por extrato, em Ajustes: envie o extrato da conta em CSV (Nubank) ou a fatura
+  em PDF (Santander), e o app compara cada linha com o que você já lançou.
   - Cada item aparece em ordem de data, marcado como confere, previsto, divergente, novo,
     sobra ou interno.
   - Nada é gravado até você revisar a lista e confirmar.
