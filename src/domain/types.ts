@@ -78,6 +78,7 @@ export interface Cartao extends Entidade {
   categoriaAssinaturasId?: ID; // CategoriaCartao oculta reservada p/ assinaturas; criada sob demanda
   categoriaParcelamentoId?: ID; // CategoriaCartao oculta reservada p/ parcelamento de fatura; sob demanda
   ativo: boolean;
+  permiteCompra?: boolean; // undefined/true = permite; false = bloqueado p/ compra avulsa nova
   bancoId?: ID; // banco dono do cartão; organizacional nesta entrega
 }
 

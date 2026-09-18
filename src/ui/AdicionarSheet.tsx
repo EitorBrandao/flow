@@ -28,7 +28,7 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
   const cartoesAtivos = useMemo(() => {
     if (!dados) return [];
     const ids = boxIdsSelecionadas(dados, boxSel);
-    return dados.cartoes.filter((c) => c.ativo && ids.includes(c.boxId));
+    return dados.cartoes.filter((c) => c.ativo && c.permiteCompra !== false && ids.includes(c.boxId));
   }, [dados, boxSel]);
 
   const chips = useMemo(() => {

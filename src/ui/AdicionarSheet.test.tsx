@@ -78,6 +78,25 @@ it('2+ cartões ativos: "Compra no cartão" mostra lista de escolha antes do for
   expect(await screen.findByRole('heading', { name: 'Nova compra' })).toBeInTheDocument();
 });
 
+it('cartão bloqueado para compra não aparece na escolha, mesmo ativo', async () => {
+  const box = await montarBox();
+  const nubank = await repo.salvarCartao({
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
+  }, '2027-12-31');
+  await repo.salvarCartao({ ...nubank, permiteCompra: false }, '2027-12-31');
+  await repo.salvarCartao({
+    boxId: box.id, nome: 'Inter', diaFechamento: 20, diaVencimento: 28,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+  render(<AdicionarSheet aberto onFechar={() => {}} />);
+
+  await userEvent.click(screen.getByText('Compra no cartão'));
+  // só o Inter está disponível: pula direto pro formulário, sem passar pela escolha
+  expect(await screen.findByRole('heading', { name: 'Nova compra' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Compra em qual cartão?' })).not.toBeInTheDocument();
+});
+
 async function montarComHistorico() {
   const box = await montarBox();
   const cartao = await repo.salvarCartao({
