@@ -21,8 +21,10 @@ indexado), Vitest + Testing Library.
 - Sem migração de dados: `cartoes: 'id, boxId'` em `src/db/database.ts` não muda — campo novo
   não é indexado.
 - Sem indicador visual novo (sem opacidade, sem badge) para o estado `permiteCompra`.
-- Rótulos do botão: **"Bloquear compras"** (estado atual permite) / **"Permitir compras"**
-  (estado atual bloqueia).
+- Rótulos do botão: **"Bloquear"** (estado atual permite) / **"Permitir"** (estado atual
+  bloqueia) — ajustado durante a execução para uma palavra só, como "Ativar"/"Desativar"
+  (o par original, "Bloquear compras"/"Permitir compras", arriscava quebrar linha ao lado de
+  "Editar" e "Desativar"/"Ativar" em tela estreita).
 - Textos de UI e mensagens de commit em português (ver `CLAUDE.md`).
 
 ---

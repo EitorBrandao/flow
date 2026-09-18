@@ -120,7 +120,7 @@ export default function Cartoes() {
               {c.ativo ? 'Desativar' : 'Ativar'}
             </button>
             <button className="botao" onClick={() => alternarPermiteCompra(c.id)}>
-              {c.permiteCompra === false ? 'Permitir compras' : 'Bloquear compras'}
+              {c.permiteCompra === false ? 'Permitir' : 'Bloquear'}
             </button>
           </div>
         ))}

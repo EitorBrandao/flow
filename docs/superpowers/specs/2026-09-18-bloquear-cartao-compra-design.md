@@ -52,8 +52,9 @@ Essa lista já alimenta:
 Em Ajustes → Cartões (`src/ui/ajustes/Cartoes.tsx`), cada linha da lista ganha um segundo
 botão, ao lado de "Ativar"/"Desativar":
 
-- rótulo alterna entre **"Bloquear compras"** (quando `permiteCompra !== false`) e
-  **"Permitir compras"** (quando `permiteCompra === false`);
+- rótulo alterna entre **"Bloquear"** (quando `permiteCompra !== false`) e **"Permitir"**
+  (quando `permiteCompra === false`) — uma palavra só, como "Ativar"/"Desativar", para não
+  estourar a linha em tela estreita;
 - ao clicar, chama `repo.salvarCartao({ ...c, permiteCompra: !permiteCompraAtual }, horizonte)`
   e `recarregar()`, no mesmo padrão de `alternarAtivo`.
 

@@ -160,16 +160,16 @@ it('bloquear compras não desativa o cartão, só o esconde do fluxo de nova com
   useApp.setState({ hoje: '2026-07-01' });
   render(<Cartoes />);
 
-  await userEvent.click(screen.getByRole('button', { name: 'Bloquear compras' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Bloquear' }));
 
   await waitFor(async () => {
     const [cartao] = await db.cartoes.toArray();
     expect(cartao.permiteCompra).toBe(false);
     expect(cartao.ativo).toBe(true);
   });
-  expect(await screen.findByRole('button', { name: 'Permitir compras' })).toBeInTheDocument();
+  expect(await screen.findByRole('button', { name: 'Permitir' })).toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole('button', { name: 'Permitir compras' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Permitir' }));
 
   await waitFor(async () => {
     const [cartao] = await db.cartoes.toArray();
