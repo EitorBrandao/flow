@@ -8,6 +8,7 @@ import Boxes from './ajustes/Boxes';
 import Cartoes from './ajustes/Cartoes';
 import Categorias from './ajustes/Categorias';
 import CategoriasCartao from './ajustes/CategoriasCartao';
+import Importar from './ajustes/Importar';
 import Recorrencias from './ajustes/Recorrencias';
 import Viagens from './ajustes/Viagens';
 import Wiki from './ajustes/Wiki';
@@ -23,6 +24,7 @@ const ITENS: { id: SecaoAjustes; rotulo: string }[] = [
   { id: 'assinaturas', rotulo: 'Assinaturas do cartão' },
   { id: 'viagens', rotulo: 'Viagens' },
   { id: 'backup', rotulo: 'Backup e restauração' },
+  { id: 'importar', rotulo: 'Importar e conferir' },
   { id: 'wiki', rotulo: 'Wiki' },
   { id: 'versao', rotulo: 'Versão' },
 ];
@@ -69,6 +71,7 @@ export default function TelaAjustes() {
       {secao === 'assinaturas' && <Assinaturas />}
       {secao === 'viagens' && <Viagens />}
       {secao === 'backup' && <Backup />}
+      {secao === 'importar' && <Importar />}
       {secao === 'wiki' && <Wiki />}
       {secao === 'versao' && <Versao />}
     </div>
