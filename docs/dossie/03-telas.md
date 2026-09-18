@@ -429,6 +429,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -862,6 +863,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -1359,6 +1361,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -1800,6 +1803,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -2256,6 +2260,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -2663,6 +2668,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -2681,6 +2687,7 @@ option: carteira
 option: reserva
 option: casa
 Hoje
+button: Há mudanças sem backup há mais de 7 dias — toque para exportar.
 tab: Visão
 tab: Conferir
 tab: Pendentes · 23
@@ -3061,6 +3068,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
@@ -3079,6 +3087,7 @@ option: carteira
 option: reserva
 option: casa
 Hoje
+button: Há mudanças sem backup há mais de 7 dias — toque para exportar.
 tab: Visão
 tab: Conferir
 tab: Pendentes · 26
@@ -3429,6 +3438,7 @@ Categorias do cartão
 Assinaturas do cartão
 Viagens
 Backup e restauração
+Importar e conferir
 Wiki
 Versão
 ```
