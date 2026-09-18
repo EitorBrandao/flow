@@ -5,6 +5,7 @@ import type { LancamentoBruto } from './tipos';
 
 const BOX = 'box-1';
 const CAT = 'cat-1';
+const CAT_GANHO = 'cat-ganho-1';
 const CARTAO = 'cartao-1';
 const CAT_CARTAO = 'catcartao-1';
 
@@ -34,7 +35,7 @@ function bruto(p: Partial<LancamentoBruto> & { data: string; valorCent: number }
   return { descricao: 'LOJA GAMA', fonte: 'conta', ...p };
 }
 
-const OPCOES = { boxId: BOX, categoriaPadraoId: CAT, cartaoId: CARTAO,
+const OPCOES = { boxId: BOX, categoriasPadrao: { ganho: CAT_GANHO, gasto: CAT }, cartaoId: CARTAO,
                  categoriaCartaoPadraoId: CAT_CARTAO };
 
 describe('conferir', () => {
@@ -158,6 +159,17 @@ describe('conferir', () => {
     });
   });
 
+  // O tipo da categoria decide se o valor soma ou subtrai no saldo. Uma entrada gravada em
+  // categoria de gasto seria subtraída da projeção.
+  it('escolhe a categoria de entrada para valor positivo e a de saída para negativo', () => {
+    const itens = conferir([
+      bruto({ data: '2026-08-15', valorCent: 100000, descricao: 'FULANO DE TAL' }),
+      bruto({ data: '2026-08-16', valorCent: -4500, descricao: 'LOJA GAMA' }),
+    ], dadosCom([]), OPCOES);
+    expect(itens[0].acao).toEqual({ tipo: 'adicionarLancamento', categoriaId: CAT_GANHO });
+    expect(itens[1].acao).toEqual({ tipo: 'adicionarLancamento', categoriaId: CAT });
+  });
+
   it('não cria nada quando o pagamento não acha fatura correspondente', () => {
     const itens = conferir([
       bruto({ data: '2026-08-03', valorCent: -123456, fonte: 'cartao',
@@ -225,7 +237,7 @@ describe('conferir', () => {
 
   // Um bruto sem destino não pode derrubar a classificação dos outros.
   it('avisa em vez de lançar quando falta a categoria padrão do cartão', () => {
-    const semCategoria = { boxId: BOX, categoriaPadraoId: CAT, cartaoId: CARTAO };
+    const semCategoria = { boxId: BOX, categoriasPadrao: { ganho: CAT_GANHO, gasto: CAT }, cartaoId: CARTAO };
     const itens = conferir([
       bruto({ data: '2026-08-15', valorCent: -4500, fonte: 'cartao' }),
       bruto({ data: '2026-08-16', valorCent: -5190, fonte: 'conta', descricao: 'POSTO BETA' }),

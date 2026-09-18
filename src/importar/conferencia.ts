@@ -3,10 +3,26 @@ import type { CompraCartao, Dados, ID, ISODate, Lancamento } from '../domain/typ
 import { contraparteNubank, normalizarDescricao } from './descricao';
 import type { ItemConferencia, LancamentoBruto } from './tipos';
 
+/**
+ * Sentinelas usadas no lugar da categoria real em `conferir`. No Flow, quem decide se um
+ * valor soma ou subtrai no saldo é o tipo da categoria (`projection.ts`), não o sinal do
+ * bruto — por isso não basta uma categoria só para todo lançamento novo de conta.
+ *
+ * Nada é gravado antes de o usuário confirmar: `aplicar` troca cada sentinela pela categoria
+ * "A classificar" de verdade, criando-a só se algum item precisar dela.
+ */
+export const CATEGORIA_A_CLASSIFICAR = {
+  ganho: 'a-classificar:ganho',
+  gasto: 'a-classificar:gasto',
+  cartao: 'a-classificar:cartao',
+} as const;
+
 export interface OpcoesConferencia {
   boxId: ID;
   cartaoId?: ID;
-  categoriaPadraoId: ID;
+  /** Escolhida pelo sinal do bruto: positivo usa `ganho`, negativo usa `gasto`. Ver
+   *  "A categoria padrão depende do sinal" na spec da conferência por extrato. */
+  categoriasPadrao: { ganho: ID; gasto: ID };
   /** Só é exigida quando um bruto de cartão vira `novo` com `adicionarCompra`. Se ele casar
    *  como `confere`, `previsto` ou `divergente`, este campo nunca é lido. */
   categoriaCartaoPadraoId?: ID;
@@ -197,9 +213,12 @@ export function conferir(
         ...(compraReconstruida ? { compraReconstruida } : {}),
       });
     } else {
+      // O tipo da categoria decide se o valor soma ou subtrai no saldo (`projection.ts`).
+      // Gravar uma entrada na categoria de gasto tiraria o valor da projeção em vez de somar.
+      const categoriaId = b.valorCent > 0 ? opcoes.categoriasPadrao.ganho : opcoes.categoriasPadrao.gasto;
       itens.push({
         estado: 'novo', bruto: b,
-        acao: { tipo: 'adicionarLancamento', categoriaId: opcoes.categoriaPadraoId },
+        acao: { tipo: 'adicionarLancamento', categoriaId },
       });
     }
   }
