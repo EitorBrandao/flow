@@ -1,5 +1,6 @@
 import * as repo from '../db/repo';
 import type { ID, ISODate } from '../domain/types';
+import { CATEGORIA_A_CLASSIFICAR } from './conferencia';
 import type { ItemConferencia } from './tipos';
 
 export interface ContextoAplicar {
@@ -20,8 +21,22 @@ export interface ResumoAplicacao {
   invalidos: number;
 }
 
+/** Verdadeiro quando algum item usa a sentinela `s` como categoria de destino. */
+function usaSentinela(itens: ItemConferencia[], s: ID): boolean {
+  return itens.some((item) => {
+    const acao = item.acao;
+    return (acao.tipo === 'adicionarLancamento' && acao.categoriaId === s)
+      || (acao.tipo === 'adicionarCompra' && acao.categoriaCartaoId === s);
+  });
+}
+
 /**
  * Executa as decisões da conferência.
+ *
+ * Antes de processar os itens, troca cada sentinela de `CATEGORIA_A_CLASSIFICAR` pela
+ * categoria real — achada pelo nome ou criada, via `repo.categoriaAClassificarDe` e
+ * `repo.categoriaCartaoAClassificarDe`. A categoria só é criada se algum item precisar dela:
+ * sem isso, uma conferência onde tudo foi descartado criaria categoria à toa.
  *
  * As compras de cartão vão todas juntas por `salvarComprasCartaoEmLote`, para que
  * `sincronizarCartoes` rode uma vez só. O resto vai item a item, porque são operações
@@ -34,6 +49,27 @@ export async function aplicar(
     confirmados: 0, adicionados: 0, excluidos: 0, ignorados: 0, invalidos: 0,
   };
   const compras: repo.NovaCompraCartao[] = [];
+
+  const categoriaGanhoId = usaSentinela(itens, CATEGORIA_A_CLASSIFICAR.ganho)
+    ? await repo.categoriaAClassificarDe(ctx.boxId, 'ganho')
+    : undefined;
+  const categoriaGastoId = usaSentinela(itens, CATEGORIA_A_CLASSIFICAR.gasto)
+    ? await repo.categoriaAClassificarDe(ctx.boxId, 'gasto')
+    : undefined;
+  const categoriaCartaoId = ctx.cartaoId != null && usaSentinela(itens, CATEGORIA_A_CLASSIFICAR.cartao)
+    ? await repo.categoriaCartaoAClassificarDe(ctx.cartaoId)
+    : undefined;
+
+  // Troca a sentinela pela categoria real. `categoriaGanhoId`/`categoriaGastoId`/
+  // `categoriaCartaoId` só ficam `undefined` quando NENHUM item usa a sentinela
+  // correspondente — e nesse caso `categoriaReal` nunca é chamada com essa sentinela, porque
+  // ela só aparece na `categoriaId`/`categoriaCartaoId` de um item que a usa.
+  function categoriaReal(id: ID): ID {
+    if (id === CATEGORIA_A_CLASSIFICAR.ganho && categoriaGanhoId != null) return categoriaGanhoId;
+    if (id === CATEGORIA_A_CLASSIFICAR.gasto && categoriaGastoId != null) return categoriaGastoId;
+    if (id === CATEGORIA_A_CLASSIFICAR.cartao && categoriaCartaoId != null) return categoriaCartaoId;
+    return id;
+  }
 
   for (const item of itens) {
     const acao = item.acao;
@@ -59,7 +95,7 @@ export async function aplicar(
       case 'adicionarLancamento': {
         if (!item.bruto) { resumo.invalidos++; break; }
         await repo.salvarLancamento({
-          boxId: ctx.boxId, categoriaId: acao.categoriaId,
+          boxId: ctx.boxId, categoriaId: categoriaReal(acao.categoriaId),
           data: item.bruto.data, valor: Math.abs(item.bruto.valorCent),
           status: 'efetivo', nota: item.bruto.descricao,
         });
@@ -71,7 +107,7 @@ export async function aplicar(
         if (!item.bruto || !ctx.cartaoId) { resumo.invalidos++; break; }
         const reconstruida = item.compraReconstruida;
         compras.push({
-          cartaoId: ctx.cartaoId, categoriaCartaoId: acao.categoriaCartaoId,
+          cartaoId: ctx.cartaoId, categoriaCartaoId: categoriaReal(acao.categoriaCartaoId),
           data: reconstruida?.data ?? item.bruto.data,
           valorTotal: reconstruida?.valorTotalCent ?? Math.abs(item.bruto.valorCent),
           parcelas: reconstruida?.parcelas ?? item.bruto.parcela?.total ?? 1,

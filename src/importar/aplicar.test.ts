@@ -3,6 +3,7 @@ import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
 import { limparDb } from '../test-setup';
 import { aplicar } from './aplicar';
+import { CATEGORIA_A_CLASSIFICAR } from './conferencia';
 
 const HORIZONTE = '2027-12-31';
 
@@ -175,5 +176,76 @@ describe('aplicar', () => {
       expect(depois.comprasCartao).toHaveLength(0);
       expect(depois.lancamentos.some((l) => l.origem === 'cartao')).toBe(false);
     } finally { vi.useRealTimers(); }
+  });
+
+  describe('sentinelas de "A classificar"', () => {
+    it('cria "A classificar (entrada)" para a sentinela de ganho e aponta o lançamento pra ela', async () => {
+      const { box } = await montarBox();
+
+      await aplicar([{
+        estado: 'novo',
+        bruto: { data: '2026-08-15', valorCent: 100000, descricao: 'FULANO DE TAL', fonte: 'conta' },
+        acao: { tipo: 'adicionarLancamento', categoriaId: CATEGORIA_A_CLASSIFICAR.ganho },
+      }], { boxId: box.id, horizonte: HORIZONTE });
+
+      const dados = await repo.carregarTudo();
+      const categoria = dados.categorias.find((c) => c.nome === 'A classificar (entrada)');
+      expect(categoria).toBeDefined();
+      expect(categoria?.tipo).toBe('ganho');
+      expect(dados.lancamentos[0].categoriaId).toBe(categoria?.id);
+    });
+
+    it('reusa a mesma categoria "A classificar" em duas chamadas seguidas', async () => {
+      const { box, gasto } = await montarBox();
+
+      async function adicionarUmGasto() {
+        await aplicar([{
+          estado: 'novo',
+          bruto: { data: '2026-08-15', valorCent: -4500, descricao: 'LOJA GAMA', fonte: 'conta' },
+          acao: { tipo: 'adicionarLancamento', categoriaId: CATEGORIA_A_CLASSIFICAR.gasto },
+        }], { boxId: box.id, horizonte: HORIZONTE });
+      }
+      await adicionarUmGasto();
+      await adicionarUmGasto();
+
+      const dados = await repo.carregarTudo();
+      const comEsseNome = dados.categorias.filter((c) => c.nome === 'A classificar');
+      expect(comEsseNome).toHaveLength(1);
+      // A categoria manual criada em `montarBox` também se chama "mercado", não "A classificar".
+      expect(comEsseNome[0].id).not.toBe(gasto.id);
+    });
+
+    it('cria a categoria "A classificar" do cartão para a sentinela de cartão', async () => {
+      // Não usa `montarCartaoDeTeste`: ela já cria uma categoria "A classificar" própria, o
+      // que mascararia a criação sob demanda que este teste verifica.
+      const { box } = await montarBox();
+      const cartao = await repo.salvarCartao({
+        boxId: box.id, nome: 'Santander', diaFechamento: 28, diaVencimento: 5,
+      }, HORIZONTE);
+
+      await aplicar([{
+        estado: 'novo',
+        bruto: { data: '2026-08-07', valorCent: -4500, descricao: 'MERCADO ALFA', fonte: 'cartao' },
+        acao: { tipo: 'adicionarCompra', categoriaCartaoId: CATEGORIA_A_CLASSIFICAR.cartao },
+      }], { boxId: cartao.boxId, cartaoId: cartao.id, horizonte: HORIZONTE });
+
+      const dados = await repo.carregarTudo();
+      const categoria = dados.categoriasCartao.find((c) => c.cartaoId === cartao.id && c.nome === 'A classificar');
+      expect(categoria).toBeDefined();
+      expect(dados.comprasCartao[0].categoriaCartaoId).toBe(categoria?.id);
+    });
+
+    it('não cria categoria nenhuma quando a lista só tem itens para ignorar', async () => {
+      const { box } = await montarBox();
+
+      await aplicar(
+        [{ estado: 'interno', acao: { tipo: 'ignorar' } }],
+        { boxId: box.id, horizonte: HORIZONTE },
+      );
+
+      const dados = await repo.carregarTudo();
+      expect(dados.categorias.some((c) => c.nome.startsWith('A classificar'))).toBe(false);
+      expect(dados.categoriasCartao.some((c) => c.nome === 'A classificar')).toBe(false);
+    });
   });
 });
