@@ -414,6 +414,28 @@ describe('cartão de crédito', () => {
     expect(dados.lancamentos.some((l) => l.origem === 'cartao')).toBe(true);
   });
 
+  // `sincronizarCartoes` sempre gira num único `db.transaction`, mesmo com vários cartões
+  // (ver a função em repo.ts). Por isso, contar chamadas de `db.transaction` distingue o lote
+  // real (uma transação para gravar + uma para sincronizar, não importa quantas compras) de
+  // uma implementação ingênua em laço, que chamaria `salvarCompraCartao` por compra — e cada
+  // chamada dele soma mais duas transações (uma para gravar, uma para sincronizar).
+  it('faz uma única sincronização para o lote inteiro, não uma por compra', async () => {
+    const { cartao, catCartao } = await montarCartao();
+    const spy = vi.spyOn(db, 'transaction');
+    try {
+      await repo.salvarComprasCartaoEmLote([
+        { cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-10',
+          valorTotal: 4500, parcelas: 1, descricao: 'MERCADO ALFA' },
+        { cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-11',
+          valorTotal: 5190, parcelas: 3, descricao: 'POSTO BETA' },
+      ], '2027-12-31');
+
+      // 1 transação para o bulkAdd das compras + 1 para sincronizarCartoes.
+      // Um laço de salvarCompraCartao teria gerado 4 (duas por compra).
+      expect(spy).toHaveBeenCalledTimes(2);
+    } finally { spy.mockRestore(); }
+  });
+
   it('não grava nada nem sincroniza quando a lista de compras é vazia', async () => {
     const { cartao } = await montarCartao();
     await repo.salvarComprasCartaoEmLote([], '2027-12-31');

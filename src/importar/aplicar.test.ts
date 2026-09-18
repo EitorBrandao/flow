@@ -116,4 +116,64 @@ describe('aplicar', () => {
     expect(dados.comprasCartao).toHaveLength(0);
     expect(resumo.ignorados).toBe(1);
   });
+
+  it('conta o item malformado em vez de descartá-lo em silêncio', async () => {
+    const { box } = await montarBox();
+    const resumo = await aplicar([
+      // sem `lancamentoId`, que a ação exige
+      { estado: 'previsto', acao: { tipo: 'confirmar' } },
+      // sem `bruto`, que a ação exige
+      { estado: 'novo', acao: { tipo: 'adicionarLancamento', categoriaId: 'qualquer' } },
+    ], { boxId: box.id, horizonte: HORIZONTE });
+
+    const dados = await repo.carregarTudo();
+    expect(dados.lancamentos).toHaveLength(0);
+    expect(resumo.invalidos).toBe(2);
+  });
+
+  it('exclui um lançamento a partir de uma sobra', async () => {
+    const { box, gasto } = await montarBox();
+    const l = await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2026-08-15', valor: 4500,
+      status: 'efetivo', nota: 'LOJA GAMA',
+    });
+
+    const resumo = await aplicar(
+      [{ estado: 'sobra', lancamentoId: l.id, acao: { tipo: 'excluir' } }],
+      { boxId: box.id, horizonte: HORIZONTE },
+    );
+
+    const dados = await repo.carregarTudo();
+    expect(dados.lancamentos).toHaveLength(0);
+    expect(resumo.excluidos).toBe(1);
+  });
+
+  // Excluir compra de cartão precisa propagar o horizonte, senão a fatura projetada fica
+  // dessincronizada e continua cobrando uma compra que não existe mais.
+  // Congela "hoje" antes do vencimento da fatura: `diffSincronizacao` só cria previsto com
+  // vencimento no futuro (ver src/domain/fatura.ts), e sem isso o teste ficaria dependente da
+  // data real do relógio, quebrando sozinho quando o vencimento simulado ficasse no passado.
+  it('exclui uma compra de cartão e ressincroniza a fatura', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-08-01T12:00:00'));
+      const { cartao, catCartao } = await montarCartaoDeTeste();
+      const compra = await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-10',
+        valorTotal: 4500, parcelas: 1, descricao: 'MERCADO ALFA',
+      }, HORIZONTE);
+
+      const antes = await repo.carregarTudo();
+      expect(antes.lancamentos.some((l) => l.origem === 'cartao')).toBe(true);
+
+      await aplicar(
+        [{ estado: 'sobra', compraCartaoId: compra.id, acao: { tipo: 'excluir' } }],
+        { boxId: cartao.boxId, cartaoId: cartao.id, horizonte: HORIZONTE },
+      );
+
+      const depois = await repo.carregarTudo();
+      expect(depois.comprasCartao).toHaveLength(0);
+      expect(depois.lancamentos.some((l) => l.origem === 'cartao')).toBe(false);
+    } finally { vi.useRealTimers(); }
+  });
 });

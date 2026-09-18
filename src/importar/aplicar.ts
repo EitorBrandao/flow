@@ -13,6 +13,11 @@ export interface ResumoAplicacao {
   adicionados: number;
   excluidos: number;
   ignorados: number;
+  /** Item que caiu numa guarda defensiva (faltou `lancamentoId`, `bruto` ou `cartaoId`) e por
+   *  isso não pôde ser aplicado. `aplicar` é pública, e nada garante que só `conferir` monte
+   *  os itens — sem este contador, um item malformado seria descartado em silêncio, e a soma
+   *  dos outros campos ficaria menor que a quantidade de itens sem ninguém perceber. */
+  invalidos: number;
 }
 
 /**
@@ -26,7 +31,7 @@ export async function aplicar(
   itens: ItemConferencia[], ctx: ContextoAplicar,
 ): Promise<ResumoAplicacao> {
   const resumo: ResumoAplicacao = {
-    confirmados: 0, adicionados: 0, excluidos: 0, ignorados: 0,
+    confirmados: 0, adicionados: 0, excluidos: 0, ignorados: 0, invalidos: 0,
   };
   const compras: repo.NovaCompraCartao[] = [];
 
@@ -38,21 +43,21 @@ export async function aplicar(
         break;
 
       case 'confirmar': {
-        if (!item.lancamentoId) break;
+        if (!item.lancamentoId) { resumo.invalidos++; break; }
         await repo.confirmarPendente(item.lancamentoId);
         resumo.confirmados++;
         break;
       }
 
       case 'confirmarComValor': {
-        if (!item.lancamentoId) break;
+        if (!item.lancamentoId) { resumo.invalidos++; break; }
         await repo.confirmarPendente(item.lancamentoId, acao.valorCent, acao.data);
         resumo.confirmados++;
         break;
       }
 
       case 'adicionarLancamento': {
-        if (!item.bruto) break;
+        if (!item.bruto) { resumo.invalidos++; break; }
         await repo.salvarLancamento({
           boxId: ctx.boxId, categoriaId: acao.categoriaId,
           data: item.bruto.data, valor: Math.abs(item.bruto.valorCent),
@@ -63,7 +68,7 @@ export async function aplicar(
       }
 
       case 'adicionarCompra': {
-        if (!item.bruto || !ctx.cartaoId) break;
+        if (!item.bruto || !ctx.cartaoId) { resumo.invalidos++; break; }
         const reconstruida = item.compraReconstruida;
         compras.push({
           cartaoId: ctx.cartaoId, categoriaCartaoId: acao.categoriaCartaoId,
@@ -88,6 +93,6 @@ export async function aplicar(
     }
   }
 
-  await repo.salvarComprasCartaoEmLote(compras, ctx.horizonte);
+  if (compras.length > 0) await repo.salvarComprasCartaoEmLote(compras, ctx.horizonte);
   return resumo;
 }
