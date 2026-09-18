@@ -615,3 +615,29 @@ automática de banco e mapeamento manual de colunas, como último recurso. Campo
 - Gravar estorno de cartão, com `CampoValor` aceitando negativo como pré-requisito.
 - Ligar o estado `interno` às transferências do branch `transferencia-bancos`, depois que ele
   entrar na `main`.
+
+## Decisões depois do mockup (2026-09-18)
+
+**Variante B, cronológica.** A lista segue a ordem dos dias, como o extrato. O estado vira
+uma etiqueta colorida em cada item, em vez de agrupar. Os passos 1 e 2, o aviso do adapter e
+o resumo de contagens ficam no topo. Item que confere aparece em linha compacta, sem botões.
+
+**A categoria padrão depende do sinal.** A primeira versão de `conferir` usava uma categoria
+só para todo lançamento novo de conta. No Flow, quem decide se um valor soma ou subtrai no
+saldo é o tipo da categoria (`projection.ts`). Uma entrada gravada em categoria de gasto
+tiraria o valor da projeção em vez de somar. Agora `conferir` recebe
+`categoriasPadrao: { ganho, gasto }` e escolhe pelo sinal do bruto.
+
+**"A classificar" nasce só na confirmação.** A conferência usa identificadores-sentinela no
+lugar das categorias padrão. `aplicar` troca cada sentinela pela categoria real, criando-a
+só se algum item precisar dela. Assim nada é gravado antes de o usuário confirmar. A
+categoria é achada pelo nome, ou criada: não há campo novo no schema. Na box, o gasto vai
+para "A classificar" e a entrada para "A classificar (entrada)"; no cartão, para "A
+classificar". São categorias comuns e visíveis: o usuário reclassifica quando quiser.
+
+**Sem escolha de banco nesta entrega.** O desenho previa escolher o banco quando a box tem
+mais de um. Mas `Lancamento.bancoId` existe só nas pernas de transferência: lançamento comum
+não guarda banco. Isso depende da entrega 2 do item de bancos, ainda aberta.
+
+**Cor do estado "novo" é token novo** (`--estado-novo`), pelo nível 3 do guia de estilo. Os
+outros cinco estados reusam tokens que já existem.
