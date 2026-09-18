@@ -1,4 +1,0 @@
-- Botão "Bloquear"/"Permitir" em cada cartão, em Ajustes → Cartões.
-  - Um cartão bloqueado não aparece mais no menu Adicionar → "Compra no cartão".
-  - A fatura e as assinaturas do cartão continuam funcionando normalmente — é útil para um cartão que só existe para receber assinaturas.
-  - É independente de "Ativar"/"Desativar", que continua desligando o cartão por completo.

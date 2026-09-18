@@ -3,6 +3,15 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.30.0] - 2026-09-18
+
+### Adicionado
+
+- Botão "Bloquear"/"Permitir" em cada cartão, em Ajustes → Cartões.
+  - Um cartão bloqueado não aparece mais no menu Adicionar → "Compra no cartão".
+  - A fatura e as assinaturas do cartão continuam funcionando normalmente — é útil para um cartão que só existe para receber assinaturas.
+  - É independente de "Ativar"/"Desativar", que continua desligando o cartão por completo.
+
 ## [0.29.0] - 2026-09-17
 
 ### Adicionado
