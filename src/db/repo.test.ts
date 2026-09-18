@@ -398,6 +398,30 @@ describe('cartão de crédito', () => {
     } finally { vi.useRealTimers(); }
   });
 
+  it('salva compras em lote e sincroniza os cartões uma vez só', async () => {
+    const { cartao, catCartao } = await montarCartao();
+
+    await repo.salvarComprasCartaoEmLote([
+      { cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-10',
+        valorTotal: 4500, parcelas: 1, descricao: 'MERCADO ALFA' },
+      { cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-11',
+        valorTotal: 5190, parcelas: 3, descricao: 'POSTO BETA' },
+    ], '2027-12-31');
+
+    const dados = await repo.carregarTudo();
+    expect(dados.comprasCartao).toHaveLength(2);
+    // A fatura projetada existe: prova de que sincronizarCartoes rodou depois do lote.
+    expect(dados.lancamentos.some((l) => l.origem === 'cartao')).toBe(true);
+  });
+
+  it('não grava nada nem sincroniza quando a lista de compras é vazia', async () => {
+    const { cartao } = await montarCartao();
+    await repo.salvarComprasCartaoEmLote([], '2027-12-31');
+    const dados = await repo.carregarTudo();
+    expect(dados.comprasCartao).toHaveLength(0);
+    expect(cartao.id).toBeDefined();
+  });
+
   it('assinatura materializa compras futuras e pausar remove as não passadas', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     try {

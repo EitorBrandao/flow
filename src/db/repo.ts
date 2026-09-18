@@ -513,6 +513,30 @@ export async function salvarCompraCartao(n: NovaCompraCartao, horizonte: ISODate
   return c;
 }
 
+/**
+ * Grava várias compras numa transação só e sincroniza os cartões UMA vez, no fim.
+ *
+ * `salvarCompraCartao` chama `sincronizarCartoes` a cada compra, e cada chamada recalcula
+ * todas as faturas de todos os cartões. Numa conferência de fatura são dezenas de compras —
+ * dezenas de recálculos completos, com o app travado. Este caminho existe só para isso.
+ *
+ * A transação é única de propósito: gravar metade faria a próxima conferência mentir sobre o
+ * que já entrou.
+ */
+export async function salvarComprasCartaoEmLote(
+  compras: NovaCompraCartao[], horizonte: ISODate,
+): Promise<void> {
+  if (compras.length === 0) return;
+  const agora = agoraISO();
+  await db.transaction('rw', db.comprasCartao, db.config, async () => {
+    await db.comprasCartao.bulkAdd(compras.map((n): CompraCartao => ({
+      id: novoId(), criadoEm: agora, alteradoEm: agora, ...n,
+    })));
+    await marcarMudanca();
+  });
+  await sincronizarCartoes(horizonte);
+}
+
 export async function atualizarCompraCartao(
   id: ID,
   patch: Partial<Pick<CompraCartao, 'data' | 'valorTotal' | 'parcelas' | 'descricao' | 'categoriaCartaoId' | 'viagemId'>>,
