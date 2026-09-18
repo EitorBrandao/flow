@@ -43,7 +43,9 @@ Cada banco mostra o saldo informado com a data e quantos cartões estão vincula
 
 Cadastrar/editar o cartão de cada box: nome, dia de fechamento, dia de vencimento, a categoria de gasto do Flow que recebe a fatura e, se a box tiver bancos cadastrados, o banco dono do cartão.
 
-Só um cartão **ativo** por box — tentar ativar um segundo mostra aviso pedindo para desativar o atual primeiro.
+Uma box pode ter vários cartões **ativos** ao mesmo tempo. "Desativar" desliga o cartão por completo: para de sincronizar a fatura como lançamento, e some da tela Cartão e do menu Adicionar.
+
+Cada cartão tem ainda um segundo controle, independente: **"Bloquear"/"Permitir"**. Ele só afeta o menu Adicionar → "Compra no cartão" — um cartão bloqueado não entra na lista de escolha, nem no atalho que pula direto pro formulário quando sobra um só. A fatura continua sincronizando, e as assinaturas do cartão continuam gerando compra todo mês. Serve para um cartão que só existe para receber assinaturas, sem você nunca lançar uma compra avulsa nele.
 
 **Obrigatórios:** nome, categoria da fatura (pré-preenchida com a categoria "cartão" da box, se existir). **Têm padrão:** box (a primeira com saldo próprio), dia de fechamento (28), dia de vencimento (5), banco (sem banco). O campo de banco só aparece se a box tiver algum cadastrado.
 
