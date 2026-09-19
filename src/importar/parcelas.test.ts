@@ -85,4 +85,18 @@ describe('reconstruirCompra', () => {
     });
     expect(c!.data).toBe('2026-09-07');
   });
+
+  // A parcela 1 de uma compra feita no mês P entra na fatura que vence em P+1 — não na própria
+  // P. Uma compra comum (à vista) do começo do ciclo de fechamento cai no mês ANTERIOR ao
+  // vencimento, não no mesmo mês. Com o centro errado (mesFatura, sem descontar o mês), essa
+  // compra ficava a dois meses do esperado e ganhava "Ano deduzido com incerteza" à toa.
+  it('não avisa para compra comum do começo do ciclo, um mês antes do vencimento', () => {
+    const c = reconstruirCompra({
+      diaMes: '28/08', parcelaN: 1, parcelaTotal: 1,
+      valorParcelaCent: 10000, mesFatura: '2026-10',
+    });
+    expect(c).toBeDefined();
+    expect(c!.data).toBe('2026-08-28');
+    expect(c!.anoDeduzidoComAviso).toBe(false);
+  });
 });
