@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.31.2] - 2026-09-19
+
+### Alterado
+
+- Conferência por extrato: a fatura em PDF do Santander passa a ter os lançamentos reconhecidos.
+  - Quando nada é reconhecido, a tela mostra quantas linhas ficaram de fora e oferece "Copiar texto extraído", para diagnóstico.
+
 ## [0.31.1] - 2026-09-19
 
 ### Alterado
