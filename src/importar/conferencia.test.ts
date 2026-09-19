@@ -355,6 +355,58 @@ describe('conferir', () => {
   // IMPORTANTE 5: uma linha de valor zero não é gasto nem ganho — virar lançamento de
   // R$ 0,00 numa categoria de gasto não serve a nada, e a categoria nem decidiria se soma ou
   // subtrai no saldo.
+  // O usuário digita a compra com as palavras dele; o banco escreve outra coisa
+  // ("MERCADOLIVRE*MERCADOL"). Exigir descrição igual para `confere`/`previsto` fazia quase
+  // nada casar. Agora o valor exato, dentro da janela de data, basta.
+  describe('casamento sem exigir descrição igual (confere/previsto)', () => {
+    it('confere mesmo com descrição diferente, quando data e valor batem', () => {
+      const d = dadosCom([
+        lancamento({ data: '2026-08-15', valor: 4500, nota: 'MERCADOLIVRE*MERCADOL' }),
+      ]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'MERCADO LIVRE COMPRA 123' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('confere');
+      expect(itens[0].acao.tipo).toBe('ignorar');
+    });
+
+    it('entre dois candidatos de mesmo valor e data, prefere o de descrição igual', () => {
+      const d = dadosCom([
+        lancamento({ id: 'descricao-diferente', data: '2026-08-15', valor: 4500, nota: 'OUTRA COISA' }),
+        lancamento({ id: 'descricao-igual', data: '2026-08-15', valor: 4500, nota: 'LOJA GAMA' }),
+      ]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'LOJA GAMA' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('confere');
+      expect(itens[0].lancamentoId).toBe('descricao-igual');
+    });
+
+    // Sem candidato de valor exato, e a descrição também diverge: não há o que comparar como
+    // "o mesmo lançamento com o valor errado" — vira novo, não divergente.
+    it('valor diferente e descrição diferente vira novo, não divergente', () => {
+      const d = dadosCom([
+        lancamento({ data: '2026-08-15', valor: 12000, nota: 'OUTRA COISA TOTALMENTE DIFERENTE' }),
+      ]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'LOJA GAMA' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('novo');
+    });
+
+    // Valor diferente, mas a descrição bate: é o mesmo lançamento com o valor errado.
+    it('valor diferente e descrição igual continua divergente', () => {
+      const d = dadosCom([
+        lancamento({ data: '2026-08-15', valor: 12000, nota: 'LOJA GAMA' }),
+      ]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'LOJA GAMA' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('divergente');
+      expect(itens[0].acao).toEqual({ tipo: 'confirmarComValor', valorCent: 4500, data: '2026-08-15' });
+    });
+  });
+
   it('marca a linha de valor zero como interno e nunca a grava', () => {
     const itens = conferir([
       bruto({ data: '2026-08-15', valorCent: 0, descricao: 'LOJA GAMA' }),

@@ -219,13 +219,22 @@ export function conferir(
     const valorCent = Math.abs(b.valorCent);
     const chave = chaveDoBruto(b);
 
-    const perto = universo
+    // `confere`/`previsto`: valor exato, dentro da janela de data — a descrição NÃO é exigida.
+    // O usuário digita a compra com as palavras dele; o banco escreve outra coisa
+    // ("MERCADOLIVRE*MERCADOL"). Entre vários candidatos, a preferência é: descrição igual
+    // primeiro, depois a menor distância de data, depois a ordem de chegada (o `sort` é
+    // estável, então empate nos dois critérios preserva a ordem de `universo`).
+    const exato = universo
       .filter((c) => !usados.has(c.id)
-        && c.chave === chave
+        && c.valorCent === valorCent
         && diferencaEmDias(c.data, b.data) <= tolerancia)
-      .sort((x, y) => diferencaEmDias(x.data, b.data) - diferencaEmDias(y.data, b.data));
-
-    const exato = perto.find((c) => c.valorCent === valorCent);
+      .sort((x, y) => {
+        const prefX = x.chave === chave ? 0 : 1;
+        const prefY = y.chave === chave ? 0 : 1;
+        return prefX !== prefY
+          ? prefX - prefY
+          : diferencaEmDias(x.data, b.data) - diferencaEmDias(y.data, b.data);
+      })[0];
     if (exato) {
       usados.add(exato.id);
       itens.push({
@@ -236,7 +245,14 @@ export function conferir(
       continue;
     }
 
-    const divergente = perto[0];
+    // `divergente`: mesmo lugar (descrição igual, dentro da janela de data), valor diferente.
+    // Aqui a descrição CONTINUA exigida — sem isso, qualquer lançamento do mesmo dia pareceria
+    // divergente, não só o que é de fato o mesmo gasto com o valor errado.
+    const divergente = universo
+      .filter((c) => !usados.has(c.id)
+        && c.chave === chave
+        && diferencaEmDias(c.data, b.data) <= tolerancia)
+      .sort((x, y) => diferencaEmDias(x.data, b.data) - diferencaEmDias(y.data, b.data))[0];
     if (divergente) {
       usados.add(divergente.id);
       itens.push({
