@@ -15,6 +15,7 @@ function ehCabecalho(linha: string): boolean {
 export function lerNubankConta(texto: string): LeituraAdapter {
   const linhas = lerCsv(texto);
   const brutos: LancamentoBruto[] = [];
+  const linhasNaoReconhecidas: string[] = [];
   let linhasIgnoradas = 0;
 
   if (linhas.length === 0 || !ehCabecalho(linhas[0].join(','))) {
@@ -27,6 +28,10 @@ export function lerNubankConta(texto: string): LeituraAdapter {
     const descricao = (colunas[3] ?? '').trim();
     if (data == null || valorCent == null || descricao === '') {
       linhasIgnoradas++;
+      // `lerCsv` já separou a linha em colunas: juntá-las de volta com vírgula reconstrói a
+      // linha crua o bastante para o diagnóstico, sem precisar guardar o texto original à
+      // parte só para este caso raro.
+      linhasNaoReconhecidas.push(colunas.join(','));
       continue;
     }
     const externalId = (colunas[2] ?? '').trim();
@@ -37,7 +42,7 @@ export function lerNubankConta(texto: string): LeituraAdapter {
       ...(natureza ? { natureza } : {}),
     });
   }
-  return { brutos, linhasIgnoradas, avisos: [] };
+  return { brutos, linhasIgnoradas, avisos: [], linhasNaoReconhecidas };
 }
 
 export const nubankConta: Adapter = {

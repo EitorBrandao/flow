@@ -11,6 +11,24 @@ describe('lerSantanderFatura', () => {
     expect(r.blocos![0].rotulo).toBe('FULANO DE TAL - 0000 XXXX XXXX 0000');
   });
 
+  it('não lista nenhuma linha não reconhecida quando tudo é lido', () => {
+    const r = lerSantanderFatura(FATURA_SANTANDER, '2026-09');
+    expect(r.linhasNaoReconhecidas).toEqual([]);
+  });
+
+  it('registra o texto de cada linha ignorada, na mesma quantidade que linhasIgnoradas', () => {
+    const texto = [
+      'FULANO DE TAL - 0000 XXXX XXXX 0000',
+      'Compra Data Descrição Parcela R$ US$',
+      '01/08 MERCADO ALFA 45,00',
+      'linha sem padrao nenhum de transacao',
+    ].join('\n');
+    const r = lerSantanderFatura(texto, '2026-09');
+    expect(r.linhasIgnoradas).toBe(1);
+    expect(r.linhasNaoReconhecidas).toHaveLength(r.linhasIgnoradas);
+    expect(r.linhasNaoReconhecidas).toEqual(['linha sem padrao nenhum de transacao']);
+  });
+
   // Este é o caso que derruba qualquer parser que assuma uma transação por linha.
   it('separa transações grudadas numa linha só', () => {
     const r = lerSantanderFatura(FATURA_SANTANDER, '2026-09');
@@ -76,6 +94,7 @@ describe('lerSantanderFatura', () => {
     const r = lerSantanderFatura('3 07/08 MERCADO ALFA 45,00', '2026-09');
     expect(r.brutos).toHaveLength(0);
     expect(r.linhasIgnoradas).toBe(1);
+    expect(r.linhasNaoReconhecidas).toEqual(['3 07/08 MERCADO ALFA 45,00']);
   });
 
   it('não lança com mês de fatura malformado', () => {

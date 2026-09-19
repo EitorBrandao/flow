@@ -44,6 +44,8 @@ describe('lerNubankConta', () => {
     const r = lerNubankConta(csv);
     expect(r.brutos).toHaveLength(1);
     expect(r.linhasIgnoradas).toBe(1);
+    expect(r.linhasNaoReconhecidas).toHaveLength(1);
+    expect(r.linhasNaoReconhecidas).toEqual(['data-torta,valor-torto,x,y']);
   });
 
   it('não devolve nada quando o cabeçalho não é o esperado', () => {

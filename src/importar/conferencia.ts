@@ -237,7 +237,13 @@ export function conferir(
   }
 
   // 4. Sobra: o que o app tem, dentro do período do arquivo, e o arquivo não tem.
-  const datas = brutos.map((b) => b.data).sort();
+  // Uma parcela posterior à primeira (n > 1) traz a data da COMPRA ORIGINAL, meses atrás —
+  // não uma data do ciclo atual da fatura. Se essa data entrasse aqui, o período esticaria
+  // por meses, e todo lançamento ou compra do app nesse intervalo viraria sobra falsa.
+  const datas = brutos
+    .filter((b) => !(b.parcela && b.parcela.n > 1))
+    .map((b) => b.data)
+    .sort();
   if (datas.length > 0) {
     const [inicio, fim] = [datas[0], datas[datas.length - 1]];
     for (const c of [...daConta, ...doCartao]) {

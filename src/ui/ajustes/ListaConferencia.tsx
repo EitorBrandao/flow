@@ -36,10 +36,15 @@ interface Props {
   onTrocar: (chave: string, estado: EstadoItem, acao: AcaoItem) => void;
   totaisCorrigidos: Record<string, DecisaoTotal>;
   onCorrigirTotal: (chave: string, estado: EstadoItem, valorCent: number) => void;
+  mostrarLinhasIgnoradas: boolean;
+  onToggleLinhasIgnoradas: () => void;
+  copiarEstado: 'ocioso' | 'copiado' | 'erro';
+  onCopiarTextoExtraido: (texto: string) => void;
 }
 
 export default function ListaConferencia({
   leitura, itens, dados, trocas, onTrocar, totaisCorrigidos, onCorrigirTotal,
+  mostrarLinhasIgnoradas, onToggleLinhasIgnoradas, copiarEstado, onCopiarTextoExtraido,
 }: Props) {
   // `chave` já é a identidade estável do item (ver `ItemComContexto`), então basta ordenar uma
   // cópia por data — sem precisar remontar nenhum índice depois.
@@ -62,6 +67,35 @@ export default function ListaConferencia({
           {leitura.avisos.map((a) => <div key={a}>{a}</div>)}
           {leitura.linhasIgnoradas > 0 && <div>{leitura.linhasIgnoradas} linhas ignoradas.</div>}
         </div>
+      )}
+
+      {leitura.linhasIgnoradas > 0
+        && leitura.linhasNaoReconhecidas && leitura.linhasNaoReconhecidas.length > 0 && (
+        <>
+          <button type="button" className="botao" onClick={onToggleLinhasIgnoradas}>
+            {mostrarLinhasIgnoradas ? 'Ocultar linhas não reconhecidas' : 'Ver linhas não reconhecidas'}
+          </button>
+          {mostrarLinhasIgnoradas && (
+            <div className="lista">
+              {leitura.linhasNaoReconhecidas.map((linha, i) => (
+                <div className="item" key={i}><p className="sub">{linha}</p></div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {leitura.textoExtraido && (leitura.linhasIgnoradas > 0 || itens.length === 0) && (
+        <>
+          <button
+            type="button" className="botao"
+            onClick={() => onCopiarTextoExtraido(leitura.textoExtraido!)}
+          >
+            {copiarEstado === 'copiado' ? 'Copiado' : 'Copiar texto extraído'}
+          </button>
+          <p className="sub">O texto contém os dados da sua fatura. Use só para diagnóstico.</p>
+          {copiarEstado === 'erro' && <p className="sub">Não foi possível copiar.</p>}
+        </>
       )}
 
       <div className="importar-resumo">

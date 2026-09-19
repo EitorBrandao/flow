@@ -41,8 +41,10 @@ export default function Importar() {
   const [erroAplicar, setErroAplicar] = useState('');
   const [aplicando, setAplicando] = useState(false);
 
-  // Estado do botão "Copiar texto extraído": só para diagnóstico, quando nada foi reconhecido.
+  // Estado do botão "Copiar texto extraído" e da lista de linhas não reconhecidas: os dois só
+  // existem para diagnóstico, quando o arquivo tem alguma linha ignorada.
   const [copiarEstado, setCopiarEstado] = useState<'ocioso' | 'copiado' | 'erro'>('ocioso');
+  const [mostrarLinhasIgnoradas, setMostrarLinhasIgnoradas] = useState(false);
 
   const cartoesAtivos = useMemo(() => (dados?.cartoes ?? []).filter((c) => c.ativo), [dados]);
 
@@ -94,7 +96,7 @@ export default function Importar() {
     setBoxIdEscolhida(null); setDestinoBlocos({});
     setTrocas({}); setTotaisCorrigidos({});
     setResumoAplicado(null); setErroAplicar('');
-    setCopiarEstado('ocioso');
+    setCopiarEstado('ocioso'); setMostrarLinhasIgnoradas(false);
   }
 
   /** Copia o texto que o pdf.js extraiu, só para diagnóstico — não é lido de volta pelo app.
@@ -116,7 +118,7 @@ export default function Importar() {
     setErro('');
     setTrocas({});
     setTotaisCorrigidos({});
-    setCopiarEstado('ocioso');
+    setCopiarEstado('ocioso'); setMostrarLinhasIgnoradas(false);
     try {
       const r = await adapter.ler(conteudo);
       setLeitura(r);
@@ -322,7 +324,24 @@ export default function Importar() {
           {leitura!.linhasIgnoradas > 0 && (
             <p className="sub">{leitura!.linhasIgnoradas} linhas não foram reconhecidas.</p>
           )}
-          {leitura!.textoExtraido && (
+          {leitura!.linhasNaoReconhecidas && leitura!.linhasNaoReconhecidas.length > 0 && (
+            <>
+              <button
+                type="button" className="botao"
+                onClick={() => setMostrarLinhasIgnoradas((v) => !v)}
+              >
+                {mostrarLinhasIgnoradas ? 'Ocultar linhas não reconhecidas' : 'Ver linhas não reconhecidas'}
+              </button>
+              {mostrarLinhasIgnoradas && (
+                <div className="lista">
+                  {leitura!.linhasNaoReconhecidas.map((linha, i) => (
+                    <div className="item" key={i}><p className="sub">{linha}</p></div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+          {leitura!.textoExtraido && (leitura!.linhasIgnoradas > 0 || zeroBrutos) && (
             <>
               <button
                 type="button" className="botao"
@@ -396,6 +415,10 @@ export default function Importar() {
             onTrocar={(chave, estado, acao) => setTrocas((t) => ({ ...t, [chave]: { estado, acao } }))}
             totaisCorrigidos={totaisCorrigidos}
             onCorrigirTotal={(chave, estado, v) => setTotaisCorrigidos((t) => ({ ...t, [chave]: { estado, valorCent: v } }))}
+            mostrarLinhasIgnoradas={mostrarLinhasIgnoradas}
+            onToggleLinhasIgnoradas={() => setMostrarLinhasIgnoradas((v) => !v)}
+            copiarEstado={copiarEstado}
+            onCopiarTextoExtraido={(texto) => void copiarTextoExtraido(texto)}
           />
           <div className="importar-rodape">
             {erroAplicar && <p className="aviso">{erroAplicar}</p>}
