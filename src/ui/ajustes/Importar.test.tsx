@@ -36,8 +36,11 @@ const TEXTO_FATURA_DOIS_CARTOES = [
 
 // A leitura real do PDF passa pelo pdf.js (`textoPdf.ts`); os testes deste arquivo não têm um
 // PDF binário de verdade, então a extração de texto é substituída pelo texto sintético acima.
+// É um `vi.fn()`, não uma função fixa, porque um teste abaixo precisa fazê-la falhar uma vez,
+// pra verificar a mensagem de erro em português.
+const extrairTextoPdfMock = vi.fn(async (_conteudo: ArrayBuffer) => TEXTO_FATURA_DOIS_CARTOES);
 vi.mock('../../importar/adapters/textoPdf', () => ({
-  extrairTextoPdf: async () => TEXTO_FATURA_DOIS_CARTOES,
+  extrairTextoPdf: (conteudo: ArrayBuffer) => extrairTextoPdfMock(conteudo),
 }));
 
 beforeEach(async () => {
@@ -122,6 +125,24 @@ describe('Importar', () => {
     const categoriaSaida = dados.categorias.find((c) => c.id === saida!.categoriaId);
     expect(categoriaEntrada?.tipo).toBe('ganho');
     expect(categoriaSaida?.tipo).toBe('gasto');
+  });
+
+  // Regressão do defeito do buffer esvaziado do PDF (ver `textoPdf.test.ts`): a exceção crua
+  // aparecia na tela em inglês. O detalhe técnico continua na mensagem — foi ele que permitiu
+  // diagnosticar o defeito —, mas com um prefixo em português na frente.
+  it('erro ao ler o arquivo aparece com prefixo em português, com o detalhe técnico junto', async () => {
+    extrairTextoPdfMock.mockRejectedValueOnce(new Error('Cannot perform Construct on a detached ArrayBuffer'));
+    await useApp.getState().iniciar();
+    render(<Importar />);
+
+    await userEvent.upload(
+      screen.getByLabelText('Escolher arquivo'),
+      new File(['%PDF-1.4 fatura sintética'], 'fatura.pdf', { type: 'application/pdf' }),
+    );
+
+    await screen.findByText(
+      'Não foi possível ler o arquivo. Detalhe técnico: Cannot perform Construct on a detached ArrayBuffer',
+    );
   });
 
   // CRÍTICO 1: `trocas`/`totaisCorrigidos` eram chaveados pelo ÍNDICE do item na lista

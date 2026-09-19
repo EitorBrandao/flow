@@ -1,0 +1,2 @@
+- Conferência por extrato: ler a fatura em PDF de novo, pelo botão "Trocar", não dá mais erro.
+  - Um erro ao ler o arquivo agora aparece em português, com o detalhe técnico junto.
