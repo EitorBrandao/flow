@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { FATURA_DOIS_CARTOES, FATURA_SANTANDER } from '../fixtures/santander-fatura';
+import {
+  FATURA_DOIS_CARTOES, FATURA_SANTANDER, FATURA_SANTANDER_COMPLETA,
+} from '../fixtures/santander-fatura';
 import { lerSantanderFatura, mesFaturaDoTexto } from './santanderFatura';
 
 describe('lerSantanderFatura', () => {
@@ -112,6 +114,54 @@ describe('lerSantanderFatura', () => {
     expect(estorno!.valorCent).toBeGreaterThan(0);
     expect(pagamento!.valorCent).toBeGreaterThan(0);
     expect(compra!.valorCent).toBeLessThan(0);
+  });
+});
+
+// A página 1 (cabeçalho de cartão fantasma, boleto, autenticação mecânica) e o "Resumo da
+// Fatura" ficam fora do detalhamento. Sem a delimitação por "Detalhamento da Fatura" (início) e
+// "Resumo da Fatura" (fim), a página 1 cria um bloco fantasma e todo o resto vira ruído contado.
+describe('lerSantanderFatura — delimitação pelo "Detalhamento da Fatura"', () => {
+  it('lê só a região do detalhamento: dois blocos, todas as compras, nada ignorado', () => {
+    const r = lerSantanderFatura(FATURA_SANTANDER_COMPLETA, '2026-10');
+    expect(r.blocos).toHaveLength(2);
+    expect(r.linhasIgnoradas).toBe(0);
+    expect(r.linhasNaoReconhecidas).toEqual([]);
+    // As cinco linhas de transação: pagamento de fatura, parcelada e despesa do cartão
+    // titular; estorno e despesa do cartão virtual.
+    expect(r.brutos).toHaveLength(5);
+  });
+
+  it('não abre bloco fantasma com o cabeçalho de cartão da página 1', () => {
+    const r = lerSantanderFatura(FATURA_SANTANDER_COMPLETA, '2026-10');
+    // Os dois blocos lidos são exatamente os do detalhamento — nenhum bloco extra da página 1.
+    expect(r.blocos!.map((b) => b.rotulo)).toEqual([
+      'FULANO DE TAL - 1234 XXXX XXXX 5678',
+      '@ FULANO DE TAL - 1234 XXXX XXXX 5678',
+    ]);
+  });
+
+  it('reconhece a parcelada e a natureza das linhas dentro do detalhamento', () => {
+    const r = lerSantanderFatura(FATURA_SANTANDER_COMPLETA, '2026-10');
+    const parcelada = r.brutos.find((b) => b.parcela != null);
+    expect(parcelada?.parcela).toEqual({ n: 10, total: 10 });
+    expect(r.brutos.map((b) => b.natureza)).toContain('pagamentoFatura');
+    expect(r.brutos.map((b) => b.natureza)).toContain('estornoCartao');
+  });
+
+  // Compatibilidade: uma fixture sem o título "Detalhamento da Fatura" continua sendo lida
+  // desde o começo — é o caso de FATURA_SANTANDER e de vários testes acima, que começam direto
+  // no cabeçalho do cartão, sem o título antes.
+  it('sem o título "Detalhamento da Fatura", continua lendo desde o começo (compatibilidade)', () => {
+    const texto = [
+      'FULANO DE TAL - 0000 XXXX XXXX 0000',
+      'Despesas',
+      'Compra Data Descrição Parcela R$ US$',
+      '01/08 MERCADO ALFA 45,00',
+    ].join('\n');
+    const r = lerSantanderFatura(texto, '2026-09');
+    expect(r.blocos).toHaveLength(1);
+    expect(r.brutos).toHaveLength(1);
+    expect(r.linhasIgnoradas).toBe(0);
   });
 });
 
