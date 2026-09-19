@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.31.1] - 2026-09-19
+
+### Alterado
+
+- Conferência por extrato: ler a fatura em PDF de novo, pelo botão "Trocar", não dá mais erro.
+  - Um erro ao ler o arquivo agora aparece em português, com o detalhe técnico junto.
+
 ## [0.31.0] - 2026-09-18
 
 ### Adicionado
