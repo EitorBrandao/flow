@@ -687,3 +687,12 @@ deduzido com incerteza" à toa — foi o que apareceu em compras comuns de merca
 descrição igual — ver "Casamento".** Os dois já estão descritos na seção acima; entram aqui só
 para registrar que as quatro correções nasceram da mesma sessão de uso real, não de desenho
 separado.
+
+**Casar por valor e data, sem exigir descrição igual, abriu uma brecha: coincidência.** Um
+lançamento sem nenhuma relação com o bruto, mas do mesmo valor e dentro da mesma janela de
+±3 dias, casa igual — e para um `previsto`, a ação padrão é `confirmar`, que grava sozinho. Por
+isso, quando o candidato do casamento comum (`exato`, em "Casamento") tem descrição normalizada
+diferente da do bruto, o item ganha `aviso: 'Casado por valor e data, com descrição diferente.
+Confira se é o mesmo lançamento.'` — descrição igual, sem aviso. O casamento de compra parcelada
+fica de fora: a identidade dele (número de parcelas + data + valor reconstruído do total) já é
+forte o bastante, e também não exige descrição igual.

@@ -143,6 +143,34 @@ describe('LinhaConferencia', () => {
     expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 
+  it('confere com aviso mostra o aviso de descrição diferente', () => {
+    const item: ItemConferencia = {
+      estado: 'confere',
+      bruto: { data: '2026-08-07', valorCent: -4500, descricao: 'MERCADO ALFA 103', fonte: 'conta' },
+      lancamentoId: 'l3',
+      acao: { tipo: 'ignorar' },
+      aviso: 'Casado por valor e data, com descrição diferente. Confira se é o mesmo lançamento.',
+    };
+    renderLinha(item);
+    expect(screen.getByText(
+      'Casado por valor e data, com descrição diferente. Confira se é o mesmo lançamento.',
+    )).toBeInTheDocument();
+  });
+
+  it('previsto com aviso mostra o aviso de descrição diferente', () => {
+    const item: ItemConferencia = {
+      estado: 'previsto',
+      bruto: { data: '2026-08-20', valorCent: -3990, descricao: 'FARMACIA DELTA', fonte: 'conta' },
+      lancamentoId: 'l1',
+      acao: { tipo: 'confirmar' },
+      aviso: 'Casado por valor e data, com descrição diferente. Confira se é o mesmo lançamento.',
+    };
+    renderLinha(item);
+    expect(screen.getByText(
+      'Casado por valor e data, com descrição diferente. Confira se é o mesmo lançamento.',
+    )).toBeInTheDocument();
+  });
+
   it('interno (resgate): mostra só Ignorar', () => {
     const item: ItemConferencia = {
       estado: 'interno',

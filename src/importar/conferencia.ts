@@ -96,8 +96,9 @@ function candidatosDoCartao(dados: Dados, cartaoId: ID | undefined): Candidato[]
  * Três critérios, todos exigidos: mesmo número de parcelas, data a até `tolerancia` dias (a
  * data do bruto já é a da compra original, reconstruída pelo adapter) e o valor da parcela N
  * compatível a menos da sobra de arredondamento que `valorParcela` empurra para a parcela 1 —
- * no máximo `compra.parcelas` centavos. A descrição NÃO entra: o usuário digita a compra com as
- * palavras dele, e o banco escreve outra coisa.
+ * no máximo `compra.parcelas - 1` centavos, porque o resto da divisão inteira (`valorTotal %
+ * parcelas`) nunca chega a `compra.parcelas`. A descrição NÃO entra: o usuário digita a compra
+ * com as palavras dele, e o banco escreve outra coisa.
  */
 function candidatoDeParcelaCompativel(
   candidatos: Candidato[], parcela: { n: number; total: number }, valorBrutoAbsCent: number,
@@ -108,7 +109,7 @@ function candidatoDeParcelaCompativel(
       && c.parcelas === parcela.total
       && diferencaEmDias(c.data, dataBruto) <= tolerancia
       && Math.abs(valorParcela(c.valorCent, c.parcelas as number, parcela.n) - valorBrutoAbsCent)
-        <= (c.parcelas as number))
+        <= (c.parcelas as number) - 1)
     .sort((x, y) => diferencaEmDias(x.data, dataBruto) - diferencaEmDias(y.data, dataBruto))[0];
 }
 
@@ -198,12 +199,13 @@ export function conferir(
     }
 
     // 3a. Compra parcelada: casa contra o TOTAL gravado da compra existente, não contra o
-    // valor da parcela — ver `candidatoDeParcelaCompativel`. Sem candidato, cai no fluxo comum
-    // abaixo, que também não vai achar nada (o valor da parcela nunca bate com um total) e
-    // termina em `novo`, como antes desta regra existir.
-    if (b.fonte === 'cartao' && b.parcela) {
+    // valor da parcela — ver `candidatoDeParcelaCompativel`. Sem candidato, NÃO cai no fluxo
+    // comum abaixo: o valor de uma parcela pode bater, por coincidência, com o `valorTotal` de
+    // uma compra à vista qualquer, na mesma data. Vai direto para `novo`.
+    const ehParcela = b.fonte === 'cartao' && b.parcela != null;
+    if (ehParcela) {
       const candidato = candidatoDeParcelaCompativel(
-        doCartao, b.parcela, Math.abs(b.valorCent), b.data, tolerancia, usados,
+        doCartao, b.parcela!, Math.abs(b.valorCent), b.data, tolerancia, usados,
       );
       if (candidato) {
         usados.add(candidato.id);
@@ -214,52 +216,62 @@ export function conferir(
       }
     }
 
-    // 3b. Casamento comum.
-    const universo = b.fonte === 'cartao' ? doCartao : daConta;
-    const valorCent = Math.abs(b.valorCent);
-    const chave = chaveDoBruto(b);
+    // 3b. Casamento comum. Pulado para uma parcela sem candidato de parcela (ver 3a).
+    if (!ehParcela) {
+      const universo = b.fonte === 'cartao' ? doCartao : daConta;
+      const valorCent = Math.abs(b.valorCent);
+      const chave = chaveDoBruto(b);
 
-    // `confere`/`previsto`: valor exato, dentro da janela de data — a descrição NÃO é exigida.
-    // O usuário digita a compra com as palavras dele; o banco escreve outra coisa
-    // ("MERCADOLIVRE*MERCADOL"). Entre vários candidatos, a preferência é: descrição igual
-    // primeiro, depois a menor distância de data, depois a ordem de chegada (o `sort` é
-    // estável, então empate nos dois critérios preserva a ordem de `universo`).
-    const exato = universo
-      .filter((c) => !usados.has(c.id)
-        && c.valorCent === valorCent
-        && diferencaEmDias(c.data, b.data) <= tolerancia)
-      .sort((x, y) => {
-        const prefX = x.chave === chave ? 0 : 1;
-        const prefY = y.chave === chave ? 0 : 1;
-        return prefX !== prefY
-          ? prefX - prefY
-          : diferencaEmDias(x.data, b.data) - diferencaEmDias(y.data, b.data);
-      })[0];
-    if (exato) {
-      usados.add(exato.id);
-      itens.push({
-        estado: exato.ehPrevisto ? 'previsto' : 'confere',
-        bruto: b, ...refDe(exato),
-        acao: exato.ehPrevisto ? { tipo: 'confirmar' } : { tipo: 'ignorar' },
-      });
-      continue;
-    }
+      // `confere`/`previsto`: valor exato, dentro da janela de data — a descrição NÃO é
+      // exigida. O usuário digita a compra com as palavras dele; o banco escreve outra coisa
+      // ("MERCADOLIVRE*MERCADOL"). Entre vários candidatos, a preferência é: descrição igual
+      // primeiro, depois a menor distância de data, depois a ordem de chegada (o `sort` é
+      // estável, então empate nos dois critérios preserva a ordem de `universo`). Sem
+      // descrição igual exigida, o casamento corre o risco de casar por coincidência — um
+      // lançamento não relacionado, do mesmo valor e dentro da mesma janela de data. O aviso
+      // avisa o usuário disso, para ele conferir antes de confirmar (a ação padrão de um
+      // `previsto` já grava sozinha).
+      const exato = universo
+        .filter((c) => !usados.has(c.id)
+          && c.valorCent === valorCent
+          && diferencaEmDias(c.data, b.data) <= tolerancia)
+        .sort((x, y) => {
+          const prefX = x.chave === chave ? 0 : 1;
+          const prefY = y.chave === chave ? 0 : 1;
+          return prefX !== prefY
+            ? prefX - prefY
+            : diferencaEmDias(x.data, b.data) - diferencaEmDias(y.data, b.data);
+        })[0];
+      if (exato) {
+        usados.add(exato.id);
+        const avisoDescricao = exato.chave !== chave
+          ? 'Casado por valor e data, com descrição diferente. Confira se é o mesmo lançamento.'
+          : undefined;
+        itens.push({
+          estado: exato.ehPrevisto ? 'previsto' : 'confere',
+          bruto: b, ...refDe(exato),
+          acao: exato.ehPrevisto ? { tipo: 'confirmar' } : { tipo: 'ignorar' },
+          ...(avisoDescricao ? { aviso: avisoDescricao } : {}),
+        });
+        continue;
+      }
 
-    // `divergente`: mesmo lugar (descrição igual, dentro da janela de data), valor diferente.
-    // Aqui a descrição CONTINUA exigida — sem isso, qualquer lançamento do mesmo dia pareceria
-    // divergente, não só o que é de fato o mesmo gasto com o valor errado.
-    const divergente = universo
-      .filter((c) => !usados.has(c.id)
-        && c.chave === chave
-        && diferencaEmDias(c.data, b.data) <= tolerancia)
-      .sort((x, y) => diferencaEmDias(x.data, b.data) - diferencaEmDias(y.data, b.data))[0];
-    if (divergente) {
-      usados.add(divergente.id);
-      itens.push({
-        estado: 'divergente', bruto: b, ...refDe(divergente),
-        acao: { tipo: 'confirmarComValor', valorCent, data: b.data },
-      });
-      continue;
+      // `divergente`: mesmo lugar (descrição igual, dentro da janela de data), valor
+      // diferente. Aqui a descrição CONTINUA exigida — sem isso, qualquer lançamento do mesmo
+      // dia pareceria divergente, não só o que é de fato o mesmo gasto com o valor errado.
+      const divergente = universo
+        .filter((c) => !usados.has(c.id)
+          && c.chave === chave
+          && diferencaEmDias(c.data, b.data) <= tolerancia)
+        .sort((x, y) => diferencaEmDias(x.data, b.data) - diferencaEmDias(y.data, b.data))[0];
+      if (divergente) {
+        usados.add(divergente.id);
+        itens.push({
+          estado: 'divergente', bruto: b, ...refDe(divergente),
+          acao: { tipo: 'confirmarComValor', valorCent, data: b.data },
+        });
+        continue;
+      }
     }
 
     if (b.fonte === 'cartao') {

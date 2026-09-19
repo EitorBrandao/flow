@@ -244,6 +244,27 @@ describe('conferir', () => {
       expect(itens[0].estado).toBe('confere');
       expect(itens[0].compraCartaoId).toBe('existente');
       expect(itens[0].acao).toEqual({ tipo: 'ignorar' });
+      // O casamento de parcela tem identidade própria (número de parcelas + data + valor
+      // reconstruído) — não exige descrição igual, e por isso também não avisa quando ela
+      // diverge, ao contrário do casamento comum de "confere"/"previsto".
+      expect(itens[0].aviso).toBeUndefined();
+    });
+
+    // Sem candidato de parcela compatível, o bruto de uma parcela não pode cair no casamento
+    // comum: o casamento comum compara o valor de UMA parcela com o `valorTotal` de qualquer
+    // compra, e uma compra à vista de mesmo valor e data casaria por coincidência.
+    it('parcela sem candidato de parcela não casa por coincidência com compra à vista do mesmo valor e data', () => {
+      const d = dadosCom([], [
+        compraCartao({ id: 'a-vista', data: '2026-07-02', valorTotal: 10000, descricao: 'LOJA GAMA' }),
+      ]);
+      const itens = conferir([
+        bruto({
+          data: '2026-07-02', valorCent: -10000, fonte: 'cartao', descricao: 'LOJA GAMA',
+          parcela: { n: 3, total: 10 },
+        }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('novo');
+      expect(itens[0].compraCartaoId).toBeUndefined();
     });
 
     it('não casa quando a data da compra existente fica longe da data do bruto', () => {
@@ -404,6 +425,48 @@ describe('conferir', () => {
       ], d, OPCOES);
       expect(itens[0].estado).toBe('divergente');
       expect(itens[0].acao).toEqual({ tipo: 'confirmarComValor', valorCent: 4500, data: '2026-08-15' });
+    });
+
+    // O casamento por valor e data, sem exigir descrição igual, corre o risco de casar por
+    // coincidência: um lançamento não relacionado, do mesmo valor e na mesma janela de data.
+    // O aviso existe para que o usuário confira antes de confirmar (a ação padrão de um
+    // `previsto` grava sozinha).
+    it('confere com descrição diferente do banco recebe aviso para conferir', () => {
+      const d = dadosCom([
+        lancamento({ data: '2026-08-15', valor: 4500, nota: 'MERCADOLIVRE*MERCADOL' }),
+      ]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'MERCADO LIVRE COMPRA 123' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('confere');
+      expect(itens[0].aviso).toBe(
+        'Casado por valor e data, com descrição diferente. Confira se é o mesmo lançamento.',
+      );
+    });
+
+    it('confere com descrição igual não recebe aviso', () => {
+      const d = dadosCom([lancamento({ data: '2026-08-15', valor: 4500, nota: 'LOJA GAMA' })]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'LOJA GAMA' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('confere');
+      expect(itens[0].aviso).toBeUndefined();
+    });
+
+    it('previsto com descrição diferente recebe aviso e continua propondo confirmar', () => {
+      const d = dadosCom([
+        lancamento({
+          data: '2026-08-15', valor: 4500, nota: 'MERCADOLIVRE*MERCADOL', status: 'previsto',
+        }),
+      ]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'MERCADO LIVRE COMPRA 123' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('previsto');
+      expect(itens[0].acao).toEqual({ tipo: 'confirmar' });
+      expect(itens[0].aviso).toBe(
+        'Casado por valor e data, com descrição diferente. Confira se é o mesmo lançamento.',
+      );
     });
   });
 
