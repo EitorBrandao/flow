@@ -365,9 +365,12 @@ perto de `mês da fatura − (n − 1) meses`. Quando a data deduzida cai a mais
 esperado, o item é marcado com aviso e fica visível para você conferir. Nunca se inventa um ano
 em silêncio.
 
-**A identidade para o casamento** de uma parcelada é o cartão, a descrição normalizada, o valor
-da parcela e o total de parcelas. Ela **não** inclui o número da parcela. Assim, importar a
-fatura do mês seguinte reconhece a mesma compra e a classifica como `confere`.
+**A identidade para o casamento** de uma parcelada é o cartão, o total de parcelas, a data da
+compra original (±3 dias) e o valor da parcela, com tolerância de centavos de arredondamento
+contra `valorParcela` da compra gravada. A descrição **não** entra: quem lançou a compra à mão
+escreveu outra coisa. O número da parcela também não entra. Assim, importar a fatura do mês
+seguinte reconhece a mesma compra e a classifica como `confere`. (Revisto depois da primeira
+conferência real — ver a seção final.)
 
 **Anuidade.** Uma linha de anuidade usa o formato de parcela (`01/12`) mas aparece em `Despesas`,
 não em `Parcelamentos`. A regra é a mesma para as duas subseções: `NN/NN` antes do valor é
