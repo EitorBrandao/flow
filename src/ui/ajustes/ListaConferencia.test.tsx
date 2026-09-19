@@ -110,12 +110,13 @@ describe('ListaConferencia', () => {
     expect(container.textContent).toContain('linha torta 2');
   });
 
-  it('mostra o botão de copiar texto extraído só quando há texto e linha ignorada', () => {
+  it('mostra o botão de copiar texto extraído quando há linhas ignoradas ou nenhum lançamento reconhecido', () => {
     const dados = dadosVazios();
-    const semIgnoradas: LeituraAdapter = { brutos: [], linhasIgnoradas: 0, avisos: [], textoExtraido: 'texto' };
+    // Sem texto extraído, o botão nunca aparece
+    const semTexto: LeituraAdapter = { brutos: [], linhasIgnoradas: 0, avisos: [], textoExtraido: undefined };
     const { container, rerender } = render(
       <ListaConferencia
-        leitura={semIgnoradas} itens={[]} dados={dados}
+        leitura={semTexto} itens={[]} dados={dados}
         trocas={{}} onTrocar={vi.fn()}
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
@@ -124,6 +125,20 @@ describe('ListaConferencia', () => {
     );
     expect(container.textContent).not.toContain('Copiar texto extraído');
 
+    // Com texto e zero lançamentos reconhecidos (itens vazio), o botão aparece
+    const zeroLancamentos: LeituraAdapter = { brutos: [], linhasIgnoradas: 0, avisos: [], textoExtraido: 'texto' };
+    rerender(
+      <ListaConferencia
+        leitura={zeroLancamentos} itens={[]} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+      />,
+    );
+    expect(container.textContent).toContain('Copiar texto extraído');
+
+    // Com linhas ignoradas, o botão também aparece
     const comIgnoradas: LeituraAdapter = { brutos: [], linhasIgnoradas: 1, avisos: [], textoExtraido: 'texto' };
     rerender(
       <ListaConferencia

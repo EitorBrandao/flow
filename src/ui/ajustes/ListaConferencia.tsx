@@ -85,7 +85,7 @@ export default function ListaConferencia({
         </>
       )}
 
-      {leitura.textoExtraido && leitura.linhasIgnoradas > 0 && (
+      {leitura.textoExtraido && (leitura.linhasIgnoradas > 0 || itens.length === 0) && (
         <>
           <button
             type="button" className="botao"

@@ -381,6 +381,18 @@ const TEXTO_FATURA_PARCIALMENTE_RECONHECIDA = [
   'VALOR TOTAL 45,00 0,00',
 ].join('\n');
 
+// Um texto que não tem a linha "Vencimento" — sem ela, o adaptador recusa a leitura inteira,
+// mas com zero linhas ignoradas, porque nenhuma linha foi processada como tentativa de transação.
+// Este é o case de falha no reconhecimento do mês da fatura, o diagnóstico citado no CLAUDE.md.
+const TEXTO_FATURA_MES_NAO_RECONHECIDO = [
+  'Detalhamento da Fatura',
+  'FULANO DE TAL - 0000 XXXX XXXX 0000',
+  'Despesas',
+  'Compra Data Descrição Parcela R$ US$',
+  '3 07/08 MERCADO ALFA 45,00',
+  'VALOR TOTAL 45,00 0,00',
+].join('\n');
+
 describe('Importar — diagnóstico com conferência parcial', () => {
   beforeEach(() => {
     Object.defineProperty(navigator, 'clipboard', {
@@ -431,5 +443,26 @@ describe('Importar — diagnóstico com conferência parcial', () => {
     expect(screen.getByText('1 linhas ignoradas.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ver linhas não reconhecidas' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Copiar texto extraído/ })).not.toBeInTheDocument();
+  });
+
+  it('mostra o botão de copiar quando o mês de vencimento não é reconhecido (zero brutos, zero linhas ignoradas)', async () => {
+    extrairTextoPdfMock.mockResolvedValueOnce(TEXTO_FATURA_MES_NAO_RECONHECIDO);
+    await useApp.getState().iniciar();
+    render(<Importar />);
+
+    await userEvent.upload(
+      screen.getByLabelText('Escolher arquivo'),
+      new File(['%PDF-1.4 fatura sintética'], 'fatura.pdf', { type: 'application/pdf' }),
+    );
+
+    await screen.findByText('Nenhum lançamento reconhecido no arquivo.');
+    expect(screen.getByText('Mês de vencimento da fatura não reconhecido; nada foi lido.')).toBeInTheDocument();
+    expect(screen.queryByText(/linhas não foram reconhecidas/)).not.toBeInTheDocument();
+
+    const botao = screen.getByRole('button', { name: 'Copiar texto extraído' });
+    await userEvent.click(botao);
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(TEXTO_FATURA_MES_NAO_RECONHECIDO);
+    expect(await screen.findByRole('button', { name: 'Copiado' })).toBeInTheDocument();
   });
 });

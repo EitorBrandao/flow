@@ -341,7 +341,7 @@ export default function Importar() {
               )}
             </>
           )}
-          {leitura!.textoExtraido && leitura!.linhasIgnoradas > 0 && (
+          {leitura!.textoExtraido && (leitura!.linhasIgnoradas > 0 || zeroBrutos) && (
             <>
               <button
                 type="button" className="botao"
