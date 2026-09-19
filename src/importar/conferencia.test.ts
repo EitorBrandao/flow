@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Dados, Lancamento } from '../domain/types';
+import type { CompraCartao, Dados, Lancamento } from '../domain/types';
 import {
   acaoEfetiva, chaveDoItem, conferir, totalCorrigidoValido, totalEfetivo,
 } from './conferencia';
@@ -21,16 +21,25 @@ function lancamento(p: Partial<Lancamento> & { data: string; valor: number }): L
   } as Lancamento;
 }
 
-function dadosCom(lancamentos: Lancamento[]): Dados {
+function dadosCom(lancamentos: Lancamento[], comprasCartao: CompraCartao[] = []): Dados {
   return {
     boxes: [], categorias: [], lancamentos, recorrencias: [], cenarios: [],
-    cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
+    cartoes: [], categoriasCartao: [], comprasCartao, recorrenciasCartao: [],
     conferenciasFatura: [], viagens: [], bancos: [], ajustesFechamento: [], notasFiscais: [],
     config: {
       id: 'config', boxPadraoId: BOX, ultimoBackupEm: null,
       mudancasDesdeBackup: false, horizonteProjecao: '2027-12-31',
     },
   };
+}
+
+function compraCartao(p: Partial<CompraCartao> & { data: string; valorTotal: number }): CompraCartao {
+  return {
+    id: p.id ?? `c-${p.data}-${p.valorTotal}`,
+    cartaoId: CARTAO, categoriaCartaoId: CAT_CARTAO, parcelas: 1,
+    criadoEm: '2026-08-01T00:00:00.000Z', alteradoEm: '2026-08-01T00:00:00.000Z',
+    ...p,
+  } as CompraCartao;
 }
 
 function bruto(p: Partial<LancamentoBruto> & { data: string; valorCent: number }): LancamentoBruto {
@@ -92,6 +101,33 @@ describe('conferir', () => {
     ], d, OPCOES);
     const sobras = itens.filter((i) => i.estado === 'sobra').map((i) => i.lancamentoId);
     expect(sobras).toEqual(['dentro']);
+  });
+
+  // Uma parcela posterior (n > 1) traz no bruto a data da COMPRA ORIGINAL, meses atrás — não a
+  // data da fatura atual. Se essa data entrar no cálculo do período da "sobra", o período
+  // estica por meses, e toda compra do app nesse intervalo vira sobra falsa.
+  it('não usa a data de parcela posterior (n > 1) para esticar o período da sobra', () => {
+    const d = dadosCom([], [
+      // Compra de dois meses antes do ciclo da fatura atual, ausente do arquivo: com o
+      // período esticado pela parcela, isso vira sobra falsa; sem esticar, fica fora do
+      // período (que passa a ir só de 20/07 a 15/08, definido pelos brutos comuns).
+      compraCartao({ id: 'antiga-fora', data: '2026-06-10', valorTotal: 3000, descricao: 'POSTO BETA' }),
+      // Compra dentro do ciclo da fatura atual, ausente do arquivo: continua sobra de
+      // verdade, porque está dentro do período real.
+      compraCartao({ id: 'do-mes-sobra', data: '2026-08-01', valorTotal: 2000, descricao: 'FARMACIA DELTA' }),
+    ]);
+    const itens = conferir([
+      // Parcela 2 de 3: a data é a da compra original, em junho — meses antes do ciclo atual.
+      bruto({
+        data: '2026-06-02', valorCent: -10000, fonte: 'cartao', descricao: 'MERCADO ALFA',
+        parcela: { n: 2, total: 3 },
+      }),
+      // Duas compras comuns do ciclo atual, que definem o período real: 20/07 a 15/08.
+      bruto({ data: '2026-07-20', valorCent: -3000, fonte: 'cartao', descricao: 'FULANO DE TAL' }),
+      bruto({ data: '2026-08-15', valorCent: -4500, fonte: 'cartao', descricao: 'LOJA GAMA' }),
+    ], d, OPCOES);
+    const sobras = itens.filter((i) => i.estado === 'sobra').map((i) => i.compraCartaoId);
+    expect(sobras).toEqual(['do-mes-sobra']);
   });
 
   // Sem casamento um-para-um, os dois brutos casam com o mesmo lançamento.
