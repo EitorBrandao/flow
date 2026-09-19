@@ -37,6 +37,10 @@ export interface LeituraAdapter {
   // fatura ou do extrato do usuário. Nunca é gravado: só a UI de importação o lê, para exibir
   // um botão de copiar.
   textoExtraido?: string;
+  // O texto de cada linha (ou trecho) que virou uma unidade de `linhasIgnoradas`, na mesma
+  // ordem. Existe só para diagnóstico e contém os dados da fatura ou do extrato do usuário —
+  // nunca é gravado: só a UI de importação o lê, para exibir a lista sob pedido.
+  linhasNaoReconhecidas?: string[];
 }
 
 export interface Adapter {

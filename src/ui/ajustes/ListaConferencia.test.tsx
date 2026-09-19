@@ -53,6 +53,8 @@ describe('ListaConferencia', () => {
         leitura={leitura} itens={itens} dados={dados}
         trocas={{}} onTrocar={vi.fn()}
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
       />,
     );
 
@@ -71,5 +73,67 @@ describe('ListaConferencia', () => {
     expect(indiceLoja).toBeGreaterThanOrEqual(0);
     expect(indicePosto).toBeGreaterThan(indiceLoja);
     expect(indiceMercado).toBeGreaterThan(indicePosto);
+  });
+
+  it('mostra o botão de ver linhas não reconhecidas e a lista só quando mandado exibir', () => {
+    const dados = dadosVazios();
+    const leitura: LeituraAdapter = {
+      brutos: [], linhasIgnoradas: 2, avisos: [],
+      linhasNaoReconhecidas: ['linha torta 1', 'linha torta 2'],
+    };
+
+    const { container, rerender } = render(
+      <ListaConferencia
+        leitura={leitura} itens={[]} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+      />,
+    );
+
+    expect(container.textContent).toContain('Ver linhas não reconhecidas');
+    expect(container.textContent).not.toContain('linha torta 1');
+
+    rerender(
+      <ListaConferencia
+        leitura={leitura} itens={[]} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        mostrarLinhasIgnoradas onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+      />,
+    );
+
+    expect(container.textContent).toContain('Ocultar linhas não reconhecidas');
+    expect(container.textContent).toContain('linha torta 1');
+    expect(container.textContent).toContain('linha torta 2');
+  });
+
+  it('mostra o botão de copiar texto extraído só quando há texto e linha ignorada', () => {
+    const dados = dadosVazios();
+    const semIgnoradas: LeituraAdapter = { brutos: [], linhasIgnoradas: 0, avisos: [], textoExtraido: 'texto' };
+    const { container, rerender } = render(
+      <ListaConferencia
+        leitura={semIgnoradas} itens={[]} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+      />,
+    );
+    expect(container.textContent).not.toContain('Copiar texto extraído');
+
+    const comIgnoradas: LeituraAdapter = { brutos: [], linhasIgnoradas: 1, avisos: [], textoExtraido: 'texto' };
+    rerender(
+      <ListaConferencia
+        leitura={comIgnoradas} itens={[]} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+      />,
+    );
+    expect(container.textContent).toContain('Copiar texto extraído');
   });
 });

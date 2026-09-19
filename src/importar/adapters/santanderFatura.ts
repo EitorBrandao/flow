@@ -87,6 +87,7 @@ export function lerSantanderFatura(texto: string, mesFatura: string): LeituraAda
 
   const blocos: BlocoCartao[] = [];
   const avisos: string[] = [];
+  const linhasNaoReconhecidas: string[] = [];
   let linhasIgnoradas = 0;
   let atual: BlocoCartao | undefined;
   let subsecao: Subsecao = 'despesas';
@@ -118,16 +119,19 @@ export function lerSantanderFatura(texto: string, mesFatura: string): LeituraAda
       // perdido — conta como ignorada. Se não der nenhuma, é só texto solto antes do primeiro
       // cartão, e não precisa de contagem.
       const antesDoBloco = extrairTransacoes(linha);
-      if (antesDoBloco.length > 0) linhasIgnoradas += antesDoBloco.length;
+      if (antesDoBloco.length > 0) {
+        linhasIgnoradas += antesDoBloco.length;
+        for (let i = 0; i < antesDoBloco.length; i++) linhasNaoReconhecidas.push(linha);
+      }
       continue;
     }
 
     const transacoes = extrairTransacoes(linha);
-    if (transacoes.length === 0) { linhasIgnoradas++; continue; }
+    if (transacoes.length === 0) { linhasIgnoradas++; linhasNaoReconhecidas.push(linha); continue; }
 
     for (const t of transacoes) {
       const valorCent = parsearValorExtrato(t.valorTexto);
-      if (valorCent == null) { linhasIgnoradas++; continue; }
+      if (valorCent == null) { linhasIgnoradas++; linhasNaoReconhecidas.push(linha); continue; }
 
       const parcelaTexto = t.parcela;
       const parcelaN = parcelaTexto ? Number(parcelaTexto.slice(0, 2)) : 1;
@@ -140,7 +144,7 @@ export function lerSantanderFatura(texto: string, mesFatura: string): LeituraAda
         diaMes: t.diaMes, parcelaN, parcelaTotal,
         valorParcelaCent: Math.abs(valorCent), mesFatura,
       });
-      if (compra == null) { linhasIgnoradas++; continue; }
+      if (compra == null) { linhasIgnoradas++; linhasNaoReconhecidas.push(linha); continue; }
       if (compra.anoDeduzidoComAviso) {
         avisos.push(`Ano deduzido com incerteza em "${t.descricao}".`);
       }
@@ -175,7 +179,9 @@ export function lerSantanderFatura(texto: string, mesFatura: string): LeituraAda
     }
   }
 
-  return { brutos: blocos.flatMap((b) => b.brutos), linhasIgnoradas, avisos, blocos };
+  return {
+    brutos: blocos.flatMap((b) => b.brutos), linhasIgnoradas, avisos, blocos, linhasNaoReconhecidas,
+  };
 }
 
 const VENCIMENTO = /Vencimento\s+(\d{2})\/(\d{2})\/(\d{4})/;
