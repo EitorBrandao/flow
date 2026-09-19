@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.31.3] - 2026-09-19
+
+### Alterado
+
+- Conferência por extrato: a tela mostra quais linhas do arquivo não foram reconhecidas.
+  - O "Copiar texto extraído" aparece sempre que alguma linha fica de fora ou nada é reconhecido.
+  - Compra parcelada antiga na fatura não faz mais lançamentos de meses anteriores aparecerem como sobra.
+
 ## [0.31.2] - 2026-09-19
 
 ### Alterado
