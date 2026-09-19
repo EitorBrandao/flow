@@ -112,7 +112,10 @@ export default function Importar() {
       setDestinoBlocos(destinos);
     } catch (e) {
       setLeitura(null);
-      setErro(e instanceof Error ? e.message : 'Falha ao ler o arquivo.');
+      // O detalhe técnico fica na mensagem: foi ele que permitiu diagnosticar o defeito do
+      // buffer esvaziado do PDF. Sem o prefixo em português, a exceção crua aparecia na tela.
+      const mensagem = e instanceof Error ? e.message : 'motivo desconhecido';
+      setErro(`Não foi possível ler o arquivo. Detalhe técnico: ${mensagem}`);
     } finally {
       setLendo(false);
     }
