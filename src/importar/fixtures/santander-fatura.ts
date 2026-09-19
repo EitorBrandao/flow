@@ -62,7 +62,7 @@ export const FATURA_SANTANDER_COMPLETA = [
   'Vencimento',
   '15/10/2026',
   'Seu limite é',
-  '10.000,00',
+  '1.000,00',
   'Pagamento mínimo',
   '20,52',
   'Ficha de Compensação',
