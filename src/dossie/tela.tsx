@@ -2,6 +2,7 @@ import { Component, type ReactNode } from 'react';
 import { act, render, cleanup } from '@testing-library/react';
 import { boxSelInicial, useApp, type Aba } from '../state/store';
 import Shell from '../ui/Shell';
+import { instalarAmbiente } from './ambiente';
 import type { Retrato } from './retrato';
 
 /**
@@ -172,12 +173,24 @@ export async function renderComCaptura(elemento: ReactNode): Promise<string> {
   }
 }
 
+/**
+ * `executarRoteiro` já devolveu o relógio real quando este ponto roda — mas o app tem tela
+ * que lê `Date.now()` direto (o aviso de backup atrasado em `TelaHoje.tsx`), em vez do
+ * `hoje` fictício do corte. Sem congelar o relógio de novo aqui, esse texto passaria a
+ * depender de quantos dias reais já se passaram desde que o dossiê foi gerado, e o dossiê
+ * "envelheceria" sozinho, sem nenhum código mudar.
+ */
 export async function textoDaTela(retrato: Retrato, aba: Aba): Promise<string> {
   useApp.setState({
     dados: retrato.dados, hoje: retrato.data, aba,
     boxSel: boxSelInicial(retrato.dados), carregado: true, ajustesSecao: null,
   });
-  return renderComCaptura(<Shell />);
+  const ambiente = instalarAmbiente(retrato.data);
+  try {
+    return await renderComCaptura(<Shell />);
+  } finally {
+    ambiente.restaurar();
+  }
 }
 
 export async function coletarTelas(retratos: Retrato[]): Promise<TelasDoCorte[]> {
