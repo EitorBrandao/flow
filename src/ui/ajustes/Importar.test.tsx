@@ -268,3 +268,71 @@ describe('Importar', () => {
     expect(screen.queryByText('3. Conferir')).not.toBeInTheDocument();
   });
 });
+
+// Texto que reproduz o formato que a extração do PDF entrega quando o cabeçalho do cartão e o
+// detalhamento caem numa linha só (o defeito original de `textoPdf.ts`): nenhuma transação é
+// reconhecida como pertencendo a um cartão, e a única transação da linha conta como ignorada.
+const TEXTO_FATURA_SEM_RECONHECIMENTO = [
+  'Vencimento 05/09/2026',
+  'Detalhamento da Fatura FULANO DE TAL - 0000 XXXX XXXX 0000 Despesas Compra Data '
+    + 'Descrição Parcela R$ US$ 3 07/08 MERCADO ALFA 45,00 VALOR TOTAL 45,00 0,00',
+].join('\n');
+
+describe('Importar — diagnóstico quando nada é reconhecido', () => {
+  beforeEach(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+      configurable: true,
+    });
+  });
+
+  it('mostra quantas linhas foram ignoradas e o botão para copiar o texto extraído', async () => {
+    extrairTextoPdfMock.mockResolvedValueOnce(TEXTO_FATURA_SEM_RECONHECIMENTO);
+    await useApp.getState().iniciar();
+    render(<Importar />);
+
+    await userEvent.upload(
+      screen.getByLabelText('Escolher arquivo'),
+      new File(['%PDF-1.4 fatura sintética'], 'fatura.pdf', { type: 'application/pdf' }),
+    );
+
+    await screen.findByText('Nenhum lançamento reconhecido no arquivo.');
+    expect(screen.getByText('1 linhas não foram reconhecidas.')).toBeInTheDocument();
+
+    const botao = screen.getByRole('button', { name: 'Copiar texto extraído' });
+    await userEvent.click(botao);
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(TEXTO_FATURA_SEM_RECONHECIMENTO);
+    expect(await screen.findByRole('button', { name: 'Copiado' })).toBeInTheDocument();
+  });
+
+  it('não mostra o botão de copiar quando o adapter não tem texto de diagnóstico (CSV)', async () => {
+    await useApp.getState().iniciar();
+    render(<Importar />);
+
+    await userEvent.upload(
+      screen.getByLabelText('Escolher arquivo'),
+      new File([CABECALHO], 'extrato-vazio.csv', { type: 'text/csv' }),
+    );
+
+    await screen.findByText('Nenhum lançamento reconhecido no arquivo.');
+    expect(screen.queryByRole('button', { name: /Copiar texto extraído/ })).not.toBeInTheDocument();
+  });
+
+  it('mostra aviso quando a cópia falha', async () => {
+    extrairTextoPdfMock.mockResolvedValueOnce(TEXTO_FATURA_SEM_RECONHECIMENTO);
+    vi.mocked(navigator.clipboard.writeText).mockRejectedValueOnce(new Error('sem permissão'));
+    await useApp.getState().iniciar();
+    render(<Importar />);
+
+    await userEvent.upload(
+      screen.getByLabelText('Escolher arquivo'),
+      new File(['%PDF-1.4 fatura sintética'], 'fatura.pdf', { type: 'application/pdf' }),
+    );
+
+    const botao = await screen.findByRole('button', { name: 'Copiar texto extraído' });
+    await userEvent.click(botao);
+
+    expect(await screen.findByText('Não foi possível copiar.')).toBeInTheDocument();
+  });
+});

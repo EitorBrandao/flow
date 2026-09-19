@@ -203,6 +203,9 @@ export const santanderFatura: Adapter = {
     // Sem "Vencimento" reconhecido, `mesFaturaDoTexto` devolve `undefined` e a string vazia
     // faz `lerSantanderFatura` recusar o mês e devolver o aviso, sem ler nada — é o
     // comportamento certo: nunca se deduz o ano das parcelas a partir de um mês inventado.
-    return lerSantanderFatura(texto, mesFaturaDoTexto(texto) ?? '');
+    const leitura = lerSantanderFatura(texto, mesFaturaDoTexto(texto) ?? '');
+    // Só para diagnóstico, quando a tela de importação não reconhece nada: deixa o usuário
+    // copiar o texto que o pdf.js extraiu, sem precisar mandar o PDF inteiro.
+    return { ...leitura, textoExtraido: texto };
   },
 };
