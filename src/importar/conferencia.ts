@@ -1,4 +1,5 @@
 import { diasEntre } from '../domain/dates';
+import { valorParcela } from '../domain/fatura';
 import type { CompraCartao, Dados, ID, ISODate, Lancamento } from '../domain/types';
 import { contraparteNubank, normalizarDescricao } from './descricao';
 import type {
@@ -39,6 +40,9 @@ interface Candidato {
   chave: string;
   ehPrevisto: boolean;
   ehCompra: boolean;
+  /** Só para candidato de compra de cartão: o número de parcelas dela. É o que permite casar
+   *  uma parcela do bruto contra o TOTAL gravado, sem comparar o valor da parcela com o total. */
+  parcelas?: number;
 }
 
 /** Uma fatura é mensal, então um pagamento nunca está a mais de um mês do vencimento dela.
@@ -77,8 +81,35 @@ function candidatosDoCartao(dados: Dados, cartaoId: ID | undefined): Candidato[]
     .filter((c) => c.cartaoId === cartaoId)
     .map((c: CompraCartao) => ({
       id: c.id, data: c.data, valorCent: c.valorTotal,
-      chave: chaveDe(c.descricao ?? ''), ehPrevisto: false, ehCompra: true,
+      chave: chaveDe(c.descricao ?? ''), ehPrevisto: false, ehCompra: true, parcelas: c.parcelas,
     }));
+}
+
+/**
+ * Candidato de compra parcelada compatível com uma linha de parcela do bruto.
+ *
+ * O bruto de uma parcela traz o valor de UMA parcela; a `CompraCartao` do app guarda o TOTAL
+ * (`valorTotal`) e `parcelas`. Comparar os dois valores direto nunca bate — por isso o
+ * casamento reconstrói, a partir do total gravado, o valor que a parcela N deveria ter
+ * (`valorParcela`) e compara esse valor com o do bruto.
+ *
+ * Três critérios, todos exigidos: mesmo número de parcelas, data a até `tolerancia` dias (a
+ * data do bruto já é a da compra original, reconstruída pelo adapter) e o valor da parcela N
+ * compatível a menos da sobra de arredondamento que `valorParcela` empurra para a parcela 1 —
+ * no máximo `compra.parcelas` centavos. A descrição NÃO entra: o usuário digita a compra com as
+ * palavras dele, e o banco escreve outra coisa.
+ */
+function candidatoDeParcelaCompativel(
+  candidatos: Candidato[], parcela: { n: number; total: number }, valorBrutoAbsCent: number,
+  dataBruto: ISODate, tolerancia: number, usados: Set<ID>,
+): Candidato | undefined {
+  return candidatos
+    .filter((c) => !usados.has(c.id)
+      && c.parcelas === parcela.total
+      && diferencaEmDias(c.data, dataBruto) <= tolerancia
+      && Math.abs(valorParcela(c.valorCent, c.parcelas as number, parcela.n) - valorBrutoAbsCent)
+        <= (c.parcelas as number))
+    .sort((x, y) => diferencaEmDias(x.data, dataBruto) - diferencaEmDias(y.data, dataBruto))[0];
 }
 
 /**
@@ -166,7 +197,24 @@ export function conferir(
       continue;
     }
 
-    // 3. Casamento comum.
+    // 3a. Compra parcelada: casa contra o TOTAL gravado da compra existente, não contra o
+    // valor da parcela — ver `candidatoDeParcelaCompativel`. Sem candidato, cai no fluxo comum
+    // abaixo, que também não vai achar nada (o valor da parcela nunca bate com um total) e
+    // termina em `novo`, como antes desta regra existir.
+    if (b.fonte === 'cartao' && b.parcela) {
+      const candidato = candidatoDeParcelaCompativel(
+        doCartao, b.parcela, Math.abs(b.valorCent), b.data, tolerancia, usados,
+      );
+      if (candidato) {
+        usados.add(candidato.id);
+        itens.push({
+          estado: 'confere', bruto: b, ...refDe(candidato), acao: { tipo: 'ignorar' },
+        });
+        continue;
+      }
+    }
+
+    // 3b. Casamento comum.
     const universo = b.fonte === 'cartao' ? doCartao : daConta;
     const valorCent = Math.abs(b.valorCent);
     const chave = chaveDoBruto(b);

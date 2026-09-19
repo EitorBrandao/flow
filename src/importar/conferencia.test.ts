@@ -226,6 +226,72 @@ describe('conferir', () => {
     expect(itens[0].acao).toEqual({ tipo: 'adicionarCompra', categoriaCartaoId: CAT_CARTAO });
   });
 
+  // A compra parcelada existente guarda o TOTAL (`valorTotal`) e `parcelas`; o bruto de uma
+  // parcela traz o valor de UMA parcela e `parcela: { n, total }`. Comparar o bruto direto com
+  // `valorTotal` nunca bate, e a parcelada existente virava "novo" à toa. O casamento certo usa
+  // `valorParcela` para reconstruir o valor esperado da parcela N a partir do total gravado.
+  describe('casamento de compra parcelada', () => {
+    it('casa a parcela com a compra existente do mesmo total de parcelas e data igual', () => {
+      const d = dadosCom([], [
+        compraCartao({ id: 'existente', data: '2026-07-02', valorTotal: 100000, parcelas: 10 }),
+      ]);
+      const itens = conferir([
+        bruto({
+          data: '2026-07-02', valorCent: -10000, fonte: 'cartao', descricao: 'LOJA GAMA OUTRA',
+          parcela: { n: 3, total: 10 },
+        }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('confere');
+      expect(itens[0].compraCartaoId).toBe('existente');
+      expect(itens[0].acao).toEqual({ tipo: 'ignorar' });
+    });
+
+    it('não casa quando a data da compra existente fica longe da data do bruto', () => {
+      const d = dadosCom([], [
+        // 20 dias de diferença: fora da tolerância de casamento de parcela.
+        compraCartao({ id: 'longe', data: '2026-07-22', valorTotal: 100000, parcelas: 10 }),
+      ]);
+      const itens = conferir([
+        bruto({
+          data: '2026-07-02', valorCent: -10000, fonte: 'cartao',
+          parcela: { n: 3, total: 10 },
+        }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('novo');
+      expect(itens[0].compraCartaoId).toBeUndefined();
+    });
+
+    it('não casa quando o número de parcelas da compra existente é diferente', () => {
+      const d = dadosCom([], [
+        compraCartao({ id: 'outro-total', data: '2026-07-02', valorTotal: 120000, parcelas: 12 }),
+      ]);
+      const itens = conferir([
+        bruto({
+          data: '2026-07-02', valorCent: -10000, fonte: 'cartao',
+          parcela: { n: 3, total: 10 },
+        }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('novo');
+      expect(itens[0].compraCartaoId).toBeUndefined();
+    });
+
+    it('casa mesmo com 1 centavo de diferença por sobra de arredondamento', () => {
+      // valorParcela(100001, 10, 3) = floor(100001/10) = 10000 (a sobra de 1 centavo vai para
+      // a parcela 1). O bruto traz 10001 — 1 centavo a mais — e ainda deve casar.
+      const d = dadosCom([], [
+        compraCartao({ id: 'arredondada', data: '2026-07-02', valorTotal: 100001, parcelas: 10 }),
+      ]);
+      const itens = conferir([
+        bruto({
+          data: '2026-07-02', valorCent: -10001, fonte: 'cartao',
+          parcela: { n: 3, total: 10 },
+        }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('confere');
+      expect(itens[0].compraCartaoId).toBe('arredondada');
+    });
+  });
+
   it('reconstrói o total da compra parcelada, não o valor da parcela', () => {
     const itens = conferir([
       bruto({ data: '2026-07-02', valorCent: -10000, fonte: 'cartao',
