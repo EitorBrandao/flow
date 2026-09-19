@@ -117,3 +117,26 @@ it('coleta uma entrada por corte, com todas as abas', async () => {
   expect(Object.keys(telas[0].textos).sort()).toEqual([...ABAS_DO_DOSSIE].sort());
   expect(telas[0].rotulo).toBe(retratos[0].rotulo);
 });
+
+it('o aviso de backup atrasado usa o "hoje" do corte, não o relógio real', async () => {
+  // TelaHoje compara `ultimoBackupEm` contra `Date.now()` para decidir se mostra o aviso
+  // de "backup atrasado" (ver TelaHoje.tsx). No corte "com o cenário ligado", o "hoje"
+  // fictício é 2026-10-15 e o último backup fictício foi em 2026-09-10 — mais de 7 dias
+  // de diferença, então o aviso **deveria** aparecer. Mas `executarRoteiro` já devolveu o
+  // relógio real quando `textoDaTela` roda: se ela ler o relógio de verdade em vez do
+  // "hoje" fictício do corte, o resultado depende de quantos dias reais já passaram desde
+  // que o dossiê foi gerado, e não do roteiro — aqui, simulando um relógio real ainda
+  // perto do backup fictício (dentro dos 7 dias), o aviso sumiria por engano.
+  await limparDb();
+  const retratos = await executarRoteiro(ROTEIRO);
+  const corte = retratos.find((r) => r.rotulo === 'com o cenário ligado')!;
+
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-09-12T12:00:00.000Z'));
+  try {
+    const texto = await textoDaTela(corte, 'hoje');
+    expect(texto).toContain('Há mudanças sem backup');
+  } finally {
+    vi.useRealTimers();
+  }
+});
