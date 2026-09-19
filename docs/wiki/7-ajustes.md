@@ -87,6 +87,8 @@ A tela tem três passos, e nada é gravado antes do terceiro:
 - **Destino.** Para o extrato de conta: a box, e o banco, se a box tiver mais de um cadastrado. Para a fatura: o cartão de cada bloco — a fatura pode trazer mais de um cartão, e "Não importar" é uma resposta válida para um bloco.
 - **Conferir.** A lista mostra cada linha do arquivo já comparada com o Flow. Só ao tocar em "Confirmar" algo é gravado.
 
+> Se a fatura em PDF não reconhecer nenhum lançamento, "Copiar texto extraído" copia o texto que o Flow leu do arquivo, para diagnóstico. Esse texto contém os dados da sua fatura.
+
 Cada item da lista chega classificado num destes seis estados:
 
 : Confere | Já existe um lançamento igual no Flow. Sem botão: não há nada a fazer.

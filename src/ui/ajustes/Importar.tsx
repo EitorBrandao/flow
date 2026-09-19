@@ -41,6 +41,9 @@ export default function Importar() {
   const [erroAplicar, setErroAplicar] = useState('');
   const [aplicando, setAplicando] = useState(false);
 
+  // Estado do botão "Copiar texto extraído": só para diagnóstico, quando nada foi reconhecido.
+  const [copiarEstado, setCopiarEstado] = useState<'ocioso' | 'copiado' | 'erro'>('ocioso');
+
   const cartoesAtivos = useMemo(() => (dados?.cartoes ?? []).filter((c) => c.ativo), [dados]);
 
   const itensComContexto: ItemComContexto[] = useMemo(() => {
@@ -91,6 +94,19 @@ export default function Importar() {
     setBoxIdEscolhida(null); setDestinoBlocos({});
     setTrocas({}); setTotaisCorrigidos({});
     setResumoAplicado(null); setErroAplicar('');
+    setCopiarEstado('ocioso');
+  }
+
+  /** Copia o texto que o pdf.js extraiu, só para diagnóstico — não é lido de volta pelo app.
+   *  O rótulo do botão muda por alguns segundos para confirmar a cópia. */
+  async function copiarTextoExtraido(texto: string) {
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiarEstado('copiado');
+      setTimeout(() => setCopiarEstado('ocioso'), 3000);
+    } catch {
+      setCopiarEstado('erro');
+    }
   }
 
   async function lerComAdapter(adapter: Adapter, conteudo: ArrayBuffer) {
@@ -100,6 +116,7 @@ export default function Importar() {
     setErro('');
     setTrocas({});
     setTotaisCorrigidos({});
+    setCopiarEstado('ocioso');
     try {
       const r = await adapter.ler(conteudo);
       setLeitura(r);
@@ -302,6 +319,21 @@ export default function Importar() {
         <section className="card">
           {leitura!.avisos.map((a) => <p className="aviso" key={a}>{a}</p>)}
           <p className="sub">Nenhum lançamento reconhecido no arquivo.</p>
+          {leitura!.linhasIgnoradas > 0 && (
+            <p className="sub">{leitura!.linhasIgnoradas} linhas não foram reconhecidas.</p>
+          )}
+          {leitura!.textoExtraido && (
+            <>
+              <button
+                type="button" className="botao"
+                onClick={() => void copiarTextoExtraido(leitura!.textoExtraido!)}
+              >
+                {copiarEstado === 'copiado' ? 'Copiado' : 'Copiar texto extraído'}
+              </button>
+              <p className="sub">O texto contém os dados da sua fatura. Use só para diagnóstico.</p>
+              {copiarEstado === 'erro' && <p className="sub">Não foi possível copiar.</p>}
+            </>
+          )}
         </section>
       )}
 

@@ -33,6 +33,10 @@ export interface LeituraAdapter {
   linhasIgnoradas: number;
   avisos: string[];
   blocos?: BlocoCartao[];
+  // Existe só para diagnóstico, quando nada é reconhecido no arquivo — e contém os dados da
+  // fatura ou do extrato do usuário. Nunca é gravado: só a UI de importação o lê, para exibir
+  // um botão de copiar.
+  textoExtraido?: string;
 }
 
 export interface Adapter {

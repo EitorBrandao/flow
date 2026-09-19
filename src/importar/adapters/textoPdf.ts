@@ -19,12 +19,20 @@ export async function extrairTextoPdf(conteudo: ArrayBuffer): Promise<string> {
   for (let n = 1; n <= doc.numPages; n++) {
     const pagina = await doc.getPage(n);
     const conteudoTexto = await pagina.getTextContent();
-    paginas.push(
-      conteudoTexto.items
-        .map((i) => ('str' in i ? i.str : ''))
-        .join(' ')
-        .replace(/\s+/g, ' '),
-    );
+    // `lerSantanderFatura` (em `santanderFatura.ts`) depende de linha: o cabeçalho de cada
+    // cartão, as subseções e o "VALOR TOTAL" só casam ancorados no início e no fim da linha.
+    // `hasEOL` é a marca de fim de linha do próprio pdf.js — sem preservá-la, a página inteira
+    // vira uma linha só e nada é reconhecido. Itens sem "str" são conteúdo marcado, sem texto.
+    let bruto = '';
+    for (const item of conteudoTexto.items) {
+      if (!('str' in item)) continue;
+      bruto += item.str + (item.hasEOL ? '\n' : ' ');
+    }
+    const linhas = bruto
+      .split('\n')
+      .map((l) => l.replace(/\s+/g, ' ').trim())
+      .filter((l) => l !== '');
+    paginas.push(linhas.join('\n'));
   }
   return paginas.join('\n');
 }
