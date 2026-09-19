@@ -365,9 +365,12 @@ perto de `mês da fatura − (n − 1) meses`. Quando a data deduzida cai a mais
 esperado, o item é marcado com aviso e fica visível para você conferir. Nunca se inventa um ano
 em silêncio.
 
-**A identidade para o casamento** de uma parcelada é o cartão, a descrição normalizada, o valor
-da parcela e o total de parcelas. Ela **não** inclui o número da parcela. Assim, importar a
-fatura do mês seguinte reconhece a mesma compra e a classifica como `confere`.
+**A identidade para o casamento** de uma parcelada é o cartão, o total de parcelas, a data da
+compra original (±3 dias) e o valor da parcela, com tolerância de centavos de arredondamento
+contra `valorParcela` da compra gravada. A descrição **não** entra: quem lançou a compra à mão
+escreveu outra coisa. O número da parcela também não entra. Assim, importar a fatura do mês
+seguinte reconhece a mesma compra e a classifica como `confere`. (Revisto depois da primeira
+conferência real — ver a seção final.)
 
 **Anuidade.** Uma linha de anuidade usa o formato de parcela (`01/12`) mas aparece em `Despesas`,
 não em `Parcelamentos`. A regra é a mesma para as duas subseções: `NN/NN` antes do valor é
@@ -410,9 +413,27 @@ Gravar estorno vira item próprio, e o pré-requisito dele é `CampoValor` aceit
 
 A ordem importa. Cada regra só roda sobre o que a anterior não resolveu.
 
-1. **Por data, valor e descrição.** Data com tolerância de ±3 dias, valor exato, descrição
-   normalizada igual. O banco posta em D+1, e às vezes em D+3 depois de um fim de semana.
-2. **Por data e descrição, valor diferente.** Mesma tolerância de data. Resulta em `divergente`.
+1. **Por data e valor, para `confere`/`previsto`.** Data com tolerância de ±3 dias, valor
+   exato. **A descrição NÃO é exigida aqui** — foi revisto depois da primeira conferência real:
+   o usuário digita a compra com as próprias palavras, e o banco escreve outra coisa
+   ("MERCADOLIVRE\*MERCADOL"). Exigir descrição igual fazia quase nada casar. Entre vários
+   candidatos de mesmo valor na janela de data, a ordem de preferência é: descrição igual
+   primeiro, depois a menor distância de data, depois a ordem de chegada no arquivo.
+2. **Por data e descrição, valor diferente, para `divergente`.** Mesma tolerância de data. Aqui
+   a descrição normalizada igual **continua exigida** — sem isso, qualquer lançamento do mesmo
+   dia pareceria divergente, não só o que é de fato o mesmo gasto com o valor errado.
+
+**Compra parcelada casa contra o TOTAL gravado, não contra o valor da parcela.** O bruto de uma
+parcela traz o valor de UMA parcela e `parcela: { n, total }`; a `CompraCartao` do app guarda o
+`valorTotal` e `parcelas`. Comparar os dois direto nunca bate, e uma parcelada já lançada virava
+`novo` a cada mês. Para bruto de cartão com `parcela`, o candidato casa quando: `compra.parcelas`
+é igual a `parcela.total`; a data da compra está a até 3 dias da data do bruto (que já é a data
+original, reconstruída pelo adapter); e `valorParcela(compra.valorTotal, compra.parcelas,
+parcela.n)` (de `fatura.ts`) difere do valor absoluto do bruto em no máximo `compra.parcelas − 1`
+centavos — a sobra de arredondamento que `valorParcela` empurra para a primeira parcela. A
+descrição também não é exigida aqui. Casou: `confere`, ação `ignorar`. Sem candidato: `novo`,
+direto — a parcela NÃO passa pelo casamento comum, senão o valor de uma parcela poderia casar
+por coincidência com o total de uma compra à vista.
 
 **O `externalId` fica de fora desta entrega.** O `Identificador` do Nubank é um UUID estável
 entre exportações, e seria a melhor chave possível — mas `Lancamento` não tem campo para
@@ -641,3 +662,38 @@ não guarda banco. Isso depende da entrega 2 do item de bancos, ainda aberta.
 
 **Cor do estado "novo" é token novo** (`--estado-novo`), pelo nível 3 do guia de estilo. Os
 outros cinco estados reusam tokens que já existem.
+
+## Decisões depois da primeira conferência real (2026-09-19)
+
+A primeira conferência com uma fatura de verdade (Santander, PDF) revelou quatro problemas que
+nenhum arquivo sintético tinha exercitado. Os quatro são consertos de comportamento errado, não
+mudança de desenho — registrados aqui porque mexem exatamente no que "Casamento" e "Parcelas"
+descrevem.
+
+**A leitura do Santander ignorava só o "óbvio", não a página inteira.** O cabeçalho de cartão da
+página 1 (acima de "Total a Pagar") tem a mesma forma do cabeçalho de bloco dentro do
+detalhamento, e abria um bloco fantasma — o resto da página 1 (resumo, boleto, autenticação
+mecânica) virava "linha ignorada". A leitura agora fica restrita à região entre a primeira linha
+"Detalhamento da Fatura" e a "Resumo da Fatura" seguinte; fora dela, nada abre bloco, vira
+transação, ou conta como ignorado. Sem o título (arquivo que a extração não devolveu por
+completo), a leitura volta a valer desde o começo, por compatibilidade.
+
+**O centro do ano deduzido estava deslocado em um mês.** A parcela 1 de uma compra feita no mês
+P entra na fatura que VENCE em P+1, não na própria P. `reconstruirCompra` usava `mesFatura −
+(n − 1)` como centro; o certo é `mesFatura − n`. Com o centro errado, toda compra comum
+(à vista) do começo do ciclo de fechamento ficava a dois meses do esperado e ganhava "Ano
+deduzido com incerteza" à toa — foi o que apareceu em compras comuns de mercado.
+
+**Compra parcelada nunca casava — ver "Casamento".** E **confere/previsto não podiam exigir
+descrição igual — ver "Casamento".** Os dois já estão descritos na seção acima; entram aqui só
+para registrar que as quatro correções nasceram da mesma sessão de uso real, não de desenho
+separado.
+
+**Casar por valor e data, sem exigir descrição igual, abriu uma brecha: coincidência.** Um
+lançamento sem nenhuma relação com o bruto, mas do mesmo valor e dentro da mesma janela de
+±3 dias, casa igual — e para um `previsto`, a ação padrão é `confirmar`, que grava sozinho. Por
+isso, quando o candidato do casamento comum (`exato`, em "Casamento") tem descrição normalizada
+diferente da do bruto, o item ganha `aviso: 'Casado por valor e data, com descrição diferente.
+Confira se é o mesmo lançamento.'` — descrição igual, sem aviso. O casamento de compra parcelada
+fica de fora: a identidade dele (número de parcelas + data + valor reconstruído do total) já é
+forte o bastante, e também não exige descrição igual.

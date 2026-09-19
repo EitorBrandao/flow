@@ -46,6 +46,8 @@ function extrairTransacoes(linha: string): TransacaoLida[] {
 }
 
 const CABECALHO_BLOCO = /^@?\s*.+ - \d{4} [X\d]{4} [X\d]{4} \d{4}$/;
+const INICIO_DETALHAMENTO = /^Detalhamento da Fatura$/i;
+const FIM_DETALHAMENTO = /^Resumo da Fatura$/i;
 const RUIDO = [
   /^Detalhamento da Fatura$/i,
   // "Descrição" com escape: nenhum caractere não-ASCII colado dentro de regex. Ancorado nas
@@ -92,7 +94,21 @@ export function lerSantanderFatura(texto: string, mesFatura: string): LeituraAda
   let atual: BlocoCartao | undefined;
   let subsecao: Subsecao = 'despesas';
 
-  for (const bruta of texto.split('\n')) {
+  // O detalhamento vive entre a PRIMEIRA linha "Detalhamento da Fatura" e a linha "Resumo da
+  // Fatura" seguinte. Fora dessa região há cabeçalho de cartão da página 1 (mesma forma do
+  // cabeçalho de bloco — sem o corte ele abre um bloco fantasma), boleto, recibo, autenticação
+  // mecânica e o próprio resumo. Nada disso abre bloco, vira transação, ou conta como ignorado.
+  //
+  // Sem o título (fixture antiga, ou arquivo que a extração não devolveu por completo), lê-se
+  // desde o começo — é o comportamento anterior, mantido por compatibilidade.
+  const linhas = texto.split('\n');
+  const indiceInicio = linhas.findIndex((l) => INICIO_DETALHAMENTO.test(l.trim()));
+  const inicio = indiceInicio === -1 ? 0 : indiceInicio;
+  const posBuscaFim = indiceInicio === -1 ? 0 : indiceInicio + 1;
+  const indiceFimRelativo = linhas.slice(posBuscaFim).findIndex((l) => FIM_DETALHAMENTO.test(l.trim()));
+  const fim = indiceFimRelativo === -1 ? linhas.length : posBuscaFim + indiceFimRelativo;
+
+  for (const bruta of linhas.slice(inicio, fim)) {
     const linha = bruta.trim();
     if (linha === '') continue;
 

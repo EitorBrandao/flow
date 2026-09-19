@@ -226,6 +226,93 @@ describe('conferir', () => {
     expect(itens[0].acao).toEqual({ tipo: 'adicionarCompra', categoriaCartaoId: CAT_CARTAO });
   });
 
+  // A compra parcelada existente guarda o TOTAL (`valorTotal`) e `parcelas`; o bruto de uma
+  // parcela traz o valor de UMA parcela e `parcela: { n, total }`. Comparar o bruto direto com
+  // `valorTotal` nunca bate, e a parcelada existente virava "novo" à toa. O casamento certo usa
+  // `valorParcela` para reconstruir o valor esperado da parcela N a partir do total gravado.
+  describe('casamento de compra parcelada', () => {
+    it('casa a parcela com a compra existente do mesmo total de parcelas e data igual', () => {
+      const d = dadosCom([], [
+        compraCartao({ id: 'existente', data: '2026-07-02', valorTotal: 100000, parcelas: 10 }),
+      ]);
+      const itens = conferir([
+        bruto({
+          data: '2026-07-02', valorCent: -10000, fonte: 'cartao', descricao: 'LOJA GAMA OUTRA',
+          parcela: { n: 3, total: 10 },
+        }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('confere');
+      expect(itens[0].compraCartaoId).toBe('existente');
+      expect(itens[0].acao).toEqual({ tipo: 'ignorar' });
+      // O casamento de parcela tem identidade própria (número de parcelas + data + valor
+      // reconstruído) — não exige descrição igual, e por isso também não avisa quando ela
+      // diverge, ao contrário do casamento comum de "confere"/"previsto".
+      expect(itens[0].aviso).toBeUndefined();
+    });
+
+    // Sem candidato de parcela compatível, o bruto de uma parcela não pode cair no casamento
+    // comum: o casamento comum compara o valor de UMA parcela com o `valorTotal` de qualquer
+    // compra, e uma compra à vista de mesmo valor e data casaria por coincidência.
+    it('parcela sem candidato de parcela não casa por coincidência com compra à vista do mesmo valor e data', () => {
+      const d = dadosCom([], [
+        compraCartao({ id: 'a-vista', data: '2026-07-02', valorTotal: 10000, descricao: 'LOJA GAMA' }),
+      ]);
+      const itens = conferir([
+        bruto({
+          data: '2026-07-02', valorCent: -10000, fonte: 'cartao', descricao: 'LOJA GAMA',
+          parcela: { n: 3, total: 10 },
+        }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('novo');
+      expect(itens[0].compraCartaoId).toBeUndefined();
+    });
+
+    it('não casa quando a data da compra existente fica longe da data do bruto', () => {
+      const d = dadosCom([], [
+        // 20 dias de diferença: fora da tolerância de casamento de parcela.
+        compraCartao({ id: 'longe', data: '2026-07-22', valorTotal: 100000, parcelas: 10 }),
+      ]);
+      const itens = conferir([
+        bruto({
+          data: '2026-07-02', valorCent: -10000, fonte: 'cartao',
+          parcela: { n: 3, total: 10 },
+        }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('novo');
+      expect(itens[0].compraCartaoId).toBeUndefined();
+    });
+
+    it('não casa quando o número de parcelas da compra existente é diferente', () => {
+      const d = dadosCom([], [
+        compraCartao({ id: 'outro-total', data: '2026-07-02', valorTotal: 120000, parcelas: 12 }),
+      ]);
+      const itens = conferir([
+        bruto({
+          data: '2026-07-02', valorCent: -10000, fonte: 'cartao',
+          parcela: { n: 3, total: 10 },
+        }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('novo');
+      expect(itens[0].compraCartaoId).toBeUndefined();
+    });
+
+    it('casa mesmo com 1 centavo de diferença por sobra de arredondamento', () => {
+      // valorParcela(100001, 10, 3) = floor(100001/10) = 10000 (a sobra de 1 centavo vai para
+      // a parcela 1). O bruto traz 10001 — 1 centavo a mais — e ainda deve casar.
+      const d = dadosCom([], [
+        compraCartao({ id: 'arredondada', data: '2026-07-02', valorTotal: 100001, parcelas: 10 }),
+      ]);
+      const itens = conferir([
+        bruto({
+          data: '2026-07-02', valorCent: -10001, fonte: 'cartao',
+          parcela: { n: 3, total: 10 },
+        }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('confere');
+      expect(itens[0].compraCartaoId).toBe('arredondada');
+    });
+  });
+
   it('reconstrói o total da compra parcelada, não o valor da parcela', () => {
     const itens = conferir([
       bruto({ data: '2026-07-02', valorCent: -10000, fonte: 'cartao',
@@ -289,6 +376,100 @@ describe('conferir', () => {
   // IMPORTANTE 5: uma linha de valor zero não é gasto nem ganho — virar lançamento de
   // R$ 0,00 numa categoria de gasto não serve a nada, e a categoria nem decidiria se soma ou
   // subtrai no saldo.
+  // O usuário digita a compra com as palavras dele; o banco escreve outra coisa
+  // ("MERCADOLIVRE*MERCADOL"). Exigir descrição igual para `confere`/`previsto` fazia quase
+  // nada casar. Agora o valor exato, dentro da janela de data, basta.
+  describe('casamento sem exigir descrição igual (confere/previsto)', () => {
+    it('confere mesmo com descrição diferente, quando data e valor batem', () => {
+      const d = dadosCom([
+        lancamento({ data: '2026-08-15', valor: 4500, nota: 'MERCADOLIVRE*MERCADOL' }),
+      ]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'MERCADO LIVRE COMPRA 123' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('confere');
+      expect(itens[0].acao.tipo).toBe('ignorar');
+    });
+
+    it('entre dois candidatos de mesmo valor e data, prefere o de descrição igual', () => {
+      const d = dadosCom([
+        lancamento({ id: 'descricao-diferente', data: '2026-08-15', valor: 4500, nota: 'OUTRA COISA' }),
+        lancamento({ id: 'descricao-igual', data: '2026-08-15', valor: 4500, nota: 'LOJA GAMA' }),
+      ]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'LOJA GAMA' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('confere');
+      expect(itens[0].lancamentoId).toBe('descricao-igual');
+    });
+
+    // Sem candidato de valor exato, e a descrição também diverge: não há o que comparar como
+    // "o mesmo lançamento com o valor errado" — vira novo, não divergente.
+    it('valor diferente e descrição diferente vira novo, não divergente', () => {
+      const d = dadosCom([
+        lancamento({ data: '2026-08-15', valor: 12000, nota: 'OUTRA COISA TOTALMENTE DIFERENTE' }),
+      ]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'LOJA GAMA' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('novo');
+    });
+
+    // Valor diferente, mas a descrição bate: é o mesmo lançamento com o valor errado.
+    it('valor diferente e descrição igual continua divergente', () => {
+      const d = dadosCom([
+        lancamento({ data: '2026-08-15', valor: 12000, nota: 'LOJA GAMA' }),
+      ]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'LOJA GAMA' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('divergente');
+      expect(itens[0].acao).toEqual({ tipo: 'confirmarComValor', valorCent: 4500, data: '2026-08-15' });
+    });
+
+    // O casamento por valor e data, sem exigir descrição igual, corre o risco de casar por
+    // coincidência: um lançamento não relacionado, do mesmo valor e na mesma janela de data.
+    // O aviso existe para que o usuário confira antes de confirmar (a ação padrão de um
+    // `previsto` grava sozinha).
+    it('confere com descrição diferente do banco recebe aviso para conferir', () => {
+      const d = dadosCom([
+        lancamento({ data: '2026-08-15', valor: 4500, nota: 'MERCADOLIVRE*MERCADOL' }),
+      ]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'MERCADO LIVRE COMPRA 123' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('confere');
+      expect(itens[0].aviso).toBe(
+        'Casado por valor e data, com descrição diferente. Confira se é o mesmo lançamento.',
+      );
+    });
+
+    it('confere com descrição igual não recebe aviso', () => {
+      const d = dadosCom([lancamento({ data: '2026-08-15', valor: 4500, nota: 'LOJA GAMA' })]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'LOJA GAMA' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('confere');
+      expect(itens[0].aviso).toBeUndefined();
+    });
+
+    it('previsto com descrição diferente recebe aviso e continua propondo confirmar', () => {
+      const d = dadosCom([
+        lancamento({
+          data: '2026-08-15', valor: 4500, nota: 'MERCADOLIVRE*MERCADOL', status: 'previsto',
+        }),
+      ]);
+      const itens = conferir([
+        bruto({ data: '2026-08-15', valorCent: -4500, descricao: 'MERCADO LIVRE COMPRA 123' }),
+      ], d, OPCOES);
+      expect(itens[0].estado).toBe('previsto');
+      expect(itens[0].acao).toEqual({ tipo: 'confirmar' });
+      expect(itens[0].aviso).toBe(
+        'Casado por valor e data, com descrição diferente. Confira se é o mesmo lançamento.',
+      );
+    });
+  });
+
   it('marca a linha de valor zero como interno e nunca a grava', () => {
     const itens = conferir([
       bruto({ data: '2026-08-15', valorCent: 0, descricao: 'LOJA GAMA' }),

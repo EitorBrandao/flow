@@ -129,6 +129,7 @@ export default function LinhaConferencia({
         <div className="cresce">
           <div>{descricao}</div>
           <div className="sub">{etiqueta}</div>
+          {item.aviso && <div className="sub">{item.aviso}</div>}
         </div>
         <span className={classeValor}>{formatarBRL(valorCent)}</span>
       </div>
@@ -146,7 +147,8 @@ export default function LinhaConferencia({
         </div>
         <span className={classeValor}>{formatarBRL(valorCent)}</span>
       </div>
-      {item.estado === 'interno' && item.aviso && <p className="sub">{item.aviso}</p>}
+      {(item.estado === 'interno' || item.estado === 'previsto') && item.aviso
+        && <p className="sub">{item.aviso}</p>}
       <div className="acoes">
         {item.estado === 'novo' && (
           <>
