@@ -5,3 +5,5 @@
   - A leitura da fatura em PDF considera só o detalhamento das compras: some o cartão repetido
     da primeira página e caem as linhas ignoradas.
   - Compras do começo do ciclo não recebem mais o aviso de ano incerto.
+  - Quando um item casa só por valor e data, com descrição diferente, ele avisa para você
+    conferir se é o mesmo lançamento.

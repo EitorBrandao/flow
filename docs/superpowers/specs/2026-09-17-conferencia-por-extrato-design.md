@@ -429,10 +429,11 @@ parcela traz o valor de UMA parcela e `parcela: { n, total }`; a `CompraCartao` 
 `novo` a cada mês. Para bruto de cartão com `parcela`, o candidato casa quando: `compra.parcelas`
 é igual a `parcela.total`; a data da compra está a até 3 dias da data do bruto (que já é a data
 original, reconstruída pelo adapter); e `valorParcela(compra.valorTotal, compra.parcelas,
-parcela.n)` (de `fatura.ts`) difere do valor absoluto do bruto em no máximo `compra.parcelas`
+parcela.n)` (de `fatura.ts`) difere do valor absoluto do bruto em no máximo `compra.parcelas − 1`
 centavos — a sobra de arredondamento que `valorParcela` empurra para a primeira parcela. A
 descrição também não é exigida aqui. Casou: `confere`, ação `ignorar`. Sem candidato: `novo`,
-como antes desta regra existir.
+direto — a parcela NÃO passa pelo casamento comum, senão o valor de uma parcela poderia casar
+por coincidência com o total de uma compra à vista.
 
 **O `externalId` fica de fora desta entrega.** O `Identificador` do Nubank é um UUID estável
 entre exportações, e seria a melhor chave possível — mas `Lancamento` não tem campo para
