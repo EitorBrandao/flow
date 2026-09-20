@@ -81,26 +81,64 @@ describe('conferir', () => {
     expect(itens[0].acao).toEqual({ tipo: 'adicionarLancamento', categoriaId: CAT });
   });
 
-  it('não marca sobra para lançamento fora do período, mesmo por um dia', () => {
-    const d = dadosCom([
-      lancamento({ id: 'sobrando', data: '2026-08-16', valor: 1000, nota: 'POSTO BETA' }),
+  // OPCOES tem cartaoId definido (é uma conferência de fatura), então o universo da sobra é só
+  // `doCartao` — por isso estes dois testes de período usam compra de cartão, não lançamento
+  // da box. Ver os dois testes de universo logo abaixo para a regra em si.
+  it('não marca sobra para compra fora do período, mesmo por um dia', () => {
+    const d = dadosCom([], [
+      compraCartao({ id: 'sobrando', data: '2026-08-16', valorTotal: 1000, descricao: 'POSTO BETA' }),
     ]);
-    const itens = conferir([bruto({ data: '2026-08-15', valorCent: -4500 })], d, OPCOES);
+    const itens = conferir([bruto({ data: '2026-08-15', valorCent: -4500, fonte: 'cartao' })], d, OPCOES);
     const sobra = itens.find((i) => i.estado === 'sobra');
     expect(sobra).toBeUndefined(); // 16/08 está fora do período [15/08, 15/08]
   });
 
   it('não marca sobra fora do período coberto pelo arquivo', () => {
-    const d = dadosCom([
-      lancamento({ id: 'antigo', data: '2026-01-01', valor: 1000, nota: 'POSTO BETA' }),
-      lancamento({ id: 'dentro', data: '2026-08-16', valor: 1000, nota: 'POSTO BETA' }),
+    const d = dadosCom([], [
+      compraCartao({ id: 'antigo', data: '2026-01-01', valorTotal: 1000, descricao: 'POSTO BETA' }),
+      compraCartao({ id: 'dentro', data: '2026-08-16', valorTotal: 1000, descricao: 'POSTO BETA' }),
     ]);
     const itens = conferir([
-      bruto({ data: '2026-08-15', valorCent: -4500 }),
-      bruto({ data: '2026-08-17', valorCent: -5190, descricao: 'FARMACIA DELTA' }),
+      bruto({ data: '2026-08-15', valorCent: -4500, fonte: 'cartao' }),
+      bruto({ data: '2026-08-17', valorCent: -5190, descricao: 'FARMACIA DELTA', fonte: 'cartao' }),
     ], d, OPCOES);
-    const sobras = itens.filter((i) => i.estado === 'sobra').map((i) => i.lancamentoId);
+    const sobras = itens.filter((i) => i.estado === 'sobra').map((i) => i.compraCartaoId);
     expect(sobras).toEqual(['dentro']);
+  });
+
+  // A sobra olha só o universo do lado que o arquivo confere: fatura de cartão (`cartaoId`
+  // definido) só pode conter compras do próprio cartão, então um lançamento comum da box
+  // (salário, Pix, boleto) nunca deveria virar sobra ali. Antes desta regra, juntar os dois
+  // universos fazia todo lançamento da box virar "sobra" em bloco numa conferência de fatura.
+  it('sobra de conferência de fatura considera só compras do cartão, não lançamentos da box', () => {
+    const d = dadosCom(
+      [lancamento({ id: 'salario', data: '2026-08-15', valor: 500000, nota: 'SALARIO' })],
+      [compraCartao({ id: 'compra-sobra', data: '2026-08-15', valorTotal: 3000, descricao: 'FARMACIA DELTA' })],
+    );
+    const itens = conferir(
+      [bruto({ data: '2026-08-15', valorCent: -9999, descricao: 'OUTRA COISA', fonte: 'cartao' })],
+      d, OPCOES,
+    );
+    const sobras = itens.filter((i) => i.estado === 'sobra');
+    expect(sobras.map((i) => i.compraCartaoId)).toEqual(['compra-sobra']);
+    expect(sobras.some((i) => i.lancamentoId === 'salario')).toBe(false);
+  });
+
+  // Espelho do teste acima: conferência de extrato de conta (sem `cartaoId`) só pode conter
+  // lançamentos da box — o que aparece no extrato é o pagamento da fatura inteira, não cada
+  // compra dela. Uma compra de cartão do app nunca deveria virar sobra ali.
+  it('sobra de conferência de conta considera só lançamentos da box, não compras do cartão', () => {
+    const d = dadosCom(
+      [lancamento({ id: 'boleto', data: '2026-08-15', valor: 20000, nota: 'BOLETO LUZ' })],
+      [compraCartao({ id: 'compra-nao-sobra', data: '2026-08-15', valorTotal: 3000, descricao: 'FARMACIA DELTA' })],
+    );
+    const itens = conferir(
+      [bruto({ data: '2026-08-15', valorCent: -9999, descricao: 'OUTRA COISA' })],
+      d, { ...OPCOES, cartaoId: undefined },
+    );
+    const sobras = itens.filter((i) => i.estado === 'sobra');
+    expect(sobras.map((i) => i.lancamentoId)).toEqual(['boleto']);
+    expect(sobras.some((i) => i.compraCartaoId === 'compra-nao-sobra')).toBe(false);
   });
 
   // Uma parcela posterior (n > 1) traz no bruto a data da COMPRA ORIGINAL, meses atrás — não a

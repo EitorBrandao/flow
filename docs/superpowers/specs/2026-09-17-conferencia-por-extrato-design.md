@@ -460,6 +460,15 @@ cartão não pode casar com um lançamento da box, porque no Flow o lançamento 
 inteira, calculada por `fatura.ts`. A única exceção é a linha de pagamento de fatura, que casa
 contra o `Lancamento` da fatura — ver "Pagamento da fatura".
 
+**A mesma separação vale para o `sobra`.** Ele olha só o lado do universo que corresponde à
+origem do arquivo — nunca os dois juntos. Conferência de fatura de cartão (`opcoes.cartaoId`
+definido) considera só `CompraCartao` do cartão; conferência de extrato de conta considera só
+`Lancamento` da box. Juntar os dois universos transformava um lado inteiro em "sobra" em bloco,
+sempre que a conferência era do outro lado: numa fatura, todo lançamento comum da box (salário,
+Pix, boleto) virava sobra falsa, porque nunca poderia estar ali; num extrato de conta, o espelho
+— cada compra de cartão do app viraria sobra, quando o que aparece no extrato é o pagamento da
+fatura inteira, não cada compra dela.
+
 ## Cartão
 
 **Gasto de cartão vira `CompraCartao`, nunca `Lancamento`.** A fatura o Flow já calcula sozinho,

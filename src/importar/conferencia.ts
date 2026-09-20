@@ -313,6 +313,13 @@ export function conferir(
   }
 
   // 4. Sobra: o que o app tem, dentro do período do arquivo, e o arquivo não tem.
+  // O universo é só o lado correspondente à origem do arquivo, nunca os dois juntos: uma
+  // conferência de fatura de cartão (`cartaoId` definido) só pode conter compras daquele
+  // cartão, então um lançamento comum da box (salário, Pix, boleto) nunca deveria virar sobra
+  // ali. O espelho vale para o extrato de conta — o que aparece lá é o pagamento da fatura
+  // inteira, não cada compra dela. Juntar `daConta` e `doCartao` fazia um universo inteiro
+  // virar "sobra" em bloco, sempre que a conferência era do outro lado.
+  const universoSobra = opcoes.cartaoId != null ? doCartao : daConta;
   // Uma parcela posterior à primeira (n > 1) traz a data da COMPRA ORIGINAL, meses atrás —
   // não uma data do ciclo atual da fatura. Se essa data entrasse aqui, o período esticaria
   // por meses, e todo lançamento ou compra do app nesse intervalo viraria sobra falsa.
@@ -322,7 +329,7 @@ export function conferir(
     .sort();
   if (datas.length > 0) {
     const [inicio, fim] = [datas[0], datas[datas.length - 1]];
-    for (const c of [...daConta, ...doCartao]) {
+    for (const c of universoSobra) {
       if (usados.has(c.id)) continue;
       if (c.data < inicio || c.data > fim) continue;
       itens.push({ estado: 'sobra', ...refDe(c), acao: { tipo: 'ignorar' } });
