@@ -1,3 +1,0 @@
-- Conferência por extrato: tocar numa pílula do resumo filtra a lista por aquele estado.
-  - Tocar de novo na mesma pílula mostra todos os itens.
-  - O botão de confirmar continua aplicando a lista inteira, filtrada ou não.

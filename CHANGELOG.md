@@ -3,6 +3,20 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.32.0] - 2026-09-20
+
+### Adicionado
+
+- Conferência por extrato: tocar numa pílula do resumo filtra a lista por aquele estado.
+  - Tocar de novo na mesma pílula mostra todos os itens.
+  - O botão de confirmar continua aplicando a lista inteira, filtrada ou não.
+
+### Alterado
+
+- Conferência da fatura: o passo de destino mostra só os cartões da box selecionada.
+- Conferência da fatura: lançamentos comuns da box não aparecem mais como sobra.
+  - A sobra de uma fatura olha só as compras daquele cartão; a de um extrato de conta, só os lançamentos da box.
+
 ## [0.31.4] - 2026-09-19
 
 ### Alterado

@@ -1,1 +1,0 @@
-- Conferência da fatura: o passo de destino mostra só os cartões da box selecionada.
