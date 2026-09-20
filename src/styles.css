@@ -534,9 +534,12 @@ table.tabela th:first-child, table.tabela td:first-child {
 /* ---- Conferência da importação (Importar.tsx, ListaConferencia.tsx, LinhaConferencia.tsx) ---- */
 .importar-resumo { display: flex; gap: 8px; flex-wrap: wrap; }
 .importar-contagem {
-  display: flex; align-items: baseline; gap: 6px;
+  display: flex; align-items: center; gap: 6px; border: none;
   background: var(--surface2); border-radius: 999px; padding: 6px 12px; font-size: 13px;
+  min-height: 44px;
 }
+.importar-contagem.ativo { background: var(--ac-dim); color: var(--ac); }
+.importar-contagem:disabled { opacity: .45; cursor: default; }
 .importar-contagem b { font-variant-numeric: tabular-nums; font-size: 14.5px; }
 .importar-ponto {
   display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle;

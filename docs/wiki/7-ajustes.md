@@ -84,7 +84,7 @@ Santander, em PDF. Baixe o arquivo direto no site ou no aplicativo do banco.
 A tela tem três passos, e nada é gravado antes do terceiro:
 
 - **Arquivo.** Escolher o CSV ou o PDF. O Flow reconhece o formato sozinho; se não reconhecer, você escolhe manualmente.
-- **Destino.** Para o extrato de conta: a box, e o banco, se a box tiver mais de um cadastrado. Para a fatura: o cartão de cada bloco — a fatura pode trazer mais de um cartão, e "Não importar" é uma resposta válida para um bloco.
+- **Destino.** Para o extrato de conta: a box, e o banco, se a box tiver mais de um cadastrado. Para a fatura: o cartão de cada bloco — a fatura pode trazer mais de um cartão, e "Não importar" é uma resposta válida para um bloco. A lista de cartões mostra só os da box selecionada no momento; na visão consolidada de todas as boxes, aparecem os cartões de qualquer box.
 - **Conferir.** A lista mostra cada linha do arquivo já comparada com o Flow. Só ao tocar em "Confirmar" algo é gravado.
 
 > Quando alguma linha do arquivo não é reconhecida, "Ver linhas não reconhecidas" mostra o texto de cada uma — para diagnóstico. Na fatura em PDF, "Copiar texto extraído" também aparece nesse caso, com o texto bruto que o Flow leu do arquivo. Os dois contêm os dados da sua fatura ou do seu extrato.
@@ -98,7 +98,9 @@ Cada item da lista chega classificado num destes seis estados:
 : Sobra | Está lançado no Flow, dentro do período do arquivo, mas não aparece no banco. "Manter" deixa como está; "Excluir do app" apaga. A ação padrão é sempre manter — excluir nunca é automático, porque o banco pode simplesmente não ter processado ainda.
 : Interno | Movimento que não é ganho nem gasto de verdade. "Ignorar" não grava nada.
 
-> Um botão no topo da lista, "Marcar todos como ignorar", zera as decisões de uma vez, para você escolher só o que quer aceitar.
+> Acima da lista, cada estado é uma pílula com a contagem; toque nela para ver só os itens daquele estado, e toque de novo para ver todos — o filtro só muda o que aparece, nunca o que "Confirmar" grava.
+
+> Um botão no topo da lista, "Marcar todos como ignorar", zera as decisões de uma vez, para você escolher só o que quer aceitar; com um filtro ativo, ele vira "Marcar os visíveis como ignorar" e afeta só o que está filtrado.
 
 **A aplicação na caixinha do Nubank** aparece como Interno, com um botão a mais: "É saída de
 verdade". O Flow não sabe se você só guardou o dinheiro — que continua seu, é movimento interno

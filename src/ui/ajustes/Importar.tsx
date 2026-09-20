@@ -6,7 +6,7 @@ import {
   type OpcoesConferencia,
 } from '../../importar/conferencia';
 import type {
-  Adapter, DecisaoTotal, DecisaoTroca, ItemConferencia, LeituraAdapter,
+  Adapter, DecisaoTotal, DecisaoTroca, EstadoItem, ItemConferencia, LeituraAdapter,
 } from '../../importar/tipos';
 import type { ID } from '../../domain/types';
 import { boxIdEfetivo, useApp } from '../../state/store';
@@ -37,6 +37,10 @@ export default function Importar() {
   const [trocas, setTrocas] = useState<Record<string, DecisaoTroca>>({});
   const [totaisCorrigidos, setTotaisCorrigidos] = useState<Record<string, DecisaoTotal>>({});
 
+  // Filtro de exibição do resumo do passo 3 (pílula tocada) — nunca muda o que `confirmar`
+  // grava, só o que aparece na lista. Trocar destino ou arquivo limpa o filtro (regra da spec).
+  const [filtro, setFiltro] = useState<EstadoItem | null>(null);
+
   const [resumoAplicado, setResumoAplicado] = useState<ResumoAplicacao | null>(null);
   const [erroAplicar, setErroAplicar] = useState('');
   const [aplicando, setAplicando] = useState(false);
@@ -46,7 +50,15 @@ export default function Importar() {
   const [copiarEstado, setCopiarEstado] = useState<'ocioso' | 'copiado' | 'erro'>('ocioso');
   const [mostrarLinhasIgnoradas, setMostrarLinhasIgnoradas] = useState(false);
 
-  const cartoesAtivos = useMemo(() => (dados?.cartoes ?? []).filter((c) => c.ativo), [dados]);
+  // Na visão consolidada ('casa'), qualquer cartão ativo entra — é ali que o usuário olha
+  // tudo e precisa poder escolher qualquer um. Numa box específica, só os cartões dela: do
+  // contrário, o passo 2 oferecia cartão de outra box como destino (defeito relatado).
+  const cartoesAtivos = useMemo(() => {
+    const ativos = (dados?.cartoes ?? []).filter((c) => c.ativo);
+    if (!dados || boxSel === 'casa') return ativos;
+    const boxId = boxIdEfetivo(dados, boxSel);
+    return ativos.filter((c) => c.boxId === boxId);
+  }, [dados, boxSel]);
 
   const itensComContexto: ItemComContexto[] = useMemo(() => {
     if (!leitura || !dados) return [];
@@ -83,10 +95,16 @@ export default function Importar() {
       : boxIdEscolhida != null)
     : false;
 
+  // O botão Confirmar sempre olha TODOS os itens, filtrados ou não — o filtro é só de
+  // exibição (regra da spec: filtrar não pode dar a impressão de que grava menos).
   const mudancas = itensComContexto
     .filter((ic) => acaoEfetiva(ic.item, trocas[ic.chave]).tipo !== 'ignorar').length;
   const semMudanca = itensComContexto.length - mudancas;
   const podeConfirmar = destinoCompleto && mudancas > 0 && !aplicando;
+
+  const itensVisiveis = filtro
+    ? itensComContexto.filter((ic) => ic.item.estado === filtro)
+    : itensComContexto;
 
   if (!dados) return null;
 
@@ -94,7 +112,7 @@ export default function Importar() {
     setNomeArquivo(''); setBuf(null); setAdapterAtual(undefined); setEscolhendoFormato(false);
     setLeitura(null); setLendo(false); setErro('');
     setBoxIdEscolhida(null); setDestinoBlocos({});
-    setTrocas({}); setTotaisCorrigidos({});
+    setTrocas({}); setTotaisCorrigidos({}); setFiltro(null);
     setResumoAplicado(null); setErroAplicar('');
     setCopiarEstado('ocioso'); setMostrarLinhasIgnoradas(false);
   }
@@ -118,15 +136,17 @@ export default function Importar() {
     setErro('');
     setTrocas({});
     setTotaisCorrigidos({});
+    setFiltro(null);
     setCopiarEstado('ocioso'); setMostrarLinhasIgnoradas(false);
     try {
       const r = await adapter.ler(conteudo);
       setLeitura(r);
       setBoxIdEscolhida(boxIdEfetivo(dados!, boxSel));
       const destinos: Record<number, DestinoBloco> = {};
-      const ativos = (dados?.cartoes ?? []).filter((c) => c.ativo);
+      // Mesma lista do passo 2 (`cartoesAtivos`, já filtrada pela box selecionada): a
+      // pré-seleção só acontece quando ela sobra com exatamente um cartão elegível.
       (r.blocos ?? []).forEach((_, i) => {
-        destinos[i] = ativos.length === 1 ? ativos[0].id : undefined;
+        destinos[i] = cartoesAtivos.length === 1 ? cartoesAtivos[0].id : undefined;
       });
       setDestinoBlocos(destinos);
     } catch (e) {
@@ -150,6 +170,7 @@ export default function Importar() {
     setDestinoBlocos({});
     setTrocas({});
     setTotaisCorrigidos({});
+    setFiltro(null);
     setResumoAplicado(null);
     setErroAplicar('');
     const adapter = detectarAdapter(file.name, inicio);
@@ -166,12 +187,13 @@ export default function Importar() {
     void lerComAdapter(adapter, buf);
   }
 
-  /** Marca toda a lista para ignorar — inclusive itens que já tinham outra decisão. É um
+  /** Marca para ignorar os itens visíveis — inclusive os que já tinham outra decisão. Sem
+   *  filtro, "visíveis" é a lista inteira; com filtro, só o estado escolhido no resumo. É um
    *  jeito rápido de "esvaziar" a conferência antes de escolher, item a item, o que entra. */
   function marcarTodosComoIgnorar() {
     setTrocas((t) => {
       const novo = { ...t };
-      for (const ic of itensComContexto) novo[ic.chave] = { estado: ic.item.estado, acao: { tipo: 'ignorar' } };
+      for (const ic of itensVisiveis) novo[ic.chave] = { estado: ic.item.estado, acao: { tipo: 'ignorar' } };
       return novo;
     });
   }
@@ -364,7 +386,7 @@ export default function Importar() {
               <button
                 key={b.id}
                 className={boxIdEscolhida === b.id ? 'ativo' : ''}
-                onClick={() => setBoxIdEscolhida(b.id)}
+                onClick={() => { setBoxIdEscolhida(b.id); setFiltro(null); }}
               >{b.nome}</button>
             ))}
           </div>
@@ -383,12 +405,12 @@ export default function Importar() {
                   <button
                     key={c.id}
                     className={destinoBlocos[i] === c.id ? 'ativo' : ''}
-                    onClick={() => setDestinoBlocos((d) => ({ ...d, [i]: c.id }))}
+                    onClick={() => { setDestinoBlocos((d) => ({ ...d, [i]: c.id })); setFiltro(null); }}
                   >{c.nome}</button>
                 ))}
                 <button
                   className={destinoBlocos[i] === NAO_IMPORTAR ? 'ativo' : ''}
-                  onClick={() => setDestinoBlocos((d) => ({ ...d, [i]: NAO_IMPORTAR }))}
+                  onClick={() => { setDestinoBlocos((d) => ({ ...d, [i]: NAO_IMPORTAR })); setFiltro(null); }}
                 >Não importar</button>
               </div>
             </div>
@@ -403,7 +425,7 @@ export default function Importar() {
             <h3>3. Conferir</h3>
             {itensComContexto.length > 0 && (
               <button type="button" className="acao" onClick={marcarTodosComoIgnorar}>
-                Marcar todos como ignorar
+                {filtro ? 'Marcar os visíveis como ignorar' : 'Marcar todos como ignorar'}
               </button>
             )}
           </div>
@@ -419,6 +441,8 @@ export default function Importar() {
             onToggleLinhasIgnoradas={() => setMostrarLinhasIgnoradas((v) => !v)}
             copiarEstado={copiarEstado}
             onCopiarTextoExtraido={(texto) => void copiarTextoExtraido(texto)}
+            filtro={filtro}
+            onFiltroChange={setFiltro}
           />
           <div className="importar-rodape">
             {erroAplicar && <p className="aviso">{erroAplicar}</p>}

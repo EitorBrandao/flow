@@ -1,7 +1,7 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Dados } from '../../domain/types';
-import type { ItemConferencia, LeituraAdapter } from '../../importar/tipos';
+import type { EstadoItem, ItemConferencia, LeituraAdapter } from '../../importar/tipos';
 import ListaConferencia, { type ItemComContexto } from './ListaConferencia';
 
 function dadosVazios(): Dados {
@@ -55,6 +55,7 @@ describe('ListaConferencia', () => {
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro={null} onFiltroChange={vi.fn()}
       />,
     );
 
@@ -89,6 +90,7 @@ describe('ListaConferencia', () => {
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro={null} onFiltroChange={vi.fn()}
       />,
     );
 
@@ -102,6 +104,7 @@ describe('ListaConferencia', () => {
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
         mostrarLinhasIgnoradas onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro={null} onFiltroChange={vi.fn()}
       />,
     );
 
@@ -121,6 +124,7 @@ describe('ListaConferencia', () => {
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro={null} onFiltroChange={vi.fn()}
       />,
     );
     expect(container.textContent).not.toContain('Copiar texto extraído');
@@ -134,6 +138,7 @@ describe('ListaConferencia', () => {
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro={null} onFiltroChange={vi.fn()}
       />,
     );
     expect(container.textContent).toContain('Copiar texto extraído');
@@ -147,8 +152,149 @@ describe('ListaConferencia', () => {
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro={null} onFiltroChange={vi.fn()}
       />,
     );
     expect(container.textContent).toContain('Copiar texto extraído');
+  });
+});
+
+describe('ListaConferencia — filtro por pílula do resumo', () => {
+  function montarItens(): { dados: Dados; itens: ItemComContexto[]; leitura: LeituraAdapter } {
+    const dados = dadosVazios();
+    dados.categorias.push({
+      id: 'cat-gasto', boxId: 'b1', nome: 'Mercado', tipo: 'gasto', ordem: 0, arquivada: false,
+      criadoEm: '2026-01-01T00:00:00.000Z', alteradoEm: '2026-01-01T00:00:00.000Z',
+    });
+    dados.lancamentos.push({
+      id: 'l-sobra', boxId: 'b1', categoriaId: 'cat-gasto', data: '2026-08-10', valor: 5190,
+      status: 'efetivo', origem: 'manual', nota: 'POSTO BETA',
+      criadoEm: '2026-01-01T00:00:00.000Z', alteradoEm: '2026-01-01T00:00:00.000Z',
+    });
+
+    const itemNovo: ItemConferencia = {
+      estado: 'novo',
+      bruto: { data: '2026-08-20', valorCent: -4500, descricao: 'MERCADO ALFA', fonte: 'conta' },
+      acao: { tipo: 'adicionarLancamento', categoriaId: 'cat-gasto' },
+    };
+    const itemConfere: ItemConferencia = {
+      estado: 'confere',
+      bruto: { data: '2026-08-05', valorCent: -3990, descricao: 'LOJA GAMA', fonte: 'conta' },
+      acao: { tipo: 'ignorar' },
+    };
+    const itemSobra: ItemConferencia = { estado: 'sobra', lancamentoId: 'l-sobra', acao: { tipo: 'ignorar' } };
+
+    const itens: ItemComContexto[] = [
+      { item: itemNovo, boxId: 'b1', chave: 'bruto:0' },
+      { item: itemConfere, boxId: 'b1', chave: 'bruto:1' },
+      { item: itemSobra, boxId: 'b1', chave: 'sobra:l-sobra' },
+    ];
+    const leitura: LeituraAdapter = { brutos: [], linhasIgnoradas: 0, avisos: [] };
+    return { dados, itens, leitura };
+  }
+
+  function pilhaDoEstado(container: HTMLElement, textoEstado: string): HTMLButtonElement {
+    const botao = Array.from(container.querySelectorAll<HTMLButtonElement>('.importar-contagem'))
+      .find((b) => b.textContent?.includes(textoEstado));
+    if (!botao) throw new Error(`pílula "${textoEstado}" não encontrada`);
+    return botao;
+  }
+
+  it('cada pílula é um botão de verdade; a de contagem zero vem desabilitada', () => {
+    const { dados, itens, leitura } = montarItens();
+    const { container } = render(
+      <ListaConferencia
+        leitura={leitura} itens={itens} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro={null} onFiltroChange={vi.fn()}
+      />,
+    );
+
+    const pilhaNovo = pilhaDoEstado(container, 'novo');
+    expect(pilhaNovo.tagName).toBe('BUTTON');
+    expect(pilhaNovo).not.toBeDisabled();
+    expect(pilhaNovo).toHaveAttribute('aria-pressed', 'false');
+
+    const pilhaPrevisto = pilhaDoEstado(container, 'previstos');
+    expect(pilhaPrevisto).toBeDisabled();
+  });
+
+  it('tocar numa pílula com contagem chama onFiltroChange com o estado dela', () => {
+    const { dados, itens, leitura } = montarItens();
+    const onFiltroChange = vi.fn();
+    const { container } = render(
+      <ListaConferencia
+        leitura={leitura} itens={itens} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro={null} onFiltroChange={onFiltroChange}
+      />,
+    );
+
+    fireEvent.click(pilhaDoEstado(container, 'novo'));
+    expect(onFiltroChange).toHaveBeenCalledWith('novo' satisfies EstadoItem);
+  });
+
+  it('com filtro ativo, mostra só os itens daquele estado e o aviso abaixo do resumo', () => {
+    const { dados, itens, leitura } = montarItens();
+    const { container } = render(
+      <ListaConferencia
+        leitura={leitura} itens={itens} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro="novo" onFiltroChange={vi.fn()}
+      />,
+    );
+
+    expect(container.textContent).toContain('MERCADO ALFA');
+    expect(container.textContent).not.toContain('LOJA GAMA');
+    expect(container.textContent).not.toContain('POSTO BETA');
+
+    expect(container.textContent).toContain('Mostrando só os itens com estado "novo"');
+    expect(pilhaDoEstado(container, 'novo')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('tocar de novo na pílula ativa pede para tirar o filtro (chama com null)', () => {
+    const { dados, itens, leitura } = montarItens();
+    const onFiltroChange = vi.fn();
+    const { container } = render(
+      <ListaConferencia
+        leitura={leitura} itens={itens} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro="novo" onFiltroChange={onFiltroChange}
+      />,
+    );
+
+    fireEvent.click(pilhaDoEstado(container, 'novo'));
+    expect(onFiltroChange).toHaveBeenCalledWith(null);
+  });
+
+  it('tocar noutra pílula troca o filtro, sem acumular os dois estados', () => {
+    const { dados, itens, leitura } = montarItens();
+    const onFiltroChange = vi.fn();
+    const { container } = render(
+      <ListaConferencia
+        leitura={leitura} itens={itens} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro="novo" onFiltroChange={onFiltroChange}
+      />,
+    );
+
+    fireEvent.click(pilhaDoEstado(container, 'confere'));
+    expect(onFiltroChange).toHaveBeenCalledTimes(1);
+    expect(onFiltroChange).toHaveBeenCalledWith('confere' satisfies EstadoItem);
   });
 });
