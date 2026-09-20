@@ -84,7 +84,7 @@ Santander, em PDF. Baixe o arquivo direto no site ou no aplicativo do banco.
 A tela tem três passos, e nada é gravado antes do terceiro:
 
 - **Arquivo.** Escolher o CSV ou o PDF. O Flow reconhece o formato sozinho; se não reconhecer, você escolhe manualmente.
-- **Destino.** Para o extrato de conta: a box, e o banco, se a box tiver mais de um cadastrado. Para a fatura: o cartão de cada bloco — a fatura pode trazer mais de um cartão, e "Não importar" é uma resposta válida para um bloco.
+- **Destino.** Para o extrato de conta: a box, e o banco, se a box tiver mais de um cadastrado. Para a fatura: o cartão de cada bloco — a fatura pode trazer mais de um cartão, e "Não importar" é uma resposta válida para um bloco. A lista de cartões mostra só os da box selecionada no momento; na visão consolidada de todas as boxes, aparecem os cartões de qualquer box.
 - **Conferir.** A lista mostra cada linha do arquivo já comparada com o Flow. Só ao tocar em "Confirmar" algo é gravado.
 
 > Quando alguma linha do arquivo não é reconhecida, "Ver linhas não reconhecidas" mostra o texto de cada uma — para diagnóstico. Na fatura em PDF, "Copiar texto extraído" também aparece nesse caso, com o texto bruto que o Flow leu do arquivo. Os dois contêm os dados da sua fatura ou do seu extrato.

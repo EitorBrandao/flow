@@ -34,6 +34,18 @@ const TEXTO_FATURA_DOIS_CARTOES = [
   '3/4',
 ].join('\n');
 
+// Mesmo formato, com um único bloco (um só cartão na fatura) — usado pelo teste do filtro de
+// cartões por box, que não precisa de mais de um bloco pra provar o ponto.
+const TEXTO_FATURA_UM_CARTAO = [
+  'Vencimento 05/09/2026',
+  'Detalhamento da Fatura',
+  'FULANO DE TAL - 0000 XXXX XXXX 0000',
+  'Despesas',
+  'Compra Data Descrição Parcela R$ US$',
+  '3 07/08 MERCADO ALFA 45,00',
+  'VALOR TOTAL 45,00 0,00',
+].join('\n');
+
 // A leitura real do PDF passa pelo pdf.js (`textoPdf.ts`); os testes deste arquivo não têm um
 // PDF binário de verdade, então a extração de texto é substituída pelo texto sintético acima.
 // É um `vi.fn()`, não uma função fixa, porque um teste abaixo precisa fazê-la falhar uma vez,
@@ -232,6 +244,41 @@ describe('Importar', () => {
     // A decisão de descartar POSTO BETA continua sendo dele, não migrou pra outro item.
     const linhaPostoDepois = linhaDoItem(screen.getByText('POSTO BETA'));
     expect(within(linhaPostoDepois).getByRole('button', { name: 'Descartar' })).toHaveClass('ativo');
+  });
+
+  // Defeito relatado: o passo 2 oferecia cartão de OUTRA box como destino, porque
+  // `cartoesAtivos` filtrava só por `ativo`, sem olhar a box selecionada no app.
+  it('o passo 2 só oferece cartões da box selecionada, e pré-seleciona quando sobra um só', async () => {
+    const boxA = await montarBox();
+    const boxB = {
+      id: novoId(), nome: 'segunda', saldoInicial: 0, dataSaldoInicial: '2026-01-01',
+      criadoEm: agoraISO(), alteradoEm: agoraISO(),
+    };
+    await repo.salvarBox(boxB);
+    const cartaoA = await repo.salvarCartao(
+      { boxId: boxA.id, nome: 'Cartão A', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31',
+    );
+    const cartaoB = await repo.salvarCartao(
+      { boxId: boxB.id, nome: 'Cartão B', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31',
+    );
+    extrairTextoPdfMock.mockResolvedValueOnce(TEXTO_FATURA_UM_CARTAO);
+    await useApp.getState().iniciar();
+    useApp.getState().setBoxSel(boxA.id);
+    render(<Importar />);
+
+    await userEvent.upload(
+      screen.getByLabelText('Escolher arquivo'),
+      new File(['%PDF-1.4 fatura sintética'], 'fatura.pdf', { type: 'application/pdf' }),
+    );
+
+    await screen.findByText('FULANO DE TAL - 0000 XXXX XXXX 0000');
+    const radiogroup = screen.getByRole(
+      'radiogroup', { name: 'Destino de FULANO DE TAL - 0000 XXXX XXXX 0000' },
+    );
+    // Só o cartão da box selecionada (A) aparece, não o da outra box (B) — e, por sobrar
+    // exatamente um cartão elegível, ele já vem pré-selecionado.
+    expect(within(radiogroup).queryByRole('button', { name: cartaoB.nome })).not.toBeInTheDocument();
+    expect(within(radiogroup).getByRole('button', { name: cartaoA.nome })).toHaveClass('ativo');
   });
 
   // CRÍTICO 2: se um `aplicar` falhar depois de outro já ter gravado, o app precisa recarregar

@@ -50,7 +50,15 @@ export default function Importar() {
   const [copiarEstado, setCopiarEstado] = useState<'ocioso' | 'copiado' | 'erro'>('ocioso');
   const [mostrarLinhasIgnoradas, setMostrarLinhasIgnoradas] = useState(false);
 
-  const cartoesAtivos = useMemo(() => (dados?.cartoes ?? []).filter((c) => c.ativo), [dados]);
+  // Na visão consolidada ('casa'), qualquer cartão ativo entra — é ali que o usuário olha
+  // tudo e precisa poder escolher qualquer um. Numa box específica, só os cartões dela: do
+  // contrário, o passo 2 oferecia cartão de outra box como destino (defeito relatado).
+  const cartoesAtivos = useMemo(() => {
+    const ativos = (dados?.cartoes ?? []).filter((c) => c.ativo);
+    if (!dados || boxSel === 'casa') return ativos;
+    const boxId = boxIdEfetivo(dados, boxSel);
+    return ativos.filter((c) => c.boxId === boxId);
+  }, [dados, boxSel]);
 
   const itensComContexto: ItemComContexto[] = useMemo(() => {
     if (!leitura || !dados) return [];
@@ -135,9 +143,10 @@ export default function Importar() {
       setLeitura(r);
       setBoxIdEscolhida(boxIdEfetivo(dados!, boxSel));
       const destinos: Record<number, DestinoBloco> = {};
-      const ativos = (dados?.cartoes ?? []).filter((c) => c.ativo);
+      // Mesma lista do passo 2 (`cartoesAtivos`, já filtrada pela box selecionada): a
+      // pré-seleção só acontece quando ela sobra com exatamente um cartão elegível.
       (r.blocos ?? []).forEach((_, i) => {
-        destinos[i] = ativos.length === 1 ? ativos[0].id : undefined;
+        destinos[i] = cartoesAtivos.length === 1 ? cartoesAtivos[0].id : undefined;
       });
       setDestinoBlocos(destinos);
     } catch (e) {
