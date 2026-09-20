@@ -40,18 +40,17 @@ interface Props {
   onToggleLinhasIgnoradas: () => void;
   copiarEstado: 'ocioso' | 'copiado' | 'erro';
   onCopiarTextoExtraido: (texto: string) => void;
+  /** Estado escolhido no resumo para filtrar a lista abaixo — só de exibição, nunca muda o
+   *  que `Importar.tsx` confirma. `null` mostra tudo. */
+  filtro: EstadoItem | null;
+  onFiltroChange: (estado: EstadoItem | null) => void;
 }
 
 export default function ListaConferencia({
   leitura, itens, dados, trocas, onTrocar, totaisCorrigidos, onCorrigirTotal,
   mostrarLinhasIgnoradas, onToggleLinhasIgnoradas, copiarEstado, onCopiarTextoExtraido,
+  filtro, onFiltroChange,
 }: Props) {
-  // `chave` já é a identidade estável do item (ver `ItemComContexto`), então basta ordenar uma
-  // cópia por data — sem precisar remontar nenhum índice depois.
-  const ordenados = useMemo(() => (
-    [...itens].sort((a, b) => dataDoItem(a.item, dados).localeCompare(dataDoItem(b.item, dados)))
-  ), [itens, dados]);
-
   const contagens = useMemo(() => {
     const c: Record<EstadoItem, number> = {
       confere: 0, previsto: 0, divergente: 0, novo: 0, sobra: 0, interno: 0,
@@ -59,6 +58,18 @@ export default function ListaConferencia({
     for (const { item } of itens) c[item.estado]++;
     return c;
   }, [itens]);
+
+  // O filtro só decide o que aparece aqui embaixo — as contagens acima (e tudo que
+  // `Importar.tsx` confirma) continuam olhando `itens` inteiro, sem filtro.
+  const itensVisiveis = useMemo(() => (
+    filtro ? itens.filter((ic) => ic.item.estado === filtro) : itens
+  ), [itens, filtro]);
+
+  // `chave` já é a identidade estável do item (ver `ItemComContexto`), então basta ordenar uma
+  // cópia por data — sem precisar remontar nenhum índice depois.
+  const ordenados = useMemo(() => (
+    [...itensVisiveis].sort((a, b) => dataDoItem(a.item, dados).localeCompare(dataDoItem(b.item, dados)))
+  ), [itensVisiveis, dados]);
 
   return (
     <>
@@ -102,14 +113,28 @@ export default function ListaConferencia({
         {ORDEM_ESTADOS.map((estado) => {
           const n = contagens[estado];
           const [singular, plural] = ROTULOS_CONTAGEM[estado];
+          const ativo = filtro === estado;
           return (
-            <span key={estado} className="importar-contagem">
+            <button
+              key={estado}
+              type="button"
+              className={`importar-contagem${ativo ? ' ativo' : ''}`}
+              aria-pressed={ativo}
+              disabled={n === 0}
+              onClick={() => onFiltroChange(ativo ? null : estado)}
+            >
               <i className={`importar-ponto ${estado}`} aria-hidden="true" />
               <b>{n}</b> {n === 1 ? singular : plural}
-            </span>
+            </button>
           );
         })}
       </div>
+      {filtro && (
+        <p className="sub">
+          Mostrando só os itens com estado &quot;{ROTULOS_CONTAGEM[filtro][0]}&quot;. Toque de
+          novo na pílula para ver todos.
+        </p>
+      )}
 
       <div className="lista">
         {ordenados.map((ic) => (

@@ -98,7 +98,9 @@ Cada item da lista chega classificado num destes seis estados:
 : Sobra | Está lançado no Flow, dentro do período do arquivo, mas não aparece no banco. "Manter" deixa como está; "Excluir do app" apaga. A ação padrão é sempre manter — excluir nunca é automático, porque o banco pode simplesmente não ter processado ainda.
 : Interno | Movimento que não é ganho nem gasto de verdade. "Ignorar" não grava nada.
 
-> Um botão no topo da lista, "Marcar todos como ignorar", zera as decisões de uma vez, para você escolher só o que quer aceitar.
+> Acima da lista, cada estado é uma pílula com a contagem; toque nela para ver só os itens daquele estado, e toque de novo para ver todos — o filtro só muda o que aparece, nunca o que "Confirmar" grava.
+
+> Um botão no topo da lista, "Marcar todos como ignorar", zera as decisões de uma vez, para você escolher só o que quer aceitar; com um filtro ativo, ele vira "Marcar os visíveis como ignorar" e afeta só o que está filtrado.
 
 **A aplicação na caixinha do Nubank** aparece como Interno, com um botão a mais: "É saída de
 verdade". O Flow não sabe se você só guardou o dinheiro — que continua seu, é movimento interno

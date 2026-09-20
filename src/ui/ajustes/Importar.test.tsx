@@ -84,6 +84,41 @@ async function uploadCsvDuasLinhas() {
   await screen.findByRole('button', { name: /Confirmar — 2 mudanças/ });
 }
 
+// CSV com três linhas, uma de cada estado: PAGAMENTO RECEBIDO casa com um lançamento efetivo
+// já existente (confere), CONTA PREVISTA casa com um previsto já existente (previsto), e LOJA
+// GAMA não casa com nada (novo). Usado pelos testes do filtro por pílula: precisa de mais de
+// um estado com contagem > 0 pra provar que "Marcar os visíveis" não vaza pra outro estado.
+const CSV_TRES_LINHAS = [
+  CABECALHO,
+  '20/08/2026,150.00,1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d,PAGAMENTO RECEBIDO',
+  '21/08/2026,-45.00,2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e,LOJA GAMA',
+  '22/08/2026,-99.00,3c4d5e6f-7a8b-4c9d-0e1f-2a3b4c5d6e7f,CONTA PREVISTA',
+].join('\n');
+
+async function montarBoxComPreExistentes() {
+  const box = await montarBox();
+  const categoria = await repo.salvarCategoria({
+    boxId: box.id, nome: 'Categoria', tipo: 'gasto', ordem: 0,
+  });
+  // Confere: mesma data e mesmo valor absoluto de PAGAMENTO RECEBIDO (150,00).
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-08-20', valor: 15000,
+    status: 'efetivo', nota: 'já lançado',
+  });
+  // Previsto: mesma data e mesmo valor absoluto de CONTA PREVISTA (99,00).
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-08-22', valor: 9900,
+    status: 'previsto', nota: 'previsto',
+  });
+  return { box, categoria };
+}
+
+async function uploadCsvTresLinhas() {
+  const arquivo = new File([CSV_TRES_LINHAS], 'extrato-nubank.csv', { type: 'text/csv' });
+  await userEvent.upload(screen.getByLabelText('Escolher arquivo'), arquivo);
+  await screen.findByRole('button', { name: /Confirmar — 2 mudanças/ });
+}
+
 /** `.closest()` devolve `Element | null`; a UI dela é sempre um `<div class="item">`, mas o
  *  tipo não garante isso sozinho — aqui a checagem de nulo E de tipo ficam num só lugar. */
 function linhaDoItem(elementoDeTexto: HTMLElement): HTMLElement {
@@ -263,6 +298,106 @@ describe('Importar', () => {
 
     const botao = await screen.findByRole('button', { name: /Confirmar — 0 mudanças/ });
     expect(botao).toBeDisabled();
+  });
+
+  it('tocar numa pílula do resumo filtra a lista, mas o Confirmar continua contando tudo', async () => {
+    await montarBoxComPreExistentes();
+    await useApp.getState().iniciar();
+    render(<Importar />);
+    await uploadCsvTresLinhas();
+
+    expect(screen.getByText('PAGAMENTO RECEBIDO')).toBeInTheDocument();
+    expect(screen.getByText('LOJA GAMA')).toBeInTheDocument();
+    expect(screen.getByText('CONTA PREVISTA')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /^1 novo$/ }));
+
+    expect(screen.queryByText('PAGAMENTO RECEBIDO')).not.toBeInTheDocument();
+    expect(screen.getByText('LOJA GAMA')).toBeInTheDocument();
+    expect(screen.queryByText('CONTA PREVISTA')).not.toBeInTheDocument();
+    expect(screen.getByText(/Mostrando só os itens com estado "novo"/)).toBeInTheDocument();
+
+    // O filtro é só de exibição: a contagem do Confirmar (novo + previsto) não muda.
+    expect(screen.getByRole('button', { name: /Confirmar — 2 mudanças/ })).toBeInTheDocument();
+
+    // Tocar de novo na mesma pílula tira o filtro.
+    await userEvent.click(screen.getByRole('button', { name: /^1 novo$/ }));
+    expect(screen.getByText('PAGAMENTO RECEBIDO')).toBeInTheDocument();
+    expect(screen.getByText('CONTA PREVISTA')).toBeInTheDocument();
+    expect(screen.queryByText(/Mostrando só os itens com estado/)).not.toBeInTheDocument();
+  });
+
+  it('"Marcar os visíveis como ignorar" só marca os itens do estado filtrado', async () => {
+    await montarBoxComPreExistentes();
+    await useApp.getState().iniciar();
+    render(<Importar />);
+    await uploadCsvTresLinhas();
+
+    await userEvent.click(screen.getByRole('button', { name: /^1 novo$/ }));
+    const botaoMarcar = screen.getByRole('button', { name: 'Marcar os visíveis como ignorar' });
+    await userEvent.click(botaoMarcar);
+
+    // LOJA GAMA (o único item visível) deixou de ser mudança; CONTA PREVISTA, fora do filtro,
+    // continua com a ação padrão (confirmar) — só ela sobra como mudança.
+    await screen.findByRole('button', { name: /Confirmar — 1 mudanças/ });
+
+    await userEvent.click(screen.getByRole('button', { name: /^1 novo$/ }));
+    const linhaPrevisto = linhaDoItem(screen.getByText('CONTA PREVISTA'));
+    expect(within(linhaPrevisto).getByRole('button', { name: 'Confirmar' })).toHaveClass('ativo');
+    const linhaNovo = linhaDoItem(screen.getByText('LOJA GAMA'));
+    expect(within(linhaNovo).getByRole('button', { name: 'Descartar' })).toHaveClass('ativo');
+  });
+
+  it('sem filtro, "Marcar todos como ignorar" continua agindo sobre a lista inteira', async () => {
+    await montarBoxComPreExistentes();
+    await useApp.getState().iniciar();
+    render(<Importar />);
+    await uploadCsvTresLinhas();
+
+    expect(screen.getByRole('button', { name: 'Marcar todos como ignorar' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Marcar todos como ignorar' }));
+
+    const botao = await screen.findByRole('button', { name: /Confirmar — 0 mudanças/ });
+    expect(botao).toBeDisabled();
+  });
+
+  it('trocar a box de destino limpa o filtro ativo', async () => {
+    const { box } = await montarBoxComPreExistentes();
+    await repo.salvarBox({
+      id: novoId(), nome: 'segunda', saldoInicial: 0, dataSaldoInicial: '2026-01-01',
+      criadoEm: agoraISO(), alteradoEm: agoraISO(),
+    });
+    await useApp.getState().iniciar();
+    // Com duas boxes de saldo próprio, `boxSelInicial` escolhe pela ordem de chave primária
+    // (o id, um UUID) — não pela ordem de criação. Fixa a seleção em 'casa' (a que tem os
+    // lançamentos pré-existentes) pra este teste não depender dessa ordem.
+    useApp.getState().setBoxSel(box.id);
+    render(<Importar />);
+    await uploadCsvTresLinhas();
+
+    await userEvent.click(screen.getByRole('button', { name: /^1 novo$/ }));
+    expect(screen.getByText(/Mostrando só os itens com estado "novo"/)).toBeInTheDocument();
+
+    const radiogroupDestino = screen.getByRole('radiogroup', { name: 'Box de destino' });
+    await userEvent.click(within(radiogroupDestino).getByRole('button', { name: 'segunda' }));
+
+    expect(screen.queryByText(/Mostrando só os itens com estado/)).not.toBeInTheDocument();
+  });
+
+  it('trocar de arquivo limpa o filtro ativo', async () => {
+    await montarBoxComPreExistentes();
+    await useApp.getState().iniciar();
+    render(<Importar />);
+    await uploadCsvTresLinhas();
+
+    await userEvent.click(screen.getByRole('button', { name: /^1 novo$/ }));
+    expect(screen.getByText(/Mostrando só os itens com estado "novo"/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Escolher outro arquivo' }));
+    await uploadCsvTresLinhas();
+
+    expect(screen.queryByText(/Mostrando só os itens com estado/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Marcar todos como ignorar' })).toBeInTheDocument();
   });
 
   it('"Escolher outro arquivo" volta ao passo 1, limpando leitura, destino e decisões', async () => {

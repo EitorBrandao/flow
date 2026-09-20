@@ -73,7 +73,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.nota-bloco` | resumo da nota fiscal anexada a uma compra do cartão (`FormCompra.tsx`) — emitente, data, total da nota e contagem de itens sobre `--surface2`; também envolve o painel de anexar o XML |
 | `.nota-itens` / `.nota-item` / `.nota-item-diferenca` | lista compacta "item → valor → % do total" dentro do `.nota-bloco`, com rolagem própria; cada `.nota-item` é uma linha de duas colunas (descrição e quantidade à esquerda, valor em negrito e percentual à direita); `.nota-item-diferenca` marca a linha final de desconto/frete |
 | `.selecionar-arquivo` | wrapper de um seletor de arquivo estilizado como `.botao`: um botão decorativo (`aria-hidden`, `tabIndex={-1}`) chama `input.click()`, e o `input[type=file]` real fica por cima dele com opacity 0 (não `display:none`), como o alvo de toque de verdade — mesma técnica de `.campo-data`/`.campo-data-input` (`CampoData.tsx`). Usado em `Importar.tsx` |
-| `.importar-resumo` / `.importar-contagem` | resumo de contagens por estado no topo da conferência (`ListaConferencia.tsx`): `.importar-resumo` é a linha de pílulas, `.importar-contagem` cada pílula (ponto colorido + número + rótulo) |
+| `.importar-resumo` / `.importar-contagem` | resumo de contagens por estado no topo da conferência (`ListaConferencia.tsx`): `.importar-resumo` é a linha de pílulas, `.importar-contagem` cada pílula, um `<button>` (ponto colorido + número + rótulo, `min-height: 44px`) que filtra a lista abaixo pelo estado dela — `aria-pressed` marca a pílula ativa, `.ativo` dá a cor (`--ac-dim`/`--ac`, mesmo padrão de `.botao.ativo`), e uma pílula de contagem zero vem `disabled` (`opacity: .45`) |
 | `.importar-ponto` | ponto colorido de 8px que marca o estado de um item da conferência; usado sozinho no resumo (`.importar-contagem`) e junto de `.importar-estado` em cada linha (`LinhaConferencia.tsx`). Seis modificadores compostos, um por `EstadoItem` (confere/previsto/divergente/novo/sobra/interno), dão a cor de fundo — `--pos`/`--ac`/`--aviso-fg`/`--estado-novo`/`--neg`/`--muted`, nessa ordem |
 | `.importar-estado` | nome do estado de um item da conferência (`LinhaConferencia.tsx`), com os mesmos seis modificadores compostos do `.importar-ponto` acima dando a cor do texto |
 | `.importar-rodape` | rodapé fixo do passo 3 da conferência (`Importar.tsx`) — `position: sticky`, grudado acima da barra de navegação (`bottom: 96px` mobile, `24px` desktop); reúne o botão Confirmar, a contagem de itens sem mudança e o aviso de erro; degradê pro `--bg` evita corte seco no texto que rola por baixo |
@@ -161,6 +161,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 `ListaConferencia.tsx` e `LinhaConferencia.tsx`, não entram nesta lista: os três vivem em
 `src/ui/ajustes/`, mesmo caso já registrado no topo desta seção (varredura do verificador não
 desce a subpastas). `Importar.tsx` orquestra os três passos (arquivo, destino, conferir);
-`ListaConferencia.tsx` monta o resumo de contagens (`.importar-resumo`) e a lista em ordem de
-data; `LinhaConferencia.tsx` renderiza uma linha (etiqueta `.importar-ponto`/`.importar-estado`,
-detalhe, valor, botões de ação).
+`ListaConferencia.tsx` monta o resumo de contagens (`.importar-resumo`), filtrável tocando numa
+pílula, e a lista em ordem de data (só de exibição — quem confirma continua olhando tudo, em
+`Importar.tsx`); `LinhaConferencia.tsx` renderiza uma linha (etiqueta
+`.importar-ponto`/`.importar-estado`, detalhe, valor, botões de ação).
