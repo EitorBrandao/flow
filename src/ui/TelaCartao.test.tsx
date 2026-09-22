@@ -87,12 +87,35 @@ it('conferência mostra a diferença e a caixa troca o valor do previsto', async
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
     expect(await screen.findByText(/Falta bater/)).toBeInTheDocument();
     expect(screen.getByText(/R\$\s*20,00/)).toBeInTheDocument();
+    // Do ponto de vista do Flow: itens abaixo do banco = negativo, em vermelho.
+    expect(screen.getByText(/^−R\$\s*20,00$/)).toHaveClass('valor-gasto');
 
     await userEvent.click(screen.getByLabelText(/usar este valor no Flow/));
     await waitFor(async () => {
       const previsto = (await db.lancamentos.toArray()).find((l) => l.origem === 'cartao');
       expect(previsto?.valor).toBe(10000);
     });
+  } finally { vi.useRealTimers(); }
+});
+
+it('conferência com itens acima do banco mostra a diferença positiva, em verde', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao, catCartao } = await montarCartao();
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-01',
+      valorTotal: 8000, parcelas: 1,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    render(<TelaCartao />);
+
+    await abrirAba(/Conferência/);
+    await userEvent.type(screen.getByLabelText('Valor no app do banco'), '50,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
+    expect(await screen.findByText(/a mais que o app/)).toBeInTheDocument();
+    expect(screen.getByText(/^\+R\$\s*30,00$/)).toHaveClass('valor-ganho');
   } finally { vi.useRealTimers(); }
 });
 
