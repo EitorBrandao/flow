@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.32.2] - 2026-09-22
+
+### Alterado
+
+- Na aba Conferência da fatura do cartão, a diferença entre o banco e os itens agora tem cor e sinal.
+  - Vermelho e negativo quando falta lançar algum gasto no cartão.
+  - Verde e positivo quando os itens somam mais que o banco.
+
 ## [0.32.1] - 2026-09-22
 
 ### Alterado

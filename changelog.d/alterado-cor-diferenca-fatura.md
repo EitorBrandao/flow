@@ -1,3 +1,0 @@
-- Na aba Conferência da fatura do cartão, a diferença entre o banco e os itens agora tem cor e sinal.
-  - Vermelho e negativo quando falta lançar algum gasto no cartão.
-  - Verde e positivo quando os itens somam mais que o banco.
