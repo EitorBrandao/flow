@@ -22,3 +22,6 @@ dist/
 
 # Scratch de execução do superpowers:subagent-driven-development (briefs, reports, ledger)
 .superpowers/
+
+# Backups reais e scripts de análise pontual (dados financeiros do usuário — nunca versionar)
+.tests/
