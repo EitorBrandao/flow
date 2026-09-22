@@ -66,11 +66,7 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
       </div>
       {diff != null && (
         <p className="sub" style={{ margin: '4px 0 0' }}>
-          {Math.abs(diff) <= 1
-            ? 'Bate certinho.'
-            : diff > 0
-              ? `Diferença: ${formatarBRL(diff)} — falta inserir no app`
-              : `Diferença: ${formatarBRL(-diff)} — sobra no app (confira duplicado ou algo não confirmado no banco)`}
+          <Diferenca diff={diff} />
           {dataDeclarado ? ` · conferido em ${dataDeclarado}` : ''}
         </p>
       )}
@@ -78,13 +74,17 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
   );
 }
 
-/** Mesmas frases de diferença que `ConferenciaSaldo` usa — a conferência por banco muda só
- *  o campo de entrada (um por banco em vez de um único), não o texto de resultado. */
-function textoDiferenca(diff: number): string {
-  if (Math.abs(diff) <= 1) return 'Bate certinho.';
-  return diff > 0
-    ? `Diferença: ${formatarBRL(diff)} — falta inserir no app`
-    : `Diferença: ${formatarBRL(-diff)} — sobra no app (confira duplicado ou algo não confirmado no banco)`;
+/** Resultado da conferência, compartilhado pelas duas variantes (saldo único e por banco).
+ *  `diff` é banco − app; o valor exibido é do ponto de vista do app (app − banco): negativo
+ *  quando falta lançar, positivo quando sobra. */
+function Diferenca({ diff }: { diff: number }) {
+  if (Math.abs(diff) <= 1) return <>Bate certinho.</>;
+  const doApp = -diff;
+  return doApp < 0 ? (
+    <>Diferença: <span className="valor-gasto">−{formatarBRL(-doApp)}</span> — falta inserir no app</>
+  ) : (
+    <>Diferença: <span className="valor-ganho">+{formatarBRL(doApp)}</span> — sobra no app (confira duplicado ou algo não confirmado no banco)</>
+  );
 }
 
 /** Um grupo de bancos: sem box quando a seleção é uma única box (lista plana), com box
@@ -237,7 +237,7 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
       {diff == null ? (
         <p className="sub" style={{ margin: '4px 0 0' }}>Informe o saldo de ao menos um banco para conferir.</p>
       ) : (
-        <p className="sub" style={{ margin: '4px 0 0' }}>{textoDiferenca(diff)}</p>
+        <p className="sub" style={{ margin: '4px 0 0' }}><Diferenca diff={diff} /></p>
       )}
       <button className="botao" style={{ alignSelf: 'flex-start' }} onClick={salvar}>Salvar conferência dos bancos</button>
     </div>
