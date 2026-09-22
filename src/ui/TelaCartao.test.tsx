@@ -85,7 +85,7 @@ it('conferência mostra a diferença e a caixa troca o valor do previsto', async
     await abrirAba(/Conferência/);
     await userEvent.type(screen.getByLabelText('Valor no app do banco'), '100,00');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
-    expect(await screen.findByText(/Falta bater/)).toBeInTheDocument();
+    expect(await screen.findByText(/falta inserir no cartão/)).toBeInTheDocument();
     expect(screen.getByText(/R\$\s*20,00/)).toBeInTheDocument();
     // Do ponto de vista do Flow: itens abaixo do banco = negativo, em vermelho.
     expect(screen.getByText(/^−R\$\s*20,00$/)).toHaveClass('valor-gasto');
@@ -114,7 +114,7 @@ it('conferência com itens acima do banco mostra a diferença positiva, em verde
     await abrirAba(/Conferência/);
     await userEvent.type(screen.getByLabelText('Valor no app do banco'), '50,00');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
-    expect(await screen.findByText(/a mais que o app/)).toBeInTheDocument();
+    expect(await screen.findByText(/sobra no cartão/)).toBeInTheDocument();
     expect(screen.getByText(/^\+R\$\s*30,00$/)).toHaveClass('valor-ganho');
   } finally { vi.useRealTimers(); }
 });
@@ -136,14 +136,14 @@ it('botão Remover remove a conferência salva', async () => {
     // Digite valor e salve
     await userEvent.type(screen.getByLabelText('Valor no app do banco'), '100,00');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
-    expect(await screen.findByText(/Falta bater/)).toBeInTheDocument();
+    expect(await screen.findByText(/falta inserir no cartão/)).toBeInTheDocument();
 
     // Clique em Remover
     await userEvent.click(screen.getByRole('button', { name: 'Remover conferência' }));
 
     // Confirme que a diferença desapareceu
     await waitFor(async () => {
-      expect(screen.queryByText(/Falta bater/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/falta inserir no cartão/)).not.toBeInTheDocument();
     });
 
     // Clique Salvar novamente — não deve recriar a conferência
@@ -151,7 +151,7 @@ it('botão Remover remove a conferência salva', async () => {
 
     // Confirme que a diferença ainda não aparece (valor foi resetado para 0)
     await waitFor(async () => {
-      expect(screen.queryByText(/Falta bater/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/falta inserir no cartão/)).not.toBeInTheDocument();
     });
 
     // Confirme que a conferência não foi recriada no DB

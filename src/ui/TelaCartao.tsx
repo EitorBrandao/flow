@@ -73,10 +73,10 @@ function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: str
         <p className="sub" style={{ margin: '4px 0 0' }}>
           {/* Valor do ponto de vista do Flow (itens − banco), igual à conferência de saldo em Hoje. */}
           {diff === 0
-            ? '✓ Batido com o app.'
+            ? 'Bate certinho.'
             : diff > 0
-              ? <>Falta bater <span className="valor-gasto">−{formatarBRL(diff)}</span> — tem gasto ainda não lançado aqui.</>
-              : <>Itens somam <span className="valor-ganho">+{formatarBRL(-diff)}</span> a mais que o app.</>}
+              ? <>Diferença: <span className="valor-gasto">−{formatarBRL(diff)}</span> — falta inserir no cartão</>
+              : <>Diferença: <span className="valor-ganho">+{formatarBRL(-diff)}</span> — sobra no cartão (confira duplicado ou algo que ainda não entrou na fatura do banco)</>}
         </p>
       )}
       {conf && (
