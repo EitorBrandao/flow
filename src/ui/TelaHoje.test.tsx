@@ -56,6 +56,8 @@ it('declara saldo real maior que o saldo do app e mostra que falta inserir', asy
 
   expect(await screen.findByText(/falta inserir/)).toBeInTheDocument();
   expect(screen.getByText(/R\$\s*50,00/)).toBeInTheDocument();
+  // Diferença do ponto de vista do app: banco com mais = app devendo = negativo, em vermelho.
+  expect(screen.getByText(/^−R\$\s*50,00$/)).toHaveClass('valor-gasto');
   const salva = await db.boxes.get(box.id);
   expect(salva?.saldoDeclaradoCent).toBe(105000);
 });
@@ -76,6 +78,7 @@ it('declara saldo real negativo (cheque especial) e persiste com o sinal', async
   await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
   expect(await screen.findByText(/sobra no app/)).toBeInTheDocument();
+  expect(screen.getByText(/^\+R\$\s*1\.050,00$/)).toHaveClass('valor-ganho');
   const salva = await db.boxes.get(box.id);
   expect(salva?.saldoDeclaradoCent).toBe(-5000);
 });
