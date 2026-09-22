@@ -64,7 +64,7 @@ Aba dedicada à fatura do cartão da box selecionada (ou os dois cartões empilh
 - Cabeçalho, sempre visível fora das abas: total da fatura, dia de fechamento e de vencimento.
 - **Resumo:** valor pago ou a pagar, com atalho para corrigir; resumo por categoria do cartão quando há mais de uma categoria na fatura — tocar numa categoria já pula para Lançamentos filtrado por ela.
 - **Lançamentos:** busca por descrição, categoria, data ou valor; itens agrupados em À vista/Parceladas, com marcação de parcela (ex.: "3/12"); tocar abre edição; excluir remove a compra e todas as parcelas dela.
-- **Conferência:** campo "valor no app do banco"; mostra "falta bater R$ X" ou "✓ batido"; checkbox "usar este valor no Flow" (desmarcada por padrão). O rótulo da aba mostra ✔️ ou ⚠️ assim que existe uma conferência salva — dá para saber se bate sem entrar na aba.
+- **Conferência:** campo "valor no app do banco"; mostra "falta bater R$ X" ou "✓ batido" — o valor da diferença segue a mesma regra da conferência de saldo em Hoje: vermelho e negativo quando faltam itens, verde e positivo quando os itens passam do banco; checkbox "usar este valor no Flow" (desmarcada por padrão). O rótulo da aba mostra ✔️ ou ⚠️ assim que existe uma conferência salva — dá para saber se bate sem entrar na aba.
 - Botão "+ compra" na própria tela (valor, data, categoria do cartão, parcelas, descrição).
 - Sem cartão cadastrado para a seleção: mostra atalho direto para cadastrar em Ajustes.
 
