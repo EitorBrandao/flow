@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.32.1] - 2026-09-22
+
+### Alterado
+
+- Na aba Conferir da tela Hoje, a diferença entre o banco e o app agora tem cor e sinal.
+  - Vermelho e negativo quando falta lançar algo no app.
+  - Verde e positivo quando sobra algo no app.
+
 ## [0.32.0] - 2026-09-20
 
 ### Adicionado

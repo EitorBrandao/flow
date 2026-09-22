@@ -1,3 +1,0 @@
-- Na aba Conferir da tela Hoje, a diferença entre o banco e o app agora tem cor e sinal.
-  - Vermelho e negativo quando falta lançar algo no app.
-  - Verde e positivo quando sobra algo no app.
