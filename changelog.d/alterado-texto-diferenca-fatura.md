@@ -1,1 +1,0 @@
-- A conferência da fatura do cartão usa as mesmas frases da conferência de saldo: "Diferença:" seguido do valor, "falta inserir no cartão" ou "sobra no cartão", e "Bate certinho." quando fecha.

@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.32.3] - 2026-09-22
+
+### Alterado
+
+- A conferência da fatura do cartão usa as mesmas frases da conferência de saldo: "Diferença:" seguido do valor, "falta inserir no cartão" ou "sobra no cartão", e "Bate certinho." quando fecha.
+
 ## [0.32.2] - 2026-09-22
 
 ### Alterado
