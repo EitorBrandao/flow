@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
 import * as repo from '../db/repo';
 import { addMesesData, formatarDataBR } from '../domain/dates';
 import { categoriasCartaoReservadasIds } from '../domain/categorias';
-import { formatarBRL } from '../domain/money';
+import { formatarBRL, formatarPercentual as formatarPercentualDominio } from '../domain/money';
 import { distribuirItens, notaDaCompra, parsearNotaFiscal, type NotaFiscalExtraida } from '../domain/notaFiscal';
 import type { Cartao, CompraCartao, ID, ISODate } from '../domain/types';
 import { viagemAtivaEm } from '../domain/viagem';
@@ -35,7 +35,7 @@ type EstadoNota =
  *  nada e ainda confunde com o sinal errado. Omitir é mais honesto que mostrar isso. */
 function formatarPercentual(p: number): string | null {
   if (Math.abs(p) < 0.05) return null;
-  return `${p.toFixed(1).replace('.', ',')}%`;
+  return formatarPercentualDominio(p);
 }
 
 /** Quantidade vem em décimos de milésimo. Só vale mostrar quando não for a unidade solta. */

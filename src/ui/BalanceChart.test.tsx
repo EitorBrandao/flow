@@ -59,22 +59,29 @@ describe('BalanceChart — cor do rodapé mín/máx', () => {
     expect(screen.getByText(semNbsp(formatarBRL(218000)))).toHaveClass('pos');
   });
 
-  // min/max (BalanceChart.tsx) sempre incluem 0 como piso/teto — o domínio do gráfico
-  // cobre a linha do zero mesmo quando todos os dados são positivos. Com dados só
-  // positivos, o "mín" exibido é sempre R$ 0,00 (ainda verde, por ser >= 0), nunca o menor
-  // valor real da série.
-  it('todos os valores positivos: mín cai no zero (verde), máx no maior valor (verde)', () => {
+  // O rodapé mostra o menor e o maior saldo reais da série, como o FluxoChartModal. O zero
+  // só entra na escala do desenho (a linha do zero fica visível), nunca no rótulo.
+  it('todos os valores positivos: mín e máx são os valores reais (verdes)', () => {
     render(<BalanceChart serie={serieComValores(61000, 342000)} hoje="2026-07-02" />);
-    expect(screen.getByText(semNbsp(formatarBRL(0)))).toHaveClass('pos');
+    expect(screen.getByText(semNbsp(formatarBRL(61000)))).toHaveClass('pos');
     expect(screen.getByText(semNbsp(formatarBRL(342000)))).toHaveClass('pos');
   });
 
-  // simetricamente, com dados só negativos o "máx" exibido é sempre R$ 0,00 (verde) — o
-  // rodapé nunca fica "todo vermelho" neste componente, diferente do FluxoChartModal
-  // (cujo rodapé não força o zero).
-  it('todos os valores negativos: mín no menor valor (vermelho), máx cai no zero (verde)', () => {
+  it('todos os valores negativos: mín e máx são os valores reais (vermelhos)', () => {
     render(<BalanceChart serie={serieComValores(-189000, -12000)} hoje="2026-07-02" />);
     expect(screen.getByText(semNbsp(formatarBRL(-189000)))).toHaveClass('neg');
-    expect(screen.getByText(semNbsp(formatarBRL(0)))).toHaveClass('pos');
+    expect(screen.getByText(semNbsp(formatarBRL(-12000)))).toHaveClass('neg');
   });
+});
+
+it('o rótulo "mín" mostra o menor saldo real, não o zero da escala', () => {
+  const positiva: DiaSaldo[] = [
+    { data: '2026-07-01', saldoEfetivo: 350000, saldoProjetado: 350000, saldoComCenarios: 350000 },
+    { data: '2026-07-02', saldoEfetivo: 350000, saldoProjetado: 300000, saldoComCenarios: 300000 },
+    { data: '2026-07-03', saldoEfetivo: 350000, saldoProjetado: 420000, saldoComCenarios: 420000 },
+  ];
+  const { container } = render(<BalanceChart serie={positiva} hoje="2026-07-01" />);
+  const rodape = container.querySelector('.grafico-rodape')!.textContent!;
+  expect(semNbsp(rodape)).toContain(`mín ${semNbsp(formatarBRL(300000))}`);
+  expect(semNbsp(rodape)).toContain(`máx ${semNbsp(formatarBRL(420000))}`);
 });

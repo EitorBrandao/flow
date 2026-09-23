@@ -19,11 +19,15 @@ export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenario
     // recebimento confirmado maior que qualquer saldo projetado no horizonte).
     return s.data <= hoje ? [...v, s.saldoEfetivo] : v;
   });
-  const min = Math.min(...valores, 0);
-  const max = Math.max(...valores, 0);
-  const amp = max - min || 1;
+  // O rodapé mostra o menor e o maior saldo reais; o zero entra só na escala do desenho,
+  // para a linha do zero ficar sempre visível (como no FluxoChartModal).
+  const min = Math.min(...valores);
+  const max = Math.max(...valores);
+  const escalaMin = Math.min(min, 0);
+  const escalaMax = Math.max(max, 0);
+  const amp = escalaMax - escalaMin || 1;
   const x = (i: number) => (i / (serie.length - 1)) * 100;
-  const y = (v: number) => 38 - ((v - min) / amp) * 36;
+  const y = (v: number) => 38 - ((v - escalaMin) / amp) * 36;
   const pontos = (sel: { i: number; v: number }[]) =>
     sel.map((p) => `${x(p.i).toFixed(2)},${y(p.v).toFixed(2)}`).join(' ');
   const passado = serie.map((s, i) => ({ i, v: s.saldoEfetivo, data: s.data })).filter((p) => p.data <= hoje);
