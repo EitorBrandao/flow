@@ -1,0 +1,5 @@
+- A tela Hoje mostra sempre, embaixo do saldo, há quanto tempo foi o último backup.
+  - Fica âmbar quando há mudanças sem backup, e vermelho quando elas já têm 7 dias ou mais.
+  - Tocar leva direto para Ajustes → Backup.
+  - Substitui o aviso que só aparecia no topo depois de 7 dias.
+- Ajustes → Backup mostra há quanto tempo foi o último backup, com a data e a hora entre parênteses.
