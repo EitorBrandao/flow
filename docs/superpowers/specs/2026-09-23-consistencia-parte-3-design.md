@@ -88,7 +88,9 @@ celular, dados sintéticos), incluídos a pedido do usuário.
     dois textos fica — o menu ou o título —, e usar o mesmo nos dois lugares.
 11. **Escolher arquivo do mesmo jeito.** Backup usa o `<input type="file">` nativo, cujo texto
     vem do navegador ("Choose File" num navegador em inglês); Importar e conferir tem o botão
-    próprio "Escolher arquivo". Backup passa a usar o mesmo botão.
+    próprio "Escolher arquivo". Backup passa a usar o mesmo botão — e também o anexo do XML
+    da nota, em `FormCompra` e em `EscanearNotaSheet`, que usam o input nativo pelo mesmo
+    motivo.
 12. **Detalhes da tela Lançar:**
     - A caixa de "Marcar como previsto" fica na mesma linha do texto (hoje a caixa fica numa
       linha e o texto desce para a seguinte).
