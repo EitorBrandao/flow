@@ -18,7 +18,6 @@ option: carteira
 option: reserva
 option: casa
 Hoje
-button: Há mudanças sem backup há mais de 7 dias — toque para exportar.
 tab: Visão
 tab: Conferir
 tab: Pendentes · 0
@@ -32,6 +31,7 @@ R$ 0,00
 · máx
 R$ 8.970,00
 21/02
+button: Último backup: nunca · há mudanças não salvas em backup
 ```
 
 ### Aba Fluxo
@@ -448,7 +448,6 @@ option: carteira
 option: reserva
 option: casa
 Hoje
-button: Há mudanças sem backup há mais de 7 dias — toque para exportar.
 tab: Visão
 tab: Conferir
 tab: Pendentes · 0
@@ -462,6 +461,7 @@ R$ 0,00
 · máx
 R$ 8.970,00
 25/02
+button: Último backup: nunca · há mudanças não salvas em backup
 ```
 
 ### Aba Fluxo
@@ -882,7 +882,6 @@ option: carteira
 option: reserva
 option: casa
 Hoje
-button: Há mudanças sem backup há mais de 7 dias — toque para exportar.
 tab: Visão
 tab: Conferir
 tab: Pendentes · 3
@@ -898,6 +897,7 @@ R$ 0,00
 · máx
 R$ 12.280,10
 10/03
+button: Último backup: nunca · há mudanças não salvas em backup
 ```
 
 ### Aba Fluxo
@@ -1380,7 +1380,6 @@ option: carteira
 option: reserva
 option: casa
 Hoje
-button: Há mudanças sem backup há mais de 7 dias — toque para exportar.
 tab: Visão
 tab: Conferir
 tab: Pendentes · 12
@@ -1396,6 +1395,7 @@ R$ 0,00
 · máx
 R$ 25.752,00
 18/07
+button: Último backup: nunca · há mudanças não salvas em backup
 ```
 
 ### Aba Fluxo
@@ -1822,7 +1822,6 @@ option: carteira
 option: reserva
 option: casa
 Hoje
-button: Há mudanças sem backup há mais de 7 dias — toque para exportar.
 tab: Visão
 tab: Conferir
 tab: Pendentes · 15
@@ -1838,6 +1837,7 @@ R$ 0,00
 · máx
 R$ 29.048,80
 15/08
+button: Último backup: nunca · há mudanças não salvas em backup
 ```
 
 ### Aba Fluxo
@@ -2294,6 +2294,7 @@ R$ 0,00
 · máx
 R$ 35.945,70
 10/10
+button: Último backup: há 2 dias
 ```
 
 ### Aba Fluxo
@@ -2687,7 +2688,6 @@ option: carteira
 option: reserva
 option: casa
 Hoje
-button: Há mudanças sem backup há mais de 7 dias — toque para exportar.
 tab: Visão
 tab: Conferir
 tab: Pendentes · 23
@@ -2703,6 +2703,7 @@ R$ 0,00
 · máx
 R$ 39.405,80
 12/11
+button: Último backup: há 35 dias · há mudanças não salvas em backup
 ```
 
 ### Aba Fluxo
@@ -3087,7 +3088,6 @@ option: carteira
 option: reserva
 option: casa
 Hoje
-button: Há mudanças sem backup há mais de 7 dias — toque para exportar.
 tab: Visão
 tab: Conferir
 tab: Pendentes · 26
@@ -3103,6 +3103,7 @@ R$ 0,00
 · máx
 R$ 42.865,90
 28/12
+button: Último backup: há 81 dias · há mudanças não salvas em backup
 ```
 
 ### Aba Fluxo

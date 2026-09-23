@@ -142,30 +142,66 @@ it('com box com saldo próprio e ao menos uma categoria, mostra o saldo e não o
   expect(screen.queryByText('Primeira vez por aqui?')).not.toBeInTheDocument();
 });
 
-it('clicar no aviso de backup atrasado abre a subtela de backup', async () => {
-  const agora = agoraISO();
-  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
-  await repo.salvarBox(box);
-  await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
-  await useApp.getState().iniciar();
+describe('rodapé de backup', () => {
+  async function montar(config: { mudancasDesdeBackup: boolean; ultimoBackupEm: string | null }) {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+    await useApp.getState().iniciar();
+    await repo.salvarConfig(config);
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-26', aba: 'hoje', ajustesSecao: null });
+    render(<TelaHoje />);
+  }
 
-  // Marca que há mudanças desde o último backup, e o último backup foi há mais de 7 dias
-  await repo.salvarConfig({
-    mudancasDesdeBackup: true,
-    ultimoBackupEm: '2026-07-01T00:00:00Z', // 25 dias atrás (hoje é 26/07)
+  /** Horário local fixo — o teste não depende do fuso da máquina. */
+  const local = (dia: number) => new Date(2026, 6, dia, 12).toISOString();
+
+  it('sem mudanças pendentes fica neutro', async () => {
+    await montar({ mudancasDesdeBackup: false, ultimoBackupEm: local(23) });
+    const rodape = screen.getByRole('button', { name: 'Último backup: há 3 dias' });
+    expect(rodape).toHaveClass('backup-rodape', 'backup-rodape-neutro');
+    expect(rodape).not.toHaveClass('aviso');
   });
-  await useApp.getState().recarregar();
 
-  useApp.setState({ boxSel: box.id, aba: 'hoje', ajustesSecao: null });
+  it('com mudanças e backup recente fica âmbar', async () => {
+    await montar({ mudancasDesdeBackup: true, ultimoBackupEm: local(23) });
+    const rodape = screen.getByRole('button', { name: 'Último backup: há 3 dias · há mudanças não salvas em backup' });
+    expect(rodape).toHaveClass('backup-rodape', 'aviso');
+    expect(rodape).not.toHaveClass('aviso-urgente');
+  });
+
+  it('com mudanças e backup de 7 dias ou mais fica vermelho', async () => {
+    await montar({ mudancasDesdeBackup: true, ultimoBackupEm: local(14) });
+    const rodape = screen.getByRole('button', { name: 'Último backup: há 12 dias · há mudanças não salvas em backup' });
+    expect(rodape).toHaveClass('backup-rodape', 'aviso', 'aviso-urgente');
+  });
+
+  it('tocar no rodapé abre Ajustes → Backup', async () => {
+    await montar({ mudancasDesdeBackup: true, ultimoBackupEm: local(14) });
+    await userEvent.click(screen.getByRole('button', { name: /Último backup/ }));
+    const estado = useApp.getState();
+    expect(estado.aba).toBe('ajustes');
+    expect(estado.ajustesSecao).toBe('backup');
+  });
+
+  it('o aviso antigo do topo não existe mais', async () => {
+    await montar({ mudancasDesdeBackup: true, ultimoBackupEm: local(1) });
+    expect(screen.queryByText(/Há mudanças sem backup/)).not.toBeInTheDocument();
+  });
+
+  it('só aparece na Visão', async () => {
+    await montar({ mudancasDesdeBackup: true, ultimoBackupEm: local(14) });
+    await abrirAba(/Pendentes/);
+    expect(screen.queryByRole('button', { name: /Último backup/ })).not.toBeInTheDocument();
+  });
+});
+
+it('no primeiro uso o rodapé de backup não aparece', async () => {
+  await useApp.getState().iniciar();
   render(<TelaHoje />);
-
-  expect(screen.getByText(/Há mudanças sem backup/)).toBeInTheDocument();
-
-  await userEvent.click(screen.getByRole('button', { name: /Há mudanças sem backup/ }));
-
-  const estado = useApp.getState();
-  expect(estado.aba).toBe('ajustes');
-  expect(estado.ajustesSecao).toBe('backup');
+  expect(screen.queryByRole('button', { name: /Último backup/ })).not.toBeInTheDocument();
 });
 
 describe('conferência por banco', () => {

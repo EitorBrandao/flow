@@ -81,4 +81,4 @@ Fazer isso uma vez por semana é o que mantém a projeção confiável.
 
 - No celular, o botão abre o menu de compartilhamento: dá para salvar direto no Drive, no OneDrive ou mandar para você mesmo.
 - Para levar tudo para outro aparelho, é o mesmo arquivo: importe do outro lado.
-- A tela Hoje avisa quando há mudanças e o último backup ficou velho — quando o aviso aparecer, ele está falando sério.
+- A tela Hoje mostra, embaixo do saldo, há quanto tempo foi o último backup — quando ele ficar vermelho, está falando sério.

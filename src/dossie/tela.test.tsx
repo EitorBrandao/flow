@@ -118,25 +118,28 @@ it('coleta uma entrada por corte, com todas as abas', async () => {
   expect(telas[0].rotulo).toBe(retratos[0].rotulo);
 });
 
-it('o aviso de backup atrasado usa o "hoje" do corte, não o relógio real', async () => {
-  // TelaHoje compara `ultimoBackupEm` contra `Date.now()` para decidir se mostra o aviso
-  // de "backup atrasado" (ver TelaHoje.tsx). No corte "com o cenário ligado", o "hoje"
-  // fictício é 2026-10-15 e o último backup fictício foi em 2026-09-10 — mais de 7 dias
-  // de diferença, então o aviso **deveria** aparecer. Mas `executarRoteiro` já devolveu o
-  // relógio real quando `textoDaTela` roda: se ela ler o relógio de verdade em vez do
-  // "hoje" fictício do corte, o resultado depende de quantos dias reais já passaram desde
-  // que o dossiê foi gerado, e não do roteiro — aqui, simulando um relógio real ainda
-  // perto do backup fictício (dentro dos 7 dias), o aviso sumiria por engano.
+it('o rodapé de backup conta os dias até o "hoje" do corte', async () => {
+  // O rodapé de backup da Visão (TelaHoje.tsx) conta a idade do backup com
+  // `estadoBackup(dados.config, hoje)` — `hoje` vem do store, nunca de `Date.now()` direto
+  // (ver src/domain/estadoBackup.ts). No corte "com o cenário ligado", o "hoje" fictício é
+  // 2026-10-15. O `ultimoBackupEm` que chega até esse corte é 2026-09-10, do passo "exporta
+  // o backup e reimporta no modo 'mesclar'" — não do passo seguinte (2026-09-11, "reimporta
+  // no modo 'substituir tudo'"): esse passo exporta o backup, grava `ultimoBackupEm` novo na
+  // config viva, e na sequência chama `substituirTudo(backup.dados)` com o snapshot que
+  // tinha exportado um instante antes — o `ultimoBackupEm` recém-gravado é sobrescrito de
+  // volta pelo valor antigo (2026-09-10) que veio dentro desse snapshot (`reimportar` em
+  // `roteiro.ts:21-31`; confirmado lendo `corte.dados.config.ultimoBackupEm` na saída do
+  // teste). A diferença entre 2026-09-10 e 2026-10-15 é o que este teste trava: "há 35
+  // dias". O sufixo de mudanças pendentes aparece porque o cenário foi ligado em 2026-10-01,
+  // depois do backup — não por causa da contagem de dias.
+  //
+  // Prova de que a asserção protege o "hoje" certo: trocar o `hoje` passado a
+  // `estadoBackup` em `TelaHoje.tsx` (por exemplo, para `addDias(hoje, -100)`) derruba a
+  // asserção abaixo; a mudança foi revertida antes do commit.
   await limparDb();
   const retratos = await executarRoteiro(ROTEIRO);
   const corte = retratos.find((r) => r.rotulo === 'com o cenário ligado')!;
 
-  vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date('2026-09-12T12:00:00.000Z'));
-  try {
-    const texto = await textoDaTela(corte, 'hoje');
-    expect(texto).toContain('Há mudanças sem backup');
-  } finally {
-    vi.useRealTimers();
-  }
+  const texto = await textoDaTela(corte, 'hoje');
+  expect(texto).toContain('Último backup: há 35 dias · há mudanças não salvas em backup');
 });

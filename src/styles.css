@@ -176,6 +176,7 @@ strong.valor-ganho, strong.valor-gasto {
   background: var(--aviso-bg); color: var(--aviso-fg);
   padding: 12px 14px; border-radius: 12px; font-size: 14px;
 }
+.aviso-urgente { background: var(--neg-bg); color: var(--neg); }
 .cabecalho-dia {
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; padding: 10px 4px 4px;
@@ -593,3 +594,11 @@ table.tabela th:first-child, table.tabela td:first-child {
 }
 .nota-item-diferenca > div:first-child > span:first-child,
 .nota-item-diferenca > div:last-child > span:first-child { color: var(--muted); font-weight: 400; }
+
+/* ---- Rodapé de backup (TelaHoje.tsx) ---- */
+.backup-rodape {
+  display: block; width: 100%; text-align: left; border: none; min-height: 42px;
+}
+.backup-rodape-neutro {
+  background: none; color: var(--muted); font-size: 13px; padding: 10px 14px;
+}

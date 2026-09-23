@@ -174,11 +174,12 @@ export async function renderComCaptura(elemento: ReactNode): Promise<string> {
 }
 
 /**
- * `executarRoteiro` já devolveu o relógio real quando este ponto roda — mas o app tem tela
- * que lê `Date.now()` direto (o aviso de backup atrasado em `TelaHoje.tsx`), em vez do
- * `hoje` fictício do corte. Sem congelar o relógio de novo aqui, esse texto passaria a
- * depender de quantos dias reais já se passaram desde que o dossiê foi gerado, e o dossiê
- * "envelheceria" sozinho, sem nenhum código mudar.
+ * `executarRoteiro` já devolveu o relógio real quando este ponto roda. Nenhuma tela hoje lê
+ * `Date.now()` direto — todas recebem o `hoje` fictício do corte pelo store. Ainda assim,
+ * congelamos o relógio de novo aqui como proteção: se uma tela futura vier a ler o relógio
+ * real (em vez do `hoje` do corte), o texto que ela gera passaria a depender de quantos dias
+ * reais já se passaram desde que o dossiê foi gerado, e o dossiê "envelheceria" sozinho, sem
+ * nenhum código mudar.
  */
 export async function textoDaTela(retrato: Retrato, aba: Aba): Promise<string> {
   useApp.setState({

@@ -63,4 +63,4 @@ Registro único de preferências do app.
 
 : `boxPadraoId` | box que abre selecionada ao iniciar o app; só é válida se apontar para uma box com saldo próprio
 : `horizonteProjecao` | até que dia o motor projeta o saldo (padrão: 31/12 do ano seguinte)
-: `ultimoBackupEm` / `mudancasDesdeBackup` | controlam o aviso de backup atrasado na tela Hoje
+: `ultimoBackupEm` / `mudancasDesdeBackup` | controlam o rodapé de backup da Visão, na tela Hoje
