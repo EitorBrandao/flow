@@ -1,5 +1,13 @@
+/** Negativo sai com o sinal de menos (U+2212), não com o hífen do `toLocaleString`: é o
+ *  mesmo sinal das pílulas e diferenças que montam "−" + valor absoluto à mão. */
 export function formatarBRL(centavos: number): string {
-  return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace('-', '−');
+}
+
+/** Percentual com uma casa e vírgula decimal (ex.: "32,4%", "−12,3%"). Recebe pontos
+ *  percentuais (32.4), não fração (0.324). */
+export function formatarPercentual(p: number): string {
+  return `${p.toFixed(1).replace('.', ',').replace('-', '−')}%`;
 }
 
 /** Acrescenta um dígito (0-9) ao fim do buffer de centavos, empurrando os existentes à esquerda. */

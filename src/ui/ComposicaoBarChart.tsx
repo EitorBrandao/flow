@@ -1,4 +1,4 @@
-import { formatarBRL } from '../domain/money';
+import { formatarBRL, formatarPercentual } from '../domain/money';
 import type { TipoCategoria } from '../domain/types';
 
 export interface LinhaComposicao {
@@ -14,10 +14,6 @@ interface Props {
   linhas: LinhaComposicao[];
   base: number;
   onClicarLinha: (chave: string) => void;
-}
-
-function pct(x: number): string {
-  return `${(x * 100).toFixed(1)}%`;
 }
 
 export default function ComposicaoBarChart({ linhas, base, onClicarLinha }: Props) {
@@ -43,7 +39,7 @@ export default function ComposicaoBarChart({ linhas, base, onClicarLinha }: Prop
                 {l.badge && <> <span className="badge">{l.badge}</span></>}
               </span>
               <span className="composicao-valores">
-                {l.pctDaRenda != null && <span className="composicao-pct">{pct(l.pctDaRenda)}</span>}
+                {l.pctDaRenda != null && <span className="composicao-pct">{formatarPercentual(l.pctDaRenda * 100)}</span>}
                 <strong className={l.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
                   {formatarBRL(l.total)}
                 </strong>

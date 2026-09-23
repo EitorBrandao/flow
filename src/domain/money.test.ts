@@ -1,11 +1,22 @@
-import { formatarBRL, formatarSobraCompacta, empurrarDigito, apagarUltimoDigito, digitosParaCentavos, formatarSemSimbolo, parsearCentavosDecimal } from './money';
+import { formatarBRL, formatarPercentual, formatarSobraCompacta, empurrarDigito, apagarUltimoDigito, digitosParaCentavos, formatarSemSimbolo, parsearCentavosDecimal } from './money';
 
 describe('formatarBRL', () => {
   it('formata centavos como moeda pt-BR', () => {
     // toLocaleString pt-BR usa espaço não separável (U+00A0) após R$
     expect(formatarBRL(123456)).toBe('R$ 1.234,56');
     expect(formatarBRL(0)).toBe('R$ 0,00');
-    expect(formatarBRL(-4500)).toBe('-R$ 45,00');
+    // Negativo usa o sinal de menos (U+2212), como as pílulas e diferenças do app.
+    expect(formatarBRL(-4500)).toBe('−R$ 45,00');
+  });
+});
+
+describe('formatarPercentual', () => {
+  it('usa vírgula decimal e uma casa', () => {
+    expect(formatarPercentual(32.4)).toBe('32,4%');
+    expect(formatarPercentual(5)).toBe('5,0%');
+  });
+  it('negativo usa o sinal de menos (U+2212)', () => {
+    expect(formatarPercentual(-12.34)).toBe('−12,3%');
   });
 });
 

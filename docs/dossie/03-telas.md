@@ -27,7 +27,7 @@ R$ 4.300
 +R$ 3.170,00 nos próximos 28 dias
 17/01
 mín
-R$ 0,00
+R$ 4.300,00
 · máx
 R$ 8.970,00
 21/02
@@ -458,7 +458,7 @@ R$ 4.300
 +R$ 3.170,00 nos próximos 28 dias
 21/01
 mín
-R$ 0,00
+R$ 4.300,00
 · máx
 R$ 8.970,00
 25/02
@@ -897,7 +897,7 @@ projetado:
 R$ 7.470,00
 03/02
 mín
-R$ 0,00
+R$ 4.300,00
 · máx
 R$ 12.280,10
 10/03
@@ -1275,10 +1275,10 @@ barras na mesma escala do card acima (100% = maior entre ganhos e gastos do mês
 salário
 R$ 5.000,00
 moradia
-30.0%
+30,0%
 R$ 1.500,00
 sigma
-6.6%
+6,6%
 R$ 330,00
 heading: Evolução mensal
 +0
@@ -1398,7 +1398,7 @@ projetado:
 R$ 20.965,20
 13/06
 mín
-R$ 0,00
+R$ 7.880,00
 · máx
 R$ 25.752,00
 18/07
@@ -1720,10 +1720,10 @@ barras na mesma escala do card acima (100% = maior entre ganhos e gastos do mês
 salário
 R$ 5.000,00
 moradia
-30.0%
+30,0%
 R$ 1.500,00
 sigma
-2.4%
+2,4%
 R$ 120,00
 Assinaturas
 todos os cartões
@@ -1841,7 +1841,7 @@ projetado:
 R$ 24.172,00
 11/07
 mín
-R$ 0,00
+R$ 7.800,00
 · máx
 R$ 29.048,80
 15/08
@@ -2165,13 +2165,13 @@ barras na mesma escala do card acima (100% = maior entre ganhos e gastos do mês
 salário
 R$ 5.000,00
 moradia
-30.0%
+30,0%
 R$ 1.500,00
 sigma
-4.3%
+4,3%
 R$ 213,20
 mercado
-1.6%
+1,6%
 R$ 80,00
 Assinaturas
 todos os cartões
@@ -2299,7 +2299,7 @@ projetado:
 R$ 30.985,60
 05/09
 mín
-R$ 0,00
+R$ 7.676,80
 · máx
 R$ 35.945,70
 10/10
@@ -2588,10 +2588,10 @@ barras na mesma escala do card acima (100% = maior entre ganhos e gastos do mês
 salário
 R$ 5.000,00
 moradia
-30.0%
+30,0%
 R$ 1.500,00
 sigma
-1.3%
+1,3%
 R$ 63,20
 Assinaturas
 todos os cartões
@@ -2711,7 +2711,7 @@ projetado:
 R$ 34.445,70
 08/10
 mín
-R$ 0,00
+R$ 7.676,80
 · máx
 R$ 39.405,80
 12/11
@@ -2991,10 +2991,10 @@ barras na mesma escala do card acima (100% = maior entre ganhos e gastos do mês
 salário
 R$ 5.000,00
 moradia
-30.0%
+30,0%
 R$ 1.500,00
 sigma
-0.8%
+0,8%
 R$ 39,90
 Assinaturas
 todos os cartões
@@ -3114,7 +3114,7 @@ projetado:
 R$ 37.905,80
 23/11
 mín
-R$ 0,00
+R$ 7.676,80
 · máx
 R$ 42.865,90
 28/12
@@ -3364,10 +3364,10 @@ barras na mesma escala do card acima (100% = maior entre ganhos e gastos do mês
 salário
 R$ 5.000,00
 moradia
-30.0%
+30,0%
 R$ 1.500,00
 sigma
-0.8%
+0,8%
 R$ 39,90
 Assinaturas
 todos os cartões

@@ -13,7 +13,7 @@ it('renderiza nome, valor e % da renda quando presente', () => {
   render(<ComposicaoBarChart linhas={linhas} base={680000} onClicarLinha={() => {}} />);
   expect(screen.getByText('Salário')).toBeInTheDocument();
   expect(screen.getByText('R$ 6.200,00')).toBeInTheDocument();
-  expect(screen.getByText('32.4%')).toBeInTheDocument();
+  expect(screen.getByText('32,4%')).toBeInTheDocument();
   expect(screen.getByText('todos os cartões')).toBeInTheDocument();
 });
 
