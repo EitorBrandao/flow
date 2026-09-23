@@ -50,7 +50,8 @@ cabeçalhos vazios.
 
 - O cabeçalho mostra `—` no lugar do valor, sem cor de sinal. Nunca `R$ 0,00`.
 - Se o dia for depois de `config.horizonteProjecao`, o bloco mostra a linha `.sub`
-  "A projeção vai até DD/MM/AAAA.".
+  "A projeção vai até DD/MM/AAAA.". Nesse caso, a linha "Nenhum lançamento neste dia." não aparece:
+  depois do horizonte não existe lançamento, e a frase só repetiria o óbvio.
 - O horizonte não tem controle na UI (é 31/12 do ano seguinte, estendido sozinho por
   `horizonteMinimo` em `repo.ts`). Por isso não há "estender horizonte" a oferecer.
 
