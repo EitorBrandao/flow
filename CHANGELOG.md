@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.35.2] - 2026-09-23
+
+### Alterado
+
+- Telas mais consistentes entre si.
+  - As sheets do botão "+" (Adicionar, Nova compra, Escanear nota) usam o mesmo tamanho de título das outras sheets.
+  - A conferência de saldo em Hoje só diz "Bate certinho" com diferença zero, igual à conferência da fatura: um centavo já aparece como diferença.
+  - Datas no formato DD/MM/AAAA em Hoje (conferido em), Recorrências, Assinaturas e Boxes; na tabela Comparativo de Análises, o mês aparece como MM/AAAA.
+  - Na lista do Fluxo, o valor de cada lançamento aparece sem "+" nem "−", como nas outras telas; a cor continua dizendo se é ganho ou gasto.
+
 ## [0.35.1] - 2026-09-23
 
 ### Alterado

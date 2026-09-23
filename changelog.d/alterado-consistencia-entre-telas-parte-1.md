@@ -1,5 +1,0 @@
-- Telas mais consistentes entre si.
-  - As sheets do botão "+" (Adicionar, Nova compra, Escanear nota) usam o mesmo tamanho de título das outras sheets.
-  - A conferência de saldo em Hoje só diz "Bate certinho" com diferença zero, igual à conferência da fatura: um centavo já aparece como diferença.
-  - Datas no formato DD/MM/AAAA em Hoje (conferido em), Recorrências, Assinaturas e Boxes; na tabela Comparativo de Análises, o mês aparece como MM/AAAA.
-  - Na lista do Fluxo, o valor de cada lançamento aparece sem "+" nem "−", como nas outras telas; a cor continua dizendo se é ganho ou gasto.
