@@ -2,7 +2,7 @@
 
 : `efetivo` | Lançamento confirmado; entra no saldo real.
 : `previsto` | Ainda não aconteceu (ou não foi confirmado); entra só na projeção.
-: pendente | Previsto cuja data já chegou/passou — espera confirmação na tela Hoje.
+: pendente | [Previsto](#glossario/previsto) cuja data já chegou/passou — espera confirmação na tela Hoje.
 : box casa | Visão consolidada das boxes pessoais + gastos compartilhados; sem saldo próprio, calculada ao vivo.
 : cenário | Conjunto de lançamentos hipotéticos, ligável/desligável, para simular "e se?" — aba Simular temporariamente oculta da navegação.
 : materializar | Gerar/atualizar os previstos futuros de uma recorrência a partir da regra.

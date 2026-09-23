@@ -106,7 +106,7 @@ export default function Wiki() {
     setDestino(null);
   }, [destino, atualId]);
 
-  // Balão aberto: fecha ao tocar fora dele (o termo cuida do próprio toque) ou ao rolar.
+  // Balão aberto: fecha ao tocar fora dele (o termo cuida do próprio toque), ao rolar, ou ao pressionar Esc.
   useEffect(() => {
     if (!balao) return;
     const fechar = () => setBalao(null);
@@ -115,11 +115,16 @@ export default function Wiki() {
       if (t.closest('.wiki-balao') || t.closest('[data-termo]')) return;
       fechar();
     };
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') fechar();
+    };
     document.addEventListener('click', aoTocar);
     window.addEventListener('scroll', fechar, true);
+    document.addEventListener('keydown', aoTeclar);
     return () => {
       document.removeEventListener('click', aoTocar);
       window.removeEventListener('scroll', fechar, true);
+      document.removeEventListener('keydown', aoTeclar);
     };
   }, [balao]);
 

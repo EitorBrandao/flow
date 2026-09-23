@@ -78,4 +78,30 @@ describe('Wiki', () => {
     await userEvent.click(termo);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
+
+  it('Esc fecha o balão', async () => {
+    await abrirConceitos();
+    await userEvent.click(await screen.findByRole('button', { name: 'pendente' }));
+    await screen.findByRole('dialog');
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('link externo abre em abeta nova', async () => {
+    render(<Wiki />);
+    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Código e versão' }));
+    const link = await screen.findByRole('link', { name: /github\.com\/EitorBrandao\/flow/ });
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+  });
+
+  it('balão no Glossário mostra definição de link interno', async () => {
+    render(<Wiki />);
+    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Glossário' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Previsto' }));
+    const balao = await screen.findByRole('dialog', { name: 'Definição: previsto' });
+    expect(balao).toHaveTextContent(/entra só na projeção/);
+  });
 });
