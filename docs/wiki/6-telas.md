@@ -60,24 +60,25 @@ A linha do tempo do dinheiro. Duas abas: Lista (padrão) e Gráfico.
 
 Aba dedicada à fatura do cartão da box selecionada (ou os dois cartões empilhados, na visão casa). Cada fatura tem três abas: Resumo, Lançamentos e Conferência.
 
-- Mostra a fatura do mês atual por padrão, com navegação ‹ mês anterior / mês seguinte ›.
-- Cabeçalho, sempre visível fora das abas: total da fatura, dia de fechamento e de vencimento.
-- **Resumo:** valor pago ou a pagar, com atalho para corrigir; resumo por categoria do cartão quando há mais de uma categoria na fatura — tocar numa categoria já pula para Lançamentos filtrado por ela.
+- Mostra a fatura do mês atual por padrão, com navegação ‹ mês anterior / mês seguinte › — o mês aparece por nome (janeiro, fevereiro etc.).
+- Cabeçalho, sempre visível fora das abas: nome do cartão, total da fatura, dia de fechamento e de vencimento.
+- **Resumo:** valor pago ou a pagar, com atalho para corrigir; resumo por categoria do cartão aparece sempre que há ao menos uma categoria — tocar numa categoria a deixa destacada, filtra os lançamentos para ela, e tocar de novo tira o filtro e o destaque. Para voltar ao resumo da fatura sem categoria selecionada, toque fora dos itens ou na aba Resumo de novo.
 - **Lançamentos:** busca por descrição, categoria, data ou valor; itens agrupados em À vista/Parceladas, com marcação de parcela (ex.: "3/12"); tocar abre edição; excluir remove a compra e todas as parcelas dela.
 - **Conferência:** campo "valor no app do banco"; mostra a diferença nas mesmas frases da conferência de saldo em Hoje ("bate certinho", "falta inserir no cartão" ou "sobra no cartão — confira duplicado") — o valor da diferença segue a mesma regra da conferência de saldo em Hoje: vermelho e negativo quando faltam itens, verde e positivo quando os itens passam do banco; checkbox "usar este valor no Flow" (desmarcada por padrão). O rótulo da aba mostra ✔️ ou ⚠️ assim que existe uma conferência salva — dá para saber se bate sem entrar na aba.
 - Botão "+ compra" na própria tela (valor, data, categoria do cartão, parcelas, descrição).
 - Sem cartão cadastrado para a seleção: mostra atalho direto para cadastrar em Ajustes.
+- Tocar numa fatura no Fluxo ou tocar uma categoria em Análises abre o cabeçalho do cartão (nome, mês, total, fechamento e vencimento) e as abas da fatura de um modo consistente em todas as telas.
 
 **+ compra — obrigatórios:** valor, categoria do cartão. **Têm padrão:** data (hoje), parcelas (1). **Opcional:** descrição.
 **Conferência — obrigatório:** nenhum; campo vazio só limpa a conferência do mês (não bloqueia nada).
 
 ## Análises
 
-Resumo mensal e comparativos, navegando mês a mês (◀ ▶).
+Resumo mensal e comparativos, navegando mês a mês com as setas ‹ › — o mês aparece por nome (janeiro, fevereiro etc.).
 
 - Caixa "incluir previstos" — desligada, mostra só o que já é efetivo no mês.
 - **Resumo:** ganhos, gastos e sobra do mês.
-- **Por categoria:** total de cada categoria e seu percentual da renda do mês (só para categorias de gasto).
+- **Por categoria:** total de cada categoria e seu percentual da renda do mês (só para categorias de gasto). Tocar numa categoria de cartão abre o cabeçalho da fatura (nome do cartão, mês, total, fechamento e vencimento) e as abas da fatura, com o mesmo aspecto de todas as outras telas.
 - **Comparativo:** mês atual × mês anterior × mesmo mês do ano passado × média móvel de 3 meses, por categoria.
 
 O detalhamento do cartão fica na própria aba Cartão — ainda não está integrado aqui.
