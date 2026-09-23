@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { gerarBackup } from '../../backup/backup';
 import * as repo from '../../db/repo';
 import { useApp } from '../../state/store';
 import Backup from './Backup';
@@ -60,5 +61,37 @@ describe('Backup (última cópia)', () => {
     render(<Backup />);
 
     expect(screen.getByText('Último backup: nunca · há mudanças não salvas em backup')).toBeInTheDocument();
+  });
+});
+
+describe('Backup (restaurar)', () => {
+  /** Restaura pela própria tela: escolhe o modo, confirma e envia o arquivo. */
+  async function restaurar(modo: 'substituir tudo' | 'mesclar') {
+    const arquivo = JSON.stringify(gerarBackup(await repo.carregarTudo()));
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<Backup />);
+    await userEvent.click(screen.getByRole('radio', { name: modo }));
+    await userEvent.upload(
+      screen.getByLabelText('Arquivo de backup (.json)'),
+      new File([arquivo], 'flow-backup.json', { type: 'application/json' }),
+    );
+    await screen.findByText('Backup restaurado.');
+    return (await repo.carregarTudo()).config;
+  }
+
+  it('mesclar deixa o marcador de mudanças ligado: o resultado não está inteiro em nenhum arquivo', async () => {
+    await useApp.getState().iniciar();
+    await repo.salvarConfig({ mudancasDesdeBackup: false });
+    await useApp.getState().recarregar();
+
+    expect((await restaurar('mesclar')).mudancasDesdeBackup).toBe(true);
+  });
+
+  it('substituir desliga o marcador: os dados passam a ser exatamente os do arquivo', async () => {
+    await useApp.getState().iniciar();
+    await repo.salvarConfig({ mudancasDesdeBackup: true });
+    await useApp.getState().recarregar();
+
+    expect((await restaurar('substituir tudo')).mudancasDesdeBackup).toBe(false);
   });
 });

@@ -81,7 +81,10 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   invariantes.
 - **Config** — singleton (`id: 'config'`) com o horizonte da projeção
   (`horizonteProjecao`), a box padrão do seletor (`boxPadraoId`) e o estado do lembrete de
-  backup (`mudancasDesdeBackup`, `ultimoBackupEm`).
+  backup (`mudancasDesdeBackup`, `ultimoBackupEm`). Importar um backup define o marcador pelo
+  modo, nunca pelo arquivo (`substituirTudo`): **substituir** desliga — os dados passam a ser os
+  do arquivo; **mesclar** liga — o resultado não está inteiro em arquivo nenhum. O arquivo não
+  serve de fonte porque foi exportado com o marcador ainda ligado.
 - **NotaFiscalSalva** — os itens (`ItemNota[]`) de uma NFC-e anexada a uma `CompraCartao`,
   vinda do XML lido pelo scanner. **Só os itens ficam guardados — o XML original nunca é
   salvo**: um XML de nota pesa dezenas de KB, e o backup carregaria isso para sempre. O
