@@ -122,12 +122,18 @@ it('o rodapé de backup usa o "hoje" do corte, não o relógio real', async () =
   // O rodapé de backup da Visão (TelaHoje.tsx) conta a idade do backup com
   // `estadoBackup(dados.config, hoje)` — `hoje` vem do store, nunca de `Date.now()` direto
   // (ver src/domain/estadoBackup.ts). No corte "com o cenário ligado", o "hoje" fictício é
-  // 2026-10-15; o último backup fictício aconteceu em 2026-09-11 (passo "reimporta no modo
-  // 'substituir tudo'"), com o relógio simulado do roteiro (`instalarAmbiente`/`avancarPara`).
-  // A diferença entre as duas datas fictícias dá 35 dias, e por isso o corte também traz o
-  // sufixo de mudanças pendentes (o cenário ligado em 2026-10-01 mexeu nos dados depois do
-  // backup). Este teste trava esse texto: se `TelaHoje` passasse para `estadoBackup` qualquer
-  // "hoje" diferente do hoje do corte, a contagem de dias mudaria e a asserção quebraria
+  // 2026-10-15. O `ultimoBackupEm` que chega até esse corte é 2026-09-10, do passo "exporta
+  // o backup e reimporta no modo 'mesclar'" — não do passo seguinte (2026-09-11, "reimporta
+  // no modo 'substituir tudo'"): esse passo exporta o backup, grava `ultimoBackupEm` novo na
+  // config viva, e na sequência chama `substituirTudo(backup.dados)` com o snapshot que
+  // tinha exportado um instante antes — o `ultimoBackupEm` recém-gravado é sobrescrito de
+  // volta pelo valor antigo (2026-09-10) que veio dentro desse snapshot (`reimportar` em
+  // `roteiro.ts:21-31`; confirmado lendo `corte.dados.config.ultimoBackupEm` na saída do
+  // teste). A diferença entre 2026-09-10 e 2026-10-15 dá 35 dias, e por isso o corte também
+  // traz o sufixo de mudanças pendentes (o cenário ligado em 2026-10-01 mexeu nos dados
+  // depois do backup). Este teste trava esse texto: se `TelaHoje` passasse para
+  // `estadoBackup` qualquer "hoje" diferente do hoje do corte, a contagem de dias mudaria
+  // e a asserção quebraria
   // (confirmado à mão: trocar `hoje` por uma data deslocada em `TelaHoje.tsx` derruba este
   // teste; a mudança foi revertida antes do commit).
   //
