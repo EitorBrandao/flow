@@ -50,7 +50,7 @@ cd /c/Users/eitor/Claude/ProjetoFinancas/.worktrees/saldo-dia-futuro && npm ci
 - [ ] **Passo 3: montar o mockup HTML** no scratchpad (`mockup-saldo-dia-futuro.html`), com `<meta charset="utf-8">` na primeira linha e as cores de `:root` copiadas de `src/styles.css`. Três quadros lado a lado, com dados sintéticos:
   1. Dia único futuro sem lançamento: cabeçalho `qua. 12/08/2026 · R$ 950`, pílula vermelha `−R$ 50 em relação a hoje`, linha `Nenhum lançamento neste dia.`
   2. Período: primeiro dia vazio, um dia com lançamento, último dia vazio — cada dia futuro com a sua pílula.
-  3. Dia além do horizonte: cabeçalho com `—`, linha `A projeção vai até 31/12/2027.`
+  3. Dia além do horizonte: cabeçalho com `—`, linha `A projeção vai até 31/12/2027.`, sem "Nenhum lançamento neste dia." (aprovado em 2026-09-23).
   E, embaixo, o card de saldo da Hoje com a pílula nova `+R$ 800 nos próximos 28 dias`.
 
 - [ ] **Passo 4: mostrar o mockup** — abrir no navegador do PC **e** mandar no chat com SendUserFile.
@@ -131,6 +131,7 @@ describe('dia filtrado sem lançamento', () => {
     expect(await screen.findByText(`A projeção vai até ${formatarDataBR(horizonte)}.`)).toBeInTheDocument();
     expect(screen.getByText('—')).toBeInTheDocument();
     expect(screen.queryByText(formatarBRL(0))).not.toBeInTheDocument();
+    expect(screen.queryByText('Nenhum lançamento neste dia.')).not.toBeInTheDocument();
   });
 });
 ```
@@ -206,7 +207,8 @@ Trocar o bloco `{dias.map((dia) => ( ... ))}` (linhas 181-211) por:
                   {saldo == null && dia > horizonte && (
                     <p className="sub">A projeção vai até {formatarDataBR(horizonte)}.</p>
                   )}
-                  {dataAtiva && lancsDia.length === 0 && (
+                  {/* Depois do horizonte não existe lançamento: "A projeção vai até" já diz tudo. */}
+                  {dataAtiva && lancsDia.length === 0 && dia <= horizonte && (
                     <p className="sub">Nenhum lançamento neste dia.</p>
                   )}
                   {lancsDia.map((l) => (
