@@ -459,6 +459,10 @@ describe('dia filtrado sem lançamento', () => {
 
     expect(await screen.findByText('Nenhum lançamento neste dia.')).toBeInTheDocument();
     expect(screen.getByText('qua. 12/08/2026')).toBeInTheDocument();
+    // O saldo 95000 centavos deve aparecer no cabecalho do dia
+    expect(screen.getByText((content, element) => {
+      return element?.classList?.contains('total-dia') && content.includes('950,00');
+    })).toBeInTheDocument();
     expect(screen.queryByText('Nenhum resultado para a busca.')).not.toBeInTheDocument();
   });
 
