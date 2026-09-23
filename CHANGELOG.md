@@ -3,6 +3,15 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.36.1] - 2026-09-23
+
+### Alterado
+
+- O gráfico da tela Hoje e do Fluxo mostra o menor saldo real do período em "mín", em vez de R$ 0,00.
+  - Vale também para o "máx" quando todo o período fica no negativo.
+- Valores negativos aparecem com o mesmo sinal de menos em todas as telas, inclusive a sobra das Análises.
+- Os percentuais das Análises usam vírgula decimal, como o resto do app.
+
 ## [0.36.0] - 2026-09-23
 
 ### Alterado
