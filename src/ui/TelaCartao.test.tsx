@@ -259,11 +259,21 @@ it('clicar numa categoria do resumo filtra os lançamentos; clicar de novo limpa
     expect(screen.queryByText('Mercado')).not.toBeInTheDocument();
 
     await abrirAba('Resumo');
-    expect(screen.getByRole('button', { name: /^lazer/ })).toHaveAttribute('aria-pressed', 'true');
-    await userEvent.click(screen.getByRole('button', { name: /^lazer/ }));
+    const btnLazer = screen.getByRole('button', { name: /^lazer/ });
+    const btnMercado = screen.getByRole('button', { name: /^mercado/ });
+    expect(btnLazer).toHaveAttribute('aria-pressed', 'true');
+    expect(btnLazer).toHaveClass('ativo');
+    expect(btnMercado).toHaveAttribute('aria-pressed', 'false');
+    expect(btnMercado).not.toHaveClass('ativo');
+
+    await userEvent.click(btnLazer);
 
     expect(await screen.findByText('Mercado')).toBeInTheDocument();
     expect(screen.getByText('Streaming')).toBeInTheDocument();
+
+    // Volta ao Resumo e confirma que o filtro foi limpo
+    await abrirAba('Resumo');
+    expect(screen.getByRole('button', { name: /^lazer/ })).not.toHaveClass('ativo');
   } finally { vi.useRealTimers(); }
 });
 
