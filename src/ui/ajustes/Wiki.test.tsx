@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Wiki from './Wiki';
 
@@ -87,7 +87,7 @@ describe('Wiki', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('link externo abre em abeta nova', async () => {
+  it('link externo abre em aba nova', async () => {
     render(<Wiki />);
     await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Código e versão' }));
@@ -103,5 +103,24 @@ describe('Wiki', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Previsto' }));
     const balao = await screen.findByRole('dialog', { name: 'Definição: previsto' });
     expect(balao).toHaveTextContent(/entra só na projeção/);
+  });
+
+  it('termo dentro do balão abre a definição no lugar certo (mesma posição)', async () => {
+    await abrirConceitos();
+    await userEvent.click(await screen.findByRole('button', { name: 'pendente' }));
+    const balao1 = await screen.findByRole('dialog', { name: 'Definição: pendente' });
+    const top1 = balao1.style.top;
+    expect(top1).toBeTruthy();
+
+    const dialog = await screen.findByRole('dialog');
+    const botaoPrevisto = within(dialog).getByRole('button', { name: 'Previsto' });
+    await userEvent.click(botaoPrevisto);
+
+    const balao2 = await screen.findByRole('dialog', { name: 'Definição: previsto' });
+    const top2 = balao2.style.top;
+
+    // Deve ser o mesmo balão, só com id trocado
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(top2).toBe(top1);
   });
 });

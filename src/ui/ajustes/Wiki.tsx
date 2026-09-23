@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import {
   idDoCapitulo, normalizar, parseCapitulo, sortearNomes, termosDoGlossario,
-  type Bloco, type Capitulo, type Inline,
+  type Bloco, type Capitulo, type Inline, type ItemCampo,
 } from './capitulos';
 
 // Carrega capítulos (exclui README que não é um capítulo)
@@ -85,7 +85,7 @@ export default function Wiki() {
   );
   const glossario = useMemo(() => {
     const g = capitulos.find((c) => c.id === 'glossario');
-    return g ? termosDoGlossario(g) : new Map();
+    return g ? termosDoGlossario(g) : new Map<string, Omit<ItemCampo, 'id'>>();
   }, [capitulos]);
   const [atualId, setAtualId] = useState(capitulos[0].id);
   const [indiceAberto, setIndiceAberto] = useState(false);
@@ -132,6 +132,10 @@ export default function Wiki() {
     ir: (capitulo, secao) => { setBalao(null); setAtualId(capitulo); setDestino({ secao }); },
     alternarTermo: (id, el) => {
       if (balao?.id === id) { setBalao(null); return; }
+      if (el.closest('.wiki-balao') && balao) {
+        setBalao({ ...balao, id });
+        return;
+      }
       const ra = corpo.current!.getBoundingClientRect();
       const rt = el.getBoundingClientRect();
       const meio = rt.left - ra.left + rt.width / 2 - 7;

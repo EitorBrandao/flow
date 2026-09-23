@@ -93,6 +93,10 @@ describe('parseCapitulo', () => {
     expect(() => parseCapitulo('t', '# T\n\n[x](#a/b/c)\n', NOMES_FIXOS)).toThrow(/link interno/);
   });
 
+  it('recusa [[ ]] vazio', () => {
+    expect(() => parseCapitulo('t', '# T\n\num [[ ]] vazio\n', NOMES_FIXOS)).toThrow(/vazio/);
+  });
+
   it('dá id a cada termo de campos, sem crase e sem acento', () => {
     const cap = parseCapitulo('t', '# T\n\n: `efetivo` | confirmado\n: horizonte de projeção | até onde\n', NOMES_FIXOS);
     const campos = cap.blocos[0];

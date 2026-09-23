@@ -63,7 +63,9 @@ function refInterna(texto: string, href: string): Inline {
 function refGlossario(bruto: string): Inline {
   const codigo = bruto.length > 2 && bruto.startsWith('`') && bruto.endsWith('`');
   const texto = codigo ? bruto.slice(1, -1) : bruto;
-  const ref: Inline = { tipo: 'ref', texto, capitulo: 'glossario', secao: idDoTopico(texto) };
+  const trimmed = texto.trim();
+  if (!trimmed) throw new Error('wiki: [[ ]] vazio');
+  const ref: Inline = { tipo: 'ref', texto: trimmed, capitulo: 'glossario', secao: idDoTopico(trimmed) };
   return codigo ? { ...ref, codigo: true } : ref;
 }
 
@@ -101,7 +103,7 @@ export function idDoTopico(titulo: string): string {
     .replace(/^-|-$/g, '');
 }
 
-/** Id est\u00e1vel do cap\u00edtulo: nome do arquivo sem pasta, extens\u00e3o e n\u00famero. Renumerar n\u00e3o quebra link. */
+/** Id estável do capítulo: nome do arquivo sem pasta, extensão e número. Renumerar não quebra link. */
 export function idDoCapitulo(caminho: string): string {
   return caminho.split('/').pop()!.replace(/\.md$/, '').replace(/^\d+-/, '');
 }
@@ -207,7 +209,7 @@ function inlinesDoBloco(b: Bloco): Inline[] {
   return b.conteudo;
 }
 
-/** Ids que um link `#capitulo/\u2026` pode alcan\u00e7ar: se\u00e7\u00f5es e termos de campos. */
+/** Ids que um link `#capitulo/…` pode alcançar: seções e termos de campos. */
 function destinosDe(cap: Capitulo): Set<string> {
   const ids = new Set<string>();
   for (const b of cap.blocos) {
@@ -226,8 +228,8 @@ export function validarLinks(capitulos: Capitulo[]): string[] {
       if (p.tipo !== 'ref') continue;
       const alvo = `#${p.capitulo}${p.secao ? `/${p.secao}` : ''}`;
       const destino = porId.get(p.capitulo);
-      if (!destino) erros.push(`${cap.id}: cap\u00edtulo inexistente em ${alvo}`);
-      else if (p.secao && !destinosDe(destino).has(p.secao)) erros.push(`${cap.id}: se\u00e7\u00e3o ou termo inexistente em ${alvo}`);
+      if (!destino) erros.push(`${cap.id}: capítulo inexistente em ${alvo}`);
+      else if (p.secao && !destinosDe(destino).has(p.secao)) erros.push(`${cap.id}: seção ou termo inexistente em ${alvo}`);
     }
   }
   return erros;

@@ -129,5 +129,5 @@ O que esta versão não faz:
 
 Esta documentação. O botão Índice abre a lista de capítulos e a busca, que procura no texto inteiro, sem acento e sem diferença de maiúscula.
 
-- **Link azul:** leva a outro capítulo, ou a uma seção dele.
+- **Link azul:** leva a outro capítulo, ou a uma seção dele. Link para um site abre numa aba nova.
 - **Termo com sublinhado pontilhado:** é um termo do glossário. Tocar nele abre a definição logo abaixo, sem sair do capítulo. Tocar fora, tocar de novo no termo ou rolar a tela fecha o balão. No computador, a tecla Esc também fecha.
