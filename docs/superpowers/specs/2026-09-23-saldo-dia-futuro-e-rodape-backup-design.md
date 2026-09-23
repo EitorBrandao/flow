@@ -1,6 +1,6 @@
 # Saldo de um dia futuro no Fluxo e rodapé de backup na Hoje
 
-Status: aprovada em 2026-09-23 — não implementada
+Status: aprovada em 2026-09-23 — implementada
 
 Duas entregas independentes, desenhadas juntas porque saíram da mesma revisão do backlog.
 São os itens 8 (entrega 1) e 5 do `TODO.md`. Cada uma vai num branch próprio, na ordem A → B,
