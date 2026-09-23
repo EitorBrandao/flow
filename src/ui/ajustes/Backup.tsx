@@ -2,10 +2,11 @@ import { useId, useRef, useState } from 'react';
 import { gerarBackup, mesclar, validarBackup } from '../../backup/backup';
 import * as repo from '../../db/repo';
 import { hojeISO } from '../../domain/dates';
+import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../../domain/estadoBackup';
 import { useApp } from '../../state/store';
 
 export default function Backup() {
-  const { dados, recarregar } = useApp();
+  const { dados, hoje, recarregar } = useApp();
   const [modo, setModo] = useState<'substituir' | 'mesclar'>('substituir');
   const [msg, setMsg] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -71,8 +72,10 @@ export default function Backup() {
     <div className="tela">
       <h2>Backup</h2>
       <p className="sub">
-        Último backup: {dados.config.ultimoBackupEm ? new Date(dados.config.ultimoBackupEm).toLocaleString('pt-BR') : 'nunca'}
-        {dados.config.mudancasDesdeBackup && ' · há mudanças não salvas em backup'}
+        Último backup: {estadoBackup(dados.config, hoje).idade}
+        {dados.config.ultimoBackupEm && !Number.isNaN(Date.parse(dados.config.ultimoBackupEm))
+          && ` (${new Date(dados.config.ultimoBackupEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })})`}
+        {dados.config.mudancasDesdeBackup && SUFIXO_MUDANCAS_BACKUP}
       </p>
       <button className="botao botao-primario" onClick={exportar}>Exportar backup (.json)</button>
       <h2>Restaurar</h2>
