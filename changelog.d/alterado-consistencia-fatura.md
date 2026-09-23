@@ -1,5 +1,0 @@
-- A fatura do cartão aparece do mesmo jeito em todas as telas.
-  - O cabeçalho mostra o cartão, o mês por nome, o total e as datas de fechamento e vencimento com o ano.
-  - O resumo por categoria aparece mesmo quando a fatura tem uma categoria só.
-  - Fatura sem gasto mostra o total na cor normal, não em vermelho.
-- Análises e Cartão trocam de mês com as mesmas setas, e o mês aparece por nome.
