@@ -46,7 +46,7 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
 
   return (
     <Sheet
-      aberto onFechar={onFechar} rotulo={`Fatura ${cartao.nome}`}
+      aberto onFechar={onFechar} rotulo={`${cartao.nome} · fatura de ${nomeDoMes(mes)}`}
       cabecalho={(
         <>
           <h2 style={{ marginTop: 0 }}>{cartao.nome} · fatura de {nomeDoMes(mes)}</h2>

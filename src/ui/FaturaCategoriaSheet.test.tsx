@@ -35,7 +35,7 @@ describe('FaturaCategoriaSheet', () => {
       />,
     );
 
-    expect(screen.getByRole('dialog', { name: 'Nubank' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: `Nubank · fatura de ${nomeDoMes('2026-08')}` })).toBeInTheDocument();
     expect(screen.getByText(`Nubank · fatura de ${nomeDoMes('2026-08')}`)).toBeInTheDocument();
     const totalEsperado = formatarBRL(66590).replace(/\s/g, ' ');
     expect(screen.getByText(totalEsperado, { selector: 'strong.valor-gasto' })).toBeInTheDocument();

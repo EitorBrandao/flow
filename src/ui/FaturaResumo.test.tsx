@@ -36,7 +36,7 @@ it('mostra os itens e o total da fatura, e o link navega para a aba Cartão', as
     const onFechar = vi.fn();
     render(<FaturaResumo lanc={lanc} onFechar={onFechar} />);
 
-    expect(await screen.findByRole('dialog', { name: 'Fatura Nubank' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: `Nubank · fatura de ${nomeDoMes(lanc.faturaMes!)}` })).toBeInTheDocument();
     expect(screen.getByText('Mercado')).toBeInTheDocument();
     // Compra em 10/07/2026 fecha a fatura de agosto (fechamento dia 28/07, vencimento dia 05/08).
     expect(screen.getByText(`Nubank · fatura de ${nomeDoMes(lanc.faturaMes!)}`)).toBeInTheDocument();
@@ -72,7 +72,7 @@ it('fatura sem itens mostra "Nenhum gasto nesta fatura."', async () => {
     };
     render(<FaturaResumo lanc={lanc} onFechar={() => {}} />);
 
-    expect(await screen.findByRole('dialog', { name: 'Fatura Nubank' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: `Nubank · fatura de ${nomeDoMes(lanc.faturaMes!)}` })).toBeInTheDocument();
     expect(screen.getByText('Nenhum gasto nesta fatura.')).toBeInTheDocument();
     expect(screen.getByText((_, el) => el?.tagName === 'P'
       && (el.textContent ?? '').includes('fecha 28/07/2026 · vence 05/08/2026'))).toBeInTheDocument();

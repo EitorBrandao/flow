@@ -3,7 +3,7 @@ import { limparDb } from '../test-setup';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as repo from '../db/repo';
-import { addDias, formatarDataBR } from '../domain/dates';
+import { addDias, formatarDataBR, nomeDoMes } from '../domain/dates';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import { formatarBRL } from '../domain/money';
@@ -329,7 +329,7 @@ it('lançamento de fatura de cartão abre o resumo em vez do editor, e o link na
     // o item mostra "Nubank" + badge "previsto" no mesmo nó — nome exato não bate, usa regex
     await userEvent.click(await screen.findByRole('button', { name: /Nubank/ }));
 
-    expect(await screen.findByRole('dialog', { name: 'Fatura Nubank' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: `Nubank · fatura de ${nomeDoMes('2026-08')}` })).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: 'Previsto' })).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /Ver fatura completa na aba Cartão/ }));

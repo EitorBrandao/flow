@@ -33,7 +33,7 @@ export default function FaturaCategoriaSheet({
 
   return (
     <Sheet
-      aberto={aberto} onFechar={onFechar} rotulo={cartao.nome}
+      aberto={aberto} onFechar={onFechar} rotulo={`${cartao.nome} · fatura de ${nomeDoMes(mes)}`}
       cabecalho={(
         <>
           <h2 style={{ marginTop: 0 }}>{cartao.nome} · fatura de {nomeDoMes(mes)}</h2>
