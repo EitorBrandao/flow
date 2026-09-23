@@ -37,7 +37,7 @@ cabeçalhos vazios.
 
 - `delta = saldoProjetado(dia) − saldoEfetivo(hoje)` — a mesma conta do card de saldo da Hoje
   (`TelaHoje.tsx`, "nos próximos 28 dias").
-- Texto: `+R$ 450,00 em relação a hoje` / `−R$ 450,00 em relação a hoje`. O sinal fica colado
+- Texto: `+R$ 450 em relação a hoje` / `−R$ 450 em relação a hoje`. O sinal fica colado
   ao valor e o menos é o `−` (U+2212), como nos valores da Lista e na diferença das
   conferências (`TelaFluxo.tsx:206`, `TelaHoje.tsx:84`, `TelaCartao.tsx:78-79`).
 - Cor relativa ao sinal: `.delta.pos` (verde) para diferença positiva, `.delta.neg`
@@ -66,9 +66,9 @@ cabeçalhos vazios.
 - A pílula de diferença é a mesma `.delta` da Hoje, com a mesma base de cálculo. Nenhuma frase
   nova além de "em relação a hoje", que é o equivalente de "nos próximos 28 dias".
 - **A pílula da Hoje passa a usar sinal também** (decidido em 2026-09-23). Hoje ela usa seta
-  (`▲ R$ 800,00 nos próximos 28 dias`); com a pílula nova usando sinal, o mesmo conceito —
+  (`▲ R$ 800 nos próximos 28 dias`); com a pílula nova usando sinal, o mesmo conceito —
   diferença de saldo projetado — apareceria de dois jeitos. No mesmo branch, a da Hoje vira
-  `+R$ 800,00 nos próximos 28 dias` / `−R$ 800,00 nos próximos 28 dias`, com as mesmas
+  `+R$ 800 nos próximos 28 dias` / `−R$ 800 nos próximos 28 dias`, com as mesmas
   classes `.delta.pos`/`.delta.neg` que já tem. O teste da Hoje que confere o texto da pílula
   muda junto, e o dossiê é regenerado.
 - O `—` para ausência de valor é o marcador que o app já usa: a média sem dado em Análises

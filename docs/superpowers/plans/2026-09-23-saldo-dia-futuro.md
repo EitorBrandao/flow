@@ -16,9 +16,9 @@
 - Nenhuma dependência nova. Não mexer em `scripts/`, `vite.config.ts`, `tsconfig.json`, scripts do `package.json` nem `.claude/`.
 - Não editar `"version"` do `package.json` nem o topo do `CHANGELOG.md` — só fragmento em `changelog.d/`.
 - Dados sintéticos em testes e mockup — nenhum valor real do usuário.
-- Sinal colado ao valor, com o menos `−` (U+2212): `+R$ 450,00` / `−R$ 450,00`.
+- Sinal colado ao valor, com o menos `−` (U+2212): `+R$ 450` / `−R$ 450`.
 - Textos exatos: `em relação a hoje`, `Nenhum lançamento neste dia.`, `A projeção vai até DD/MM/AAAA.`, `nos próximos 28 dias`.
-- `formatarBRL` põe espaço não separável entre `R$` e o número. Nos testes, monte o texto esperado com `formatarBRL(...)`, nunca com o literal `'R$ 50,00'`.
+- `formatarBRL` põe espaço não separável entre `R$` e o número. Nos testes, monte o texto esperado com `formatarBRL(...)`, nunca com o literal `'R$ 50'`.
 - Não aperte timeouts nem passe `{ timeout }` a `findBy*`.
 
 ## Arquivos
@@ -48,10 +48,10 @@ cd /c/Users/eitor/Claude/ProjetoFinancas/.worktrees/saldo-dia-futuro && npm ci
 - [ ] **Passo 2: ler o guia** — `docs/estilo-visual.md` e `docs/estilo/nivel-1-editar-tela.md`.
 
 - [ ] **Passo 3: montar o mockup HTML** no scratchpad (`mockup-saldo-dia-futuro.html`), com `<meta charset="utf-8">` na primeira linha e as cores de `:root` copiadas de `src/styles.css`. Três quadros lado a lado, com dados sintéticos:
-  1. Dia único futuro sem lançamento: cabeçalho `qua. 12/08/2026 · R$ 950,00`, pílula vermelha `−R$ 50,00 em relação a hoje`, linha `Nenhum lançamento neste dia.`
+  1. Dia único futuro sem lançamento: cabeçalho `qua. 12/08/2026 · R$ 950`, pílula vermelha `−R$ 50 em relação a hoje`, linha `Nenhum lançamento neste dia.`
   2. Período: primeiro dia vazio, um dia com lançamento, último dia vazio — cada dia futuro com a sua pílula.
   3. Dia além do horizonte: cabeçalho com `—`, linha `A projeção vai até 31/12/2027.`
-  E, embaixo, o card de saldo da Hoje com a pílula nova `+R$ 800,00 nos próximos 28 dias`.
+  E, embaixo, o card de saldo da Hoje com a pílula nova `+R$ 800 nos próximos 28 dias`.
 
 - [ ] **Passo 4: mostrar o mockup** — abrir no navegador do PC **e** mandar no chat com SendUserFile.
 
