@@ -14,7 +14,8 @@ A tabela abaixo lista todas as construções que o parser reconhece:
 | Lista com bullets | `- item` | `- Criar, renomear, reordenar` |
 | Nota (bloco destacado) | `> nota` | `> Esta é uma nota importante.` |
 | Campo/definição | `: termo \| definição` | `: efetivo \| Lançamento confirmado.` |
-| Link interno | `[texto](#ancora)` | `[Recorrência](#recorrencia)` |
+| Link interno | `[texto](#capitulo)` ou `[texto](#capitulo/secao)` | `[Fronteira do hoje](#motor/fronteira-do-hoje-e-pendentes)` |
+| Termo do glossário | `[[termo]]` ou `[texto](#glossario/termo)` | `[[pendente]]`, `[previstos](#glossario/previsto)` |
 | Link externo | `[texto](url)` | `[github.com/flow](https://github.com/...)` |
 | Ênfase (negrito) | `**texto**` | `**Obrigatório:** nome` |
 | Código inline | `` `código` `` | `` `IndexedDB` `` ou `` `id` `` |
@@ -44,13 +45,15 @@ O formato `: termo | definição` é usado na wiki para listas de termos e seus 
 
 ### Links
 
-Dois tipos de link são permitidos:
+Três tipos de link são permitidos:
 
-1. **Link interno** (`[texto](#ancora)`): aponta para uma âncora **no mesmo capítulo**. Se o destino está em outro capítulo, não use link — cite o capítulo em prosa em vez disso:
-   - ✅ Correto: "veja o capítulo Conceitos e modelo de dados"
-   - ❌ Errado: `[Recorrência](#recorrencia)` (se `#recorrencia` está em outro capítulo)
+1. **Link interno** (`[texto](#capitulo)` ou `[texto](#capitulo/secao)`): leva a outro capítulo, ou a uma seção dele. Vale também para o próprio capítulo. O id do capítulo é o nome do arquivo sem o número (`4-motor.md` → `motor`); renumerar não quebra link. O id da seção é o título em minúsculas, sem acento, com hífens (`## Fronteira do hoje e pendentes` → `fronteira-do-hoje-e-pendentes`).
 
-2. **Link externo** (`[texto](url)`): aponta para um site. A URL é preservada integralmente.
+2. **Termo do glossário** (`[[termo]]`): abre a definição num balão, sem sair do capítulo. O id do termo segue a mesma regra do id de seção (`box casa` → `box-casa`). Forma diferente do termo usa a versão longa: `[previstos](#glossario/previsto)`. Termo em código: `` [[`efetivo`]] ``. Marque só a primeira ocorrência do termo em cada capítulo, e só quando o sentido é o do glossário.
+
+3. **Link externo** (`[texto](url)`): aponta para um site e abre em nova aba.
+
+Todo link interno é conferido por `npm test` (`validarLinks`, em `capitulos.test.ts`). Capítulo, seção ou termo inexistente reprova a suíte — e a mensagem diz em que capítulo está o link quebrado.
 
 ## Marcadores de nome
 

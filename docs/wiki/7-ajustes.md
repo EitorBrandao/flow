@@ -124,3 +124,10 @@ O que esta versão não faz:
 - Não grava estorno de cartão — ele aparece como Interno, com a explicação na lista.
 - Não deixa escolher o banco de um lançamento de conta.
 - Não lê a fatura do cartão Nubank, nem arquivo OFX ou zip.
+
+## Wiki
+
+Esta documentação. O botão Índice abre a lista de capítulos e a busca, que procura no texto inteiro, sem acento e sem diferença de maiúscula.
+
+- **Link azul:** leva a outro capítulo, ou a uma seção dele.
+- **Termo com sublinhado pontilhado:** é um termo do glossário. Tocar nele abre a definição logo abaixo, sem sair do capítulo. Tocar fora, tocar de novo no termo ou rolar a tela fecha o balão. No computador, a tecla Esc também fecha.
