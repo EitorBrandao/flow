@@ -118,15 +118,26 @@ it('coleta uma entrada por corte, com todas as abas', async () => {
   expect(telas[0].rotulo).toBe(retratos[0].rotulo);
 });
 
-it('o aviso de backup atrasado usa o "hoje" do corte, não o relógio real', async () => {
-  // TelaHoje compara `ultimoBackupEm` contra `Date.now()` para decidir se mostra o aviso
-  // de "backup atrasado" (ver TelaHoje.tsx). No corte "com o cenário ligado", o "hoje"
-  // fictício é 2026-10-15 e o último backup fictício foi em 2026-09-10 — mais de 7 dias
-  // de diferença, então o aviso **deveria** aparecer. Mas `executarRoteiro` já devolveu o
-  // relógio real quando `textoDaTela` roda: se ela ler o relógio de verdade em vez do
-  // "hoje" fictício do corte, o resultado depende de quantos dias reais já passaram desde
-  // que o dossiê foi gerado, e não do roteiro — aqui, simulando um relógio real ainda
-  // perto do backup fictício (dentro dos 7 dias), o aviso sumiria por engano.
+it('o rodapé de backup usa o "hoje" do corte, não o relógio real', async () => {
+  // O rodapé de backup da Visão (TelaHoje.tsx) conta a idade do backup com
+  // `estadoBackup(dados.config, hoje)` — `hoje` vem do store, nunca de `Date.now()` direto
+  // (ver src/domain/estadoBackup.ts). No corte "com o cenário ligado", o "hoje" fictício é
+  // 2026-10-15; o último backup fictício aconteceu em 2026-09-11 (passo "reimporta no modo
+  // 'substituir tudo'"), com o relógio simulado do roteiro (`instalarAmbiente`/`avancarPara`).
+  // A diferença entre as duas datas fictícias dá 35 dias, e por isso o corte também traz o
+  // sufixo de mudanças pendentes (o cenário ligado em 2026-10-01 mexeu nos dados depois do
+  // backup). Este teste trava esse texto: se `TelaHoje` passasse para `estadoBackup` qualquer
+  // "hoje" diferente do hoje do corte, a contagem de dias mudaria e a asserção quebraria
+  // (confirmado à mão: trocar `hoje` por uma data deslocada em `TelaHoje.tsx` derruba este
+  // teste; a mudança foi revertida antes do commit).
+  //
+  // Ressalva sobre o `vi.setSystemTime` abaixo: ele tenta simular um relógio real diferente
+  // do "hoje" do corte, mas `textoDaTela` (tela.tsx) já congela `Date.now()` no valor do
+  // corte antes de renderizar (`instalarAmbiente`), de propósito — para o dossiê não
+  // envelhecer sozinho. Por isso, dentro deste harness, `Date.now()` e o "hoje" do corte
+  // sempre coincidem, e este teste sozinho não distingue "lê hoje do store" de "lê
+  // `Date.now()` direto". Ele garante, ainda assim, que o rodapé usa o "hoje" certo — o
+  // do corte — e não outro valor por engano.
   await limparDb();
   const retratos = await executarRoteiro(ROTEIRO);
   const corte = retratos.find((r) => r.rotulo === 'com o cenário ligado')!;
@@ -135,7 +146,7 @@ it('o aviso de backup atrasado usa o "hoje" do corte, não o relógio real', asy
   vi.setSystemTime(new Date('2026-09-12T12:00:00.000Z'));
   try {
     const texto = await textoDaTela(corte, 'hoje');
-    expect(texto).toContain('Há mudanças sem backup');
+    expect(texto).toContain('Último backup: há 35 dias · há mudanças não salvas em backup');
   } finally {
     vi.useRealTimers();
   }
