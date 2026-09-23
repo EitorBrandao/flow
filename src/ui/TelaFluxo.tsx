@@ -119,6 +119,9 @@ export default function TelaFluxo() {
   }
   const dias = [...diasSet].sort();
 
+  // Mesma base da pílula da Hoje: saldo efetivo do último dia até hoje.
+  const deHoje = serie.filter((s) => s.data <= hoje).at(-1);
+
   return (
     <div className="tela">
       <div className="pills" role="tablist" aria-label="Seções do Fluxo">
@@ -202,6 +205,17 @@ export default function TelaFluxo() {
                       )}
                     </span>
                   </div>
+                  {dataAtiva && dia > hoje && saldo != null && deHoje && (() => {
+                    const delta = saldo - deHoje.saldoEfetivo;
+                    if (delta === 0) return null;
+                    return (
+                      <div className="linha">
+                        <span className={`delta ${delta > 0 ? 'pos' : 'neg'}`}>
+                          {delta > 0 ? '+' : '−'}{formatarBRL(Math.abs(delta))} em relação a hoje
+                        </span>
+                      </div>
+                    );
+                  })()}
                   {saldo == null && dia > horizonte && (
                     <p className="sub">A projeção vai até {formatarDataBR(horizonte)}.</p>
                   )}

@@ -502,4 +502,64 @@ describe('dia filtrado sem lançamento', () => {
     expect(screen.queryByText(formatarBRL(0))).not.toBeInTheDocument();
     expect(screen.queryByText('Nenhum lançamento neste dia.')).not.toBeInTheDocument();
   });
+
+  it('dia futuro filtrado mostra a diferença em relação a hoje, negativa em vermelho', async () => {
+    const { box, catMercado } = await seedBoxComCategoria();
+    const hoje = '2026-07-05';
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: '2026-07-20', valor: 5000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje });
+
+    render(<TelaFluxo />);
+    await abrirFiltros();
+    fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-08-12' } });
+
+    const pilula = await screen.findByText(`−${formatarBRL(5000).replace(/\s/g, ' ')} em relação a hoje`);
+    expect(pilula).toHaveClass('delta', 'neg');
+  });
+
+  it('dia futuro filtrado com saldo maior que hoje mostra diferença positiva em verde', async () => {
+    const { box, catSalario } = await seedBoxComCategoria();
+    const hoje = '2026-07-05';
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-20', valor: 5000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje });
+
+    render(<TelaFluxo />);
+    await abrirFiltros();
+    fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-08-12' } });
+
+    const pilula = await screen.findByText(`+${formatarBRL(5000).replace(/\s/g, ' ')} em relação a hoje`);
+    expect(pilula).toHaveClass('delta', 'pos');
+  });
+
+  it('dia de hoje e dia passado filtrados não mostram diferença', async () => {
+    const { box } = await seedBoxComCategoria();
+    const hoje = '2026-07-05';
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje });
+
+    render(<TelaFluxo />);
+    await abrirFiltros();
+    fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: hoje } });
+    expect(await screen.findByText(/· hoje/)).toBeInTheDocument();
+    expect(screen.queryByText(/em relação a hoje/)).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-06-01' } });
+    expect(await screen.findByText('Nenhum lançamento neste dia.')).toBeInTheDocument();
+    expect(screen.queryByText(/em relação a hoje/)).not.toBeInTheDocument();
+  });
+
+  it('lista sem filtro não mostra diferença em relação a hoje', async () => {
+    const { box, catMercado } = await seedBoxComCategoria();
+    const hoje = '2026-07-05';
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: '2026-07-08', valor: 5000, status: 'previsto', nota: 'conta futura' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje });
+
+    render(<TelaFluxo />);
+
+    expect(await screen.findByText('conta futura')).toBeInTheDocument();
+    expect(screen.queryByText(/em relação a hoje/)).not.toBeInTheDocument();
+  });
 });

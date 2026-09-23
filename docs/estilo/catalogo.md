@@ -27,7 +27,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.valor-ganho`, `.valor-gasto` | valor monetário em pílula (listas/cards); sem pílula automaticamente dentro de `.tabela` ou em `<strong>` |
 | `.editavel` | modificador de `.valor-ganho`/`.valor-gasto` quando o valor é um `<button>` que abre a correção do lançamento (fila de Pendentes, `TelaHoje`); sublinhado pontilhado como pista, e altura mínima de alvo de toque |
 | `.saldo-grande` (+ `.positivo`/`.negativo`) | saldo em destaque (card herói) |
-| `.delta` (+ `.pos`/`.neg`) | badge de variação/projeção com seta ▲/▼ |
+| `.delta` (+ `.pos`/`.neg`) | badge de variação de saldo projetado, com sinal colado ao valor (`+R$ …` / `−R$ …`) e cor pelo sinal |
 | `.badge` | pílula neutra pequena (contagem, status) |
 | `.aviso` | faixa âmbar de aviso |
 | `.rotulo` | rótulo maiúsculo pequeno acima de um valor/seção |

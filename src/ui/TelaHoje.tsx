@@ -370,7 +370,7 @@ export default function TelaHoje() {
               if (delta == null || delta === 0) return null;
               return (
                 <span className={`delta ${delta > 0 ? 'pos' : 'neg'}`}>
-                  {delta > 0 ? '▲' : '▼'} {formatarBRL(Math.abs(delta))} nos próximos 28 dias
+                  {delta > 0 ? '+' : '−'}{formatarBRL(Math.abs(delta))} nos próximos 28 dias
                 </span>
               );
             })()}
