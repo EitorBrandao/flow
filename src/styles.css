@@ -209,6 +209,16 @@ strong.valor-ganho, strong.valor-gasto {
   background: var(--surface2); min-height: 44px;
 }
 .linha { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+/* linha de formulário: os campos dividem a largura por igual; botões na mesma linha ficam no fim */
+.form-linha { display: flex; gap: 8px; align-items: flex-end; }
+.form-linha > .campo { flex: 1; min-width: 0; }
+.form-linha > .campo input, .form-linha > .campo select, .form-linha > .campo .campo-data { width: 100%; }
+/* .campo-data é inline-flex (regra 108); sem display:flex aqui, o width:100% acima não
+   estica o wrapper dentro de `.form-linha > .campo` — reforça o que a regra de largura pede. */
+.form-linha > .campo .campo-data { display: flex; }
+.form-linha > .botao { flex: 0 0 auto; }
+/* botões de um formulário de várias linhas: à direita, primário por último */
+.form-botoes { display: flex; gap: 8px; justify-content: flex-end; }
 .campo-busca {
   padding: 11px 12px; border: none; border-radius: 12px;
   background: var(--surface2); color: var(--fg); min-height: 44px;
