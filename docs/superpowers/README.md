@@ -61,6 +61,7 @@ implementação acontecer.
 | 2026-07-23 | [enforcement-orientacoes-design.md](specs/2026-07-23-enforcement-orientacoes-design.md) | Enforcement automático das orientações do repositório (guards de release/deploy/catálogo, hooks, CI). | implementada | — |
 | 2026-07-23 | [graficos-aba-analises-design.md](specs/2026-07-23-graficos-aba-analises-design.md) | Gráficos (composição por categoria, evolução mensal) e responsividade na aba Análises. | implementada | [graficos-aba-analises.md](plans/2026-07-23-graficos-aba-analises.md) |
 | 2026-07-24 | [perfil-box-global-design.md](specs/2026-07-24-perfil-box-global-design.md) | Chip de box do topo vira única fonte de seleção de box no app inteiro. | implementada | — |
+| 2026-09-23 | [saldo-dia-futuro-e-rodape-backup-design.md](specs/2026-09-23-saldo-dia-futuro-e-rodape-backup-design.md) | Dia filtrado no Fluxo sempre aparece, com saldo e diferença em relação a hoje (item 8, entrega 1); rodapé de backup permanente na Visão da Hoje, em três estados (item 5). | não implementada | — |
 
 ## Planos
 
