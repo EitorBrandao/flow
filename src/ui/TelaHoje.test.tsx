@@ -796,3 +796,20 @@ it('a diferença dos próximos 28 dias usa sinal e cor, não seta', async () => 
   expect(pilula).toHaveClass('delta', 'pos');
   expect(screen.queryByText(/▲|▼/)).not.toBeInTheDocument();
 });
+
+it('conferência: um centavo de diferença não é "Bate certinho", e a data sai em DD/MM/AAAA', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'a', saldoInicial: 100000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cat1', tipo: 'ganho', ordem: 0 });
+  await repo.salvarBox({ ...box, saldoDeclaradoCent: 100001, dataSaldoDeclarado: '2026-07-02' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaHoje />);
+  await abrirAba('Conferir');
+  // Mesmo critério da conferência da fatura (TelaCartao): só diferença zero bate.
+  expect(screen.queryByText(/Bate certinho/)).not.toBeInTheDocument();
+  expect(screen.getByText(/Diferença/)).toBeInTheDocument();
+  expect(screen.getByText(/conferido em 02\/07\/2026/)).toBeInTheDocument();
+});

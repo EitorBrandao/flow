@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
+import { formatarDataBR } from '../../domain/dates';
 import { formatarBRL } from '../../domain/money';
 import { agoraISO, novoId, type Box } from '../../domain/types';
 import { useApp } from '../../state/store';
@@ -104,7 +105,7 @@ export default function Boxes() {
             <strong>{b.nome}</strong>
             <span className="sub">
               {b.saldoInicial != null
-                ? `${formatarBRL(b.saldoInicial)} em ${b.dataSaldoInicial}`
+                ? `${formatarBRL(b.saldoInicial)}${b.dataSaldoInicial ? ` em ${formatarDataBR(b.dataSaldoInicial)}` : ''}`
                 : 'sem saldo próprio (compartilhada)'}
             </span>
             {dados.config.boxPadraoId === b.id ? (
