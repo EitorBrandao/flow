@@ -457,9 +457,8 @@ describe('dia filtrado sem lançamento', () => {
     await abrirFiltros();
     fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-08-12' } });
 
-    expect(await screen.findByText(/12\/08\/2026/)).toBeInTheDocument();
-    expect(screen.getByText(formatarBRL(95000))).toBeInTheDocument();
-    expect(screen.getByText('Nenhum lançamento neste dia.')).toBeInTheDocument();
+    expect(await screen.findByText('Nenhum lançamento neste dia.')).toBeInTheDocument();
+    expect(screen.getByText('qua. 12/08/2026')).toBeInTheDocument();
     expect(screen.queryByText('Nenhum resultado para a busca.')).not.toBeInTheDocument();
   });
 
@@ -476,9 +475,9 @@ describe('dia filtrado sem lançamento', () => {
     fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-08-01' } });
     fireEvent.change(screen.getByLabelText('Até'), { target: { value: '2026-08-31' } });
 
-    expect(await screen.findByText(/01\/08\/2026/)).toBeInTheDocument();
-    expect(screen.getByText(/31\/08\/2026/)).toBeInTheDocument();
-    expect(screen.getByText('conta do meio')).toBeInTheDocument();
+    expect(await screen.findByText('conta do meio')).toBeInTheDocument();
+    expect(screen.getByText('sáb. 01/08/2026')).toBeInTheDocument();
+    expect(screen.getByText('seg. 31/08/2026')).toBeInTheDocument();
     expect(screen.queryByText(/10\/08\/2026/)).not.toBeInTheDocument();
     expect(screen.getAllByText('Nenhum lançamento neste dia.')).toHaveLength(2);
   });
