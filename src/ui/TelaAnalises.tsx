@@ -12,13 +12,10 @@ import AssinaturasResumoSheet from './AssinaturasResumoSheet';
 import ComposicaoBarChart, { type LinhaComposicao } from './ComposicaoBarChart';
 import FaturaCategoriaSheet from './FaturaCategoriaSheet';
 import LancamentosSheet from './LancamentosSheet';
+import SeletorMes from './SeletorMes';
 import ViagemSheet from './ViagemSheet';
 
 const EvolucaoMensalChart = lazy(() => import('./EvolucaoMensalChart'));
-
-function nomeMes(mes: string): string {
-  return new Date(`${mes}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-}
 
 export default function TelaAnalises() {
   const { dados, boxSel, hoje, setAba } = useApp();
@@ -86,11 +83,7 @@ export default function TelaAnalises() {
 
   return (
     <div className="tela">
-      <div className="linha" style={{ justifyContent: 'space-between' }}>
-        <button className="botao" onClick={() => setMes(addMeses(mes, -1))} aria-label="Mês anterior">◀</button>
-        <strong>{nomeMes(mes)}</strong>
-        <button className="botao" onClick={() => setMes(addMeses(mes, 1))} aria-label="Próximo mês">▶</button>
-      </div>
+      <SeletorMes mes={mes} onMudar={setMes} />
       <label className="linha">
         <input type="checkbox" checked={incluirPrevistos} onChange={(e) => setIncluirPrevistos(e.target.checked)} />
         incluir previstos

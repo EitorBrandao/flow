@@ -4,6 +4,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import * as repo from '../db/repo';
+import { nomeDoMes } from '../domain/dates';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import TelaAnalises from './TelaAnalises';
@@ -82,7 +83,7 @@ it('clicar na categoria do cartão mostra o detalhamento por categoria de cartã
     render(<TelaAnalises />);
     await userEvent.click(screen.getByRole('button', { name: /Nubank/ }));
 
-    const dialog = await screen.findByRole('dialog', { name: 'Nubank' });
+    const dialog = await screen.findByRole('dialog', { name: `Nubank · fatura de ${nomeDoMes('2026-08')}` });
     expect(within(dialog).getByText('R$ 670,00')).toBeInTheDocument(); // total da fatura
     expect(within(dialog).getByText('Mercado')).toBeInTheDocument();
     expect(within(dialog).getByText('R$ 620,00')).toBeInTheDocument(); // subtotal Mercado
@@ -205,8 +206,8 @@ it('card Viagens lista o total histórico da viagem, e continua mostrando a parc
   expect(within(cardViagens).getByText('R$ 90,00')).toBeInTheDocument(); // total histórico
 
   // navega para março (compra fechou em fev, parcela 1 vence 05/03): a linha "viagem" deve aparecer
-  await userEvent.click(screen.getByRole('button', { name: 'Próximo mês' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Próximo mês' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Mês seguinte' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Mês seguinte' }));
   expect(screen.getByRole('button', { name: /viagem - /i })).toBeInTheDocument();
 });
 

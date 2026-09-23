@@ -1,4 +1,5 @@
-import { ajustesDoCartao, calcularFaturas, type Fatura } from '../domain/fatura';
+import { formatarDataBR, nomeDoMes } from '../domain/dates';
+import { ajustesDoCartao, calcularFaturas, datasFaturaDoMes, type Fatura } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
@@ -26,11 +27,13 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
   if (!cartao) return null;
   const compras = dados.comprasCartao.filter((c) => c.cartaoId === cartao.id);
   const ajustes = ajustesDoCartao(dados.ajustesFechamento, cartao.id);
+  const mes = lanc.faturaMes ?? '';
   const fatura = calcularFaturas(cartao, compras, dados.config.horizonteProjecao, ajustes)
-    .find((f) => f.mes === lanc.faturaMes);
+    .find((f) => f.mes === mes);
+  const { dataFechamento, dataVencimento } = fatura ?? datasFaturaDoMes(cartao, mes, ajustes);
   const itens = fatura?.itens ?? [];
   const nomeCatCartao = (id: string) => dados.categoriasCartao.find((c) => c.id === id)?.nome ?? '?';
-  const mesBonito = (lanc.faturaMes ?? '').split('-').reverse().join('/');
+  const total = lanc.valor;
 
   const aVista = itens.filter((i) => i.totalParcelas === 1).sort((a, b) => b.data.localeCompare(a.data));
   const parceladas = itens.filter((i) => i.totalParcelas > 1).sort((a, b) => b.data.localeCompare(a.data));
@@ -43,11 +46,14 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
 
   return (
     <Sheet
-      aberto onFechar={onFechar} rotulo={`Fatura ${cartao.nome}`}
+      aberto onFechar={onFechar} rotulo={`${cartao.nome} · fatura de ${nomeDoMes(mes)}`}
       cabecalho={(
         <>
-          <h2 style={{ marginTop: 0 }}>{cartao.nome} · fatura {mesBonito}</h2>
-          <p className="sub" style={{ margin: 0 }}>Total: <strong className="valor-gasto">{formatarBRL(lanc.valor)}</strong></p>
+          <h2 style={{ marginTop: 0 }}>{cartao.nome} · fatura de {nomeDoMes(mes)}</h2>
+          <p className="sub" style={{ margin: 0 }}>
+            {total > 0 ? <strong className="valor-gasto">{formatarBRL(total)}</strong> : <strong>{formatarBRL(total)}</strong>}
+            {' · '}fecha {formatarDataBR(dataFechamento)} · vence {formatarDataBR(dataVencimento)}
+          </p>
         </>
       )}
     >
@@ -56,7 +62,7 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
         {aVista.map((i) => <LinhaFatura key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCatCartao} />)}
         {mostrarGrupos && <p className="rotulo-grupo" style={{ marginTop: 6 }}>Parceladas</p>}
         {parceladas.map((i) => <LinhaFatura key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCatCartao} />)}
-        {itens.length === 0 && <p className="sub">Nenhum lançamento nesta fatura.</p>}
+        {itens.length === 0 && <p className="sub">Nenhum gasto nesta fatura.</p>}
       </div>
       <button className="botao-ver-mais" style={{ marginTop: 10 }} onClick={abrirCartao}>
         Ver fatura completa na aba Cartão →

@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { nomeDoMes } from '../domain/dates';
+import { formatarBRL } from '../domain/money';
 import type { Cartao, CategoriaCartao, CompraCartao } from '../domain/types';
 import FaturaCategoriaSheet from './FaturaCategoriaSheet';
 
@@ -33,12 +35,34 @@ describe('FaturaCategoriaSheet', () => {
       />,
     );
 
-    expect(screen.getByRole('dialog', { name: 'Nubank' })).toBeInTheDocument();
-    expect(screen.getByText('R$ 665,90')).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: `Nubank · fatura de ${nomeDoMes('2026-08')}` })).toBeInTheDocument();
+    expect(screen.getByText(`Nubank · fatura de ${nomeDoMes('2026-08')}`)).toBeInTheDocument();
+    const totalEsperado = formatarBRL(66590).replace(/\s/g, ' ');
+    expect(screen.getByText(totalEsperado, { selector: 'strong.valor-gasto' })).toBeInTheDocument();
+    // Compras em julho/2026 fecham a fatura de agosto (fechamento dia 28/07, vencimento dia 05/08).
+    expect(screen.getByText((_, el) => el?.tagName === 'P'
+      && (el.textContent ?? '').includes('fecha 28/07/2026 · vence 05/08/2026'))).toBeInTheDocument();
     expect(screen.getByText('Mercado')).toBeInTheDocument();
     expect(screen.getByText('R$ 620,00')).toBeInTheDocument();
     expect(screen.getByText('Streaming')).toBeInTheDocument();
     expect(screen.getByText('R$ 45,90')).toBeInTheDocument();
+  });
+
+  it('fatura sem compras mostra o total zerado, sem destaque de valor-gasto', () => {
+    render(
+      <FaturaCategoriaSheet
+        aberto cartao={cartao} mes="2026-08" comprasCartao={[]} categoriasCartao={categoriasCartao}
+        horizonteProjecao="2027-12-31" onFechar={() => {}} onAbrirCartao={() => {}}
+      />,
+    );
+
+    const totalEsperado = formatarBRL(0).replace(/\s/g, ' ');
+    expect(screen.getByText(totalEsperado, { selector: 'strong' })).toBeInTheDocument();
+    expect(screen.queryByText(totalEsperado, { selector: 'strong.valor-gasto' })).not.toBeInTheDocument();
+    expect(screen.getByText('Nenhum gasto nesta fatura.')).toBeInTheDocument();
+    // Mesmo sem compras no mês, as datas do ciclo (fechamento/vencimento) vêm certas.
+    expect(screen.getByText((_, el) => el?.tagName === 'P'
+      && (el.textContent ?? '').includes('fecha 28/07/2026 · vence 05/08/2026'))).toBeInTheDocument();
   });
 
   it('botão "Ver fatura completa" chama onAbrirCartao', async () => {
