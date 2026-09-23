@@ -136,7 +136,7 @@ Em `docs/estilo/catalogo.md`, em "Componentes compartilhados", um bullet no form
   1. O card mostra o rótulo `Fatura · {nome do cartão}` com a classe `rotulo`, e a linha `fecha DD/MM/AAAA · vence DD/MM/AAAA` com o ano (monte o texto esperado com `formatarDataBR` das datas da fatura mostrada).
   2. O seletor mostra o mês por nome (`nomeDoMes` do mês da fatura) e o botão "Mês seguinte" continua trocando a fatura (há um teste existente com `'Mês seguinte'` — mantenha-o passando).
   3. Fatura com uma categoria só: a lista do resumo aparece, com a linha da categoria como botão `.item` e o valor em `.valor-gasto`; tocar nela filtra e troca para a aba Lançamentos (siga o teste existente que clica numa categoria do resumo, se houver; se não houver, confira que a aba Lançamentos fica selecionada).
-  4. Fatura sem gasto (troque para um mês sem compras): o total `R$ 0,00` aparece **sem** a classe `negativo`, e aparece "Nenhum gasto nesta fatura.".
+  4. Fatura sem gasto (troque para um mês sem compras): o total zerado (`formatarBRL(0)`) aparece **sem** a classe `negativo`, e aparece "Nenhum gasto nesta fatura.".
   5. Fatura com gasto: o total tem as classes `saldo-grande` e `negativo`.
 
 - [ ] **Passo 2: ver falhar** — `npx vitest run src/ui/TelaCartao.test.tsx`.
