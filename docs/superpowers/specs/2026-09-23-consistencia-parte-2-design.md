@@ -83,5 +83,5 @@ função local da `TelaAnalises` (`nomeMes`). O título de fatura (decisão 2) u
 
 ## Entrega
 
-Mockup aprovado antes do código. Wiki (`6-telas.md`: Cartão, Análises e as sheets de fatura),
+Mockup aprovado antes do código (a parte 1 já entrou na `main`, v0.35.2). Plano: `docs/superpowers/plans/2026-09-23-consistencia-parte-2.md`. Wiki (`6-telas.md`: Cartão, Análises e as sheets de fatura),
 dossiê regenerado, catálogo com o `SeletorMes`, fragmento `changelog.d/alterado-consistencia-fatura.md`.
