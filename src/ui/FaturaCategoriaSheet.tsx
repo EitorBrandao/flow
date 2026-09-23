@@ -1,3 +1,4 @@
+import { formatarDataBR, nomeDoMes } from '../domain/dates';
 import { ajustesDoCartao, calcularFaturas, datasFaturaDoMes, resumoPorCategoria } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import type { AjusteFechamento, Cartao, CategoriaCartao, CompraCartao, ISODate } from '../domain/types';
@@ -22,22 +23,27 @@ export default function FaturaCategoriaSheet({
   if (!cartao) return null;
   const compras = comprasCartao.filter((c) => c.cartaoId === cartao.id);
   const ajustes = ajustesDoCartao(ajustesFechamento, cartao.id);
-  const { dataVencimento } = datasFaturaDoMes(cartao, mes, ajustes);
+  const { dataFechamento, dataVencimento } = datasFaturaDoMes(cartao, mes, ajustes);
   const ate = dataVencimento > horizonteProjecao ? dataVencimento : horizonteProjecao;
   const fatura = calcularFaturas(cartao, compras, ate, ajustes).find((f) => f.mes === mes)
-    ?? { mes, dataFechamento: dataVencimento, dataVencimento, itens: [], totalCent: 0 };
+    ?? { mes, dataFechamento, dataVencimento, itens: [], totalCent: 0 };
   const resumo = resumoPorCategoria(fatura);
   const nomeCat = (id: string) => categoriasCartao.find((c) => c.id === id)?.nome ?? '?';
+  const total = fatura.totalCent;
 
   return (
-    <Sheet aberto={aberto} onFechar={onFechar} rotulo={cartao.nome}>
-      <div className="linha" style={{ justifyContent: 'space-between' }}>
-        <h2 style={{ margin: 0 }}>{cartao.nome}</h2>
-        <strong className="valor-gasto">{formatarBRL(fatura.totalCent)}</strong>
-      </div>
-      <p className="sub" style={{ margin: '2px 0 10px' }}>
-        fatura de {mes.split('-').reverse().join('/')} · vence {dataVencimento.split('-').reverse().join('/')}
-      </p>
+    <Sheet
+      aberto={aberto} onFechar={onFechar} rotulo={cartao.nome}
+      cabecalho={(
+        <>
+          <h2 style={{ marginTop: 0 }}>{cartao.nome} · fatura de {nomeDoMes(mes)}</h2>
+          <p className="sub" style={{ margin: 0 }}>
+            {total > 0 ? <strong className="valor-gasto">{formatarBRL(total)}</strong> : <strong>{formatarBRL(total)}</strong>}
+            {' · '}fecha {formatarDataBR(fatura.dataFechamento)} · vence {formatarDataBR(fatura.dataVencimento)}
+          </p>
+        </>
+      )}
+    >
       <div className="lista">
         {resumo.map(([catId, cent]) => (
           <div className="item" key={catId} style={{ cursor: 'default' }}>
