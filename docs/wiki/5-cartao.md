@@ -1,6 +1,6 @@
 # Cartão de crédito
 
-Itemização das compras no cartão, com a fatura calculada — não armazenada — e reduzida a um único lançamento no fluxo de caixa da box, no dia do vencimento.
+Itemização das compras no cartão, com a [[fatura]] calculada — não armazenada — e reduzida a um único lançamento no fluxo de caixa da box, no dia do vencimento.
 
 ## Cartão, compras e assinaturas
 
@@ -12,7 +12,7 @@ Quatro entidades novas. Nenhuma "fatura" é gravada — ela é sempre recalculad
 : `RecorrenciaCartao` | uma assinatura — mesma lógica de materialização das recorrências do Flow, gerando `CompraCartao` futuras
 : `ConferenciaFatura` | valor digitado a partir do app do banco, por cartão + mês, com a opção de **usar esse valor** no lugar da soma dos itens
 
-Uma box pode ter vários cartões **ativos** ao mesmo tempo. "Ativo" controla a sincronização da fatura com o Flow (ver "Sincronização com o Flow", abaixo). Um segundo controle, independente do primeiro, bloqueia só as compras avulsas novas — a fatura e as assinaturas continuam funcionando; ver capítulo Ajustes, seção Cartões.
+Uma box pode ter vários cartões **ativos** ao mesmo tempo. "Ativo" controla a sincronização da fatura com o Flow (ver [Sincronização com o Flow](#cartao/sincronizacao-com-o-flow), abaixo). Um segundo controle, independente do primeiro, bloqueia só as compras avulsas novas — a fatura e as assinaturas continuam funcionando; ver [Cartões](#ajustes/cartoes), no capítulo Ajustes.
 
 Cada compra pode ter uma nota fiscal anexada. No formulário da compra, "Anexar nota fiscal" aceita o XML da NFC-e — por arquivo ou colando o texto — e guarda a lista de itens.
 
@@ -31,7 +31,7 @@ Cada compra pode ter uma nota fiscal anexada. No formulário da compra, "Anexar 
 
 Faturas passadas não ficam "congeladas": mudar o dia de fechamento reagrupa o detalhamento histórico. O que já foi confirmado no Flow (lançamento efetivo) não muda — só a "explicação" itemizada se reorganiza.
 
-Fechou num dia diferente do combinado, só naquele mês? A aba Conferência da fatura tem um ajuste pontual para isso, logo abaixo da conferência de valor: o campo **Fechou dia**, com os botões **Salvar fechamento** e **Remover fechamento**. O ajuste vale só para o mês daquela fatura — o dia de fechamento cadastrado no cartão não muda, e os meses seguintes continuam usando o padrão. Como qualquer mudança de fechamento, ele pode mover compras perto da virada para a fatura vizinha; lançamento já confirmado não muda.
+Fechou num dia diferente do combinado, só naquele mês? A aba [[conferência]] da fatura tem um ajuste pontual para isso, logo abaixo da conferência de valor: o campo **Fechou dia**, com os botões **Salvar fechamento** e **Remover fechamento**. O ajuste vale só para o mês daquela fatura — o dia de fechamento cadastrado no cartão não muda, e os meses seguintes continuam usando o padrão. Como qualquer mudança de fechamento, ele pode mover compras perto da virada para a fatura vizinha; lançamento já confirmado não muda.
 
 ## Sincronização com o Flow
 
@@ -50,13 +50,13 @@ Nem toda fatura é paga inteira nem no dia do vencimento. Na fila de pendentes d
 
 - **Quanto pagou:** já vem preenchido com o total, então confirmar sem mexer é o caminho curto.
 - **Quando pagou:** numa fatura ainda em aberto vem com hoje, o que permite registrar pagamento adiantado — o valor sai da conta no dia certo, não no vencimento. Numa fatura já paga, o campo preserva a data registrada, para corrigir um valor não mover o dia sem querer.
-- **Parcelou o restante no banco:** informe em quantas vezes e quanto é cada parcela, como o app do banco mostra.
+- **Parcelou o restante no [[banco]]:** informe em quantas vezes e quanto é cada parcela, como o app do banco mostra.
 
 > O Flow não calcula juros. Você digita a parcela que o banco cobrou; se houver juros, eles já estão embutidos ali. A tela só mostra a diferença entre o que vai ser pago e o que ficou de fora.
 
 Sobrou valor e você não informou parcelamento? A tela avisa **em destaque** que esse valor some da projeção e não volta em nenhuma fatura. Salvar assim continua permitido — desconto e estorno existem —, mas depois de você ler o que vai acontecer.
 
-O parcelamento vira uma compra parcelada numa categoria reservada chamada "Parcelamento", então ele aparece nas faturas seguintes como qualquer outra parcelada, com a contagem `1/3`. Quem manda na data das parcelas é o fechamento do cartão, não o dia em que você quitou a fatura anterior.
+O [parcelamento](#glossario/parcelamento-de-fatura) vira uma compra parcelada numa categoria reservada chamada "Parcelamento", então ele aparece nas faturas seguintes como qualquer outra parcelada, com a contagem `1/3`. Quem manda na data das parcelas é o fechamento do cartão, não o dia em que você quitou a fatura anterior.
 
 - Parcelas cujo vencimento já passou não viram lançamento — registrar um parcelamento meses depois não ressuscita faturas antigas nem cobra duas vezes.
 - Excluir a compra do parcelamento remove as parcelas futuras, mas **não** devolve o valor original à fatura que já foi paga. Essa reversão é na mão.

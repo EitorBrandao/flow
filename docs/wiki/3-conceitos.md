@@ -10,7 +10,7 @@ Um fluxo de caixa com saldo próprio — nos exemplos desta documentação, `{{b
 : `dataSaldoInicial` | dia a partir do qual o saldo é contado
 : `saldoDeclaradoCent` / `dataSaldoDeclarado` | último saldo real do banco, informado manualmente na tela Hoje para conferência
 
-A box **casa** é especial: `saldoInicial` é sempre `null`, ela não tem saldo próprio — só guarda lançamentos compartilhados. A visão consolidada da casa é **calculada pelo motor** — {{boxA}} + {{boxB}} + lançamentos da box casa —, nunca armazenada. Veja o capítulo Motor por baixo dos panos, seção Consolidação da casa.
+A [[box casa]] é especial: `saldoInicial` é sempre `null`, ela não tem saldo próprio — só guarda lançamentos compartilhados. A visão consolidada da casa é **calculada pelo motor** — {{boxA}} + {{boxB}} + lançamentos da box casa —, nunca armazenada. Veja [Consolidação da casa](#motor/consolidacao-da-casa), no capítulo Motor por baixo dos panos.
 
 ## Categoria
 
@@ -30,7 +30,7 @@ O registro central do fluxo de caixa.
 : `cenarioId` | presente quando é hipotético — nunca fica `efetivo`
 : `cartaoId` / `faturaMes` | presentes quando é o lançamento-resumo de uma fatura de cartão
 
-`efetivo` entra no saldo real; `previsto` só entra na projeção. Um previsto cuja data já passou vira um **pendente** — veja o capítulo Motor por baixo dos panos, seção Fronteira do hoje.
+[[`efetivo`]] entra no saldo real; [[`previsto`]] só entra na projeção. Um previsto cuja data já passou vira um [[pendente]] — veja [Fronteira do hoje e pendentes](#motor/fronteira-do-hoje-e-pendentes), no capítulo Motor por baixo dos panos.
 
 ## Recorrência
 

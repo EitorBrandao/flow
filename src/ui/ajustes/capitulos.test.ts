@@ -205,4 +205,15 @@ describe('capítulos de docs/wiki', () => {
       expect(raw).not.toMatch(/\bAna\b|\bBruno\b/);
     }
   });
+
+  it('todo link interno aponta para capítulo, seção ou termo que existe', () => {
+    const caps = arquivos.map(([caminho, raw]) => parseCapitulo(idDoCapitulo(caminho), raw, NOMES_FIXOS));
+    expect(validarLinks(caps)).toEqual([]);
+  });
+
+  it('os capítulos usam links internos (a conversão das referências em prosa aconteceu)', () => {
+    const todos = arquivos.map(([, raw]) => raw).join('\n');
+    expect(todos).toMatch(/\]\(#motor\/consolidacao-da-casa\)/);
+    expect(todos).toMatch(/\[\[pendente\]\]/);
+  });
 });
