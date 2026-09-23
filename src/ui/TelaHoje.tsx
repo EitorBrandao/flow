@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import * as repo from '../db/repo';
 import { bancosDaBox, totalDeclaradoCent } from '../domain/bancos';
 import { addDias } from '../domain/dates';
+import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../domain/estadoBackup';
 import { formatarBRL } from '../domain/money';
 import type { Banco, Box, ISODate, Lancamento } from '../domain/types';
 import { pendentes, projetarBoxes } from '../domain/projection';
@@ -12,8 +13,6 @@ import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import PrimeiroUso from './PrimeiroUso';
 import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
-
-const SETE_DIAS_MS = 7 * 86_400_000;
 
 // NOTA DE PATCH (nível 1 — docs/estilo/nivel-1-editar-tela.md): a tela ganhou 3 abas
 // internas (Visão/Conferir/Pendentes) via `.pills`, classe já catalogada — nenhuma classe
@@ -273,9 +272,10 @@ export default function TelaHoje() {
   const nomeCat = (id: string) => dados.categorias.find((c) => c.id === id)?.nome ?? '?';
   const tipoCat = (id: string) => dados.categorias.find((c) => c.id === id)?.tipo ?? 'gasto';
 
-  const backupVelho = dados.config.mudancasDesdeBackup
-    && (!dados.config.ultimoBackupEm
-      || Date.parse(dados.config.ultimoBackupEm) < Date.now() - SETE_DIAS_MS);
+  const backup = estadoBackup(dados.config, hoje);
+  const classeBackup = backup.nivel === 'neutro' ? 'backup-rodape backup-rodape-neutro'
+    : backup.nivel === 'aviso' ? 'backup-rodape aviso'
+    : 'backup-rodape aviso aviso-urgente';
 
   const boxAtual = boxSel !== 'casa' ? dados.boxes.find((b) => b.id === boxSel) : undefined;
   const declaradoCent = (boxSel === 'casa' ? dados.config.saldoDeclaradoCent : boxAtual?.saldoDeclaradoCent) ?? null;
@@ -333,11 +333,6 @@ export default function TelaHoje() {
 
   return (
     <div className="tela">
-      {backupVelho && (
-        <button className="aviso" style={{ border: 'none', textAlign: 'left', cursor: 'pointer' }} onClick={() => abrirAjustes('backup')}>
-          Há mudanças sem backup há mais de 7 dias — toque para exportar.
-        </button>
-      )}
       {/* As abas ficam sempre disponíveis, mesmo no primeiro uso: um cartão de fatura pode
           já estar pendente antes de o usuário terminar de cadastrar categorias, e ele precisa
           continuar alcançável (era assim antes das abas — só a Visão trocava de conteúdo). */}
@@ -351,38 +346,43 @@ export default function TelaHoje() {
         primeiroUso ? (
           <PrimeiroUso />
         ) : (
-          <div className="card">
-            <p className="rotulo" style={{ margin: 0 }}>
-              Saldo hoje · {boxSel === 'casa' ? 'casa' : dados.boxes.find((b) => b.id === boxSel)?.nome}
-            </p>
-            {(() => {
-              const saldoHoje = deHoje?.saldoEfetivo ?? 0;
-              const [reais, centavos] = formatarBRL(saldoHoje).split(',');
-              return (
-                <p className={`saldo-grande${saldoHoje < 0 ? ' negativo' : ''}`} style={{ margin: '4px 0' }}>
-                  {reais}<b>,{centavos}</b>
-                </p>
-              );
-            })()}
-            {(() => {
-              const fim = janela.at(-1);
-              const delta = fim && deHoje ? fim.saldoProjetado - deHoje.saldoEfetivo : null;
-              if (delta == null || delta === 0) return null;
-              return (
-                <span className={`delta ${delta > 0 ? 'pos' : 'neg'}`}>
-                  {delta > 0 ? '+' : '−'}{formatarBRL(Math.abs(delta))} nos próximos 28 dias
-                </span>
-              );
-            })()}
-            {deHoje && deHoje.saldoProjetado !== deHoje.saldoEfetivo && (
-              <p className="sub" style={{ margin: 0 }}>
-                projetado: <strong className={deHoje.saldoProjetado >= 0 ? 'valor-ganho' : 'valor-gasto'}>
-                  {formatarBRL(deHoje.saldoProjetado)}
-                </strong>
+          <>
+            <div className="card">
+              <p className="rotulo" style={{ margin: 0 }}>
+                Saldo hoje · {boxSel === 'casa' ? 'casa' : dados.boxes.find((b) => b.id === boxSel)?.nome}
               </p>
-            )}
-            <BalanceChart serie={janela} hoje={hoje} altura={120} mostrarCenarios={ligados.size > 0} />
-          </div>
+              {(() => {
+                const saldoHoje = deHoje?.saldoEfetivo ?? 0;
+                const [reais, centavos] = formatarBRL(saldoHoje).split(',');
+                return (
+                  <p className={`saldo-grande${saldoHoje < 0 ? ' negativo' : ''}`} style={{ margin: '4px 0' }}>
+                    {reais}<b>,{centavos}</b>
+                  </p>
+                );
+              })()}
+              {(() => {
+                const fim = janela.at(-1);
+                const delta = fim && deHoje ? fim.saldoProjetado - deHoje.saldoEfetivo : null;
+                if (delta == null || delta === 0) return null;
+                return (
+                  <span className={`delta ${delta > 0 ? 'pos' : 'neg'}`}>
+                    {delta > 0 ? '+' : '−'}{formatarBRL(Math.abs(delta))} nos próximos 28 dias
+                  </span>
+                );
+              })()}
+              {deHoje && deHoje.saldoProjetado !== deHoje.saldoEfetivo && (
+                <p className="sub" style={{ margin: 0 }}>
+                  projetado: <strong className={deHoje.saldoProjetado >= 0 ? 'valor-ganho' : 'valor-gasto'}>
+                    {formatarBRL(deHoje.saldoProjetado)}
+                  </strong>
+                </p>
+              )}
+              <BalanceChart serie={janela} hoje={hoje} altura={120} mostrarCenarios={ligados.size > 0} />
+            </div>
+            <button type="button" className={classeBackup} onClick={() => abrirAjustes('backup')}>
+              Último backup: {backup.idade}{dados.config.mudancasDesdeBackup && SUFIXO_MUDANCAS_BACKUP}
+            </button>
+          </>
         )
       )}
 
