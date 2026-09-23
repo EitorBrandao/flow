@@ -209,7 +209,7 @@ cabecalho={(
 - Na `FaturaCategoriaSheet`: `total` = `fatura.totalCent`; datas de `fatura`. Apague o bloco atual (h2 + total à direita + "fatura de … · vence …") de dentro do corpo.
 
 - [ ] **Passo 1: testes que falham.**
-  - `FaturaResumo.test.tsx`: troque a asserção `Total: R$ 50,00` por: título `Nubank · fatura de {nomeDoMes(faturaMes do teste)}` presente; um `strong.valor-gasto` com `formatarBRL(5000).replace(/\s/g, ' ')`; e a linha com `fecha … · vence …` (com ano). Novo caso: fatura sem itens mostra "Nenhum gasto nesta fatura.".
+  - `FaturaResumo.test.tsx`: troque a asserção `Total:` seguida do valor por: título `Nubank · fatura de {nomeDoMes(faturaMes do teste)}` presente; um `strong.valor-gasto` com `formatarBRL(5000).replace(/\s/g, ' ')`; e a linha com `fecha … · vence …` (com ano). Novo caso: fatura sem itens mostra "Nenhum gasto nesta fatura.".
   - `FaturaCategoriaSheet.test.tsx`: no teste do total, confira o título `Nubank · fatura de …` e o total em `strong.valor-gasto`. Novo caso: fatura sem compras mostra o total `R$ 0,00` **sem** `valor-gasto`.
 
 - [ ] **Passo 2: ver falhar** — `npx vitest run src/ui/FaturaResumo.test.tsx src/ui/FaturaCategoriaSheet.test.tsx`.

@@ -78,7 +78,7 @@ função local da `TelaAnalises` (`nomeMes`). O título de fatura (decisão 2) u
 ## Testes que mudam de expectativa
 
 - `TelaAnalises.test.tsx`: "Próximo mês" → "Mês seguinte".
-- `FaturaResumo.test.tsx`: "Total: R$ 50,00" → a pílula do total na linha de datas.
+- `FaturaResumo.test.tsx`: "Total:" seguido do valor → a pílula do total na linha de datas.
 - `TelaCartao.test.tsx`: lista do resumo com uma categoria passa a aparecer.
 
 ## Entrega
