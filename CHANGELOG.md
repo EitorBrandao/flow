@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.35.0] - 2026-09-23
+
+### Alterado
+
+- A tela Hoje mostra sempre, embaixo do saldo, há quanto tempo foi o último backup.
+  - Fica âmbar quando há mudanças sem backup, e vermelho quando o último backup tem 7 dias ou mais, ou nunca foi feito.
+  - Tocar leva direto para Ajustes → Backup.
+  - Substitui o aviso que só aparecia no topo depois de 7 dias.
+- Ajustes → Backup mostra há quanto tempo foi o último backup, com a data e a hora entre parênteses.
+
 ## [0.34.0] - 2026-09-23
 
 ### Adicionado
