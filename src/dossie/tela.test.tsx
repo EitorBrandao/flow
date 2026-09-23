@@ -118,7 +118,7 @@ it('coleta uma entrada por corte, com todas as abas', async () => {
   expect(telas[0].rotulo).toBe(retratos[0].rotulo);
 });
 
-it('o rodapé de backup usa o "hoje" do corte, não o relógio real', async () => {
+it('o rodapé de backup conta os dias até o "hoje" do corte', async () => {
   // O rodapé de backup da Visão (TelaHoje.tsx) conta a idade do backup com
   // `estadoBackup(dados.config, hoje)` — `hoje` vem do store, nunca de `Date.now()` direto
   // (ver src/domain/estadoBackup.ts). No corte "com o cenário ligado", o "hoje" fictício é
@@ -129,31 +129,17 @@ it('o rodapé de backup usa o "hoje" do corte, não o relógio real', async () =
   // tinha exportado um instante antes — o `ultimoBackupEm` recém-gravado é sobrescrito de
   // volta pelo valor antigo (2026-09-10) que veio dentro desse snapshot (`reimportar` em
   // `roteiro.ts:21-31`; confirmado lendo `corte.dados.config.ultimoBackupEm` na saída do
-  // teste). A diferença entre 2026-09-10 e 2026-10-15 dá 35 dias, e por isso o corte também
-  // traz o sufixo de mudanças pendentes (o cenário ligado em 2026-10-01 mexeu nos dados
-  // depois do backup). Este teste trava esse texto: se `TelaHoje` passasse para
-  // `estadoBackup` qualquer "hoje" diferente do hoje do corte, a contagem de dias mudaria
-  // e a asserção quebraria
-  // (confirmado à mão: trocar `hoje` por uma data deslocada em `TelaHoje.tsx` derruba este
-  // teste; a mudança foi revertida antes do commit).
+  // teste). A diferença entre 2026-09-10 e 2026-10-15 é o que este teste trava: "há 35
+  // dias". O sufixo de mudanças pendentes aparece porque o cenário foi ligado em 2026-10-01,
+  // depois do backup — não por causa da contagem de dias.
   //
-  // Ressalva sobre o `vi.setSystemTime` abaixo: ele tenta simular um relógio real diferente
-  // do "hoje" do corte, mas `textoDaTela` (tela.tsx) já congela `Date.now()` no valor do
-  // corte antes de renderizar (`instalarAmbiente`), de propósito — para o dossiê não
-  // envelhecer sozinho. Por isso, dentro deste harness, `Date.now()` e o "hoje" do corte
-  // sempre coincidem, e este teste sozinho não distingue "lê hoje do store" de "lê
-  // `Date.now()` direto". Ele garante, ainda assim, que o rodapé usa o "hoje" certo — o
-  // do corte — e não outro valor por engano.
+  // Prova de que a asserção protege o "hoje" certo: trocar o `hoje` passado a
+  // `estadoBackup` em `TelaHoje.tsx` (por exemplo, para `addDias(hoje, -100)`) derruba a
+  // asserção abaixo; a mudança foi revertida antes do commit.
   await limparDb();
   const retratos = await executarRoteiro(ROTEIRO);
   const corte = retratos.find((r) => r.rotulo === 'com o cenário ligado')!;
 
-  vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date('2026-09-12T12:00:00.000Z'));
-  try {
-    const texto = await textoDaTela(corte, 'hoje');
-    expect(texto).toContain('Último backup: há 35 dias · há mudanças não salvas em backup');
-  } finally {
-    vi.useRealTimers();
-  }
+  const texto = await textoDaTela(corte, 'hoje');
+  expect(texto).toContain('Último backup: há 35 dias · há mudanças não salvas em backup');
 });

@@ -571,7 +571,7 @@ table.tabela th:first-child, table.tabela td:first-child {
 
 /* ---- Rodapé de backup (TelaHoje.tsx) ---- */
 .backup-rodape {
-  display: block; width: 100%; text-align: left; border: none;
+  display: block; width: 100%; text-align: left; border: none; min-height: 42px;
 }
 .backup-rodape-neutro {
   background: none; color: var(--muted); font-size: 13px; padding: 10px 14px;
