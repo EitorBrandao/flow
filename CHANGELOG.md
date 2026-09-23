@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.35.1] - 2026-09-23
+
+### Alterado
+
+- Depois de mesclar um backup, a tela Hoje passa a avisar que há mudanças não salvas em backup.
+  - Antes, mesclar marcava tudo como salvo, mesmo com mudanças que nunca foram copiadas.
+  - Substituir tudo continua sem aviso: os dados passam a ser exatamente os do arquivo.
+
 ## [0.35.0] - 2026-09-23
 
 ### Alterado

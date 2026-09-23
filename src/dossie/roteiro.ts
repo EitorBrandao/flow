@@ -27,7 +27,7 @@ async function reimportar(dados: Dados, modo: 'mesclar' | 'substituir'): Promise
 
   const backup = validarBackup(JSON.parse(arquivo));
   const finais = modo === 'substituir' ? backup.dados : mesclar(await repo.carregarTudo(), backup.dados);
-  await repo.substituirTudo(finais);
+  await repo.substituirTudo(finais, { mudancasDesdeBackup: modo === 'mesclar' });
 }
 
 /**

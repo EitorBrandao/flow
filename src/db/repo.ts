@@ -237,7 +237,17 @@ export async function salvarConfig(patch: Partial<Config>): Promise<void> {
   }
 }
 
-export async function substituirTudo(d: Dados): Promise<void> {
+/**
+ * Grava `d` no lugar de tudo o que existe. `mudancasDesdeBackup` diz como fica o marcador de
+ * "há mudanças não salvas em backup": desligado quando os dados passam a ser exatamente os de
+ * um arquivo (modo substituir); ligado quando o resultado não está inteiro em arquivo nenhum
+ * (modo mesclar — recuperá-lo exigiria os dois arquivos). Nunca vem de `d.config`: o arquivo
+ * foi exportado com o marcador ainda ligado.
+ */
+export async function substituirTudo(
+  d: Dados,
+  { mudancasDesdeBackup = false }: { mudancasDesdeBackup?: boolean } = {},
+): Promise<void> {
   const tabelas = [
     db.boxes, db.categorias, db.lancamentos, db.recorrencias, db.cenarios,
     db.cartoes, db.categoriasCartao, db.comprasCartao, db.recorrenciasCartao,
@@ -261,7 +271,7 @@ export async function substituirTudo(d: Dados): Promise<void> {
     await db.bancos.bulkAdd(d.bancos);
     await db.ajustesFechamento.bulkAdd(dedupAjustesFechamento(d.ajustesFechamento));
     await db.notasFiscais.bulkAdd(d.notasFiscais);
-    await db.config.put({ ...d.config, mudancasDesdeBackup: false });
+    await db.config.put({ ...d.config, mudancasDesdeBackup });
   });
 }
 

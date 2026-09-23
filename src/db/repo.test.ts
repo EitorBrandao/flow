@@ -280,6 +280,16 @@ it('substituirTudo troca completamente os dados e reseta mudancasDesdeBackup', a
   expect(dados.config.mudancasDesdeBackup).toBe(false);
 });
 
+it('substituirTudo pode deixar o marcador de mudanças ligado, para o modo mesclar', async () => {
+  await boxECategoria();
+  const atuais = await repo.carregarTudo();
+  await repo.substituirTudo(
+    { ...atuais, config: { ...atuais.config, mudancasDesdeBackup: false } },
+    { mudancasDesdeBackup: true },
+  );
+  expect((await repo.carregarTudo()).config.mudancasDesdeBackup).toBe(true);
+});
+
 describe('tabelas do cartão', () => {
   it('carregarTudo devolve as tabelas novas (vazias num banco novo)', async () => {
     const dados = await repo.carregarTudo();
