@@ -21,6 +21,7 @@
 - Resumo por categoria: `.item` com o nome em `.cresce` e o valor em `span.valor-gasto`; aparece sempre que houver ao menos uma categoria.
 - Datas `DD/MM/AAAA` saem de `formatarDataBR` (`src/domain/dates.ts`), não de `split('-').reverse()`.
 - `formatarBRL` usa espaço não separável; o Testing Library normaliza o DOM, não a string esperada. Monte o texto esperado com `formatarBRL(x).replace(/\s/g, ' ')`.
+- Nas sheets, título e linha de datas vão **só** pela prop `cabecalho` do `Sheet`, e a lista pelo `children`: é o `Sheet` que dá a margem lateral de 20px (`.sheet-cabecalho`, `.sheet-conteudo`). Nada de conteúdo fora desses dois blocos nem margem própria — o usuário pediu, na aprovação do mockup, que nada fique colado no canto da tela.
 - Não aperte timeouts nem passe `{ timeout }` a `findBy*`. Nunca afrouxe uma asserção para fazer um teste passar.
 
 ## Arquivos
@@ -37,7 +38,7 @@
 
 ### Tarefa 0: mockup aprovado
 
-Feita pelo orquestrador: `mockup-consistencia-parte-2.html`, no scratchpad da sessão. Não começar a Tarefa 1 sem a aprovação do usuário.
+Aprovada pelo usuário em 2026-09-23 (`mockup-consistencia-parte-2.html`, no scratchpad da sessão), com uma condição: nenhum item colado no canto da tela — ver a restrição global sobre as sheets.
 
 ---
 
