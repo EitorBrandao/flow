@@ -73,6 +73,32 @@ escolha (entrega B).
 8. **Wiki, seção Análises:** sai a frase "o detalhamento do cartão ainda não está integrado
    aqui" — a sheet de fatura das Análises já existe.
 
+Itens 9 a 13: achados da varredura com navegador de 2026-09-23 (Playwright, largura de
+celular, dados sintéticos), incluídos a pedido do usuário.
+
+9. **Wiki desatualizada em `1-primeiros-passos.md` e `7-ajustes.md`:**
+   - A categoria da fatura não se escolhe nem se cria à mão: `repo.salvarCartao` cria uma
+     categoria de gasto com o nome do cartão. Sai o passo "crie uma categoria chamada
+     'cartão'", e "categoria da fatura" deixa de constar como campo obrigatório do cartão.
+   - A ordem das categorias muda arrastando pela alça (`GripVertical`), não com ↑↓.
+   - A compra no cartão entra pelo + central → "Compra no cartão", não por "Aba Cartão →
+     + compra".
+10. **Título da subtela igual ao item do menu de Ajustes.** Hoje "Assinaturas do cartão" abre
+    a tela "Assinaturas", e "Backup e restauração" abre "Backup". Decidir no mockup qual dos
+    dois textos fica — o menu ou o título —, e usar o mesmo nos dois lugares.
+11. **Escolher arquivo do mesmo jeito.** Backup usa o `<input type="file">` nativo, cujo texto
+    vem do navegador ("Choose File" num navegador em inglês); Importar e conferir tem o botão
+    próprio "Escolher arquivo". Backup passa a usar o mesmo botão.
+12. **Detalhes da tela Lançar:**
+    - A caixa de "Marcar como previsto" fica na mesma linha do texto (hoje a caixa fica numa
+      linha e o texto desce para a seguinte).
+    - "Digite um valor." só aparece depois que o usuário tenta lançar sem valor, não ao abrir a
+      tela.
+    - O título "Lançar" aparece duas vezes (topo e `h2`); as outras abas principais só têm o
+      do topo.
+13. **Viagem com total zero nas Análises:** pílula na cor normal, não em vermelho — a mesma
+    regra da fatura sem gasto (versão 0.36.0).
+
 ## Fora de escopo
 
 - A fonte do total da fatura na sheet aberta pelo Fluxo — item 20.
