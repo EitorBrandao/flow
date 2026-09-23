@@ -47,4 +47,35 @@ describe('Wiki', () => {
     const corpo = await screen.findByRole('article');
     expect(corpo.textContent).not.toMatch(/\{\{/);
   });
+
+  async function abrirConceitos() {
+    render(<Wiki />);
+    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Conceitos e modelo de dados' }));
+  }
+
+  it('link interno troca de capítulo', async () => {
+    await abrirConceitos();
+    await userEvent.click(await screen.findByRole('link', { name: 'Consolidação da casa' }));
+    expect(await screen.findByRole('heading', { name: 'Motor por baixo dos panos' })).toBeInTheDocument();
+  });
+
+  it('termo do glossário abre a definição no lugar e fecha ao tocar fora', async () => {
+    await abrirConceitos();
+    await userEvent.click(await screen.findByRole('button', { name: 'pendente' }));
+    const balao = await screen.findByRole('dialog', { name: 'Definição: pendente' });
+    expect(balao).toHaveTextContent(/espera confirmação na tela Hoje/);
+    expect(screen.getByRole('heading', { name: 'Conceitos e modelo de dados' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('heading', { name: 'Conceitos e modelo de dados' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('tocar de novo no mesmo termo fecha o balão', async () => {
+    await abrirConceitos();
+    const termo = await screen.findByRole('button', { name: 'pendente' });
+    await userEvent.click(termo);
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    await userEvent.click(termo);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
 });

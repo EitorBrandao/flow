@@ -54,8 +54,11 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.composicao-*` | classes internas do `ComposicaoBarChart.tsx` (mesmo padrão de prefixo por componente) |
 | `.evolucao-*` | classes internas do `EvolucaoMensalChart.tsx` (mesmo padrão de prefixo por componente) |
 | `.wiki-abrir-indice` | botão de abertura do índice da wiki (align-self flex-start) |
-| `.wiki-corpo` | artigo com conteúdo da wiki; `h3` (22px margem superior), `p` (10px margem inferior), `ul` (12px margem, 20px padding-left), `li` (5px margem), `code` (quebra de overflow) |
+| `.wiki-corpo` | artigo com conteúdo da wiki; `h3` (22px margem superior), `p` (10px margem inferior), `ul` (12px margem, 20px padding-left), `li` (5px margem), `code` (quebra de overflow); position: relative (âncora do .wiki-balao) |
 | `.wiki-titulo` | título do capítulo (4px margem superior) |
+| `.wiki-link` | link interno da wiki (outro capítulo ou seção) — `--ac`, sublinhado; dentro de `.aviso` herda a cor da nota |
+| `.wiki-termo` | termo do glossário no texto da wiki — botão sem aparência de botão, `--fg` com sublinhado pontilhado em `--muted`; `.aberto` em `--ac` enquanto o balão está aberto |
+| `.wiki-balao` | balão com a definição do termo, ancorado 10px abaixo da linha do termo, largura do corpo; `--surface2`, raio 18px, sombra; setinha (`::before`) posicionada por `--seta`; dentro dele `.wiki-balao-termo` em negrito (margem 0 0 4px) e `.wiki-balao-def` (margem 0, 15px) |
 | `.wiki-campos` | lista de definições de campo (display list); `dt` em `--muted` 13px com 10px margem-top, `dd` com 2px margem-top |
 | `.wiki-fundo` | backdrop semifixo do índice (z-index 50, preto semi-transparente `rgba(0,0,0,.55)`) |
 | `.wiki-gaveta` | drawer do índice (z-index 51, `min(86vw, 330px)`, 16px padding, `--surface` com borda direita em `--line`, scroll contido) |
