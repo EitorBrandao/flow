@@ -85,7 +85,7 @@ mockup pedir espaçamento próprio para a linha da pílula, vira nível 2 e entr
   lançamento neste dia.", e não mostra "Nenhum resultado para a busca.".
 - Filtrar um período sem lançamento nas pontas mostra o primeiro e o último dia; um dia do
   meio sem lançamento não aparece.
-- Dia futuro filtrado mostra a diferença em relação a hoje, com a seta certa para as duas
+- Dia futuro filtrado mostra a diferença em relação a hoje, com o sinal e a cor certos nas duas
   direções; dia de hoje e dia passado não mostram.
 - Dia depois do horizonte mostra `—` e "A projeção vai até …", e o texto `R$ 0,00` não aparece
   no cabeçalho.
@@ -121,7 +121,7 @@ leva a Ajustes → Backup (`abrirAjustes('backup')`, como o aviso atual).
 |---|---|---|
 | neutro | `mudancasDesdeBackup` falso | linha discreta, cor `--muted` |
 | aviso | há mudanças e o último backup tem menos de 7 dias | `.aviso` (âmbar) |
-| urgente | há mudanças e o backup nunca foi feito ou tem 7 dias ou mais | `.aviso.urgente` (vermelho) |
+| urgente | há mudanças e o backup nunca foi feito ou tem 7 dias ou mais | `.aviso.aviso-urgente` (vermelho) |
 
 **Texto** — as frases de Ajustes → Backup, para as duas telas dizerem o mesmo:
 
@@ -135,12 +135,12 @@ leva a Ajustes → Backup (`abrirAjustes('backup')`, como o aviso atual).
 Pendentes não há mais aviso de backup; a Visão é a aba padrão da Hoje.
 
 **Ajustes → Backup alinha o texto.** A linha passa a ser
-`Último backup: há 3 dias (22/09/2026 19:46)` — idade relativa primeiro, data completa entre
+`Último backup: há 3 dias (22/09/2026, 19:46)` — idade relativa primeiro, data completa entre
 parênteses — e `Último backup: nunca` sem parênteses. O sufixo de mudanças continua igual.
 
 ### Unidades
 
-- **`estadoBackup(config, hoje, …)`** — função pura, sem E/S, em `src/domain/`. Recebe
+- **`estadoBackup(config, hoje)`** — função pura, sem E/S, em `src/domain/`. Recebe
   `ultimoBackupEm`, `mudancasDesdeBackup` e `hoje`; devolve `{ nivel: 'neutro' | 'aviso' |
   'urgente', idade: string }`, onde `idade` é "hoje", "ontem", "há N dias" ou "nunca". A
   conversão do timestamp para data local fica aqui, testável com relógio fixo.
@@ -148,11 +148,17 @@ parênteses — e `Último backup: nunca` sem parênteses. O sufixo de mudanças
 
 ### CSS (nível 2)
 
-- `.backup-rodape` — botão sem borda, alinhado à esquerda, largura total, texto 13–14px em
-  `--muted` no estado neutro. Classe de componente, no bloco da `TelaHoje`.
-- `.aviso.urgente` — modificador **compartilhado** de `.aviso`: `background: var(--neg-bg);
-  color: var(--neg)`. Tokens existentes; nenhum token novo.
-- As duas entram em `docs/estilo/catalogo.md` no mesmo commit.
+- `.backup-rodape` — só forma: botão sem borda, bloco de largura total, alinhado à esquerda.
+  Classe de componente, no bloco da `TelaHoje`.
+- `.backup-rodape-neutro` — cor do estado neutro: sem fundo, texto `--muted`, 13px.
+- `.aviso-urgente` — variante **compartilhada** de `.aviso`, usada junto dela
+  (`className="aviso aviso-urgente"`): `background: var(--neg-bg); color: var(--neg)`. Fica
+  logo depois de `.aviso` em `styles.css`, para vencer pela ordem. Tokens existentes; nenhum
+  token novo.
+- **Por que classes soltas e não `.aviso.urgente`:** o `verificar-catalogo.mjs` só reconhece
+  classe que abre a linha do seletor. Um modificador que só existe composto precisaria entrar
+  na lista `EXCECOES` do script — e `scripts/` só muda com pedido explícito.
+- As três entram em `docs/estilo/catalogo.md` no mesmo commit.
 
 ### Testes
 
