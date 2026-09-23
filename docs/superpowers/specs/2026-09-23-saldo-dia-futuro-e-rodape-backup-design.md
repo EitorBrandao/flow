@@ -65,10 +65,12 @@ cabeçalhos vazios.
 
 - A pílula de diferença é a mesma `.delta` da Hoje, com a mesma base de cálculo. Nenhuma frase
   nova além de "em relação a hoje", que é o equivalente de "nos próximos 28 dias".
-- **Divergência a decidir antes do código:** a pílula da Hoje usa seta (`▲ R$ 800,00 nos
-  próximos 28 dias`), e esta usa sinal. Com as duas no ar, o mesmo conceito — diferença de saldo
-  projetado — apareceria de dois jeitos. Proposta: a pílula da Hoje passa a usar sinal também
-  (`+R$ 800,00 nos próximos 28 dias`), no mesmo branch, alinhada ao resto do app.
+- **A pílula da Hoje passa a usar sinal também** (decidido em 2026-09-23). Hoje ela usa seta
+  (`▲ R$ 800,00 nos próximos 28 dias`); com a pílula nova usando sinal, o mesmo conceito —
+  diferença de saldo projetado — apareceria de dois jeitos. No mesmo branch, a da Hoje vira
+  `+R$ 800,00 nos próximos 28 dias` / `−R$ 800,00 nos próximos 28 dias`, com as mesmas
+  classes `.delta.pos`/`.delta.neg` que já tem. O teste da Hoje que confere o texto da pílula
+  muda junto, e o dossiê é regenerado.
 - O `—` para ausência de valor é o marcador que o app já usa: a média sem dado em Análises
   (`TelaAnalises.tsx:162`) e o total sem valor na Hoje (`TelaHoje.tsx:235`).
 
@@ -94,7 +96,7 @@ mockup pedir espaçamento próprio para a linha da pílula, vira nível 2 e entr
 - Regenerar o dossiê (`npm run dossie`) se o texto capturado do Fluxo mudar.
 - Wiki: `docs/wiki/6-telas.md`, seção Fluxo — o dia filtrado sempre aparece, com o saldo e a
   diferença em relação a hoje.
-- Fragmento `changelog.d/alterado-saldo-dia-futuro.md`.
+- Fragmento `changelog.d/alterado-saldo-dia-futuro.md`, citando também a pílula da Hoje, que troca a seta pelo sinal.
 
 ---
 
