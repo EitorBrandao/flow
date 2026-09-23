@@ -53,7 +53,16 @@ O bloco `campos` ganha um `id` por item (`idDoTopico` do termo). Isso serve de d
 - **Link externo:** continua abrindo em nova aba.
 - O balão também aparece dentro do próprio capítulo Glossário, se ele citar outro termo.
 
-As classes novas (termo e balão) passam por mockup aprovado antes da implementação e entram em `docs/estilo/catalogo.md`.
+### Visual aprovado (mockup de 2026-09-23, opção A)
+
+- **Link de navegação (`.wiki-link`):** `--ac`, sublinhado com `text-underline-offset: 3px`.
+- **Termo (`.wiki-termo`):** botão sem aparência de botão. Cor `--fg`, sublinhado pontilhado de 2px em `--muted`, `text-underline-offset: 4px`. Aberto (`.aberto`): texto e sublinhado em `--ac`.
+- **Dentro de nota (`.aviso`):** termo e link herdam a cor da nota (`color: inherit`).
+- **Balão (`.wiki-balao`):** ancorado logo abaixo da linha do termo, 10px abaixo dela, com a largura do corpo da wiki. Fundo `--surface2`, raio 18px, padding 14px 16px, sombra. Uma setinha quadrada girada 45° aponta para o meio do termo. Não escurece a tela.
+- **Conteúdo do balão:** termo em negrito (`.wiki-balao-termo`), definição em 15px (`.wiki-balao-def`).
+- **Fecha:** tocar fora, tocar de novo no mesmo termo, ou rolar a tela.
+
+As classes novas entram em `docs/estilo/catalogo.md`.
 
 ## Conteúdo
 
