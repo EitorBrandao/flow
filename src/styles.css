@@ -364,9 +364,9 @@ table.tabela th:first-child, table.tabela td:first-child {
 }
 .wiki-termo.aberto { color: var(--ac); text-decoration-color: var(--ac); }
 /* Dentro de nota, termo e link herdam a cor da nota. */
-.aviso .wiki-link, .aviso .wiki-termo { color: inherit; text-decoration-color: currentColor; }
+.aviso a, .aviso .wiki-termo { color: inherit; text-decoration-color: currentColor; }
 /* Termo dentro do rótulo de campo: acompanha o cinza do rótulo. */
-.wiki-campos dt .wiki-termo { color: inherit; }
+.wiki-campos dt .wiki-termo:not(.aberto) { color: inherit; }
 
 .wiki-balao {
   position: absolute; left: 0; right: 0; z-index: 5;

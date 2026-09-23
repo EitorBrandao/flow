@@ -1,9 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Wiki from './Wiki';
 
 describe('Wiki', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('abre no primeiro capítulo', async () => {
     render(<Wiki />);
     expect(await screen.findByRole('heading', { name: 'Os primeiros passos' })).toBeInTheDocument();
@@ -105,22 +109,41 @@ describe('Wiki', () => {
     expect(balao).toHaveTextContent(/entra só na projeção/);
   });
 
-  it('termo dentro do balão abre a definição no lugar certo (mesma posição)', async () => {
-    await abrirConceitos();
-    await userEvent.click(await screen.findByRole('button', { name: 'pendente' }));
-    const balao1 = await screen.findByRole('dialog', { name: 'Definição: pendente' });
-    const top1 = balao1.style.top;
-    expect(top1).toBeTruthy();
+  it('balão dentro do balão com posições simuladas; cores do termo e do link em nota', async () => {
+    const spy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect');
+    try {
+      spy.mockImplementation(function (this: HTMLElement) {
+        if (this.tagName === 'ARTICLE') {
+          return { top: 0, left: 0, width: 300, bottom: 1000, right: 300, height: 1000, x: 0, y: 0, toJSON() {} } as DOMRect;
+        }
+        if (this.closest('.wiki-balao')) {
+          return { top: 290, bottom: 300, left: 50, width: 40, right: 90, height: 10, x: 50, y: 290, toJSON() {} } as DOMRect;
+        }
+        return { top: 90, bottom: 100, left: 20, width: 40, right: 60, height: 10, x: 20, y: 90, toJSON() {} } as DOMRect;
+      });
 
-    const dialog = await screen.findByRole('dialog');
-    const botaoPrevisto = within(dialog).getByRole('button', { name: 'Previsto' });
-    await userEvent.click(botaoPrevisto);
+      await abrirConceitos();
+      await userEvent.click(await screen.findByRole('button', { name: 'pendente' }));
+      const balao1 = await screen.findByRole('dialog', { name: 'Definição: pendente' });
+      const top1 = balao1.style.top;
+      const seta1 = balao1.style.getPropertyValue('--seta');
+      expect(top1).toBe('110px');
 
-    const balao2 = await screen.findByRole('dialog', { name: 'Definição: previsto' });
-    const top2 = balao2.style.top;
+      const dialog = await screen.findByRole('dialog');
+      const botaoPrevisto = within(dialog).getByRole('button', { name: 'Previsto' });
+      await userEvent.click(botaoPrevisto);
 
-    // Deve ser o mesmo balão, só com id trocado
-    expect(screen.getAllByRole('dialog')).toHaveLength(1);
-    expect(top2).toBe(top1);
+      const balao2 = await screen.findByRole('dialog', { name: 'Definição: previsto' });
+      const top2 = balao2.style.top;
+      const seta2 = balao2.style.getPropertyValue('--seta');
+
+      // Deve ser o mesmo balão, só com id trocado
+      expect(screen.getAllByRole('dialog')).toHaveLength(1);
+      expect(top2).toBe(top1);
+      expect(top2).toBe('110px');
+      expect(seta2).toBe(seta1);
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
