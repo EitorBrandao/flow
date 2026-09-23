@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import * as repo from '../db/repo';
-import { addMeses } from '../domain/dates';
+import { formatarDataBR } from '../domain/dates';
 import {
   ajustesDoCartao, calcularFaturas, datasFaturaDoMes, mesFaturaDaCompra, resumoPorCategoria, type Fatura,
 } from '../domain/fatura';
@@ -10,17 +10,13 @@ import { boxIdsSelecionadas, useApp } from '../state/store';
 import CampoValor from './CampoValor';
 import FormCompra from './FormCompra';
 import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
+import SeletorMes from './SeletorMes';
 import Sheet from './Sheet';
 
 // NOTA DE PATCH (nível 1): o card de fatura ganhou 3 abas internas (Resumo/Lançamentos/
 // Conferência) via `.pills` — cabeçalho da fatura (mês, total, fecha/vence) continua sempre
 // visível fora das abas, igual antes.
 type AbaCartao = 'resumo' | 'lancamentos' | 'conferencia';
-
-function fmtDia(d: string): string {
-  const [, m, dia] = d.split('-');
-  return `${dia}/${m}`;
-}
 
 function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: string; totalCent: number }) {
   const { dados, recarregar } = useApp();
@@ -189,110 +185,111 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const mostrarGrupos = aVista.length > 0 && parceladas.length > 0;
 
   return (
-    <div className="card">
-      <div className="linha" style={{ justifyContent: 'space-between' }}>
-        <button className="botao" aria-label="Mês anterior" onClick={() => setMes(addMeses(mes, -1))}>‹</button>
+    <>
+      <SeletorMes mes={mes} onMudar={setMes} />
+      <div className="card">
         <div style={{ textAlign: 'center' }}>
-          <p className="sub" style={{ margin: 0 }}>{cartao.nome} · fatura {mes.split('-').reverse().join('/')}</p>
-          <p className="saldo-grande negativo" style={{ margin: '4px 0' }}>{formatarBRL(fatura.totalCent)}</p>
+          <p className="rotulo" style={{ margin: 0 }}>Fatura · {cartao.nome}</p>
+          <p className={`saldo-grande${fatura.totalCent > 0 ? ' negativo' : ''}`} style={{ margin: '4px 0' }}>
+            {formatarBRL(fatura.totalCent)}
+          </p>
           <p className="sub" style={{ margin: 0 }}>
-            fecha {fmtDia(fatura.dataFechamento)} · vence {fmtDia(fatura.dataVencimento)}
+            fecha {formatarDataBR(fatura.dataFechamento)} · vence {formatarDataBR(fatura.dataVencimento)}
           </p>
         </div>
-        <button className="botao" aria-label="Mês seguinte" onClick={() => setMes(addMeses(mes, 1))}>›</button>
-      </div>
 
-      <div className="pills" style={{ marginTop: 12 }} role="tablist" aria-label="Seções da fatura">
-        <button role="tab" aria-selected={abaCartao === 'resumo'} className={abaCartao === 'resumo' ? 'ativo' : ''} onClick={() => setAbaCartao('resumo')}>Resumo</button>
-        <button role="tab" aria-selected={abaCartao === 'lancamentos'} className={abaCartao === 'lancamentos' ? 'ativo' : ''} onClick={() => setAbaCartao('lancamentos')}>Lançamentos</button>
-        <button role="tab" aria-selected={abaCartao === 'conferencia'} className={abaCartao === 'conferencia' ? 'ativo' : ''} onClick={() => setAbaCartao('conferencia')}>
-          Conferência{diffConferencia != null && (diffConferencia === 0 ? ' ✔️' : ' ⚠️')}
-        </button>
-      </div>
-
-      {abaCartao === 'resumo' && (
-        <div style={{ marginTop: 12 }}>
-          {lancFatura && (
-            <p className="sub" style={{ margin: 0 }}>
-              {lancFatura.status === 'efetivo'
-                ? `Pago: ${formatarBRL(lancFatura.valor)}`
-                : `A pagar: ${formatarBRL(lancFatura.valor)}`}
-              {' · '}
-              <button className="botao-ver-mais" onClick={() => setPagando(true)}>
-                {lancFatura.status === 'efetivo' ? 'corrigir ou parcelar' : 'paguei outro valor'}
-              </button>
-            </p>
-          )}
-          {resumo.length > 1 && (
-            <div className="lista" style={{ marginTop: 8 }}>
-              {resumo.map(([catId, cent]) => (
-                <button
-                  key={catId}
-                  className={`botao${filtroCategoriaId === catId ? ' ativo' : ''}`}
-                  style={{ display: 'flex', justifyContent: 'space-between', width: '100%', textAlign: 'left' }}
-                  aria-pressed={filtroCategoriaId === catId}
-                  onClick={() => {
-                    setFiltroCategoriaId((v) => (v === catId ? null : catId));
-                    setAbaCartao('lancamentos');
-                  }}
-                >
-                  <span>{nomeCat(catId)}</span>
-                  <strong className="valor-gasto">{formatarBRL(cent)}</strong>
-                </button>
-              ))}
-            </div>
-          )}
-          {resumo.length === 0 && <p className="sub" style={{ marginTop: 8 }}>Nenhum gasto nesta fatura.</p>}
+        <div className="pills" style={{ marginTop: 12 }} role="tablist" aria-label="Seções da fatura">
+          <button role="tab" aria-selected={abaCartao === 'resumo'} className={abaCartao === 'resumo' ? 'ativo' : ''} onClick={() => setAbaCartao('resumo')}>Resumo</button>
+          <button role="tab" aria-selected={abaCartao === 'lancamentos'} className={abaCartao === 'lancamentos' ? 'ativo' : ''} onClick={() => setAbaCartao('lancamentos')}>Lançamentos</button>
+          <button role="tab" aria-selected={abaCartao === 'conferencia'} className={abaCartao === 'conferencia' ? 'ativo' : ''} onClick={() => setAbaCartao('conferencia')}>
+            Conferência{diffConferencia != null && (diffConferencia === 0 ? ' ✔️' : ' ⚠️')}
+          </button>
         </div>
-      )}
 
-      {abaCartao === 'lancamentos' && (
-        <div style={{ marginTop: 12 }}>
-          <div className="linha">
-            <input
-              className="campo-busca"
-              placeholder="Buscar por descrição, categoria, data ou valor..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              style={{ flex: 1 }}
-            />
-          </div>
-          <div className="lista" style={{ marginTop: 8 }}>
-            {mostrarGrupos && <p className="rotulo-grupo">À vista</p>}
-            {aVista.map((i) => (
-              <ItemFaturaBotao key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCat}
-                onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)} />
-            ))}
-            {mostrarGrupos && <p className="rotulo-grupo" style={{ marginTop: 6 }}>Parceladas</p>}
-            {parceladas.map((i) => (
-              <ItemFaturaBotao key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCat}
-                onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)} />
-            ))}
-            {itensFiltrados.length === 0 && (
-              <p className="sub">
-                {fatura.itens.length === 0 ? 'Nenhum gasto nesta fatura.' : 'Nenhum lançamento encontrado.'}
+        {abaCartao === 'resumo' && (
+          <div style={{ marginTop: 12 }}>
+            {lancFatura && (
+              <p className="sub" style={{ margin: 0 }}>
+                {lancFatura.status === 'efetivo'
+                  ? `Pago: ${formatarBRL(lancFatura.valor)}`
+                  : `A pagar: ${formatarBRL(lancFatura.valor)}`}
+                {' · '}
+                <button className="botao-ver-mais" onClick={() => setPagando(true)}>
+                  {lancFatura.status === 'efetivo' ? 'corrigir ou parcelar' : 'paguei outro valor'}
+                </button>
               </p>
             )}
+            {resumo.length > 0 && (
+              <div className="lista" style={{ marginTop: 8 }}>
+                {resumo.map(([catId, cent]) => (
+                  <button
+                    key={catId}
+                    className={`item${filtroCategoriaId === catId ? ' ativo' : ''}`}
+                    style={{ cursor: 'pointer' }}
+                    aria-pressed={filtroCategoriaId === catId}
+                    onClick={() => {
+                      setFiltroCategoriaId((v) => (v === catId ? null : catId));
+                      setAbaCartao('lancamentos');
+                    }}
+                  >
+                    <div className="cresce">{nomeCat(catId)}</div>
+                    <span className="valor-gasto">{formatarBRL(cent)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {resumo.length === 0 && <p className="sub" style={{ marginTop: 8 }}>Nenhum gasto nesta fatura.</p>}
           </div>
-        </div>
-      )}
+        )}
 
-      {abaCartao === 'conferencia' && (
-        <div style={{ marginTop: 12 }}>
-          <BlocoConferencia key={`${cartao.id}:${mes}`} cartao={cartao} mes={mes} totalCent={fatura.totalCent} />
-          <BlocoAjusteFechamento key={`${cartao.id}:${mesFechamento}`} cartao={cartao} mesFechamento={mesFechamento} />
-        </div>
-      )}
+        {abaCartao === 'lancamentos' && (
+          <div style={{ marginTop: 12 }}>
+            <div className="linha">
+              <input
+                className="campo-busca"
+                placeholder="Buscar por descrição, categoria, data ou valor..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                style={{ flex: 1 }}
+              />
+            </div>
+            <div className="lista" style={{ marginTop: 8 }}>
+              {mostrarGrupos && <p className="rotulo-grupo">À vista</p>}
+              {aVista.map((i) => (
+                <ItemFaturaBotao key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCat}
+                  onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)} />
+              ))}
+              {mostrarGrupos && <p className="rotulo-grupo" style={{ marginTop: 6 }}>Parceladas</p>}
+              {parceladas.map((i) => (
+                <ItemFaturaBotao key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCat}
+                  onClick={() => setEditando(compras.find((c) => c.id === i.compraId) ?? null)} />
+              ))}
+              {itensFiltrados.length === 0 && (
+                <p className="sub">
+                  {fatura.itens.length === 0 ? 'Nenhum gasto nesta fatura.' : 'Nenhum lançamento encontrado.'}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
-      <Sheet aberto={editando != null} onFechar={() => setEditando(null)} rotulo="Editar compra">
-        {editando && <FormCompra cartao={cartao} compra={editando} onFechar={() => setEditando(null)} />}
-      </Sheet>
-      <PagamentoFaturaSheetModal
-        lancamento={pagando ? lancFatura ?? null : null}
-        totalFaturaCent={fatura.totalCent}
-        onFechar={() => setPagando(false)}
-      />
-    </div>
+        {abaCartao === 'conferencia' && (
+          <div style={{ marginTop: 12 }}>
+            <BlocoConferencia key={`${cartao.id}:${mes}`} cartao={cartao} mes={mes} totalCent={fatura.totalCent} />
+            <BlocoAjusteFechamento key={`${cartao.id}:${mesFechamento}`} cartao={cartao} mesFechamento={mesFechamento} />
+          </div>
+        )}
+
+        <Sheet aberto={editando != null} onFechar={() => setEditando(null)} rotulo="Editar compra">
+          {editando && <FormCompra cartao={cartao} compra={editando} onFechar={() => setEditando(null)} />}
+        </Sheet>
+        <PagamentoFaturaSheetModal
+          lancamento={pagando ? lancFatura ?? null : null}
+          totalFaturaCent={fatura.totalCent}
+          onFechar={() => setPagando(false)}
+        />
+      </div>
+    </>
   );
 }
 

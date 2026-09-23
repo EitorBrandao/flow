@@ -4,6 +4,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
+import { ajustesDoCartao, datasFaturaDoMes } from '../domain/fatura';
+import { formatarDataBR, nomeDoMes } from '../domain/dates';
+import { formatarBRL } from '../domain/money';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import TelaCartao from './TelaCartao';
@@ -176,7 +179,8 @@ it('bloco de fechamento: salvar reclassifica a fatura, remover volta ao padrão'
     // sem ajuste, a fatura mostrada por padrão (a próxima a vencer, calculada só a partir de
     // `hoje`) é a de agosto — a compra de 29/07 cai na fatura de setembro (fecha depois do
     // padrão dia 28), mas isso não muda qual fatura abre por padrão.
-    expect(screen.getByText(/fatura 08\/2026/)).toBeInTheDocument();
+    // o mês da fatura mostrada sai do seletor (fora do card), com o mês por nome.
+    expect(screen.getByText(nomeDoMes('2026-08'))).toBeInTheDocument();
     await abrirAba(/Conferência/);
 
     await userEvent.clear(screen.getByLabelText('Fechou dia'));
@@ -289,6 +293,107 @@ it('busca filtra por descrição e mostra estado vazio quando nada bate', async 
     await userEvent.type(screen.getByPlaceholderText(/Buscar/), 'padaria');
     expect(await screen.findByText('Nenhum lançamento encontrado.')).toBeInTheDocument();
   } finally { vi.useRealTimers(); }
+});
+
+describe('card da fatura no padrão da Hoje (Consistência entre telas, parte 2)', () => {
+  it('mostra o rótulo "Fatura · {cartão}" em .rotulo, e as datas de fecha/vence com o ano', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { box, cartao, catCartao } = await montarCartao();
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-04',
+        valorTotal: 5000, parcelas: 1,
+      }, '2027-12-31');
+      await useApp.getState().iniciar();
+      useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+      render(<TelaCartao />);
+
+      const rotulo = screen.getByText(`Fatura · ${cartao.nome}`);
+      expect(rotulo).toHaveClass('rotulo');
+
+      // a fatura mostrada por padrão é a de 2026-08 (a próxima a vencer a partir de `hoje`).
+      const { dataFechamento, dataVencimento } =
+        datasFaturaDoMes(cartao, '2026-08', ajustesDoCartao([], cartao.id));
+      expect(screen.getByText(
+        `fecha ${formatarDataBR(dataFechamento)} · vence ${formatarDataBR(dataVencimento)}`,
+      )).toBeInTheDocument();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('o seletor de mês, fora do card, mostra o mês por nome', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { box, cartao, catCartao } = await montarCartao();
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-04',
+        valorTotal: 5000, parcelas: 1,
+      }, '2027-12-31');
+      await useApp.getState().iniciar();
+      useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+      render(<TelaCartao />);
+
+      expect(screen.getByText(nomeDoMes('2026-08'))).toBeInTheDocument();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('total zerado fica na cor normal; total com gasto fica em vermelho', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { box, cartao, catCartao } = await montarCartao();
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-04',
+        valorTotal: 5000, parcelas: 1,
+      }, '2027-12-31');
+      await useApp.getState().iniciar();
+      useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+      render(<TelaCartao />);
+
+      // fatura padrão (08/2026) tem gasto: total em vermelho. Query por seletor porque a única
+      // categoria do resumo soma o mesmo valor do total, e teria o mesmo texto.
+      const totalComGasto = screen.getByText(
+        formatarBRL(5000).replace(/\s/g, ' '), { selector: '.saldo-grande' },
+      );
+      expect(totalComGasto).toHaveClass('saldo-grande');
+      expect(totalComGasto).toHaveClass('negativo');
+
+      // 09/2026 não tem compra nenhuma: total zerado, sem a cor de alerta.
+      await userEvent.click(screen.getByRole('button', { name: 'Mês seguinte' }));
+      const totalZerado = screen.getByText(
+        formatarBRL(0).replace(/\s/g, ' '), { selector: '.saldo-grande' },
+      );
+      expect(totalZerado).toHaveClass('saldo-grande');
+      expect(totalZerado).not.toHaveClass('negativo');
+      expect(screen.getByText('Nenhum gasto nesta fatura.')).toBeInTheDocument();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('resumo com uma única categoria já aparece, como .item com pílula, e clicar filtra e muda de aba', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { box, cartao, catCartao } = await montarCartao();
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-04',
+        valorTotal: 12340, parcelas: 1, descricao: 'Mercado',
+      }, '2027-12-31');
+      await useApp.getState().iniciar();
+      useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+      render(<TelaCartao />);
+
+      const item = screen.getByRole('button', { name: /^mercado/ });
+      expect(item).toHaveClass('item');
+      expect(item.querySelector('.valor-gasto')).toHaveTextContent(
+        formatarBRL(12340).replace(/\s/g, ' '),
+      );
+
+      await userEvent.click(item);
+      expect(await screen.findByText('Mercado')).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Lançamentos' })).toHaveAttribute('aria-selected', 'true');
+    } finally { vi.useRealTimers(); }
+  });
 });
 
 describe('pagamento da fatura pela aba Cartão', () => {
