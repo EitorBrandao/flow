@@ -314,10 +314,11 @@ option: reserva
 option: casa
 Cartão
 button: ‹
-sigma · fatura 02/2026
-R$ 330,00
-fecha 25/01 · vence 05/02
+fevereiro de 2026
 button: ›
+Fatura · sigma
+R$ 330,00
+fecha 25/01/2026 · vence 05/02/2026
 tab: Resumo
 tab: Lançamentos
 tab: Conferência
@@ -342,9 +343,9 @@ option: carteira
 option: reserva
 option: casa
 Análises
-button: ◀
+button: ‹
 janeiro de 2026
-button: ▶
+button: ›
 label: incluir previstos
 Ganhos
 R$ 300,00
@@ -752,16 +753,19 @@ option: reserva
 option: casa
 Cartão
 button: ‹
-sigma · fatura 03/2026
-R$ 150,00
-fecha 25/02 · vence 05/03
+março de 2026
 button: ›
+Fatura · sigma
+R$ 150,00
+fecha 25/02/2026 · vence 05/03/2026
 tab: Resumo
 tab: Lançamentos
 tab: Conferência
 A pagar: R$ 150,00
 ·
 button: paguei outro valor
+serviços
+R$ 150,00
 ```
 
 ### Aba Análises
@@ -776,9 +780,9 @@ option: carteira
 option: reserva
 option: casa
 Análises
-button: ◀
+button: ‹
 janeiro de 2026
-button: ▶
+button: ›
 label: incluir previstos
 Ganhos
 R$ 300,00
@@ -1229,16 +1233,19 @@ option: reserva
 option: casa
 Cartão
 button: ‹
-sigma · fatura 03/2026
-R$ 189,90
-fecha 25/02 · vence 05/03
+março de 2026
 button: ›
+Fatura · sigma
+R$ 189,90
+fecha 25/02/2026 · vence 05/03/2026
 tab: Resumo
 tab: Lançamentos
 tab: Conferência
 A pagar: R$ 189,90
 ·
 button: paguei outro valor
+serviços
+R$ 189,90
 ```
 
 ### Aba Análises
@@ -1253,9 +1260,9 @@ option: carteira
 option: reserva
 option: casa
 Análises
-button: ◀
+button: ‹
 fevereiro de 2026
-button: ▶
+button: ›
 label: incluir previstos
 Ganhos
 R$ 5.000,00
@@ -1669,10 +1676,11 @@ option: reserva
 option: casa
 Cartão
 button: ‹
-sigma · fatura 07/2026
-R$ 213,20
-fecha 25/06 · vence 05/07
+julho de 2026
 button: ›
+Fatura · sigma
+R$ 213,20
+fecha 25/06/2026 · vence 05/07/2026
 tab: Resumo
 tab: Lançamentos
 tab: Conferência
@@ -1697,9 +1705,9 @@ option: carteira
 option: reserva
 option: casa
 Análises
-button: ◀
+button: ‹
 junho de 2026
-button: ▶
+button: ›
 label: incluir previstos
 Ganhos
 R$ 5.000,00
@@ -2111,10 +2119,11 @@ option: reserva
 option: casa
 Cartão
 button: ‹
-sigma · fatura 08/2026
-R$ 123,20
-fecha 25/07 · vence 05/08
+agosto de 2026
 button: ›
+Fatura · sigma
+R$ 123,20
+fecha 25/07/2026 · vence 05/08/2026
 tab: Resumo
 tab: Lançamentos
 tab: Conferência
@@ -2141,9 +2150,9 @@ option: carteira
 option: reserva
 option: casa
 Análises
-button: ◀
+button: ‹
 julho de 2026
-button: ▶
+button: ›
 label: incluir previstos
 Ganhos
 R$ 5.000,00
@@ -2537,16 +2546,19 @@ option: reserva
 option: casa
 Cartão
 button: ‹
-sigma · fatura 10/2026
-R$ 39,90
-fecha 25/09 · vence 05/10
+outubro de 2026
 button: ›
+Fatura · sigma
+R$ 39,90
+fecha 25/09/2026 · vence 05/10/2026
 tab: Resumo
 tab: Lançamentos
 tab: Conferência
 A pagar: R$ 39,90
 ·
 button: paguei outro valor
+serviços
+R$ 39,90
 ```
 
 ### Aba Análises
@@ -2561,9 +2573,9 @@ option: carteira
 option: reserva
 option: casa
 Análises
-button: ◀
+button: ‹
 setembro de 2026
-button: ▶
+button: ›
 label: incluir previstos
 Ganhos
 R$ 5.000,00
@@ -2937,16 +2949,19 @@ option: reserva
 option: casa
 Cartão
 button: ‹
-sigma · fatura 11/2026
-R$ 39,90
-fecha 25/10 · vence 05/11
+novembro de 2026
 button: ›
+Fatura · sigma
+R$ 39,90
+fecha 25/10/2026 · vence 05/11/2026
 tab: Resumo
 tab: Lançamentos
 tab: Conferência
 A pagar: R$ 39,90
 ·
 button: paguei outro valor
+serviços
+R$ 39,90
 ```
 
 ### Aba Análises
@@ -2961,9 +2976,9 @@ option: carteira
 option: reserva
 option: casa
 Análises
-button: ◀
+button: ‹
 outubro de 2026
-button: ▶
+button: ›
 label: incluir previstos
 Ganhos
 R$ 5.000,00
@@ -3307,16 +3322,19 @@ option: reserva
 option: casa
 Cartão
 button: ‹
-sigma · fatura 01/2027
-R$ 39,90
-fecha 25/12 · vence 05/01
+janeiro de 2027
 button: ›
+Fatura · sigma
+R$ 39,90
+fecha 25/12/2026 · vence 05/01/2027
 tab: Resumo
 tab: Lançamentos
 tab: Conferência
 A pagar: R$ 39,90
 ·
 button: paguei outro valor
+serviços
+R$ 39,90
 ```
 
 ### Aba Análises
@@ -3331,9 +3349,9 @@ option: carteira
 option: reserva
 option: casa
 Análises
-button: ◀
+button: ‹
 novembro de 2026
-button: ▶
+button: ›
 label: incluir previstos
 Ganhos
 R$ 5.000,00
