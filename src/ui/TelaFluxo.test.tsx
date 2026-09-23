@@ -3,9 +3,10 @@ import { limparDb } from '../test-setup';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as repo from '../db/repo';
-import { addDias } from '../domain/dates';
+import { addDias, formatarDataBR } from '../domain/dates';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
+import { formatarBRL } from '../domain/money';
 import TelaFluxo from './TelaFluxo';
 
 beforeEach(async () => {
@@ -146,7 +147,7 @@ it('escolher uma data no calendário pula direto pra aquele dia, mesmo fora do i
   expect(screen.queryByRole('button', { name: '+30 dias atrás' })).not.toBeInTheDocument();
 });
 
-it('escolher uma data sem lançamentos mostra mensagem de nenhum resultado', async () => {
+it('escolher uma data sem lançamentos mostra o dia vazio, não "nenhum resultado"', async () => {
   const { box } = await seedBoxComCategoria();
   const hoje = '2026-07-05';
   await useApp.getState().iniciar();
@@ -156,7 +157,8 @@ it('escolher uma data sem lançamentos mostra mensagem de nenhum resultado', asy
   await abrirFiltros();
   fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-01-01' } });
 
-  expect(await screen.findByText('Nenhum resultado para a busca.')).toBeInTheDocument();
+  expect(await screen.findByText('Nenhum lançamento neste dia.')).toBeInTheDocument();
+  expect(screen.queryByText('Nenhum resultado para a busca.')).not.toBeInTheDocument();
 });
 
 it('escolher uma data limpa a busca de texto e vice-versa', async () => {
@@ -439,6 +441,62 @@ it('filtro de data ativo não força hoje a aparecer se não tiver lançamento n
   await abrirFiltros();
   fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-01-01' } });
 
-  expect(await screen.findByText('Nenhum resultado para a busca.')).toBeInTheDocument();
+  expect(await screen.findByText('Nenhum lançamento neste dia.')).toBeInTheDocument();
   expect(screen.queryByText(/· hoje/)).not.toBeInTheDocument();
+});
+
+describe('dia filtrado sem lançamento', () => {
+  it('dia futuro sem lançamento aparece com o saldo projetado e o aviso de dia vazio', async () => {
+    const { box, catMercado } = await seedBoxComCategoria();
+    const hoje = '2026-07-05';
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: '2026-07-20', valor: 5000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje });
+
+    render(<TelaFluxo />);
+    await abrirFiltros();
+    fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-08-12' } });
+
+    expect(await screen.findByText(/12\/08\/2026/)).toBeInTheDocument();
+    expect(screen.getByText(formatarBRL(95000))).toBeInTheDocument();
+    expect(screen.getByText('Nenhum lançamento neste dia.')).toBeInTheDocument();
+    expect(screen.queryByText('Nenhum resultado para a busca.')).not.toBeInTheDocument();
+  });
+
+  it('período mostra o primeiro e o último dia mesmo vazios, mas não os dias vazios do meio', async () => {
+    const { box, catMercado } = await seedBoxComCategoria();
+    const hoje = '2026-07-05';
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: '2026-08-15', valor: 5000, status: 'previsto', nota: 'conta do meio' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje });
+
+    render(<TelaFluxo />);
+    await abrirFiltros();
+    await userEvent.click(screen.getByRole('button', { name: 'Selecionar período' }));
+    fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-08-01' } });
+    fireEvent.change(screen.getByLabelText('Até'), { target: { value: '2026-08-31' } });
+
+    expect(await screen.findByText(/01\/08\/2026/)).toBeInTheDocument();
+    expect(screen.getByText(/31\/08\/2026/)).toBeInTheDocument();
+    expect(screen.getByText('conta do meio')).toBeInTheDocument();
+    expect(screen.queryByText(/10\/08\/2026/)).not.toBeInTheDocument();
+    expect(screen.getAllByText('Nenhum lançamento neste dia.')).toHaveLength(2);
+  });
+
+  it('dia depois do horizonte mostra traço e até onde a projeção vai, nunca R$ 0,00', async () => {
+    const { box } = await seedBoxComCategoria();
+    const hoje = '2026-07-05';
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje });
+    const horizonte = useApp.getState().dados!.config.horizonteProjecao;
+
+    render(<TelaFluxo />);
+    await abrirFiltros();
+    fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2040-01-01' } });
+
+    expect(await screen.findByText(`A projeção vai até ${formatarDataBR(horizonte)}.`)).toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.queryByText(formatarBRL(0))).not.toBeInTheDocument();
+    expect(screen.queryByText('Nenhum lançamento neste dia.')).not.toBeInTheDocument();
+  });
 });

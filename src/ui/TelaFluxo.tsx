@@ -1,6 +1,6 @@
 import { Suspense, lazy, useMemo, useState } from 'react';
 import { Maximize2, Search } from 'lucide-react';
-import { addDias } from '../domain/dates';
+import { addDias, formatarDataBR } from '../domain/dates';
 import { ajustesDoCartao, calcularFaturas, type Fatura } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import { projetarBoxes } from '../domain/projection';
@@ -108,8 +108,15 @@ export default function TelaFluxo() {
     else porDia.set(l.data, [l]);
   }
   const saldoPorDia = new Map(serie.map((s) => [s.data, s.saldoProjetado]));
+  const horizonte = dados.config.horizonteProjecao;
   const diasSet = new Set(porDia.keys());
   if (!filtroAtivo) diasSet.add(hoje);
+  // Filtro de data responde "quanto vou ter no dia X?" — o dia (e as pontas do período)
+  // entra mesmo sem lançamento; os dias vazios do meio de um período continuam de fora.
+  if (dataAtiva) {
+    diasSet.add(dataDeFiltro);
+    diasSet.add(dataAteFiltro);
+  }
   const dias = [...diasSet].sort();
 
   return (
@@ -178,37 +185,52 @@ export default function TelaFluxo() {
             </>
           )}
           <div className="lista lista-fluxo">
-            {dias.map((dia) => (
-              <div key={dia}>
-                <div className={dia === hoje ? 'cabecalho-dia dia-hoje' : 'cabecalho-dia'}>
-                  <strong>{dataBonita(dia)}{dia === hoje ? ' · hoje' : ''}</strong>
-                  <span className="sub">
-                    <strong className={`total-dia ${(saldoPorDia.get(dia) ?? 0) >= 0 ? 'pos' : 'neg'}`}>
-                      {formatarBRL(saldoPorDia.get(dia) ?? 0)}
-                    </strong>
-                  </span>
-                </div>
-                {(porDia.get(dia) ?? []).map((l) => (
-                  <button
-                    key={l.id} className="item" style={{ width: '100%', textAlign: 'left', cursor: 'pointer' }}
-                    onClick={() => (
-                      l.origem === 'cartao' ? setFaturaSel(l)
-                      : l.origem === 'transferencia' ? setTransferenciaSel(l)
-                      : setEditando(l)
-                    )}
-                  >
-                    <div className="cresce">
-                      {nomeCat(l.categoriaId)}
-                      {l.status === 'previsto' && <span className="badge" style={{ marginLeft: 6 }}>{l.cenarioId ? 'cenário' : 'previsto'}</span>}
-                      {l.nota && <div className="sub">{l.nota}</div>}
-                    </div>
-                    <span className={tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
-                      {tipoCat(l.categoriaId) === 'ganho' ? '+' : '−'}{formatarBRL(Math.abs(l.valor))}
+            {dias.map((dia) => {
+              const saldo = saldoPorDia.get(dia);
+              const lancsDia = porDia.get(dia) ?? [];
+              return (
+                <div key={dia}>
+                  <div className={dia === hoje ? 'cabecalho-dia dia-hoje' : 'cabecalho-dia'}>
+                    <strong>{dataBonita(dia)}{dia === hoje ? ' · hoje' : ''}</strong>
+                    <span className="sub">
+                      {saldo == null ? (
+                        <strong className="total-dia">—</strong>
+                      ) : (
+                        <strong className={`total-dia ${saldo >= 0 ? 'pos' : 'neg'}`}>
+                          {formatarBRL(saldo)}
+                        </strong>
+                      )}
                     </span>
-                  </button>
-                ))}
-              </div>
-            ))}
+                  </div>
+                  {saldo == null && dia > horizonte && (
+                    <p className="sub">A projeção vai até {formatarDataBR(horizonte)}.</p>
+                  )}
+                  {/* Depois do horizonte não existe lançamento: "A projeção vai até" já diz tudo. */}
+                  {dataAtiva && lancsDia.length === 0 && dia <= horizonte && (
+                    <p className="sub">Nenhum lançamento neste dia.</p>
+                  )}
+                  {lancsDia.map((l) => (
+                    <button
+                      key={l.id} className="item" style={{ width: '100%', textAlign: 'left', cursor: 'pointer' }}
+                      onClick={() => (
+                        l.origem === 'cartao' ? setFaturaSel(l)
+                        : l.origem === 'transferencia' ? setTransferenciaSel(l)
+                        : setEditando(l)
+                      )}
+                    >
+                      <div className="cresce">
+                        {nomeCat(l.categoriaId)}
+                        {l.status === 'previsto' && <span className="badge" style={{ marginLeft: 6 }}>{l.cenarioId ? 'cenário' : 'previsto'}</span>}
+                        {l.nota && <div className="sub">{l.nota}</div>}
+                      </div>
+                      <span className={tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
+                        {tipoCat(l.categoriaId) === 'ganho' ? '+' : '−'}{formatarBRL(Math.abs(l.valor))}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
             {dias.length === 0 && (
               <p className="sub">{filtroAtivo ? 'Nenhum resultado para a busca.' : 'Nenhum lançamento no período.'}</p>
             )}
