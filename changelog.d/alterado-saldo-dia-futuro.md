@@ -1,5 +1,0 @@
-- No Fluxo, filtrar por data mostra o saldo do dia escolhido mesmo quando não há lançamento nele.
-  - Num período, aparecem sempre o primeiro e o último dia.
-  - Cada dia futuro filtrado mostra a diferença em relação a hoje, em verde ou vermelho.
-  - Um dia depois do fim da projeção mostra um traço e até quando a projeção vai, em vez de R$ 0,00.
-- Na tela Hoje, a variação dos próximos 28 dias passa a usar sinal (+ ou −) no lugar da seta.
