@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { NOMES, parseCapitulo, sortearNomes } from './capitulos';
+import { NOMES, idDoCapitulo, parseCapitulo, sortearNomes, termosDoGlossario, validarLinks } from './capitulos';
 
 const NOMES_FIXOS = { a: 'Ana', b: 'Bruno' };
 
@@ -45,8 +45,8 @@ describe('parseCapitulo', () => {
     expect(campos.itens[0].termo[0]).toEqual({ tipo: 'codigo', texto: 'saldoInicial' });
   });
 
-  it('quebra o inline em forte, código e link', () => {
-    const cap = parseCapitulo('t', '# T\n\numa **coisa** com `código` e [um link](#box).\n', NOMES_FIXOS);
+  it('quebra o inline em forte, código e link externo', () => {
+    const cap = parseCapitulo('t', '# T\n\numa **coisa** com `código` e [um link](https://exemplo.com).\n', NOMES_FIXOS);
     const bloco = cap.blocos[0];
     if (bloco.tipo !== 'paragrafo') throw new Error('bloco errado');
     expect(bloco.conteudo).toEqual([
@@ -55,9 +55,49 @@ describe('parseCapitulo', () => {
       { tipo: 'texto', texto: ' com ' },
       { tipo: 'codigo', texto: 'código' },
       { tipo: 'texto', texto: ' e ' },
-      { tipo: 'link', texto: 'um link', href: '#box' },
+      { tipo: 'link', texto: 'um link', href: 'https://exemplo.com' },
       { tipo: 'texto', texto: '.' },
     ]);
+  });
+
+  it('lê link interno para capítulo e para seção', () => {
+    const cap = parseCapitulo('t', '# T\n\nveja [o motor](#motor) e [a fronteira](#motor/fronteira-do-hoje-e-pendentes).\n', NOMES_FIXOS);
+    const bloco = cap.blocos[0];
+    if (bloco.tipo !== 'paragrafo') throw new Error('bloco errado');
+    expect(bloco.conteudo).toEqual([
+      { tipo: 'texto', texto: 'veja ' },
+      { tipo: 'ref', texto: 'o motor', capitulo: 'motor' },
+      { tipo: 'texto', texto: ' e ' },
+      { tipo: 'ref', texto: 'a fronteira', capitulo: 'motor', secao: 'fronteira-do-hoje-e-pendentes' },
+      { tipo: 'texto', texto: '.' },
+    ]);
+  });
+
+  it('lê [[termo]] como link para o glossário, com e sem crase', () => {
+    const cap = parseCapitulo('t', '# T\n\num [[box casa]] e um [[`efetivo`]].\n', NOMES_FIXOS);
+    const bloco = cap.blocos[0];
+    if (bloco.tipo !== 'paragrafo') throw new Error('bloco errado');
+    expect(bloco.conteudo).toEqual([
+      { tipo: 'texto', texto: 'um ' },
+      { tipo: 'ref', texto: 'box casa', capitulo: 'glossario', secao: 'box-casa' },
+      { tipo: 'texto', texto: ' e um ' },
+      { tipo: 'ref', texto: 'efetivo', capitulo: 'glossario', secao: 'efetivo', codigo: true },
+      { tipo: 'texto', texto: '.' },
+    ]);
+    expect(cap.texto).toContain('um box casa e um efetivo.');
+  });
+
+  it('recusa [[ ]] malformado e link interno com mais de uma barra', () => {
+    expect(() => parseCapitulo('t', '# T\n\num [[termo] solto\n', NOMES_FIXOS)).toThrow(/não reconhecida/);
+    expect(() => parseCapitulo('t', '# T\n\num termo]] solto\n', NOMES_FIXOS)).toThrow(/não reconhecida/);
+    expect(() => parseCapitulo('t', '# T\n\n[x](#a/b/c)\n', NOMES_FIXOS)).toThrow(/link interno/);
+  });
+
+  it('dá id a cada termo de campos, sem crase e sem acento', () => {
+    const cap = parseCapitulo('t', '# T\n\n: `efetivo` | confirmado\n: horizonte de projeção | até onde\n', NOMES_FIXOS);
+    const campos = cap.blocos[0];
+    if (campos.tipo !== 'campos') throw new Error('bloco errado');
+    expect(campos.itens.map((i) => i.id)).toEqual(['efetivo', 'horizonte-de-projecao']);
   });
 
   it('troca os marcadores de nome, em prosa e em nome de box', () => {
@@ -105,6 +145,41 @@ describe('parseCapitulo', () => {
   // Achado 3: segundo # deve lançar
   it('lança quando há segundo título (# ) no capítulo', () => {
     expect(() => parseCapitulo('t', '# Primeiro\n\nparágrafo\n\n# Segundo\n', NOMES_FIXOS)).toThrow(/título/);
+  });
+});
+
+describe('idDoCapitulo', () => {
+  it('tira pasta, extensão e número do nome do arquivo', () => {
+    expect(idDoCapitulo('../../../docs/wiki/4-motor.md')).toBe('motor');
+    expect(idDoCapitulo('8-glossario.md')).toBe('glossario');
+    expect(idDoCapitulo('1-primeiros-passos')).toBe('primeiros-passos');
+  });
+});
+
+describe('validarLinks', () => {
+  const glossario = parseCapitulo('glossario', '# Glossário\n\n: pendente | espera confirmação\n', NOMES_FIXOS);
+  const motor = parseCapitulo('motor', '# Motor\n\n## Fronteira do hoje\n\ntexto\n', NOMES_FIXOS);
+
+  it('aceita destinos que existem', () => {
+    const ok = parseCapitulo('conceitos', '# C\n\n[m](#motor), [f](#motor/fronteira-do-hoje) e [[pendente]].\n', NOMES_FIXOS);
+    expect(validarLinks([glossario, motor, ok])).toEqual([]);
+  });
+
+  it('reprova capítulo, seção e termo inexistentes, dizendo onde está o link', () => {
+    const ruim = parseCapitulo('conceitos', '# C\n\n- [x](#nada)\n- [y](#motor/sumiu)\n\n: campo | um [[inventado]]\n', NOMES_FIXOS);
+    const erros = validarLinks([glossario, motor, ruim]);
+    expect(erros).toHaveLength(3);
+    expect(erros[0]).toMatch(/conceitos.*#nada/);
+    expect(erros[1]).toMatch(/conceitos.*#motor\/sumiu/);
+    expect(erros[2]).toMatch(/conceitos.*#glossario\/inventado/);
+  });
+});
+
+describe('termosDoGlossario', () => {
+  it('indexa termo e definição pelo id', () => {
+    const g = parseCapitulo('glossario', '# Glossário\n\n: `efetivo` | Lançamento confirmado.\n', NOMES_FIXOS);
+    const termos = termosDoGlossario(g);
+    expect(termos.get('efetivo')?.definicao).toEqual([{ tipo: 'texto', texto: 'Lançamento confirmado.' }]);
   });
 });
 
