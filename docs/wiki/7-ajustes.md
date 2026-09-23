@@ -67,6 +67,7 @@ Excluir mantém as compras passadas geradas pela assinatura; só as futuras some
 
 - **Exportar:** gera um `.json` com tudo (schema + dados); no Android abre o menu de compartilhamento do sistema, no PC baixa o arquivo.
 - **Restaurar:** escolher **substituir tudo** ou **mesclar** (por `id`; em conflito, vence o registro alterado mais recentemente). A confirmação é sempre pedida antes de aplicar.
+- Depois de **mesclar**, a tela Hoje avisa que há mudanças não salvas em backup: o resultado da mescla não está inteiro em nenhum arquivo, e recuperá-lo exigiria os dois. Faça um backup novo para juntar tudo num arquivo só. Depois de **substituir tudo**, não há aviso — os dados são exatamente os do arquivo.
 - Backup de versão de schema mais nova que o app entende é rejeitado com mensagem clara — nada é alterado.
 - Backup antigo (de antes da aba Cartão) restaura normalmente; as tabelas novas entram vazias.
 

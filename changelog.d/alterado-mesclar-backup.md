@@ -1,0 +1,3 @@
+- Depois de mesclar um backup, a tela Hoje passa a avisar que há mudanças não salvas em backup.
+  - Antes, mesclar marcava tudo como salvo, mesmo com mudanças que nunca foram copiadas.
+  - Substituir tudo continua sem aviso: os dados passam a ser exatamente os do arquivo.

@@ -60,7 +60,7 @@ export default function Backup() {
       const finais = modo === 'substituir'
         ? backup.dados
         : mesclar(await repo.carregarTudo(), backup.dados);
-      await repo.substituirTudo(finais);
+      await repo.substituirTudo(finais, { mudancasDesdeBackup: modo === 'mesclar' });
       await recarregar();
       setMsg('Backup restaurado.');
     } catch (e) {
