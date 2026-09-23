@@ -459,10 +459,8 @@ describe('dia filtrado sem lançamento', () => {
 
     expect(await screen.findByText('Nenhum lançamento neste dia.')).toBeInTheDocument();
     expect(screen.getByText('qua. 12/08/2026')).toBeInTheDocument();
-    // O saldo 95000 centavos deve aparecer no cabecalho do dia
-    expect(screen.getByText((content, element) => {
-      return !!(element?.classList?.contains('total-dia') && content.includes('950,00'));
-    })).toBeInTheDocument();
+    // O saldo de 950,00 deve aparecer no cabeçalho do dia
+    expect(screen.getByText(formatarBRL(95000).replace(/\s/g, ' '))).toBeInTheDocument();
     expect(screen.queryByText('Nenhum resultado para a busca.')).not.toBeInTheDocument();
   });
 
@@ -534,8 +532,15 @@ describe('dia filtrado sem lançamento', () => {
   });
 
   it('dia de hoje e dia passado filtrados não mostram diferença', async () => {
-    const { box } = await seedBoxComCategoria();
+    const { box, catMercado } = await seedBoxComCategoria();
     const hoje = '2026-07-05';
+    // Efetivo antes de hoje: o saldo projetado de 01/06 (antes do gasto) passa a diferir
+    // do saldo efetivo de hoje (depois do gasto) — sem essa diferença, a guarda "dia >
+    // hoje" nunca seria testada, porque o delta já seria zero por falta de lançamento.
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: '2026-06-15', valor: -5000, status: 'efetivo' });
+    // Previsto no próprio dia de hoje: o saldo projetado de hoje passa a diferir do saldo
+    // efetivo de hoje (que ignora previsto), pela mesma razão.
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: hoje, valor: -2000, status: 'previsto' });
     await useApp.getState().iniciar();
     useApp.setState({ boxSel: box.id, hoje });
 
@@ -546,7 +551,7 @@ describe('dia filtrado sem lançamento', () => {
     expect(screen.queryByText(/em relação a hoje/)).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-06-01' } });
-    expect(await screen.findByText('Nenhum lançamento neste dia.')).toBeInTheDocument();
+    expect(await screen.findByText('seg. 01/06/2026')).toBeInTheDocument();
     expect(screen.queryByText(/em relação a hoje/)).not.toBeInTheDocument();
   });
 
