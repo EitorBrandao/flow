@@ -9,8 +9,8 @@ Todas respeitam o seletor de box no topo (no exemplo: `{{boxA}}` / `{{boxB}}` / 
 Tela inicial. Foco em "onde estou agora" e no que precisa de atenção. Três abas: Visão, Conferir e Pendentes.
 
 - **Visão:** saldo efetivo em destaque; se o projetado difere, aparece logo abaixo. A pílula colorida mostra quanto o saldo muda nos próximos 28 dias, com sinal: verde e positiva se sobe, vermelha e negativa se desce. Mini-gráfico da janela de 7 dias atrás a 28 dias à frente.
-- **Conferir:** campo para digitar o saldo que o app do banco mostra + data; o app calcula a diferença ("bate certinho", "falta inserir no app" ou "sobra no app — confira duplicado"). O valor da diferença é do ponto de vista do app: vermelho e negativo quando falta lançar algo, verde e positivo quando sobra. Se a box tiver bancos cadastrados, vira uma linha por banco, com o total informado abaixo — a diferença passa a ser calculada contra essa soma.
-- **Pendentes:** fila de previstos vencidos, com confirmar (✓) ou descartar (✕) em um toque. O rótulo da aba mostra quantos itens esperam. Se a conta veio com outro valor, toque no valor do item: ele abre os campos de data e valor ali mesmo, e confirmar grava o que você corrigiu. O ajuste vale só para aquela ocorrência — a recorrência que a gerou não muda. Fatura de cartão segue por outro caminho, o do botão "Paguei outro valor" (veja o capítulo Cartão).
+- **Conferir:** campo para digitar o saldo que o app do banco mostra + data; o app calcula a diferença ("bate certinho", "falta inserir no app" ou "sobra no app — confira duplicado"). O valor da diferença é do ponto de vista do app: vermelho e negativo quando falta lançar algo, verde e positivo quando sobra. Se a box tiver bancos cadastrados, vira uma linha por [[banco]], com o total informado abaixo — a diferença passa a ser calculada contra essa soma.
+- **Pendentes:** fila de previstos vencidos, com confirmar (✓) ou descartar (✕) em um toque. O rótulo da aba mostra quantos itens esperam. Se a conta veio com outro valor, toque no valor do item: ele abre os campos de data e valor ali mesmo, e confirmar grava o que você corrigiu. O ajuste vale só para aquela ocorrência — a recorrência que a gerou não muda. Fatura de cartão segue por outro caminho, o do botão "Paguei outro valor" (veja o capítulo [Cartão de crédito](#cartao)).
 - **Aviso de backup:** banner acima das abas, quando há mudanças e o último backup passou de 7 dias — toca e vai direto para Ajustes → Backup.
 
 **Conferência de saldo — obrigatório:** saldo real no banco. **Tem padrão:** data (hoje).
@@ -38,10 +38,10 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 - Atalho com ponto azul vai para cartão; sem ponto, é lançamento direto na box.
 - Só conta o que você digitou — lançamentos e compras no cartão — nos últimos dois meses; recorrência, fatura e assinatura não viram atalho porque já entram sozinhas.
 - Sem histórico de lançamentos, a faixa de atalhos não aparece.
-- O cabeçalho da tela Adicionar tem um ícone de câmera: escaneia o QR-code de uma nota fiscal (NFC-e) e extrai a chave de acesso.
+- O cabeçalho da tela Adicionar tem um ícone de câmera: escaneia o QR-code de uma nota fiscal (NFC-e) e extrai a [[chave de acesso]].
 - Com a chave, você busca o XML fora do app (num site de consulta de NFC-e) e volta com ele — por upload de arquivo ou colando o texto.
 - O Flow lê o XML e pré-preenche valor, data e descrição da compra; categoria e cartão continuam por sua conta.
-- A nota também traz seus itens: no formulário da compra, "Ver itens" mostra a lista de produtos com valor e percentual do total.
+- A nota também traz seus [itens](#glossario/item-da-nota): no formulário da compra, "Ver itens" mostra a lista de produtos com valor e percentual do total.
 - Sem câmera disponível, ou se o QR não for lido, dá pra digitar a chave de 44 dígitos à mão.
 
 **Obrigatórios:** valor, categoria. **Têm padrão:** data (hoje). **Opcionais:** nota, marcar como previsto.

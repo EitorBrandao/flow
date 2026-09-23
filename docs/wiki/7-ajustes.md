@@ -10,7 +10,7 @@ Por box selecionada: criar, renomear, reordenar (↑↓) e arquivar/restaurar. G
 
 ## Recorrências
 
-CRUD das regras que geram previstos automaticamente (veja o capítulo Conceitos e modelo de dados).
+CRUD das regras que geram previstos automaticamente (veja [Recorrência](#conceitos/recorrencia), no capítulo Conceitos e modelo de dados).
 
 - Editar recalcula os previstos futuros ainda não confirmados na hora.
 - "Pausar" desativa sem apagar a regra; "Ativar" retoma a materialização.
@@ -29,7 +29,7 @@ Saldo inicial negativo é aceito (digitar com "−" na frente). Uma box sem sald
 
 ## Bancos
 
-Uma box representa a **pessoa**, e uma pessoa costuma ter mais de uma conta. Aqui você cadastra os bancos de cada box e informa quanto tem em cada um.
+Uma box representa a **pessoa**, e uma pessoa costuma ter mais de uma conta. Aqui você cadastra os [bancos](#glossario/banco) de cada box e informa quanto tem em cada um.
 
 Serve para conferir: a tela Hoje passa a mostrar uma linha por banco, e a diferença contra a projeção é calculada sobre a soma. Sem bancos cadastrados, nada muda — a conferência continua com o campo único de sempre.
 
@@ -41,11 +41,11 @@ Cada banco mostra o saldo informado com a data e quantos cartões estão vincula
 
 ## Cartões
 
-Cadastrar/editar o cartão de cada box: nome, dia de fechamento, dia de vencimento, a categoria de gasto do Flow que recebe a fatura e, se a box tiver bancos cadastrados, o banco dono do cartão.
+Cadastrar/editar o cartão de cada box: nome, dia de fechamento, dia de vencimento, a categoria de gasto do Flow que recebe a [[fatura]] e, se a box tiver bancos cadastrados, o banco dono do cartão.
 
 Uma box pode ter vários cartões **ativos** ao mesmo tempo. "Desativar" desliga o cartão por completo: para de sincronizar a fatura como lançamento, e some da tela Cartão e do menu Adicionar.
 
-Cada cartão tem ainda um segundo controle, independente: **"Bloquear"/"Permitir"**. Ele só afeta o menu Adicionar → "Compra no cartão" — um cartão bloqueado não entra na lista de escolha, nem no atalho que pula direto pro formulário quando sobra um só. A fatura continua sincronizando, e as assinaturas do cartão continuam gerando compra todo mês. Serve para um cartão que só existe para receber assinaturas, sem você nunca lançar uma compra avulsa nele.
+Cada cartão tem ainda um segundo controle, independente: **"Bloquear"/"Permitir"**. Ele só afeta o menu Adicionar → "Compra no cartão" — um cartão bloqueado não entra na lista de escolha, nem no [atalho](#glossario/atalho-de-lancamento) que pula direto pro formulário quando sobra um só. A fatura continua sincronizando, e as assinaturas do cartão continuam gerando compra todo mês. Serve para um cartão que só existe para receber assinaturas, sem você nunca lançar uma compra avulsa nele.
 
 **Obrigatórios:** nome, categoria da fatura (pré-preenchida com a categoria "cartão" da box, se existir). **Têm padrão:** box (a primeira com saldo próprio), dia de fechamento (28), dia de vencimento (5), banco (sem banco). O campo de banco só aparece se a box tiver algum cadastrado.
 
@@ -95,7 +95,7 @@ Cada item da lista chega classificado num destes seis estados:
 : Previsto | Casa com um previsto ou uma recorrência ainda não confirmada. "Confirmar" dá baixa nele; "Descartar" ignora a linha.
 : Divergente | Casa por data e descrição, mas o valor é outro. "Confirmar", que já mostra o valor do banco, grava esse valor; "Descartar" ignora a linha.
 : Novo | Não existe nada parecido no Flow. "Adicionar" cria o lançamento ou a compra do cartão; "Descartar" ignora a linha. Algumas linhas novas vêm sem botão, só com um aviso — como um pagamento de fatura sem fatura correspondente no Flow, que pede para você olhar o cadastro do cartão em vez de criar algo solto.
-: Sobra | Está lançado no Flow, dentro do período do arquivo, mas não aparece no banco. "Manter" deixa como está; "Excluir do app" apaga. A ação padrão é sempre manter — excluir nunca é automático, porque o banco pode simplesmente não ter processado ainda.
+: [[Sobra]] | Está lançado no Flow, dentro do período do arquivo, mas não aparece no banco. "Manter" deixa como está; "Excluir do app" apaga. A ação padrão é sempre manter — excluir nunca é automático, porque o banco pode simplesmente não ter processado ainda.
 : Interno | Movimento que não é ganho nem gasto de verdade. "Ignorar" não grava nada.
 
 > Acima da lista, cada estado é uma pílula com a contagem; toque nela para ver só os itens daquele estado, e toque de novo para ver todos — o filtro só muda o que aparece, nunca o que "Confirmar" grava.
@@ -115,7 +115,7 @@ como se você tivesse lançado a compra inteira no dia em que ela aconteceu. Se 
 não bater com a fatura por causa de arredondamento, "Corrigir total" deixa ajustar o valor
 antes de confirmar.
 
-**Um lançamento novo** entra na categoria "A classificar" — ou "A classificar (entrada)",
+**Um lançamento novo** entra na categoria ["A classificar"](#glossario/a-classificar) — ou "A classificar (entrada)",
 quando é uma entrada de dinheiro na box. É uma categoria comum e visível, igual a qualquer
 outra: reclassifique quando quiser, em Categorias ou em Categorias do cartão.
 
@@ -124,3 +124,10 @@ O que esta versão não faz:
 - Não grava estorno de cartão — ele aparece como Interno, com a explicação na lista.
 - Não deixa escolher o banco de um lançamento de conta.
 - Não lê a fatura do cartão Nubank, nem arquivo OFX ou zip.
+
+## Wiki
+
+Esta documentação. O botão Índice abre a lista de capítulos e a busca, que procura no texto inteiro, sem acento e sem diferença de maiúscula.
+
+- **Link azul:** leva a outro capítulo, ou a uma seção dele. Link para um site abre numa aba nova.
+- **Termo com sublinhado pontilhado:** é um termo do glossário. Tocar nele abre a definição logo abaixo, sem sair do capítulo. Tocar fora, tocar de novo no termo ou rolar a tela fecha o balão. No computador, a tecla Esc também fecha.

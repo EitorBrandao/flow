@@ -1,5 +1,8 @@
-import { useMemo, useState } from 'react';
-import { normalizar, parseCapitulo, sortearNomes, type Bloco, type Capitulo, type Inline } from './capitulos';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
+import {
+  idDoCapitulo, normalizar, parseCapitulo, sortearNomes, termosDoGlossario,
+  type Bloco, type Capitulo, type Inline, type ItemCampo,
+} from './capitulos';
 
 // Carrega capítulos (exclui README que não é um capítulo)
 const BRUTOS_TODOS = import.meta.glob('../../../docs/wiki/*.md', {
@@ -9,17 +12,42 @@ const BRUTOS = Object.fromEntries(
   Object.entries(BRUTOS_TODOS).filter(([caminho]) => !caminho.includes('README'))
 );
 
-function idDoArquivo(caminho: string): string {
-  return caminho.split('/').pop()!.replace(/\.md$/, '');
+interface Acoes {
+  ir: (capitulo: string, secao?: string) => void;
+  alternarTermo: (id: string, alvo: HTMLElement) => void;
+  termoAberto: string | null;
 }
+const AcoesWiki = createContext<Acoes | null>(null);
 
 function Trechos({ partes }: { partes: Inline[] }) {
+  const acoes = useContext(AcoesWiki);
   return (
     <>
       {partes.map((p, i) => {
         if (p.tipo === 'forte') return <strong key={i}>{p.texto}</strong>;
         if (p.tipo === 'codigo') return <code key={i}>{p.texto}</code>;
-        if (p.tipo === 'link') return <a key={i} href={p.href} target={p.href.startsWith('#') ? undefined : '_blank'} rel="noopener noreferrer">{p.texto}</a>;
+        if (p.tipo === 'link') return <a key={i} href={p.href} target="_blank" rel="noopener noreferrer">{p.texto}</a>;
+        if (p.tipo === 'ref') {
+          const rotulo = p.codigo ? <code>{p.texto}</code> : p.texto;
+          if (p.capitulo === 'glossario' && p.secao) {
+            const id = p.secao;
+            return (
+              <button
+                key={i} type="button" data-termo
+                className={`wiki-termo${acoes?.termoAberto === id ? ' aberto' : ''}`}
+                aria-expanded={acoes?.termoAberto === id}
+                onClick={(e) => acoes?.alternarTermo(id, e.currentTarget)}
+              >{rotulo}</button>
+            );
+          }
+          const href = `#${p.capitulo}${p.secao ? `/${p.secao}` : ''}`;
+          return (
+            <a
+              key={i} href={href} className="wiki-link"
+              onClick={(e: MouseEvent) => { e.preventDefault(); acoes?.ir(p.capitulo, p.secao); }}
+            >{rotulo}</a>
+          );
+        }
         return <span key={i}>{p.texto}</span>;
       })}
     </>
@@ -35,8 +63,8 @@ function BlocoRender({ bloco }: { bloco: Bloco }) {
   }
   return (
     <dl className="wiki-campos">
-      {bloco.itens.map((item, i) => (
-        <div key={i}>
+      {bloco.itens.map((item) => (
+        <div key={item.id} id={item.id}>
           <dt><Trechos partes={item.termo} /></dt>
           <dd><Trechos partes={item.definicao} /></dd>
         </div>
@@ -45,31 +73,99 @@ function BlocoRender({ bloco }: { bloco: Bloco }) {
   );
 }
 
+interface Balao { id: string; top: number; seta: number }
+
 export default function Wiki() {
   const [nomes] = useState(() => sortearNomes());
   const capitulos: Capitulo[] = useMemo(
     () => Object.entries(BRUTOS)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([caminho, raw]) => parseCapitulo(idDoArquivo(caminho), raw, nomes)),
+      .map(([caminho, raw]) => parseCapitulo(idDoCapitulo(caminho), raw, nomes)),
     [nomes],
   );
+  const glossario = useMemo(() => {
+    const g = capitulos.find((c) => c.id === 'glossario');
+    return g ? termosDoGlossario(g) : new Map<string, Omit<ItemCampo, 'id'>>();
+  }, [capitulos]);
   const [atualId, setAtualId] = useState(capitulos[0].id);
   const [indiceAberto, setIndiceAberto] = useState(false);
   const [busca, setBusca] = useState('');
+  const [destino, setDestino] = useState<{ secao?: string } | null>(null);
+  const [balao, setBalao] = useState<Balao | null>(null);
+  const corpo = useRef<HTMLElement>(null);
 
   const alvo = normalizar(busca.trim());
   const filtrados = alvo ? capitulos.filter((c) => normalizar(c.texto).includes(alvo)) : capitulos;
   const atual = capitulos.find((c) => c.id === atualId) ?? capitulos[0];
+
+  // Depois de trocar de capítulo por link: rola até a seção, ou ao topo do capítulo.
+  useEffect(() => {
+    if (!destino) return;
+    const el = (destino.secao && document.getElementById(destino.secao)) || corpo.current;
+    el?.scrollIntoView?.({ block: 'start' });
+    setDestino(null);
+  }, [destino, atualId]);
+
+  // Balão aberto: fecha ao tocar fora dele (o termo cuida do próprio toque), ao rolar, ou ao pressionar Esc.
+  useEffect(() => {
+    if (!balao) return;
+    const fechar = () => setBalao(null);
+    const aoTocar = (e: Event) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('.wiki-balao') || t.closest('[data-termo]')) return;
+      fechar();
+    };
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') fechar();
+    };
+    document.addEventListener('click', aoTocar);
+    window.addEventListener('scroll', fechar, true);
+    document.addEventListener('keydown', aoTeclar);
+    return () => {
+      document.removeEventListener('click', aoTocar);
+      window.removeEventListener('scroll', fechar, true);
+      document.removeEventListener('keydown', aoTeclar);
+    };
+  }, [balao]);
+
+  const acoes: Acoes = {
+    ir: (capitulo, secao) => { setBalao(null); setAtualId(capitulo); setDestino({ secao }); },
+    alternarTermo: (id, el) => {
+      if (balao?.id === id) { setBalao(null); return; }
+      if (el.closest('.wiki-balao') && balao) {
+        setBalao({ ...balao, id });
+        return;
+      }
+      const ra = corpo.current!.getBoundingClientRect();
+      const rt = el.getBoundingClientRect();
+      const meio = rt.left - ra.left + rt.width / 2 - 7;
+      setBalao({ id, top: rt.bottom - ra.top + 10, seta: Math.max(14, Math.min(ra.width - 28, meio)) });
+    },
+    termoAberto: balao?.id ?? null,
+  };
+  const termo = balao ? glossario.get(balao.id) : undefined;
 
   return (
     <div className="tela">
       <h2>Wiki</h2>
       <button className="botao wiki-abrir-indice" aria-label="Índice" onClick={() => setIndiceAberto(true)}>☰ Índice</button>
 
-      <article className="wiki-corpo">
-        <h3 className="wiki-titulo">{atual.titulo}</h3>
-        {atual.blocos.map((b, i) => <BlocoRender key={i} bloco={b} />)}
-      </article>
+      <AcoesWiki.Provider value={acoes}>
+        <article className="wiki-corpo" ref={corpo}>
+          <h3 className="wiki-titulo">{atual.titulo}</h3>
+          {atual.blocos.map((b, i) => <BlocoRender key={i} bloco={b} />)}
+          {balao && termo && (
+            <div
+              className="wiki-balao" role="dialog"
+              aria-label={`Definição: ${termo.termo.map((p: Inline) => p.texto).join('')}`}
+              style={{ top: balao.top, '--seta': `${balao.seta}px` } as CSSProperties}
+            >
+              <p className="wiki-balao-termo"><Trechos partes={termo.termo} /></p>
+              <p className="wiki-balao-def"><Trechos partes={termo.definicao} /></p>
+            </div>
+          )}
+        </article>
+      </AcoesWiki.Provider>
 
       {indiceAberto && (
         <>
@@ -83,7 +179,7 @@ export default function Wiki() {
             {filtrados.map((c) => (
               <button
                 key={c.id} className={`wiki-item${c.id === atual.id ? ' ativo' : ''}`}
-                onClick={() => { setAtualId(c.id); setIndiceAberto(false); }}
+                onClick={() => { setBalao(null); setAtualId(c.id); setIndiceAberto(false); }}
               >
                 {c.titulo}
               </button>

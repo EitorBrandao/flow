@@ -1,6 +1,6 @@
 # Os primeiros passos
 
-O Flow começa **quase vazio**: sem categoria, sem cartão, sem nada lançado. A única coisa que já vem pronta é a box **casa**, criada na primeira abertura para receber os gastos divididos — ela não tem saldo próprio. Falta a sua box, com o saldo da conta, e as categorias. Esta é a ordem que funciona.
+O Flow começa **quase vazio**: sem categoria, sem cartão, sem nada lançado. A única coisa que já vem pronta é a [[box casa]], criada na primeira abertura para receber os gastos divididos — ela não tem saldo próprio. Falta a sua box, com o saldo da conta, e as categorias. Esta é a ordem que funciona.
 
 > Já usa o Flow em outro aparelho? Não refaça nada: vá em Ajustes, Backup, e importe o arquivo `.json` exportado do aparelho antigo. Ele traz tudo — boxes, lançamentos, cartões e configurações.
 
@@ -49,7 +49,7 @@ Aqui o app deixa de ser um caderno e vira uma projeção. Uma recorrência é um
 
 O cartão tem um mundo próprio: as compras não entram no fluxo de caixa uma a uma — elas viram **uma fatura só**, lançada na box no dia do vencimento. Sem contagem dupla. Fica em Ajustes, Cartões.
 
-- A **categoria da fatura** é uma categoria de gasto da box (aquela "cartão" do passo anterior) — é nela que a fatura aparece no seu fluxo.
+- A **categoria da fatura** é uma categoria de gasto da box (aquela "cartão" do passo anterior) — é nela que a [[fatura]] aparece no seu fluxo.
 - **Dia de fechamento** e **dia de vencimento** saem da fatura do seu banco. Compra feita no próprio dia do fechamento cai na fatura seguinte.
 - Um cartão ativo por box: para cadastrar outro, desative o atual primeiro.
 - Depois do cartão, crie ao menos uma categoria do cartão — elas são separadas das categorias da box, porque o que você compra no cartão raramente segue o mesmo recorte do orçamento.
@@ -68,7 +68,7 @@ Aba Cartão → **+ compra**.
 
 ## A primeira conferência
 
-O app não fala com o seu banco — quem garante que os dois batem é você, e a conferência existe para isso doer pouco.
+O app não fala com o seu banco — quem garante que os dois batem é você, e a [[conferência]] existe para isso doer pouco.
 
 - **Na tela Hoje:** digite o saldo que o app do banco mostra. O Flow responde "bate certinho", "falta inserir no app" (esqueceu um gasto) ou "sobra no app" (lançou duas vezes).
 - **Na aba Cartão:** digite o valor da fatura que o banco mostra. Se você não quiser caçar item por item, marque "usar este valor no Flow" e o total do banco passa a valer na projeção.

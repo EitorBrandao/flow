@@ -6,14 +6,18 @@ export type Inline =
   | { tipo: 'texto'; texto: string }
   | { tipo: 'forte'; texto: string }
   | { tipo: 'codigo'; texto: string }
-  | { tipo: 'link'; texto: string; href: string };
+  | { tipo: 'link'; texto: string; href: string }
+  /** link interno: capítulo, e seção opcional. `codigo` = texto veio entre crases */
+  | { tipo: 'ref'; texto: string; capitulo: string; secao?: string; codigo?: boolean };
+
+export interface ItemCampo { id: string; termo: Inline[]; definicao: Inline[] }
 
 export type Bloco =
   | { tipo: 'paragrafo'; conteudo: Inline[] }
   | { tipo: 'topico'; titulo: string; id: string }
   | { tipo: 'lista'; itens: Inline[][] }
   | { tipo: 'nota'; conteudo: Inline[] }
-  | { tipo: 'campos'; itens: { termo: Inline[]; definicao: Inline[] }[] };
+  | { tipo: 'campos'; itens: ItemCampo[] };
 
 export interface Capitulo {
   id: string;
@@ -46,22 +50,41 @@ function aplicarNomes(texto: string, nomes: Nomes): string {
     .replace(/\{\{boxB\}\}/g, nomes.b.toLowerCase());
 }
 
-const RE_INLINE = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/;
+// [[termo]] vem antes do link comum: os dois começam com "[".
+const RE_INLINE = /(\[\[[^[\]]+\]\]|\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/;
+
+/** `#capitulo` ou `#capitulo/secao` → ref. Qualquer outra forma com `#` lança. */
+function refInterna(texto: string, href: string): Inline {
+  const m = /^#([a-z0-9-]+)(?:\/([a-z0-9-]+))?$/.exec(href);
+  if (!m) throw new Error(`wiki: link interno malformado: "${href}" (use #capitulo ou #capitulo/secao)`);
+  return m[2] ? { tipo: 'ref', texto, capitulo: m[1], secao: m[2] } : { tipo: 'ref', texto, capitulo: m[1] };
+}
+
+function refGlossario(bruto: string): Inline {
+  const codigo = bruto.length > 2 && bruto.startsWith('`') && bruto.endsWith('`');
+  const texto = codigo ? bruto.slice(1, -1) : bruto;
+  const trimmed = texto.trim();
+  if (!trimmed) throw new Error('wiki: [[ ]] vazio');
+  const ref: Inline = { tipo: 'ref', texto: trimmed, capitulo: 'glossario', secao: idDoTopico(trimmed) };
+  return codigo ? { ...ref, codigo: true } : ref;
+}
 
 export function parseInline(texto: string): Inline[] {
   const partes: Inline[] = [];
   for (const pedaco of texto.split(RE_INLINE)) {
     if (!pedaco) continue;
-    if (pedaco.startsWith('**') && pedaco.endsWith('**')) {
+    if (pedaco.startsWith('[[') && pedaco.endsWith(']]')) {
+      partes.push(refGlossario(pedaco.slice(2, -2).trim()));
+    } else if (pedaco.startsWith('**') && pedaco.endsWith('**')) {
       partes.push({ tipo: 'forte', texto: pedaco.slice(2, -2) });
     } else if (pedaco.startsWith('`') && pedaco.endsWith('`')) {
       partes.push({ tipo: 'codigo', texto: pedaco.slice(1, -1) });
-    } else if (pedaco.startsWith('[')) {
-      const m = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(pedaco);
-      if (m) partes.push({ tipo: 'link', texto: m[1], href: m[2] });
+    } else if (pedaco.startsWith('[') && /^\[([^\]]+)\]\(([^)]+)\)$/.test(pedaco)) {
+      const [, t, href] = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(pedaco)!;
+      partes.push(href.startsWith('#') ? refInterna(t, href) : { tipo: 'link', texto: t, href });
     } else {
       // Texto que sobrou — não pode conter marcação não reconhecida
-      const marcacaoInvalida = pedaco.match(/\*|`|\]\(|\{\{/);
+      const marcacaoInvalida = pedaco.match(/\*|`|\]\(|\{\{|\[\[|\]\]/);
       if (marcacaoInvalida) {
         throw new Error(`Marcação não reconhecida no texto: "${pedaco.slice(0, 60)}..."`);
       }
@@ -78,6 +101,11 @@ export function idDoTopico(titulo: string): string {
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
+}
+
+/** Id estável do capítulo: nome do arquivo sem pasta, extensão e número. Renumerar não quebra link. */
+export function idDoCapitulo(caminho: string): string {
+  return caminho.split('/').pop()!.replace(/\.md$/, '').replace(/^\d+-/, '');
 }
 
 const NAO_SUPORTADA = /^(#{3,}\s|\||\d+\.\s|\*(?!\*)|!\[|\t)/;
@@ -133,7 +161,12 @@ export function parseCapitulo(id: string, raw: string, nomes: Nomes): Capitulo {
         throw new Error(`wiki: sintaxe não suportada no capítulo "${id}": ${linha.slice(0, 40)}`);
       }
       const [termo, ...resto] = partes;
-      const item = { termo: parseInline(termo.trim()), definicao: parseInline(resto.join('|').trim()) };
+      const termoInline = parseInline(termo.trim());
+      const item: ItemCampo = {
+        id: idDoTopico(inlineTexto(termoInline)),
+        termo: termoInline,
+        definicao: parseInline(resto.join('|').trim()),
+      };
       const ultimo = blocos[blocos.length - 1];
       if (ultimo && ultimo.tipo === 'campos') ultimo.itens.push(item);
       else blocos.push({ tipo: 'campos', itens: [item] });
@@ -167,4 +200,45 @@ function textoPuro(titulo: string, blocos: Bloco[]): string {
 /** Normaliza para busca: sem acento, sem caixa. */
 export function normalizar(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function inlinesDoBloco(b: Bloco): Inline[] {
+  if (b.tipo === 'topico') return [];
+  if (b.tipo === 'lista') return b.itens.flat();
+  if (b.tipo === 'campos') return b.itens.flatMap((i) => [...i.termo, ...i.definicao]);
+  return b.conteudo;
+}
+
+/** Ids que um link `#capitulo/…` pode alcançar: seções e termos de campos. */
+function destinosDe(cap: Capitulo): Set<string> {
+  const ids = new Set<string>();
+  for (const b of cap.blocos) {
+    if (b.tipo === 'topico') ids.add(b.id);
+    if (b.tipo === 'campos') for (const i of b.itens) ids.add(i.id);
+  }
+  return ids;
+}
+
+/** Confere todo link interno. Devolve um erro por destino inexistente; lista vazia = tudo certo. */
+export function validarLinks(capitulos: Capitulo[]): string[] {
+  const porId = new Map(capitulos.map((c) => [c.id, c]));
+  const erros: string[] = [];
+  for (const cap of capitulos) {
+    for (const p of cap.blocos.flatMap(inlinesDoBloco)) {
+      if (p.tipo !== 'ref') continue;
+      const alvo = `#${p.capitulo}${p.secao ? `/${p.secao}` : ''}`;
+      const destino = porId.get(p.capitulo);
+      if (!destino) erros.push(`${cap.id}: capítulo inexistente em ${alvo}`);
+      else if (p.secao && !destinosDe(destino).has(p.secao)) erros.push(`${cap.id}: seção ou termo inexistente em ${alvo}`);
+    }
+  }
+  return erros;
+}
+
+export function termosDoGlossario(glossario: Capitulo): Map<string, Omit<ItemCampo, 'id'>> {
+  const termos = new Map<string, Omit<ItemCampo, 'id'>>();
+  for (const b of glossario.blocos) {
+    if (b.tipo === 'campos') for (const i of b.itens) termos.set(i.id, { termo: i.termo, definicao: i.definicao });
+  }
+  return termos;
 }
