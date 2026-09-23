@@ -1,6 +1,6 @@
 import {
   addDias, addMeses, addMesesData, dataComDia, dataDeISODatetime, diasEntre, formatarDataBR, hojeISO, mesDe,
-  serialExcelParaISO, ultimoDiaDoMes,
+  nomeDoMes, serialExcelParaISO, ultimoDiaDoMes,
 } from './dates';
 
 it('hojeISO respeita fuso local', () => {
@@ -65,4 +65,11 @@ it('dataDeISODatetime devolve undefined para texto que não começa com AAAA-MM-
   expect(dataDeISODatetime('29/08/2026')).toBeUndefined();
   expect(dataDeISODatetime('')).toBeUndefined();
   expect(dataDeISODatetime('2026-08-29')).toBeUndefined(); // sem o T — não é datetime
+});
+
+describe('nomeDoMes', () => {
+  it('escreve o mês por extenso com o ano', () => {
+    expect(nomeDoMes('2026-10')).toBe('outubro de 2026');
+    expect(nomeDoMes('2027-01')).toBe('janeiro de 2027');
+  });
 });

@@ -115,6 +115,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 - **`SeletorCategoria.tsx`** — grid de 3 colunas (`.grade-categorias`) pra escolher uma
   categoria por toque, sem abrir o picker nativo do `<select>`. Usado em `TelaLancar.tsx`,
   `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `TelaSimulador.tsx`.
+- **`SeletorMes.tsx`** — navegação de mês: `‹` e `›` em `.botao` (rótulos "Mês anterior" e "Mês seguinte") com o mês por nome no meio (`nomeDoMes`, "outubro de 2026"). Props `mes` (`AAAA-MM`) e `onMudar`. Usado nas Análises e no Cartão — qualquer tela nova que navegue por mês usa este componente.
 - **`SeletorPills.tsx`** — pílulas em linha (`.pills`) pra escolher entre poucas opções sem
   abrir o picker nativo do `<select>`. Usado em `CategoriasCartao.tsx` e `Assinaturas.tsx`
   (Cartão) — a box em si não tem mais seletor próprio nessas telas: todas as telas de

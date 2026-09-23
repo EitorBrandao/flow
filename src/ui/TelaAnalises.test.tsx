@@ -205,8 +205,8 @@ it('card Viagens lista o total histórico da viagem, e continua mostrando a parc
   expect(within(cardViagens).getByText('R$ 90,00')).toBeInTheDocument(); // total histórico
 
   // navega para março (compra fechou em fev, parcela 1 vence 05/03): a linha "viagem" deve aparecer
-  await userEvent.click(screen.getByRole('button', { name: 'Próximo mês' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Próximo mês' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Mês seguinte' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Mês seguinte' }));
   expect(screen.getByRole('button', { name: /viagem - /i })).toBeInTheDocument();
 });
 

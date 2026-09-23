@@ -48,6 +48,11 @@ export function formatarDataBR(d: ISODate): string {
   return `${dia}/${mes}/${ano}`;
 }
 
+/** "AAAA-MM" → "outubro de 2026", para títulos e seletores de mês. */
+export function nomeDoMes(mes: string): string {
+  return new Date(`${mes}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+}
+
 export function addMeses(mes: string, n: number): string {
   const [y, m] = mes.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7);
