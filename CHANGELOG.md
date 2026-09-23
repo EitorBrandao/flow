@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.33.0] - 2026-09-23
+
+### Alterado
+
+- No Fluxo, filtrar por data mostra o saldo do dia escolhido mesmo quando não há lançamento nele.
+  - Num período, aparecem sempre o primeiro e o último dia.
+  - Cada dia futuro filtrado mostra a diferença em relação a hoje, em verde ou vermelho.
+  - Um dia depois do fim da projeção mostra um traço e até quando a projeção vai, em vez de R$ 0,00.
+- Na tela Hoje, a variação dos próximos 28 dias passa a usar sinal (+ ou −) no lugar da seta.
+
 ## [0.32.3] - 2026-09-22
 
 ### Alterado

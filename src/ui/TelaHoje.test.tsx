@@ -744,3 +744,19 @@ it('a fatura de cartão não ganha o gesto e mantém "Paguei outro valor"', asyn
   expect(screen.queryByRole('button', { name: 'Corrigir valor de fatura cartao' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: /Paguei outro valor/ })).toBeInTheDocument();
 });
+
+it('a diferença dos próximos 28 dias usa sinal e cor, não seta', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-10', valor: 80000, status: 'previsto' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaHoje />);
+
+  const pilula = screen.getByText(`+${formatarBRL(80000).replace(/\s/g, ' ')} nos próximos 28 dias`);
+  expect(pilula).toHaveClass('delta', 'pos');
+  expect(screen.queryByText(/▲|▼/)).not.toBeInTheDocument();
+});
