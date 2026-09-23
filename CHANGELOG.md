@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.34.0] - 2026-09-23
+
+### Adicionado
+
+- A wiki agora tem links: um toque leva a outro capítulo ou a uma seção dele
+  - Termos do glossário ficam com sublinhado pontilhado e mostram a definição logo abaixo, sem sair do capítulo
+
 ## [0.33.0] - 2026-09-23
 
 ### Alterado
