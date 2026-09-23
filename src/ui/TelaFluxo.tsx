@@ -238,7 +238,7 @@ export default function TelaFluxo() {
                         {l.nota && <div className="sub">{l.nota}</div>}
                       </div>
                       <span className={tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
-                        {tipoCat(l.categoriaId) === 'ganho' ? '+' : '−'}{formatarBRL(Math.abs(l.valor))}
+                        {formatarBRL(l.valor)}
                       </span>
                     </button>
                   ))}

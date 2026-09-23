@@ -148,7 +148,7 @@ export default function TelaAnalises() {
         <div className="rolavel">
           <table className="tabela">
             <thead>
-              <tr><th>Categoria</th><th>{mes}</th><th>mês anterior</th><th>ano passado</th><th>média 3m</th></tr>
+              <tr><th>Categoria</th><th>{mes.split('-').reverse().join('/')}</th><th>mês anterior</th><th>ano passado</th><th>média 3m</th></tr>
             </thead>
             <tbody>
               {comparativo.map((c) => {

@@ -37,7 +37,7 @@ button { cursor: pointer; }
 
 .conteudo { flex: 1; padding: 12px 16px 96px; max-width: 720px; width: 100%; margin: 0 auto; }
 .tela { display: flex; flex-direction: column; gap: 14px; }
-.tela h2 { margin: 0; font-size: 16px; font-weight: 700; padding: 0 2px; }
+.tela h2, .sheet h2 { margin: 0; font-size: 16px; font-weight: 700; padding: 0 2px; }
 .sub { color: var(--muted); font-size: 13px; }
 .rotulo {
   color: var(--muted); font-size: 12px; font-weight: 600;

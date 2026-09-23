@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import * as repo from '../../db/repo';
+import { formatarDataBR } from '../../domain/dates';
 import { formatarBRL } from '../../domain/money';
 import { boxIdEfetivo, useApp } from '../../state/store';
 import CampoData from '../CampoData';
@@ -148,7 +149,7 @@ export default function Assinaturas() {
                 <div className="linha-topo linha-topo-2-1">
                   <div className="cresce">
                     <div>{a.descricao ?? 'Assinatura'}</div>
-                    <div className="sub">desde {a.dataInicio}</div>
+                    <div className="sub">desde {formatarDataBR(a.dataInicio)}</div>
                     <div className="sub">todo dia {a.diaDoMes}, {a.parcelas == null ? 'sem fim' : `${a.parcelas}x`}</div>
                   </div>
                   <span className="valor-gasto">{formatarBRL(a.valor)}</span>

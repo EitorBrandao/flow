@@ -568,3 +568,18 @@ describe('dia filtrado sem lançamento', () => {
     expect(screen.queryByText(/em relação a hoje/)).not.toBeInTheDocument();
   });
 });
+
+it('o valor de cada lançamento sai sem sinal, igual às outras telas — a cor diz se é ganho ou gasto', async () => {
+  const { box, catMercado, catSalario } = await seedBoxComCategoria();
+  const hoje = '2026-07-05';
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: hoje, valor: 5000, status: 'efetivo' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: hoje, valor: 300000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje });
+
+  render(<TelaFluxo />);
+  const brl = (c: number) => formatarBRL(c).replace(/\s/g, ' ');
+  // Texto exato: com sinal ("−R$ 50,00") o findByText não casaria.
+  expect(await screen.findByText(brl(5000))).toHaveClass('valor-gasto');
+  expect(screen.getByText(brl(300000))).toHaveClass('valor-ganho');
+});

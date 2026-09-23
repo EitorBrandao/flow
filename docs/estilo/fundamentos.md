@@ -51,7 +51,7 @@ Token novo → `nivel-3-novo-token.md`. Mudar valor de token existente → níve
 · FAB 18px (14px no desktop) · sheet 24px (topo, ou nos 4 cantos em desktop).
 Não existe outro raio — precisar de um novo é nível 6.
 
-**Tipografia:** títulos de seção (`.tela h2`) 16px/700 · rótulo maiúsculo (`.rotulo`) 12px/600
+**Tipografia:** títulos de seção e de sheet (`.tela h2`, `.sheet h2`) 16px/700 · rótulo maiúsculo (`.rotulo`) 12px/600
 com `letter-spacing: .05em` · subtítulo (`.sub`) 13px em `--muted` · saldo grande
 (`.saldo-grande`) 38px/800 com `letter-spacing: -.03em` · valores monetários 14.5px/700 ·
 texto de navegação 12px/600 (15px no desktop).

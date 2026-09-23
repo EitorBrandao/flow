@@ -2,7 +2,7 @@ import { Fragment, useId, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as repo from '../db/repo';
 import { bancosDaBox, totalDeclaradoCent } from '../domain/bancos';
-import { addDias } from '../domain/dates';
+import { addDias, formatarDataBR } from '../domain/dates';
 import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../domain/estadoBackup';
 import { formatarBRL } from '../domain/money';
 import type { Banco, Box, ISODate, Lancamento } from '../domain/types';
@@ -66,7 +66,7 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
       {diff != null && (
         <p className="sub" style={{ margin: '4px 0 0' }}>
           <Diferenca diff={diff} />
-          {dataDeclarado ? ` · conferido em ${dataDeclarado}` : ''}
+          {dataDeclarado ? ` · conferido em ${formatarDataBR(dataDeclarado)}` : ''}
         </p>
       )}
     </div>
@@ -77,7 +77,7 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
  *  `diff` é banco − app; o valor exibido é do ponto de vista do app (app − banco): negativo
  *  quando falta lançar, positivo quando sobra. */
 function Diferenca({ diff }: { diff: number }) {
-  if (Math.abs(diff) <= 1) return <>Bate certinho.</>;
+  if (diff === 0) return <>Bate certinho.</>;
   const doApp = -diff;
   return doApp < 0 ? (
     <>Diferença: <span className="valor-gasto">−{formatarBRL(-doApp)}</span> — falta inserir no app</>
