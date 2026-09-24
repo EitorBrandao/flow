@@ -1,3 +1,4 @@
+import { Pencil } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { categoriasFaturaIds } from '../../domain/fatura';
@@ -10,21 +11,113 @@ import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 import SeletorCategoria from '../SeletorCategoria';
 
+interface CamposRecorrenciaInicial {
+  tipo: TipoCategoria;
+  valor: number;
+  categoriaId: string | null;
+  dataInicio: string;
+  diaDoMes: string;
+  parcelas: string;
+}
+interface CamposRecorrenciaSalvos {
+  categoriaId: string;
+  valor: number;
+  dataInicio: string;
+  diaDoMes: number;
+  parcelas: number | null;
+}
+
+/** Campos de uma recorrência, usados para criar (no topo) e para editar (dentro do item). */
+function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
+  inicial: CamposRecorrenciaInicial;
+  rotuloSalvar: 'Criar' | 'Salvar';
+  onSalvo: (campos: CamposRecorrenciaSalvos) => Promise<void>;
+  onCancelar?: () => void;
+}) {
+  const { dados, boxSel } = useApp();
+  const [tipo, setTipo] = useState<TipoCategoria>(inicial.tipo);
+  const [valor, setValor] = useState(inicial.valor);
+  const [categoriaId, setCategoriaId] = useState<string | null>(inicial.categoriaId);
+  const [dataInicio, setDataInicio] = useState(inicial.dataInicio);
+  const [diaDoMes, setDiaDoMes] = useState(inicial.diaDoMes);
+  const [parcelas, setParcelas] = useState(inicial.parcelas);
+  const uid = useId();
+
+  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+  const ocultas = dados
+    ? new Set([...categoriasFaturaIds(dados.cartoes), ...categoriasTransferenciaIds(dados.boxes)])
+    : new Set<string>();
+  const categoriasDaBox = dados
+    ? dados.categorias.filter((c) => c.boxId === boxId && c.tipo === tipo && !c.arquivada && !ocultas.has(c.id))
+    : [];
+
+  function trocarTipo(novoTipo: TipoCategoria) {
+    setTipo(novoTipo);
+    setCategoriaId(null);
+  }
+
+  async function salvar() {
+    if (valor <= 0 || categoriaId == null) return;
+    const diaDoMesNum = Math.min(31, Math.max(1, Number(diaDoMes) || 1));
+    const parcelasNum = parcelas ? Number(parcelas) : null;
+    await onSalvo({ categoriaId, valor, dataInicio, diaDoMes: diaDoMesNum, parcelas: parcelasNum });
+  }
+
+  return (
+    <>
+      <div className="form-linha">
+        <div className="campo">
+          <label htmlFor={`${uid}-valor`}>Valor</label>
+          <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} />
+        </div>
+      </div>
+      <div className="linha" role="radiogroup" aria-label="Tipo">
+        <button
+          className={`botao ${tipo === 'gasto' ? 'botao-primario' : ''}`}
+          onClick={() => trocarTipo('gasto')}
+        >Gasto</button>
+        <button
+          className={`botao ${tipo === 'ganho' ? 'botao-primario' : ''}`}
+          onClick={() => trocarTipo('ganho')}
+        >Ganho</button>
+      </div>
+      <div className="campo">
+        <label>Categoria</label>
+        <SeletorCategoria categorias={categoriasDaBox} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
+      </div>
+      <div className="form-linha">
+        <div className="campo">
+          <label htmlFor={`${uid}-inicio`}>Início</label>
+          <CampoData id={`${uid}-inicio`} value={dataInicio} onChange={setDataInicio} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-dia`}>Dia do mês</label>
+          <input id={`${uid}-dia`} type="number" min={1} max={31} value={diaDoMes}
+            onChange={(e) => setDiaDoMes(e.target.value)} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-parcelas`}>Parcelas</label>
+          <input id={`${uid}-parcelas`} type="number" min={1} placeholder="∞" value={parcelas}
+            onChange={(e) => setParcelas(e.target.value)} />
+        </div>
+      </div>
+      <div className="form-botoes">
+        {onCancelar && <button className="botao" onClick={onCancelar}>Cancelar</button>}
+        <button className="botao botao-primario" onClick={salvar}>{rotuloSalvar}</button>
+      </div>
+    </>
+  );
+}
+
 export default function Recorrencias() {
   const { dados, boxSel, hoje, recarregar } = useApp();
-  const [tipo, setTipo] = useState<TipoCategoria>('gasto');
-  const [valor, setValor] = useState(0);
-  const [categoriaId, setCategoriaId] = useState<string | null>(null);
-  const [dataInicio, setDataInicio] = useState(hoje);
-  const [diaDoMes, setDiaDoMes] = useState('1');
-  const [parcelas, setParcelas] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
-  const uid = useId();
+  // Muda a cada criação para o formulário do topo voltar vazio (remonta com `key`).
+  const [versaoNova, setVersaoNova] = useState(0);
   const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
 
   useEffect(() => {
     setEditandoId(null);
-    limparForm();
   }, [boxId]);
 
   if (!dados) return null;
@@ -39,54 +132,17 @@ export default function Recorrencias() {
   const recs = dados.recorrencias.filter((r) => !r.cenarioId && r.boxId === boxId);
   const nomeCat = (id: string) => dados.categorias.find((c) => c.id === id)?.nome ?? '?';
   const tipoCat = (id: string) => dados.categorias.find((c) => c.id === id)?.tipo;
-  const ocultas = new Set([...categoriasFaturaIds(dados.cartoes), ...categoriasTransferenciaIds(dados.boxes)]);
-  const categoriasDaBox = dados.categorias
-    .filter((c) => c.boxId === boxId && c.tipo === tipo && !c.arquivada && !ocultas.has(c.id));
 
-  function limparForm() {
-    setValor(0); setCategoriaId(null); setDataInicio(hoje); setDiaDoMes('1'); setParcelas('');
+  async function criar(campos: CamposRecorrenciaSalvos) {
+    await repo.salvarRecorrencia({ boxId: boxId!, ...campos }, dados!.config.horizonteProjecao);
+    setVersaoNova((v) => v + 1);
+    await recarregar();
   }
 
-  function trocarTipo(novoTipo: TipoCategoria) {
-    setTipo(novoTipo);
-    setCategoriaId(null);
-  }
-
-  function editar(id: string) {
-    const rec = recs.find((r) => r.id === id)!;
-    setEditandoId(id);
-    setTipo(tipoCat(rec.categoriaId) ?? 'gasto');
-    setValor(rec.valor);
-    setCategoriaId(rec.categoriaId);
-    setDataInicio(rec.dataInicio);
-    setDiaDoMes(String(rec.diaDoMes));
-    setParcelas(rec.parcelas != null ? String(rec.parcelas) : '');
-  }
-
-  function cancelarEdicao() {
+  async function atualizar(id: string, campos: CamposRecorrenciaSalvos) {
+    const original = recs.find((r) => r.id === id)!;
+    await repo.salvarRecorrencia({ ...original, ...campos }, dados!.config.horizonteProjecao);
     setEditandoId(null);
-    limparForm();
-  }
-
-  async function salvar() {
-    if (valor <= 0 || categoriaId == null) return;
-    const diaDoMesNum = Math.min(31, Math.max(1, Number(diaDoMes) || 1));
-    const parcelasNum = parcelas ? Number(parcelas) : null;
-    if (editandoId) {
-      const original = recs.find((r) => r.id === editandoId)!;
-      await repo.salvarRecorrencia({
-        ...original, boxId: boxId!, categoriaId, valor, dataInicio,
-        diaDoMes: diaDoMesNum, parcelas: parcelasNum,
-      }, dados!.config.horizonteProjecao);
-      setEditandoId(null);
-      limparForm();
-    } else {
-      await repo.salvarRecorrencia({
-        boxId: boxId!, categoriaId, valor, dataInicio,
-        diaDoMes: diaDoMesNum, parcelas: parcelasNum,
-      }, dados!.config.horizonteProjecao);
-      setValor(0); setParcelas('');
-    }
     await recarregar();
   }
 
@@ -114,64 +170,50 @@ export default function Recorrencias() {
         </div>
       )}
 
-      <h2>{editandoId ? 'Editar recorrência' : 'Nova recorrência'}</h2>
-      <div className="campo">
-        <label htmlFor={`${uid}-valor`}>Valor</label>
-        <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} style={{ width: 100 }} />
-      </div>
-      <div className="linha" role="radiogroup" aria-label="Tipo">
-        <button
-          className={`botao ${tipo === 'gasto' ? 'botao-primario' : ''}`}
-          onClick={() => trocarTipo('gasto')}
-        >Gasto</button>
-        <button
-          className={`botao ${tipo === 'ganho' ? 'botao-primario' : ''}`}
-          onClick={() => trocarTipo('ganho')}
-        >Ganho</button>
-      </div>
-      <div className="campo">
-        <label>Categoria</label>
-        <SeletorCategoria categorias={categoriasDaBox} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
-      </div>
-      <div className="linha">
-        <div className="campo">
-          <label htmlFor={`${uid}-inicio`}>Início</label>
-          <CampoData id={`${uid}-inicio`} value={dataInicio} onChange={setDataInicio} />
-        </div>
-        <div className="campo">
-          <label htmlFor={`${uid}-dia`}>Dia do mês</label>
-          <input id={`${uid}-dia`} type="number" min={1} max={31} value={diaDoMes}
-            onChange={(e) => setDiaDoMes(e.target.value)} style={{ width: 64 }} />
-        </div>
-        <div className="campo">
-          <label htmlFor={`${uid}-parcelas`}>Parcelas</label>
-          <input id={`${uid}-parcelas`} type="number" min={1} placeholder="∞" value={parcelas}
-            onChange={(e) => setParcelas(e.target.value)} style={{ width: 64 }} />
-        </div>
-        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={salvar}>{editandoId ? 'Salvar' : 'Criar'}</button>
-        {editandoId && <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={cancelarEdicao}>Cancelar</button>}
-      </div>
+      {!editandoId && (
+        <>
+          <h2>Nova recorrência</h2>
+          <FormRecorrencia
+            key={`${boxId}-${versaoNova}`}
+            inicial={{ tipo: 'gasto', valor: 0, categoriaId: null, dataInicio: hoje, diaDoMes: '1', parcelas: '' }}
+            rotuloSalvar="Criar" onSalvo={criar}
+          />
+        </>
+      )}
 
       <p className="rotulo-grupo">Nesta box</p>
       <div className="lista">
         {recs.map((r) => (
-          <div className="item item-coluna" key={r.id} style={{ opacity: r.ativa ? 1 : 0.5 }}>
-            <div className="linha-topo linha-topo-2-1">
-              <div className="cresce">
-                <div>{nomeCat(r.categoriaId)}{r.nota ? ` · ${r.nota}` : ''}</div>
-                <div className="sub">desde {formatarDataBR(r.dataInicio)}</div>
-                <div className="sub">todo dia {r.diaDoMes}, {r.parcelas == null ? 'sem fim' : `${r.parcelas}x`}</div>
+          editandoId === r.id ? (
+            <div className="item item-coluna" key={r.id}>
+              <FormRecorrencia
+                inicial={{
+                  tipo: tipoCat(r.categoriaId) ?? 'gasto', valor: r.valor, categoriaId: r.categoriaId,
+                  dataInicio: r.dataInicio, diaDoMes: String(r.diaDoMes), parcelas: r.parcelas != null ? String(r.parcelas) : '',
+                }}
+                rotuloSalvar="Salvar"
+                onSalvo={(campos) => atualizar(r.id, campos)} onCancelar={() => setEditandoId(null)}
+              />
+            </div>
+          ) : (
+            <div className="item item-coluna" key={r.id} style={{ opacity: r.ativa ? 1 : 0.5 }}>
+              <div className="linha-topo linha-topo-2-1">
+                <div className="cresce">
+                  <div>{nomeCat(r.categoriaId)}{r.nota ? ` · ${r.nota}` : ''}</div>
+                  <div className="sub">desde {formatarDataBR(r.dataInicio)}</div>
+                  <div className="sub">todo dia {r.diaDoMes}, {r.parcelas == null ? 'sem fim' : `${r.parcelas}x`}</div>
+                </div>
+                <span className={tipoCat(r.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
+                  {formatarBRL(r.valor)}
+                </span>
               </div>
-              <span className={tipoCat(r.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
-                {formatarBRL(r.valor)}
-              </span>
+              <div className="acoes">
+                <button className="botao" aria-label="Editar" onClick={() => setEditandoId(r.id)}><Pencil size={16} /></button>
+                <button className="botao" onClick={() => alternarAtiva(r.id)}>{r.ativa ? 'Pausar' : 'Ativar'}</button>
+                <button className="botao botao-perigo" onClick={() => excluir(r.id)}>Excluir</button>
+              </div>
             </div>
-            <div className="acoes">
-              <button className="botao" onClick={() => editar(r.id)}>Editar</button>
-              <button className="botao" onClick={() => alternarAtiva(r.id)}>{r.ativa ? 'Pausar' : 'Ativar'}</button>
-              <button className="botao botao-perigo" onClick={() => excluir(r.id)}>Excluir</button>
-            </div>
-          </div>
+          )
         ))}
         {recs.length === 0 && <p className="sub">Nenhuma recorrência nesta box.</p>}
       </div>
