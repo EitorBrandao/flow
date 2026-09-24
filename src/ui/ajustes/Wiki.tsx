@@ -131,10 +131,12 @@ export default function Wiki() {
 
   // Seção atual: o último título cujo topo já chegou à base da barra mais a FOLGA — onde um salto para a seção o deixa.
   // No fim da página, quando a rolagem não alcança esse ponto, vale o último título visível na tela, se houver algum.
+  // Página que cabe inteira na tela (sem rolagem) segue a regra normal: ao abrir, a barra mostra só o capítulo.
   useEffect(() => {
     const atualizar = () => {
       const titulos = corpo.current?.querySelectorAll<HTMLElement>('h3[id]');
-      const noFim = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+      const noFim = window.scrollY > 0
+        && window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
       if (noFim) {
         let idVisivel: string | null = null;
         titulos?.forEach((h) => {

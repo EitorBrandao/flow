@@ -247,6 +247,18 @@ describe('Wiki', () => {
       expect(screen.getByRole('button', { name: 'Índice' }))
         .toHaveTextContent(`Os primeiros passos · ${titulos[0].textContent}`);
     });
+
+    it('página que cabe na tela, sem rolagem, segue a regra normal', async () => {
+      render(<Wiki />);
+      const titulos = [...(await screen.findByRole('article')).querySelectorAll('h3[id]')];
+      simularPosicoesExplicitas(titulos, tituloTopos(titulos.length));
+      definirPropriedade(window, 'innerHeight', 1000);
+      definirPropriedade(window, 'scrollY', 0);
+      definirPropriedade(document.documentElement, 'scrollHeight', 1000);
+      fireEvent.scroll(window);
+      expect(screen.getByRole('button', { name: 'Índice' }))
+        .toHaveTextContent(`Os primeiros passos · ${titulos[0].textContent}`);
+    });
   });
 
   it('a gaveta lista as seções do capítulo atual e leva até a seção', async () => {
