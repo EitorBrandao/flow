@@ -36,7 +36,7 @@ O botão **+** no meio da barra de baixo. Valor → gasto ou ganho → categoria
 
 ## A primeira recorrência
 
-Aqui o app deixa de ser um caderno e vira uma projeção. Uma recorrência é uma regra — salário, aluguel, parcela — que gera sozinha os lançamentos `previsto` dos próximos meses. Fica em Ajustes, Recorrências. A tela vazia mostra o que é e por que vale a pena.
+Aqui o app deixa de ser um caderno e vira uma projeção. Uma recorrência é uma regra — salário, aluguel, parcela — que gera sozinha os lançamentos previstos dos próximos meses. Fica em Ajustes, Recorrências. A tela vazia mostra o que é e por que vale a pena.
 
 - Comece pelas duas ou três que mais pesam: o salário e as contas fixas grandes.
 - **Parcelas** em branco = sem fim (salário, aluguel); com número = acaba sozinho (um empréstimo em 12x).
