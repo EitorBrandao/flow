@@ -1,4 +1,0 @@
-- A wiki agora explica as viagens.
-  - O que são, como cadastrar em Ajustes, como marcar um gasto em Lançar e em Nova compra, e onde aparecem nas Análises.
-- A wiki avisa que um previsto futuro de recorrência ou de fatura, apagado pelo Fluxo, volta na próxima materialização.
-  - Para mudar de vez, é preciso editar a regra.
