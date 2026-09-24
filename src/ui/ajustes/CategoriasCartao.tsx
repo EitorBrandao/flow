@@ -40,7 +40,7 @@ function ItemCategoriaCartao({
         </div>
       ) : (
         <>
-          <button className="botao" aria-label="Arrastar para reordenar" onPointerDown={(e) => controls.start(e)}>
+          <button className="botao alca-arrastar" aria-label="Arrastar para reordenar" onPointerDown={(e) => controls.start(e)}>
             <GripVertical size={16} />
           </button>
           <span className="cresce">{cat.nome}</span>

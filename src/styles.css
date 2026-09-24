@@ -104,6 +104,8 @@ button { cursor: pointer; }
 .botao-perigo { background: var(--surface2); color: var(--neg); }
 .botao-com-icone { display: inline-flex; align-items: center; gap: 8px; }
 .botao.ativo { background: var(--ac-dim); color: var(--ac); }
+/* Puxador de arrastar (Reorder + dragControls): sem touch-action: none o toque vira rolagem e o arrasto é cancelado no celular. */
+.alca-arrastar { touch-action: none; cursor: grab; }
 
 .campo-data { position: relative; display: inline-flex; }
 .campo-data .botao { width: 100%; }

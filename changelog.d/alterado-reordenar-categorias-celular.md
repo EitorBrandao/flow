@@ -1,0 +1,2 @@
+- Arrastar para reordenar categorias volta a funcionar no celular.
+  - Vale para as categorias de Ajustes e para as categorias do cartão.
