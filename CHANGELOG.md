@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.38.1] - 2026-09-23
+
+### Alterado
+
+- Arrastar para reordenar categorias volta a funcionar no celular.
+  - Vale para as categorias de Ajustes e para as categorias do cartão.
+
 ## [0.38.0] - 2026-09-23
 
 ### Alterado
