@@ -205,6 +205,16 @@ it('no primeiro uso o rodapé de backup não aparece', async () => {
 });
 
 describe('conferência por banco', () => {
+  /** A linha `.total` inteira (rótulo + valor) a partir do rótulo. */
+  function linhaTotal(rotulo: string): HTMLElement {
+    return screen.getByText(rotulo).parentElement as HTMLElement;
+  }
+
+  /** `a` vem antes de `b` na ordem do documento. */
+  function antes(a: Element, b: Element): boolean {
+    return (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  }
+
   /** Box com saldo próprio e um lançamento efetivo já contido no saldo (não muda o saldo
    *  efetivo dali pra frente, então o teste não depende de qual "hoje" real o `recarregar()`
    *  do store resolver). */
@@ -254,6 +264,49 @@ describe('conferência por banco', () => {
     expect(screen.queryByText(/Diferença/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Bate certinho/)).not.toBeInTheDocument();
     expect(screen.getByText(/Informe o saldo de ao menos um banco/)).toBeInTheDocument();
+    // o lado do Flow aparece mesmo sem nada informado: só a diferença depende do valor
+    expect(linhaTotal('Total calculado no Flow')).toHaveTextContent(/R\$\s*1\.010,00$/);
+  });
+
+  it('box sem banco mostra o total do Flow antes de informar, sem afirmar diferença', async () => {
+    await comBoxESaldo();
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+    expect(linhaTotal('Total calculado no Flow')).toHaveTextContent(/R\$\s*1\.010,00$/);
+    expect(screen.queryByText(/Diferença/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Bate certinho/)).not.toBeInTheDocument();
+  });
+
+  it('box sem banco: total do Flow fica entre o campo informado e a diferença', async () => {
+    await comBoxESaldo();
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+    await userEvent.type(screen.getByLabelText('Saldo real no banco'), '1000,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    const diferenca = await screen.findByText(/Diferença/);
+    const flow = linhaTotal('Total calculado no Flow');
+    expect(antes(screen.getByLabelText('Saldo real no banco'), flow)).toBe(true);
+    expect(antes(flow, diferenca)).toBe(true);
+    // 1.000,00 no banco contra 1.010,00 no Flow: sobram 10,00 no app
+    expect(screen.getByText(/^\+R\$\s*10,00$/)).toHaveClass('valor-ganho');
+  });
+
+  it('com bancos: total informado, depois total do Flow, depois a diferença', async () => {
+    const box = await comBoxESaldo();
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0, saldoDeclaradoCent: 100000 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+    const informado = linhaTotal('Total informado');
+    const flow = linhaTotal('Total calculado no Flow');
+    const diferenca = screen.getByText(/Diferença/);
+    expect(informado).toHaveTextContent(/R\$\s*1\.000,00$/);
+    expect(flow).toHaveTextContent(/R\$\s*1\.010,00$/);
+    expect(antes(informado, flow)).toBe(true);
+    expect(antes(flow, diferenca)).toBe(true);
   });
 
   it('informar o saldo do segundo banco grava nele (não no primeiro) e passa a mostrar a diferença', async () => {

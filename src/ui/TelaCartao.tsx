@@ -73,8 +73,8 @@ function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: str
           {diff === 0
             ? 'Bate certinho.'
             : diff > 0
-              ? <>Diferença: <span className="valor-gasto">−{formatarBRL(diff)}</span> — falta inserir no cartão</>
-              : <>Diferença: <span className="valor-ganho">+{formatarBRL(-diff)}</span> — sobra no cartão (confira duplicado ou algo que ainda não entrou na fatura do banco)</>}
+              ? <>Diferença: <strong className="valor-gasto">−{formatarBRL(diff)}</strong> — falta inserir no cartão</>
+              : <>Diferença: <strong className="valor-ganho">+{formatarBRL(-diff)}</strong> — sobra no cartão (confira duplicado ou algo que ainda não entrou na fatura do banco)</>}
         </p>
       )}
       {conf && (
