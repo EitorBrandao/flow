@@ -57,7 +57,8 @@ interface Resultado { capitulo: string; tituloCapitulo: string; secao?: string; 
 ## 4. Texto mais sucinto
 
 - Revisão dos 9 capítulos no estilo do CLAUDE.md (ASD-STE100 + Zinsser): frases curtas, uma ideia por frase, voz ativa, sem repetição.
-- Nenhum conteúdo sai. Só a forma muda.
+- Nenhum conteúdo sai da wiki. Só a forma muda — com uma exceção, decidida pelo usuário em 2026-09-24 depois de um primeiro corte que rendeu só 2%:
+- Os capítulos de uso falam a língua da tela. Detalhe técnico — nomes de entidade e de campo (`CompraCartao`, `diaFechamento`…), regras internas do código — sai deles e vai para o capítulo "Código e versão", organizado por assunto. Nada técnico some da wiki.
 - Títulos de seção (`##`) não mudam: são os ids dos links internos.
 - Termos `[[glossário]]` e links internos continuam. `validarLinks` confere no `npm test`.
 - Marcadores de nome (`{{nomeA}}`…) continuam. Nenhum nome literal.
