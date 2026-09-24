@@ -3,6 +3,19 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.43.0] - 2026-09-24
+
+### Adicionado
+
+- Hoje → Conferir mostra o total calculado no Flow antes da diferença.
+  - Dá para ver os dois lados da conta: o valor informado e o saldo do app.
+  - A linha aparece mesmo antes de você informar um valor.
+
+### Alterado
+
+- O valor da diferença, na conferência de saldo e na da fatura, aparece só em cor, sem o fundo.
+  - O fundo cobria a linha de baixo quando o texto quebrava.
+
 ## [0.42.2] - 2026-09-24
 
 ### Alterado

@@ -1,2 +1,0 @@
-- O valor da diferença, na conferência de saldo e na da fatura, aparece só em cor, sem o fundo.
-  - O fundo cobria a linha de baixo quando o texto quebrava.
