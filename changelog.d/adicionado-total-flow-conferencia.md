@@ -1,0 +1,3 @@
+- Hoje → Conferir mostra o total calculado no Flow antes da diferença.
+  - Dá para ver os dois lados da conta: o valor informado e o saldo do app.
+  - A linha aparece mesmo antes de você informar um valor.

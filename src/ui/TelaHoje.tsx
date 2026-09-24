@@ -46,7 +46,7 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
   const diff = declaradoCent != null ? declaradoCent - saldoApp : null;
 
   return (
-    <div style={{ marginTop: 8 }}>
+    <div className="conferencia-saldo">
       <div className="linha" style={{ justifyContent: 'space-between' }}>
         <div className="campo">
           <label htmlFor={`${uid}-saldo`}>Saldo real no banco</label>
@@ -63,12 +63,24 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
         </div>
         <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={salvar}>Salvar</button>
       </div>
+      <TotalFlow saldoApp={saldoApp} />
       {diff != null && (
         <p className="sub" style={{ margin: '4px 0 0' }}>
           <Diferenca diff={diff} />
           {dataDeclarado ? ` · conferido em ${formatarDataBR(dataDeclarado)}` : ''}
         </p>
       )}
+    </div>
+  );
+}
+
+/** O outro lado da conta da conferência: o saldo que o Flow calcula para hoje. Sempre
+ *  visível, mesmo antes de a pessoa informar um valor — só a diferença depende disso. */
+function TotalFlow({ saldoApp }: { saldoApp: number }) {
+  return (
+    <div className="total">
+      <span>Total calculado no Flow</span>
+      <span>{formatarBRL(saldoApp)}</span>
     </div>
   );
 }
@@ -80,9 +92,9 @@ function Diferenca({ diff }: { diff: number }) {
   if (diff === 0) return <>Bate certinho.</>;
   const doApp = -diff;
   return doApp < 0 ? (
-    <>Diferença: <span className="valor-gasto">−{formatarBRL(-doApp)}</span> — falta inserir no app</>
+    <>Diferença: <strong className="valor-gasto">−{formatarBRL(-doApp)}</strong> — falta inserir no app</>
   ) : (
-    <>Diferença: <span className="valor-ganho">+{formatarBRL(doApp)}</span> — sobra no app (confira duplicado ou algo não confirmado no banco)</>
+    <>Diferença: <strong className="valor-ganho">+{formatarBRL(doApp)}</strong> — sobra no app (confira duplicado ou algo não confirmado no banco)</>
   );
 }
 
@@ -233,6 +245,7 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
         <span>Total informado</span>
         <span>{totalCent != null ? formatarBRL(totalCent) : '—'}</span>
       </div>
+      <TotalFlow saldoApp={saldoApp} />
       {diff == null ? (
         <p className="sub" style={{ margin: '4px 0 0' }}>Informe o saldo de ao menos um banco para conferir.</p>
       ) : (
