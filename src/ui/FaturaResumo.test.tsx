@@ -78,3 +78,34 @@ it('fatura sem itens mostra "Nenhum gasto nesta fatura."', async () => {
       && (el.textContent ?? '').includes('fecha 28/07/2026 · vence 05/08/2026'))).toBeInTheDocument();
   } finally { vi.useRealTimers(); }
 });
+
+it('fatura paga que cresceu depois mostra o mesmo aviso da aba Cartão, e o link abre a correção', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cartao = await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+    const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-10', valorTotal: 5000, parcelas: 1,
+    }, '2027-12-31');
+    const pago = (await db.lancamentos.toArray()).find((l) => l.origem === 'cartao')!;
+    await repo.confirmarPendente(pago.id);
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-12', valorTotal: 1500, parcelas: 1,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01', aba: 'fluxo' });
+
+    const lanc = (await db.lancamentos.get(pago.id)) as Lancamento;
+    render(<FaturaResumo lanc={lanc} onFechar={() => {}} />);
+
+    const texto = `Tem ${formatarBRL(1500)} nessa fatura que não chegaram no Fluxo`.replace(/\s/g, ' ');
+    expect(await screen.findByText((_, el) => el?.tagName === 'P' && el.textContent!.replace(/\s/g, ' ').includes(texto))).toHaveClass('aviso');
+    await userEvent.click(screen.getByRole('button', { name: 'Corrigir o valor pago' }));
+    const folha = await screen.findByRole('dialog', { name: 'Pagamento da fatura' });
+    expect(folha.querySelector('input')!.value.replace(/\s/g, ' ')).toBe(formatarBRL(6500).replace(/\s/g, ' '));
+  } finally { vi.useRealTimers(); }
+});

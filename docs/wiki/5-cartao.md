@@ -63,7 +63,7 @@ O parcelamento vira uma compra parcelada numa categoria reservada chamada "Parce
 
 ## Quando a fatura não bate com o Fluxo
 
-A aba Cartão mostra um aviso âmbar, logo abaixo das datas da fatura, quando o total dela e o que o Fluxo considera são diferentes e o app não tem como explicar a diferença:
+A aba Cartão mostra um aviso âmbar, logo abaixo das datas da fatura — e a folha que abre ao tocar na fatura no Fluxo mostra o mesmo aviso —, quando o total dela e o que o Fluxo considera são diferentes e o app não tem como explicar a diferença:
 
 - **"Essa fatura ficou de fora do Fluxo":** todas as compras da fatura foram lançadas depois do vencimento, e fatura vencida não vira lançamento novo. Se ela já foi paga no banco, o saldo está certo e não há nada a fazer.
 - **"Tem R$ X nessa fatura que não chegaram no Fluxo":** a fatura foi paga, e depois entrou mais compra no mesmo ciclo. Fatura paga nunca é recalculada, então a diferença fica de fora. O link **Corrigir o valor pago** abre a mesma folha de "corrigir ou parcelar", já com o valor que fecha a conta.

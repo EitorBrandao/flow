@@ -10,6 +10,7 @@ import type { Cartao, CompraCartao } from '../domain/types';
 import { boxIdsSelecionadas, useApp } from '../state/store';
 import CampoValor from './CampoValor';
 import FormCompra from './FormCompra';
+import AvisoFaturaForaDoFluxo from './AvisoFaturaForaDoFluxo';
 import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
 import SeletorMes from './SeletorMes';
 import Sheet from './Sheet';
@@ -203,23 +204,11 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
             fecha {formatarDataBR(fatura.dataFechamento)} · vence {formatarDataBR(fatura.dataVencimento)}
           </p>
         </div>
-        {foraDoFluxo?.tipo === 'vencida-sem-lancamento' && (
-          <p className="aviso" style={{ margin: '12px 0 0' }}>
-            Essa fatura ficou de fora do Fluxo: as compras entraram depois do vencimento. Se já
-            pagou, tá tudo certo.
-          </p>
-        )}
-        {foraDoFluxo?.tipo === 'paga-a-menor' && (
-          <p className="aviso" style={{ margin: '12px 0 0' }}>
-            Tem {formatarBRL(foraDoFluxo.diferencaCent)} nessa fatura que não chegaram no Fluxo: o
-            pagamento registrado foi menor.{' '}
-            <button
-              className="botao-ver-mais"
-              onClick={() => { setValorInicialPagamento(foraDoFluxo.valorSugeridoCent); setPagando(true); }}
-            >
-              Corrigir o valor pago
-            </button>
-          </p>
+        {foraDoFluxo && (
+          <AvisoFaturaForaDoFluxo
+            situacao={foraDoFluxo}
+            onCorrigir={(valor) => { setValorInicialPagamento(valor); setPagando(true); }}
+          />
         )}
 
         <div className="pills" style={{ marginTop: 12 }} role="tablist" aria-label="Seções da fatura">

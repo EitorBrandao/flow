@@ -113,6 +113,10 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   `recharts` carregado sob demanda (`React.lazy`). Ver
   `docs/superpowers/specs/2026-07-08-grafico-fluxo-pan-zoom-design.md`.
 - **`FaturaResumo.tsx`** — resumo somente leitura de uma fatura de cartão.
+- **`AvisoFaturaForaDoFluxo.tsx`** — o `.aviso` de fatura que não bate com o Fluxo
+  (`faturaForaDoFluxo`, `domain/fatura.ts`): fatura vencida que ficou de fora, ou paga a menor
+  com o link "Corrigir o valor pago". Usado na `TelaCartao` e no `FaturaResumo`, para as duas
+  telas dizerem a mesma frase.
 - **`SeletorCategoria.tsx`** — grid de 3 colunas (`.grade-categorias`) pra escolher uma
   categoria por toque, sem abrir o picker nativo do `<select>`. Usado em `TelaLancar.tsx`,
   `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `TelaSimulador.tsx`.
