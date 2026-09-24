@@ -180,3 +180,15 @@ describe('estadoPrimeiroUso', () => {
     expect(resultado).toEqual({ semBoxPropria: false, semCategorias: false, precisa: false });
   });
 });
+
+it('abrirFluxo troca para a aba Fluxo e guarda a aba interna pedida, até ser limpa', () => {
+  useApp.setState({ aba: 'hoje', fluxoAba: null });
+
+  useApp.getState().abrirFluxo('grafico');
+  expect(useApp.getState().aba).toBe('fluxo');
+  expect(useApp.getState().fluxoAba).toBe('grafico');
+
+  useApp.getState().limparFluxoAba();
+  expect(useApp.getState().fluxoAba).toBeNull();
+  expect(useApp.getState().aba).toBe('fluxo');
+});
