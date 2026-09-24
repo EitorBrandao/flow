@@ -31,7 +31,7 @@ Com dois ou mais bancos na box, cada linha ganha também o botão ↔: abre um f
 
 O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 
-- Teclado numérico decimal aberto por padrão (`autoFocus`).
+- Teclado numérico decimal já abre pronto, sem precisar tocar em nada.
 - Alterna **Gasto**/**Ganho** — troca a lista de categorias mostrada (da box selecionada, não arquivadas, na ordem definida em Ajustes → Categorias).
 - Data padrão hoje; nota opcional; caixa "marcar como previsto".
 - Data futura vira previsto automaticamente mesmo sem marcar a caixa.
