@@ -2,7 +2,8 @@ import { useId, useState } from 'react';
 import * as repo from '../db/repo';
 import { formatarDataBR } from '../domain/dates';
 import {
-  ajustesDoCartao, calcularFaturas, datasFaturaDoMes, mesFaturaDaCompra, resumoPorCategoria, type Fatura,
+  ajustesDoCartao, calcularFaturas, datasFaturaDoMes, faturaForaDoFluxo, mesFaturaDaCompra, resumoPorCategoria,
+  type Fatura,
 } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import type { Cartao, CompraCartao } from '../domain/types';
@@ -146,6 +147,8 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const [filtroCategoriaId, setFiltroCategoriaId] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
   const [pagando, setPagando] = useState(false);
+  // Valor que abre na folha de pagamento; `null` = o próprio valor já registrado.
+  const [valorInicialPagamento, setValorInicialPagamento] = useState<number | null>(null);
   const [abaCartao, setAbaCartao] = useState<AbaCartao>('resumo');
   if (!dados) return null;
 
@@ -179,6 +182,9 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   // depois que existe uma conferência salva — antes disso não há nada a sinalizar.
   const confAtual = dados.conferenciasFatura.find((c) => c.cartaoId === cartao.id && c.mes === mes);
   const diffConferencia = confAtual != null ? confAtual.valorAppCent - fatura.totalCent : null;
+  const foraDoFluxo = faturaForaDoFluxo({
+    cartao, fatura, compras, lancFatura, conferencia: confAtual, hoje,
+  });
 
   const aVista = itensFiltrados.filter((i) => i.totalParcelas === 1).sort((a, b) => b.data.localeCompare(a.data));
   const parceladas = itensFiltrados.filter((i) => i.totalParcelas > 1).sort((a, b) => b.data.localeCompare(a.data));
@@ -197,6 +203,24 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
             fecha {formatarDataBR(fatura.dataFechamento)} · vence {formatarDataBR(fatura.dataVencimento)}
           </p>
         </div>
+        {foraDoFluxo?.tipo === 'vencida-sem-lancamento' && (
+          <p className="aviso" style={{ margin: '12px 0 0' }}>
+            Essa fatura ficou de fora do Fluxo: as compras entraram depois do vencimento. Se já
+            pagou, tá tudo certo.
+          </p>
+        )}
+        {foraDoFluxo?.tipo === 'paga-a-menor' && (
+          <p className="aviso" style={{ margin: '12px 0 0' }}>
+            Tem {formatarBRL(foraDoFluxo.diferencaCent)} nessa fatura que não chegaram no Fluxo: o
+            pagamento registrado foi menor.{' '}
+            <button
+              className="botao-ver-mais"
+              onClick={() => { setValorInicialPagamento(foraDoFluxo.valorSugeridoCent); setPagando(true); }}
+            >
+              Corrigir o valor pago
+            </button>
+          </p>
+        )}
 
         <div className="pills" style={{ marginTop: 12 }} role="tablist" aria-label="Seções da fatura">
           <button role="tab" aria-selected={abaCartao === 'resumo'} className={abaCartao === 'resumo' ? 'ativo' : ''} onClick={() => setAbaCartao('resumo')}>Resumo</button>
@@ -214,7 +238,7 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
                   ? `Pago: ${formatarBRL(lancFatura.valor)}`
                   : `A pagar: ${formatarBRL(lancFatura.valor)}`}
                 {' · '}
-                <button className="botao-ver-mais" onClick={() => setPagando(true)}>
+                <button className="botao-ver-mais" onClick={() => { setValorInicialPagamento(null); setPagando(true); }}>
                   {lancFatura.status === 'efetivo' ? 'corrigir ou parcelar' : 'paguei outro valor'}
                 </button>
               </p>
@@ -286,6 +310,7 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
         <PagamentoFaturaSheetModal
           lancamento={pagando ? lancFatura ?? null : null}
           totalFaturaCent={fatura.totalCent}
+          valorInicialCent={valorInicialPagamento ?? undefined}
           onFechar={() => setPagando(false)}
         />
       </div>

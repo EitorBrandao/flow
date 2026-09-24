@@ -1,0 +1,3 @@
+- A aba Cartão avisa quando a fatura não bate com o Fluxo.
+  - Fatura vencida cujas compras foram todas lançadas depois do vencimento: o aviso explica que ela ficou de fora do Fluxo.
+  - Fatura paga que recebeu compra depois do pagamento: o aviso mostra quanto não chegou no Fluxo e leva direto à correção do valor pago.

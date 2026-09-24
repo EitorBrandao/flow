@@ -29,7 +29,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.saldo-grande` (+ `.positivo`/`.negativo`) | saldo em destaque (card herói) |
 | `.delta` (+ `.pos`/`.neg`) | badge de variação de saldo projetado, com sinal colado ao valor (`+R$ …` / `−R$ …`) e cor pelo sinal |
 | `.badge` | pílula neutra pequena (contagem, status) |
-| `.aviso` | faixa âmbar de aviso |
+| `.aviso` | faixa âmbar de aviso; um `.botao-ver-mais` dentro dela herda a cor e o tamanho do texto e fica sublinhado (ação do próprio aviso, ex.: "Corrigir o valor pago" na aba Cartão) |
 | `.aviso-urgente` | variante vermelha da `.aviso`, usada junto dela (`aviso aviso-urgente`): `--neg-bg` e `--neg`. Classe solta, não modificador composto, para o verificador de catálogo enxergá-la |
 | `.rotulo` | rótulo maiúsculo pequeno acima de um valor/seção |
 | `.rotulo-grupo` | rótulo maiúsculo pequeno de subgrupo dentro de uma lista (ex.: "À vista"/"Parceladas" na fatura do cartão) |

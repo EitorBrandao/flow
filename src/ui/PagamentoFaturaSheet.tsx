@@ -18,13 +18,16 @@ import Sheet from './Sheet';
  * o que vai ser pago e o que deixou de ser pago — inclusive quando ela é negativa, que é
  * incoerência do preenchimento e merece aparecer em vez de ser corrigida por baixo do pano.
  */
-export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, onFechar }: {
+export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, valorInicialCent, onFechar }: {
   lancamento: Lancamento;
   totalFaturaCent: number;
+  /** Valor pago que a folha abre preenchido; sem ele, o valor já registrado no lançamento.
+   *  O aviso "não chegaram no Fluxo" da aba Cartão abre com o valor que fecha a conta. */
+  valorInicialCent?: number;
   onFechar: () => void;
 }) {
   const { dados, hoje, recarregar } = useApp();
-  const [valorPago, setValorPago] = useState(lancamento.valor);
+  const [valorPago, setValorPago] = useState(valorInicialCent ?? lancamento.valor);
   // Pendente ⇒ o pagamento está acontecendo agora (inclusive adiantado, já que a fila mostra
   // a fatura antes de vencer). Já efetivo ⇒ manter a data registrada, para uma correção de
   // valor não mover a saída de dia sem querer.
@@ -162,16 +165,18 @@ export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, onFe
 
 /** A folha em si, com o `Sheet` em volta — o conteúdo fica separado para o teste montar sem
  *  depender do backdrop e da animação. */
-export function PagamentoFaturaSheetModal({ lancamento, totalFaturaCent, onFechar }: {
+export function PagamentoFaturaSheetModal({ lancamento, totalFaturaCent, valorInicialCent, onFechar }: {
   lancamento: Lancamento | null;
   totalFaturaCent: number;
+  valorInicialCent?: number;
   onFechar: () => void;
 }) {
   return (
     <Sheet aberto={lancamento != null} onFechar={onFechar} rotulo="Pagamento da fatura">
       {lancamento && (
         <PagamentoFaturaSheet
-          lancamento={lancamento} totalFaturaCent={totalFaturaCent} onFechar={onFechar}
+          lancamento={lancamento} totalFaturaCent={totalFaturaCent} valorInicialCent={valorInicialCent}
+          onFechar={onFechar}
         />
       )}
     </Sheet>
