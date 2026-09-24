@@ -76,13 +76,13 @@ escolha (entrega B).
 Itens 9 a 13: achados da varredura com navegador de 2026-09-23 (Playwright, largura de
 celular, dados sintéticos), incluídos a pedido do usuário.
 
-9. **Wiki desatualizada em `1-primeiros-passos.md` e `7-ajustes.md`:**
+9. **Wiki desatualizada em `1-primeiros-passos.md`, `7-ajustes.md` e `6-telas.md`:**
    - A categoria da fatura não se escolhe nem se cria à mão: `repo.salvarCartao` cria uma
      categoria de gasto com o nome do cartão. Sai o passo "crie uma categoria chamada
      'cartão'", e "categoria da fatura" deixa de constar como campo obrigatório do cartão.
    - A ordem das categorias muda arrastando pela alça (`GripVertical`), não com ↑↓.
    - A compra no cartão entra pelo + central → "Compra no cartão", não por "Aba Cartão →
-     + compra".
+     + compra" (`6-telas.md` também fala num botão "+ compra" na aba Cartão, que não existe).
 10. **Título da subtela igual ao item do menu de Ajustes.** Hoje "Assinaturas do cartão" abre
     a tela "Assinaturas", e "Backup e restauração" abre "Backup". Decidir no mockup qual dos
     dois textos fica — o menu ou o título —, e usar o mesmo nos dois lugares.
