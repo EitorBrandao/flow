@@ -239,7 +239,7 @@ describe('buscar', () => {
   const cartao = parseCapitulo('cartao', '# Cartão\nIntro curta.\n## Fatura\nA fatura fecha no dia do fechamento e vence depois.\n> Nota sobre juros.', nomes);
   const longo = parseCapitulo('longo', '# Outro\n## Longa\num dois tres quatro cinco seis sete oito nove dez alvo onze doze treze catorze quinze dezesseis dezessete dezoito', nomes);
 
-  it('um resultado por seção, na primeira ocorrência, sem reticências quando nada foi cortado', () => {
+  it('um resultado por seção, na primeira ocorrência, reticências só na ponta cortada', () => {
     expect(buscar([cartao], 'FECHA')).toEqual([{
       capitulo: 'cartao', tituloCapitulo: 'Cartão', secao: 'fatura', tituloSecao: 'Fatura',
       // Corte independente por lado (correção pós-revisão): o texto da seção tem 76
