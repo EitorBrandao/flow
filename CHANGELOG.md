@@ -3,6 +3,19 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.45.0] - 2026-09-24
+
+### Alterado
+
+- Wiki mais fácil de navegar.
+  - O índice fica sempre à mão, numa barra no topo que mostra o capítulo e a seção em que você está.
+  - O índice lista as seções do capítulo aberto; um toque leva direto a elas.
+  - A busca mostra o capítulo, a seção e um trecho com o termo destacado.
+  - Trocar de capítulo pelo índice abre o capítulo novo no topo.
+- Texto da wiki mais direto, na língua das telas do app.
+  - Os detalhes técnicos (nomes de campo, regras internas) foram para o capítulo Código e versão.
+  - Corrigidas explicações que não batiam com o app: desativar uma recorrência, backup de versão mais nova, número de cartões ativos por box.
+
 ## [0.44.0] - 2026-09-24
 
 ### Alterado
