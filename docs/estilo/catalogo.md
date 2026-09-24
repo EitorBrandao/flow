@@ -37,6 +37,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.lista-fluxo` | modificador de `.lista` só na aba Fluxo — deixa o valor de cada transação (`.item .valor-ganho`/`.valor-gasto`) sem negrito, pra diferenciar do totalizador do dia (`.cabecalho-dia`, em `<strong>`, continua em negrito) |
 | `.total-dia` (+ `.pos`/`.neg`) | totalizador do dia no cabeçalho do Fluxo — cor própria (`--total-pos`/`--total-neg`), separada da pílula de transação (`--pos`/`--neg`) |
 | `.grafico-rodape` (+ `.pos`/`.neg` no valor) | rodapé "mín · máx" sob o gráfico de saldo (`BalanceChart.tsx`, abas Hoje/Fluxo) — 12px, sem pílula, `--pos`/`--neg` pelo sinal do próprio valor; os mesmos modificadores `.pos`/`.neg` valem também dentro de `.grafico-expandido-rodape` (modal expandido do Fluxo) |
+| `.grafico-rodape.duas-linhas` (+ `.grafico-rodape-datas`, `.grafico-rodape-minmax`) | variante do rodapé do `BalanceChart` quando o período cruza anos: as datas completas (DD/MM/AAAA) ficam nas pontas de uma linha e o "mín · máx" centralizado na linha seguinte — numa linha só, não cabe em 360px |
 | `.botao-ver-mais` | link azul de mostrar/ocultar uma lista longa (ex.: lançamentos da fatura, escondidos por padrão) |
 | `.secao` (+ `.acao`) | cabeçalho de seção: título à esquerda, ação/contagem em azul à direita |
 | `.campo` / `.linha` | `.campo` é wrapper label+input; `.linha` agrupa campos (ou outros elementos) lado a lado |

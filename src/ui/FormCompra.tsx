@@ -196,13 +196,15 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
           <input id={`${uid}-parcelas`} type="number" min={1} max={48} value={parcelas}
             onChange={(e) => onParcelasChange(e.target.value)} style={{ width: 64 }} />
         </div>
-        <div className="campo">
-          <label htmlFor={`${uid}-parcelaspagas`}>Parcelas já pagas</label>
-          <input id={`${uid}-parcelaspagas`} type="number" min={0} max={Math.max(0, parcelasNum - 1)}
-            disabled={parcelasNum <= 1}
-            value={parcelasNum <= 1 ? '' : parcelasPagas}
-            onChange={(e) => onParcelasPagasChange(e.target.value)} style={{ width: 64 }} />
-        </div>
+        {/* Só faz sentido em compra parcelada; à vista, o campo nem aparece. */}
+        {parcelasNum > 1 && (
+          <div className="campo">
+            <label htmlFor={`${uid}-parcelaspagas`}>Parcelas já pagas</label>
+            <input id={`${uid}-parcelaspagas`} type="number" min={0} max={parcelasNum - 1}
+              value={parcelasPagas}
+              onChange={(e) => onParcelasPagasChange(e.target.value)} style={{ width: 64 }} />
+          </div>
+        )}
       </div>
       <div className="campo">
         <label>Categoria</label>

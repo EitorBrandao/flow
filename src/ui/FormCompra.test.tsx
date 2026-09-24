@@ -51,13 +51,18 @@ it('cria uma compra parcelada', async () => {
   } finally { vi.useRealTimers(); }
 });
 
-it('campo Parcelas já pagas fica desabilitado com 1 parcela', async () => {
+it('campo Parcelas já pagas só aparece com 2 parcelas ou mais', async () => {
   const { box, cartao } = await montarCartao();
   await useApp.getState().iniciar();
   useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
 
   render(<FormCompra cartao={cartao} onFechar={() => {}} />);
-  expect(screen.getByLabelText('Parcelas já pagas')).toBeDisabled();
+  expect(screen.queryByLabelText('Parcelas já pagas')).not.toBeInTheDocument();
+  const parcelas = screen.getByLabelText('Parcelas');
+  fireEvent.change(parcelas, { target: { value: '3' } });
+  expect(screen.getByLabelText('Parcelas já pagas')).toBeEnabled();
+  fireEvent.change(parcelas, { target: { value: '1' } });
+  expect(screen.queryByLabelText('Parcelas já pagas')).not.toBeInTheDocument();
 });
 
 it('editar uma compra existente mostra "Editar compra" e o botão Excluir', async () => {
@@ -239,7 +244,6 @@ it('digitar Parcelas já pagas recalcula Data para trás em meses', async () => 
     render(<FormCompra cartao={cartao} onFechar={() => {}} />);
     const inputData = screen.getByLabelText('Data') as HTMLInputElement;
     const inputParcelas = screen.getByLabelText('Parcelas');
-    const inputParcelasPagas = screen.getByLabelText('Parcelas já pagas');
 
     // Inicialmente, data é 'hoje' (2026-07-01)
     expect(inputData.value).toBe('2026-07-01');
@@ -247,6 +251,8 @@ it('digitar Parcelas já pagas recalcula Data para trás em meses', async () => 
     // Definir 3 parcelas
     await userEvent.clear(inputParcelas);
     await userEvent.type(inputParcelas, '3');
+    // O campo só aparece com 2 parcelas ou mais.
+    const inputParcelasPagas = screen.getByLabelText('Parcelas já pagas');
 
     // Digitar 2 em "Parcelas já pagas"
     await userEvent.type(inputParcelasPagas, '2');
@@ -269,7 +275,6 @@ it('limpar Parcelas já pagas NÃO reverte Data ao valor original', async () => 
     render(<FormCompra cartao={cartao} onFechar={() => {}} />);
     const inputData = screen.getByLabelText('Data') as HTMLInputElement;
     const inputParcelas = screen.getByLabelText('Parcelas');
-    const inputParcelasPagas = screen.getByLabelText('Parcelas já pagas');
 
     // Inicialmente, data é 'hoje' (2026-07-01)
     expect(inputData.value).toBe('2026-07-01');
@@ -277,6 +282,8 @@ it('limpar Parcelas já pagas NÃO reverte Data ao valor original', async () => 
     // Definir 3 parcelas
     await userEvent.clear(inputParcelas);
     await userEvent.type(inputParcelas, '3');
+    // O campo só aparece com 2 parcelas ou mais.
+    const inputParcelasPagas = screen.getByLabelText('Parcelas já pagas');
 
     // Digitar 2 em "Parcelas já pagas"
     await userEvent.type(inputParcelasPagas, '2');

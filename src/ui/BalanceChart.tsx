@@ -35,6 +35,18 @@ export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenario
   const cenarios = serie.map((s, i) => ({ i, v: s.saldoComCenarios, data: s.data })).filter((p) => p.data >= hoje);
   const iHoje = serie.findIndex((s) => s.data >= hoje);
   const uid = useId();
+  // Série que atravessa anos (o Fluxo vai até o horizonte) mostra o ano nas pontas;
+  // dentro de um ano só, dia e mês bastam.
+  const cruzaAno = serie[0].data.slice(0, 4) !== serie.at(-1)!.data.slice(0, 4);
+  const dataPonta = (d: string) =>
+    `${d.slice(8, 10)}/${d.slice(5, 7)}${cruzaAno ? `/${d.slice(0, 4)}` : ''}`;
+  const minMax = (
+    <>
+      mín <b className={min >= 0 ? 'pos' : 'neg'}>{formatarBRL(min)}</b>
+      {' · máx '}
+      <b className={max >= 0 ? 'pos' : 'neg'}>{formatarBRL(max)}</b>
+    </>
+  );
   const ultimoPassado = passado.at(-1)?.i ?? -1;
   const linhaCheia = [...passado, ...futuro.filter((f) => f.i > ultimoPassado)];
   return (
@@ -89,15 +101,22 @@ export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenario
           />
         )}
       </svg>
-      <div className="grafico-rodape">
-        <span>{serie[0].data.slice(8, 10)}/{serie[0].data.slice(5, 7)}</span>
-        <span>
-          mín <b className={min >= 0 ? 'pos' : 'neg'}>{formatarBRL(min)}</b>
-          {' · máx '}
-          <b className={max >= 0 ? 'pos' : 'neg'}>{formatarBRL(max)}</b>
-        </span>
-        <span>{serie.at(-1)!.data.slice(8, 10)}/{serie.at(-1)!.data.slice(5, 7)}</span>
-      </div>
+      {cruzaAno ? (
+        // Com o ano, as datas não cabem na mesma linha do mín/máx num celular estreito.
+        <div className="grafico-rodape duas-linhas">
+          <div className="grafico-rodape-datas">
+            <span>{dataPonta(serie[0].data)}</span>
+            <span>{dataPonta(serie.at(-1)!.data)}</span>
+          </div>
+          <div className="grafico-rodape-minmax">{minMax}</div>
+        </div>
+      ) : (
+        <div className="grafico-rodape">
+          <span>{dataPonta(serie[0].data)}</span>
+          <span>{minMax}</span>
+          <span>{dataPonta(serie.at(-1)!.data)}</span>
+        </div>
+      )}
     </div>
   );
 }
