@@ -43,11 +43,10 @@ function FormViagem({ inicial, idExcluido, rotuloSalvar, onSalvo, onCancelar }: 
 
   return (
     <>
-      {aviso && <p className="aviso">{aviso}</p>}
       <div className="form-linha">
         <div className="campo">
           <label htmlFor={`${uid}-nome`}>Nome</label>
-          <input id={`${uid}-nome`} placeholder="ex.: Praia em janeiro" value={nome} onChange={(e) => setNome(e.target.value)} />
+          <input id={`${uid}-nome`} autoFocus={onCancelar != null} placeholder="ex.: Praia em janeiro" value={nome} onChange={(e) => setNome(e.target.value)} />
         </div>
       </div>
       <div className="form-linha">
@@ -64,6 +63,7 @@ function FormViagem({ inicial, idExcluido, rotuloSalvar, onSalvo, onCancelar }: 
         {onCancelar && <button className="botao" onClick={onCancelar}>Cancelar</button>}
         <button className="botao botao-primario" onClick={salvar}>{rotuloSalvar}</button>
       </div>
+      {aviso && <p className="aviso">{aviso}</p>}
     </>
   );
 }

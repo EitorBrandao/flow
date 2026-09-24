@@ -1,0 +1,8 @@
+- Avisos de campo faltando no mesmo lugar em todas as telas: logo abaixo dos botões.
+  - Cartões, Recorrências, Assinaturas e Categorias passam a dizer o que falta, em vez de não fazer nada.
+  - Apagar o nome de uma box e salvar agora avisa, em vez de voltar calado ao nome antigo.
+  - Vale também para editar lançamento, escanear nota, anexar nota à compra e conferir bancos.
+- Tocar no lápis leva direto ao primeiro campo do item aberto.
+- Apagar a descrição de uma assinatura e salvar agora remove a descrição, também das compras futuras na fatura.
+- Boxes e Bancos: saldo e data do saldo em linhas separadas, e o valor não aparece mais cortado no celular.
+- Cartão: cada cartão abre com o nome dele num título, acima do seletor de mês; o card mostra só "Fatura".

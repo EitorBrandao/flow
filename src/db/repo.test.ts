@@ -521,6 +521,30 @@ describe('cartão de crédito', () => {
     } finally { vi.useRealTimers(); }
   });
 
+  it('apagar a descrição da assinatura tira a descrição das compras futuras e mantém a das passadas', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-06-01T12:00:00'));
+      const { cartao, catCartao } = await montarCartao();
+      const ass = await repo.salvarAssinatura({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, valor: 3990,
+        dataInicio: '2026-06-17', diaDoMes: 17, parcelas: null, descricao: 'Streaming',
+      }, '2026-12-31');
+
+      vi.setSystemTime(new Date('2026-07-28T12:00:00'));
+      const { descricao: _antiga, ...semDescricao } = ass;
+      await repo.salvarAssinatura(semDescricao, '2026-12-31');
+
+      const compras = await db.comprasCartao.where('recorrenciaCartaoId').equals(ass.id).toArray();
+      const futuras = compras.filter((c) => c.data > '2026-07-28');
+      const passadas = compras.filter((c) => c.data <= '2026-07-28');
+      expect(futuras.length).toBeGreaterThan(0);
+      expect(futuras.every((c) => c.descricao === undefined)).toBe(true);
+      expect(passadas.length).toBeGreaterThan(0);
+      expect(passadas.every((c) => c.descricao === 'Streaming')).toBe(true);
+    } finally { vi.useRealTimers(); }
+  });
+
   it('conferência usarValorApp muda o valor do previsto; desmarcar volta à soma', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     try {

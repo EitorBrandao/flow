@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
@@ -93,7 +93,7 @@ it('trocar a box no chip do topo troca os cartões oferecidos no seletor de Assi
   expect(screen.getByRole('radio', { name: 'Nubank' })).toBeInTheDocument();
   expect(screen.queryByRole('radio', { name: 'Santander' })).not.toBeInTheDocument();
 
-  useApp.setState({ boxSel: ju.id });
+  act(() => { useApp.setState({ boxSel: ju.id }); });
   rerender(<Assinaturas />);
 
   expect(screen.getByRole('radio', { name: 'Santander' })).toBeInTheDocument();
@@ -189,4 +189,32 @@ it('edita uma assinatura existente pelo item', async () => {
   await waitFor(() => expect(screen.getByText(formatarBRL(4990).replace(/\s/g, ' '))).toBeInTheDocument());
   const atualizada = await db.recorrenciasCartao.get(assinatura.id);
   expect(atualizada?.valor).toBe(4990);
+});
+
+it('criar sem valor avisa embaixo dos botões em vez de não fazer nada', async () => {
+  await prepararCartao();
+  await useApp.getState().iniciar();
+  render(<Assinaturas />);
+  const criar = await screen.findByRole('button', { name: 'Criar' });
+  await userEvent.click(criar);
+  const aviso = screen.getByText('Digite um valor para criar.');
+  expect(aviso.previousElementSibling).toContainElement(criar);
+  expect(await db.recorrenciasCartao.count()).toBe(0);
+});
+
+it('apagar a descrição e salvar remove a descrição', async () => {
+  const cartao = await prepararCartao();
+  const categoriaCartaoId = await repo.categoriaAssinaturasDe(cartao.id);
+  const ass = await repo.salvarAssinatura({
+    cartaoId: cartao.id, categoriaCartaoId, valor: 3990, dataInicio: '2026-07-01',
+    diaDoMes: 5, parcelas: null, descricao: 'Streaming',
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  render(<Assinaturas />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Editar' }));
+  expect(screen.getByLabelText('Valor')).toHaveFocus();
+  await userEvent.clear(screen.getByLabelText('Descrição (opcional)'));
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  await screen.findByRole('heading', { name: 'Nova assinatura' });
+  expect((await db.recorrenciasCartao.get(ass.id))?.descricao).toBeUndefined();
 });

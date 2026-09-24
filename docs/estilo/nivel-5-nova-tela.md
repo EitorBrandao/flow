@@ -39,8 +39,10 @@
     Bancos criam só com o nome, e editam também o saldo); um item aberto por vez, e o
     formulário de criação some enquanto isso (regra 6: um primário por tela); botões Cancelar,
     Salvar, à direita, Salvar primário; campos em `.form-linha`, ocupando a largura toda.
-    Edição de um campo só: o campo, Cancelar e Salvar numa única `.form-linha`, sem
-    `.item-coluna` (Categorias).
+    Edição de um campo só: o campo, Cancelar e Salvar numa única `.form-linha`, com o
+    item em `.item-coluna` só para o aviso caber embaixo (Categorias). Ao abrir pelo lápis,
+    o foco vai para o primeiro campo do item (`autoFocus` só na edição, nunca na criação).
+    Aviso de validação: embaixo dos botões (regra 7 do nível 1).
 
 ## Checklist de saída
 

@@ -762,7 +762,10 @@ async function materializarAssinatura(
     .modify((c) => {
       c.valorTotal = ass.valor;
       c.categoriaCartaoId = ass.categoriaCartaoId;
+      // Descrição apagada na assinatura sai também das compras futuras — senão a fatura
+      // seguia mostrando o nome antigo. As passadas ficam como estão, igual ao valor.
       if (ass.descricao) c.descricao = ass.descricao;
+      else delete c.descricao;
       c.alteradoEm = agora;
     });
 }

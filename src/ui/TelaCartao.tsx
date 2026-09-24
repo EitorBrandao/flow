@@ -193,10 +193,13 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
 
   return (
     <>
+      {/* O nome do cartão abre o bloco, acima do seletor de mês: na visão casa, com vários
+          cartões, o seletor do segundo ficava entre os dois cards e parecia do de cima. */}
+      <h2>{cartao.nome}</h2>
       <SeletorMes mes={mes} onMudar={setMes} />
       <div className="card">
         <div style={{ textAlign: 'center' }}>
-          <p className="rotulo" style={{ margin: 0 }}>Fatura · {cartao.nome}</p>
+          <p className="rotulo" style={{ margin: 0 }}>Fatura</p>
           <p className={`saldo-grande${fatura.totalCent > 0 ? ' negativo' : ''}`} style={{ margin: '4px 0' }}>
             {formatarBRL(fatura.totalCent)}
           </p>

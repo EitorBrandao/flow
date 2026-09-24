@@ -23,13 +23,18 @@ function FormCartao({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
   const [bancoId, setBancoId] = useState(inicial.bancoId);
   const [diaFechamento, setDiaFechamento] = useState(inicial.diaFechamento);
   const [diaVencimento, setDiaVencimento] = useState(inicial.diaVencimento);
+  const [aviso, setAviso] = useState('');
   const uid = useId();
 
   const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
   const bancos = dados && boxId ? bancosDaBox(dados.bancos, [boxId]) : [];
 
   async function salvar() {
-    if (!nome.trim()) return;
+    if (!nome.trim()) {
+      setAviso(`Dê um nome ao cartão para ${rotuloSalvar === 'Criar' ? 'criar' : 'salvar'}.`);
+      return;
+    }
+    setAviso('');
     await onSalvo({
       nome: nome.trim(), bancoId: bancoId || undefined,
       diaFechamento: clampDia(diaFechamento), diaVencimento: clampDia(diaVencimento),
@@ -41,7 +46,7 @@ function FormCartao({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
       <div className="form-linha">
         <div className="campo">
           <label htmlFor={`${uid}-nome`}>Nome do cartão</label>
-          <input id={`${uid}-nome`} placeholder="ex.: Nubank" value={nome} onChange={(e) => setNome(e.target.value)} />
+          <input id={`${uid}-nome`} autoFocus={onCancelar != null} placeholder="ex.: Nubank" value={nome} onChange={(e) => setNome(e.target.value)} />
         </div>
       </div>
       {bancos.length > 0 && (
@@ -73,6 +78,7 @@ function FormCartao({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
         {onCancelar && <button className="botao" onClick={onCancelar}>Cancelar</button>}
         <button className="botao botao-primario" onClick={salvar}>{rotuloSalvar}</button>
       </div>
+      {aviso && <p className="aviso">{aviso}</p>}
     </>
   );
 }
