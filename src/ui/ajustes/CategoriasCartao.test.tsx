@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
@@ -96,7 +96,7 @@ it('trocar a box no chip do topo troca os cartões oferecidos no seletor de Cate
   expect(screen.getByRole('radio', { name: 'Nubank' })).toBeInTheDocument();
   expect(screen.queryByRole('radio', { name: 'Santander' })).not.toBeInTheDocument();
 
-  useApp.setState({ boxSel: ju.id });
+  act(() => { useApp.setState({ boxSel: ju.id }); });
   rerender(<CategoriasCartao />);
 
   expect(screen.getByRole('radio', { name: 'Santander' })).toBeInTheDocument();
@@ -172,4 +172,20 @@ it('cancelar fecha o item sem gravar e traz "Nova categoria do cartão" de volta
   expect(screen.getByText('mercado')).toBeInTheDocument();
   const atual = await db.categoriasCartao.get(cat.id);
   expect(atual?.nome).toBe('mercado');
+});
+
+it('criar ou salvar sem nome avisa embaixo dos botões', async () => {
+  const cartao = await prepararCartao();
+  const cat = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  await useApp.getState().iniciar();
+  render(<CategoriasCartao />);
+  const criar = await screen.findByRole('button', { name: 'Criar' });
+  await userEvent.click(criar);
+  expect(screen.getByText('Dê um nome à categoria para criar.').previousElementSibling).toContainElement(criar);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+  await userEvent.clear(screen.getByLabelText('Editar nome'));
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  expect(screen.getByText('Dê um nome à categoria para salvar.')).toBeInTheDocument();
+  expect((await db.categoriasCartao.get(cat.id))?.nome).toBe('mercado');
 });

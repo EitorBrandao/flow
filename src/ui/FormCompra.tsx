@@ -226,11 +226,11 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
               onChange={(e) => { setXmlTexto(e.target.value); setErroNota(null); }}
             />
           </div>
-          {erroNota && <p className="aviso">{erroNota}</p>}
           <div className="linha">
             <button className="botao botao-primario" onClick={anexarNota}>Anexar</button>
             <button className="botao" onClick={() => { setAnexando(false); setXmlTexto(''); setErroNota(null); }}>Cancelar</button>
           </div>
+          {erroNota && <p className="aviso">{erroNota}</p>}
         </div>
       ) : notaExibida ? (
         <div className="nota-bloco">

@@ -31,6 +31,16 @@ componentes existentes, **sem tocar `src/styles.css`**.
 
 6. **Texto visível, `aria-label` e nomes: português.**
 
+7. **Aviso de validação (`.aviso`) fica embaixo, logo depois dos botões do formulário.**
+   Vale para criar e editar, em subtela de Ajustes, sheet ou card. O aviso aparece onde a
+   pessoa acabou de tocar; no topo, num formulário longo, ele fica fora da tela no celular.
+   Botão que não faz nada quando falta um campo é proibido: diga o que falta, uma frase
+   por vez ("Dê um nome ao cartão para criar.", "Digite um valor para salvar.").
+   Aviso informativo, que a pessoa precisa ler antes de decidir (ex.: "somem da projeção"
+   no pagamento da fatura), não é validação: fica acima do botão.
+   ✅ `<div className="form-botoes">…</div>{aviso && <p className="aviso">{aviso}</p>}`
+   ❌ `{aviso && <p className="aviso">…</p>}` antes dos campos
+
 ## Checklist de saída
 
 - [ ] `src/styles.css` não foi tocado e nenhuma classe nova foi inventada no markup

@@ -24,12 +24,18 @@ function FormBox({ inicial, onSalvo, onCancelar }: {
   // Box sem data ainda cai em hoje, que é a resposta certa em quase todo caso: o saldo que
   // a pessoa acabou de ler no app do banco é o de hoje. Quem quiser outra data, troca.
   const [data, setData] = useState(inicial.dataSaldoInicial ?? hoje);
+  const [aviso, setAviso] = useState('');
   const uid = useId();
 
   async function salvar() {
+    // Antes o nome apagado voltava calado ao nome antigo — mesmo aviso de Bancos.
+    if (!nome.trim()) {
+      setAviso('Dê um nome à box para salvar.');
+      return;
+    }
     const saldoInicial = temSaldoProprio ? (negativo ? -magnitude : magnitude) : null;
     const dataSaldoInicial = temSaldoProprio ? (data || null) : null;
-    await onSalvo({ nome: nome.trim() || inicial.nome, saldoInicial, dataSaldoInicial });
+    await onSalvo({ nome: nome.trim(), saldoInicial, dataSaldoInicial });
   }
 
   return (
@@ -37,34 +43,40 @@ function FormBox({ inicial, onSalvo, onCancelar }: {
       <div className="form-linha">
         <div className="campo">
           <label htmlFor={`${uid}-nome`}>Nome</label>
-          <input id={`${uid}-nome`} value={nome} onChange={(e) => setNome(e.target.value)} />
+          <input id={`${uid}-nome`} autoFocus value={nome} onChange={(e) => setNome(e.target.value)} />
         </div>
       </div>
       <label htmlFor={`${uid}-saldo-proprio`}>
         <input id={`${uid}-saldo-proprio`} type="checkbox" checked={temSaldoProprio} onChange={(e) => setTemSaldoProprio(e.target.checked)} />
         {' '}Esta box tem saldo próprio
       </label>
+      {/* Saldo e data em linhas próprias: dividindo a linha, o valor cortava a 360 px. */}
       {temSaldoProprio && (
-        <div className="form-linha">
-          <div className="campo">
-            <label htmlFor={`${uid}-saldo`}>Saldo inicial</label>
-            <div className="linha">
-              <button type="button" className="botao botao-sinal" aria-label="Alternar sinal (positivo/negativo)" onClick={() => setNegativo(n => !n)}>
-                {negativo ? '−' : '+'}
-              </button>
-              <CampoValor id={`${uid}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} style={{ flex: 1, minWidth: 0 }} />
+        <>
+          <div className="form-linha">
+            <div className="campo">
+              <label htmlFor={`${uid}-saldo`}>Saldo inicial</label>
+              <div className="linha">
+                <button type="button" className="botao botao-sinal" aria-label="Alternar sinal (positivo/negativo)" onClick={() => setNegativo(n => !n)}>
+                  {negativo ? '−' : '+'}
+                </button>
+                <CampoValor id={`${uid}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} style={{ flex: 1, minWidth: 0 }} />
+              </div>
             </div>
           </div>
-          <div className="campo">
-            <label htmlFor={`${uid}-data`}>Data do saldo</label>
-            <CampoData id={`${uid}-data`} value={data} onChange={setData} />
+          <div className="form-linha">
+            <div className="campo">
+              <label htmlFor={`${uid}-data`}>Data do saldo</label>
+              <CampoData id={`${uid}-data`} value={data} onChange={setData} />
+            </div>
           </div>
-        </div>
+        </>
       )}
       <div className="form-botoes">
         <button className="botao" onClick={onCancelar}>Cancelar</button>
         <button className="botao botao-primario" onClick={salvar}>Salvar</button>
       </div>
+      {aviso && <p className="aviso">{aviso}</p>}
     </>
   );
 }

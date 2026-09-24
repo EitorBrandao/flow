@@ -11,6 +11,7 @@ interface ItemProps {
   cat: CategoriaCartao;
   editando: boolean;
   nomeEdit: string;
+  avisoEdicao: string;
   uidEditar: string;
   onEditarNome: (v: string) => void;
   onIniciarEdicao: () => void;
@@ -20,24 +21,27 @@ interface ItemProps {
 }
 
 function ItemCategoriaCartao({
-  cat, editando, nomeEdit, uidEditar,
+  cat, editando, nomeEdit, avisoEdicao, uidEditar,
   onEditarNome, onIniciarEdicao, onCancelarEdicao, onSalvarEdicao, onAlternarArquivada,
 }: ItemProps) {
   const controls = useDragControls();
   return (
     <Reorder.Item
-      value={cat} as="div" className="item" style={{ opacity: cat.arquivada ? 0.5 : 1 }}
+      value={cat} as="div" className={`item${editando ? ' item-coluna' : ''}`} style={{ opacity: cat.arquivada ? 0.5 : 1 }}
       dragListener={false} dragControls={controls}
     >
       {editando ? (
-        <div className="form-linha cresce">
-          <div className="campo">
-            <label htmlFor={uidEditar}>Editar nome</label>
-            <input id={uidEditar} value={nomeEdit} onChange={(e) => onEditarNome(e.target.value)} />
+        <>
+          <div className="form-linha">
+            <div className="campo">
+              <label htmlFor={uidEditar}>Editar nome</label>
+              <input id={uidEditar} autoFocus value={nomeEdit} onChange={(e) => onEditarNome(e.target.value)} />
+            </div>
+            <button className="botao" onClick={onCancelarEdicao}>Cancelar</button>
+            <button className="botao botao-primario" onClick={onSalvarEdicao}>Salvar</button>
           </div>
-          <button className="botao" onClick={onCancelarEdicao}>Cancelar</button>
-          <button className="botao botao-primario" onClick={onSalvarEdicao}>Salvar</button>
-        </div>
+          {avisoEdicao && <p className="aviso">{avisoEdicao}</p>}
+        </>
       ) : (
         <>
           <button className="botao alca-arrastar" aria-label="Arrastar para reordenar" onPointerDown={(e) => controls.start(e)}>
@@ -60,6 +64,8 @@ export default function CategoriasCartao() {
   const [nome, setNome] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nomeEdit, setNomeEdit] = useState('');
+  const [avisoCriacao, setAvisoCriacao] = useState('');
+  const [avisoEdicao, setAvisoEdicao] = useState('');
   const uid = useId();
   const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
 
@@ -69,6 +75,8 @@ export default function CategoriasCartao() {
     setEditandoId(null);
     setNomeEdit('');
     setNome('');
+    setAvisoCriacao('');
+    setAvisoEdicao('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boxId]);
 
@@ -91,10 +99,15 @@ export default function CategoriasCartao() {
   const arquivadas = cats.filter((c) => c.arquivada);
 
   async function criar() {
-    if (!nome.trim() || !cartaoId) return;
+    if (!cartaoId) return;
+    if (!nome.trim()) {
+      setAvisoCriacao('Dê um nome à categoria para criar.');
+      return;
+    }
     await repo.salvarCategoriaCartao({ cartaoId, nome: nome.trim(), ordem: proximaOrdem(ativas) });
     await recarregar();
     setNome('');
+    setAvisoCriacao('');
   }
 
   async function reordenar(novaOrdem: CategoriaCartao[]) {
@@ -111,11 +124,13 @@ export default function CategoriasCartao() {
   function iniciarEdicao(id: string, nomeAtual: string) {
     setEditandoId(id);
     setNomeEdit(nomeAtual);
+    setAvisoEdicao('');
   }
 
   function cancelarEdicao() {
     setEditandoId(null);
     setNomeEdit('');
+    setAvisoEdicao('');
   }
 
   // Trocar de cartão pela pílula com um item aberto não pode deixar o item sumido da lista
@@ -125,10 +140,15 @@ export default function CategoriasCartao() {
     setCartaoId(id);
     setEditandoId(null);
     setNomeEdit('');
+    setAvisoEdicao('');
   }
 
   async function salvarEdicao() {
-    if (!editandoId || !nomeEdit.trim()) return;
+    if (!editandoId) return;
+    if (!nomeEdit.trim()) {
+      setAvisoEdicao('Dê um nome à categoria para salvar.');
+      return;
+    }
     await repo.atualizarCategoriaCartao(editandoId, { nome: nomeEdit.trim() });
     setEditandoId(null);
     setNomeEdit('');
@@ -140,6 +160,7 @@ export default function CategoriasCartao() {
       cat: c,
       editando: editandoId === c.id,
       nomeEdit,
+      avisoEdicao,
       uidEditar: `${uid}-editar`,
       onEditarNome: setNomeEdit,
       onIniciarEdicao: () => iniciarEdicao(c.id, c.nome),
@@ -176,6 +197,7 @@ export default function CategoriasCartao() {
                 </div>
                 <button className="botao botao-primario" onClick={criar}>Criar</button>
               </div>
+              {avisoCriacao && <p className="aviso">{avisoCriacao}</p>}
             </>
           )}
 

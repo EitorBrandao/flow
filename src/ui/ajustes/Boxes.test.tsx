@@ -32,6 +32,8 @@ it('salva saldo inicial "0,00" como zero, não como sem-saldo-próprio', async (
   await userEvent.clear(dataInput);
   await userEvent.type(dataInput, '2026-01-01');
   await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
+  // O item fecha e "Nova box" volta depois do recarregar — esperar evita o aviso de act().
+  await screen.findByRole('heading', { name: 'Nova box' });
 
   const atualizado = await db.boxes.get(box.id);
   expect(atualizado?.saldoInicial).toBe(0);
@@ -164,4 +166,33 @@ it('cancelar fecha o item sem gravar e traz "Nova box" de volta', async () => {
   expect(within(item).getByText('eitor')).toBeInTheDocument();
   const atual = await db.boxes.get(box.id);
   expect(atual?.nome).toBe('eitor');
+});
+
+it('salvar com o nome apagado avisa em vez de voltar calado ao nome antigo', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  render(<Boxes />);
+  const item = screen.getByText('eitor').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const nome = within(item).getByLabelText('Nome');
+  expect(nome).toHaveFocus();
+  await userEvent.clear(nome);
+  const salvar = within(item).getByRole('button', { name: 'Salvar' });
+  await userEvent.click(salvar);
+  expect(screen.getByText('Dê um nome à box para salvar.').previousElementSibling).toContainElement(salvar);
+});
+
+it('saldo e data ficam em linhas de formulário separadas', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  render(<Boxes />);
+  const item = screen.getByText('eitor').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const linhaSaldo = within(item).getByLabelText('Saldo inicial').closest('.form-linha');
+  const linhaData = within(item).getByLabelText('Data do saldo').closest('.form-linha');
+  expect(linhaSaldo).not.toBe(linhaData);
 });

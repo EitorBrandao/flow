@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
@@ -73,6 +73,9 @@ it('com "casa" selecionada e outra box também carregada, cria o banco na box "c
   const criado = (await db.bancos.toArray())[0];
   expect(criado.boxId).toBe(casa.id);
   expect(criado.boxId).not.toBe(outra.id);
+  // Espera a tela assentar (o campo limpa depois do recarregar), senão o fim do teste
+  // corta um setState no meio e o React avisa de act().
+  await waitFor(() => expect(screen.getByLabelText('Nome do banco')).toHaveValue(''));
 });
 
 it('mostra que o banco novo será criado na box "casa" quando essa é a seleção', async () => {
@@ -199,7 +202,7 @@ it('trocar a box no chip do topo com um banco aberto traz "Novo banco" de volta'
   await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
   expect(screen.queryByText('Novo banco')).not.toBeInTheDocument();
 
-  useApp.setState({ boxSel: ju.id });
+  act(() => { useApp.setState({ boxSel: ju.id }); });
   rerender(<Bancos />);
 
   expect(screen.getByText('Novo banco')).toBeInTheDocument();

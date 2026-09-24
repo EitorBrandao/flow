@@ -306,7 +306,7 @@ it('busca filtra por descrição e mostra estado vazio quando nada bate', async 
 });
 
 describe('card da fatura no padrão da Hoje (Consistência entre telas, parte 2)', () => {
-  it('mostra o rótulo "Fatura · {cartão}" em .rotulo, e as datas de fecha/vence com o ano', async () => {
+  it('abre com o nome do cartão num título; o card mostra o rótulo "Fatura" em .rotulo e as datas de fecha/vence com o ano', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     try {
       vi.setSystemTime(new Date('2026-07-01T12:00:00'));
@@ -319,7 +319,8 @@ describe('card da fatura no padrão da Hoje (Consistência entre telas, parte 2)
       useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
       render(<TelaCartao />);
 
-      const rotulo = screen.getByText(`Fatura · ${cartao.nome}`);
+      expect(screen.getByRole('heading', { name: cartao.nome })).toBeInTheDocument();
+      const rotulo = screen.getByText('Fatura');
       expect(rotulo).toHaveClass('rotulo');
 
       // a fatura mostrada por padrão é a de 2026-08 (a próxima a vencer a partir de `hoje`).
@@ -527,4 +528,19 @@ describe('aviso de fatura fora do Fluxo', () => {
       expect(screen.queryByText(/não chegaram no Fluxo|ficou de fora do Fluxo/)).not.toBeInTheDocument();
     } finally { vi.useRealTimers(); }
   });
+});
+
+it('com vários cartões, cada bloco abre com o nome do cartão antes do seu seletor de mês', async () => {
+  const { box } = await montarCartao();
+  await repo.salvarCartao({ boxId: box.id, nome: 'Inter', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+  render(<TelaCartao />);
+
+  const titulos = screen.getAllByRole('heading', { level: 2 });
+  expect(titulos.map((t) => t.textContent).sort()).toEqual(['Inter', 'Nubank']);
+  // O seletor do segundo cartão vem depois do título dele — não entre os dois cards sem dono.
+  const anteriores = screen.getAllByRole('button', { name: 'Mês anterior' });
+  expect(titulos[1].compareDocumentPosition(anteriores[1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(anteriores[0].compareDocumentPosition(titulos[1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });

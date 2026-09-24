@@ -14,6 +14,7 @@ interface ItemProps {
   cat: Categoria;
   editando: boolean;
   nomeEdit: string;
+  avisoEdicao: string;
   uidEditar: string;
   mostrarBadgeTipo: boolean;
   onEditarNome: (v: string) => void;
@@ -24,24 +25,27 @@ interface ItemProps {
 }
 
 function ItemCategoria({
-  cat, editando, nomeEdit, uidEditar, mostrarBadgeTipo,
+  cat, editando, nomeEdit, avisoEdicao, uidEditar, mostrarBadgeTipo,
   onEditarNome, onIniciarEdicao, onCancelarEdicao, onSalvarEdicao, onAlternarArquivada,
 }: ItemProps) {
   const controls = useDragControls();
   return (
     <Reorder.Item
-      value={cat} as="div" className="item" style={{ opacity: cat.arquivada ? 0.5 : 1 }}
+      value={cat} as="div" className={`item${editando ? ' item-coluna' : ''}`} style={{ opacity: cat.arquivada ? 0.5 : 1 }}
       dragListener={false} dragControls={controls}
     >
       {editando ? (
-        <div className="form-linha cresce">
-          <div className="campo">
-            <label htmlFor={uidEditar}>Editar nome</label>
-            <input id={uidEditar} value={nomeEdit} onChange={(e) => onEditarNome(e.target.value)} />
+        <>
+          <div className="form-linha">
+            <div className="campo">
+              <label htmlFor={uidEditar}>Editar nome</label>
+              <input id={uidEditar} autoFocus value={nomeEdit} onChange={(e) => onEditarNome(e.target.value)} />
+            </div>
+            <button className="botao" onClick={onCancelarEdicao}>Cancelar</button>
+            <button className="botao botao-primario" onClick={onSalvarEdicao}>Salvar</button>
           </div>
-          <button className="botao" onClick={onCancelarEdicao}>Cancelar</button>
-          <button className="botao botao-primario" onClick={onSalvarEdicao}>Salvar</button>
-        </div>
+          {avisoEdicao && <p className="aviso">{avisoEdicao}</p>}
+        </>
       ) : (
         <>
           <button className="botao alca-arrastar" aria-label="Arrastar para reordenar" onPointerDown={(e) => controls.start(e)}>
@@ -66,6 +70,8 @@ export default function Categorias() {
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nomeEdit, setNomeEdit] = useState('');
+  const [avisoCriacao, setAvisoCriacao] = useState('');
+  const [avisoEdicao, setAvisoEdicao] = useState('');
   const [sugestoesMarcadas, setSugestoesMarcadas] = useState<Set<string>>(
     new Set(CATEGORIAS_SUGERIDAS.filter((c) => c.marcadaPorPadrao).map((c) => `${c.nome}:${c.tipo}`)),
   );
@@ -77,6 +83,7 @@ export default function Categorias() {
   useEffect(() => {
     setEditandoId(null);
     setNomeEdit('');
+    setAvisoEdicao('');
   }, [boxId]);
 
   if (!dados) return null;
@@ -95,11 +102,16 @@ export default function Categorias() {
   const arquivadas = cats.filter((c) => c.arquivada);
 
   async function criar() {
-    if (!nome.trim() || !boxId) return;
+    if (!boxId) return;
+    if (!nome.trim()) {
+      setAvisoCriacao('Dê um nome à categoria para criar.');
+      return;
+    }
     const irmas = cats.filter((c) => c.tipo === tipo && !c.arquivada);
     await repo.salvarCategoria({ boxId, nome: nome.trim(), tipo, ordem: proximaOrdem(irmas) });
     await recarregar();
     setNome('');
+    setAvisoCriacao('');
   }
 
   async function criarSugeridas() {
@@ -150,15 +162,21 @@ export default function Categorias() {
   function iniciarEdicao(id: string, nomeAtual: string) {
     setEditandoId(id);
     setNomeEdit(nomeAtual);
+    setAvisoEdicao('');
   }
 
   function cancelarEdicao() {
     setEditandoId(null);
     setNomeEdit('');
+    setAvisoEdicao('');
   }
 
   async function salvarEdicao() {
-    if (!editandoId || !nomeEdit.trim()) return;
+    if (!editandoId) return;
+    if (!nomeEdit.trim()) {
+      setAvisoEdicao('Dê um nome à categoria para salvar.');
+      return;
+    }
     await repo.atualizarCategoria(editandoId, { nome: nomeEdit.trim() });
     setEditandoId(null);
     setNomeEdit('');
@@ -170,6 +188,7 @@ export default function Categorias() {
       cat: c,
       editando: editandoId === c.id,
       nomeEdit,
+      avisoEdicao,
       uidEditar: `${uid}-editar`,
       mostrarBadgeTipo,
       onEditarNome: setNomeEdit,
@@ -247,6 +266,7 @@ export default function Categorias() {
             </div>
             <button className="botao botao-primario" onClick={criar}>Criar</button>
           </div>
+          {avisoCriacao && <p className="aviso">{avisoCriacao}</p>}
         </>
       )}
 

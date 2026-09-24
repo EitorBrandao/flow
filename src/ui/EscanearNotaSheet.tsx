@@ -162,7 +162,6 @@ export default function EscanearNotaSheet({ onConcluir, onFechar }: {
           }}
         />
       </div>
-      {erro && <p className="aviso">{erro}</p>}
       <div className="linha">
         <button className="botao botao-primario" onClick={concluir}>Continuar</button>
         {resultadoPendente && (
@@ -170,6 +169,7 @@ export default function EscanearNotaSheet({ onConcluir, onFechar }: {
         )}
         <button className="botao" onClick={onFechar}>Cancelar</button>
       </div>
+      {erro && <p className="aviso">{erro}</p>}
     </>
   );
 }

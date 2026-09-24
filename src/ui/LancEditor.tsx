@@ -70,7 +70,6 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
           <label htmlFor="ed-nota">Nota</label>
           <input id="ed-nota" value={nota} onChange={(e) => setNota(e.target.value)} />
         </div>
-        {erro && <p className="aviso">{erro}</p>}
         {previstoDeRecorrencia && (
           <p className="sub">
             Previsto de uma recorrência: para mudar valor ou data, edite a regra em Ajustes — ou confirme já com o valor ajustado.
@@ -86,6 +85,7 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
           <button className="botao botao-perigo" onClick={excluir}>Excluir</button>
           <button className="botao" style={{ marginLeft: 'auto' }} onClick={onFechar}>Fechar</button>
         </div>
+        {erro && <p className="aviso">{erro}</p>}
     </Sheet>
   );
 }

@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { limparDb } from '../../test-setup';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
@@ -83,7 +83,7 @@ it('trocar a box no chip do topo troca as categorias mostradas em Ajustes', asyn
   expect(screen.getByText('aluguel')).toBeInTheDocument();
   expect(screen.queryByText('faculdade')).not.toBeInTheDocument();
 
-  useApp.setState({ boxSel: ju.id });
+  act(() => { useApp.setState({ boxSel: ju.id }); });
   rerender(<Categorias />);
 
   expect(screen.getByText('faculdade')).toBeInTheDocument();
@@ -105,7 +105,7 @@ it('trocar a box no chip do topo com um item aberto traz "Nova categoria" de vol
   await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
   expect(screen.queryByText('Nova categoria')).not.toBeInTheDocument();
 
-  useApp.setState({ boxSel: ju.id });
+  act(() => { useApp.setState({ boxSel: ju.id }); });
   rerender(<Categorias />);
 
   expect(screen.getByText('Nova categoria')).toBeInTheDocument();
@@ -381,4 +381,24 @@ it('o tipo da categoria nova se escolhe pelas pílulas Gasto/Ganho', async () =>
     const criada = (await db.categorias.toArray()).find((c) => c.nome === 'salário');
     expect(criada?.tipo).toBe('ganho');
   });
+});
+
+it('criar ou salvar sem nome avisa embaixo dos botões', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+  render(<Categorias />);
+  const criar = screen.getByRole('button', { name: 'Criar' });
+  await userEvent.click(criar);
+  expect(screen.getByText('Dê um nome à categoria para criar.').previousElementSibling).toContainElement(criar);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+  expect(screen.getByLabelText('Editar nome')).toHaveFocus();
+  await userEvent.clear(screen.getByLabelText('Editar nome'));
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  expect(screen.getByText('Dê um nome à categoria para salvar.')).toBeInTheDocument();
+  expect((await db.categorias.get(cat.id))?.nome).toBe('mercado');
 });
