@@ -728,6 +728,49 @@ describe('categoriaAssinaturasDe', () => {
     expect(segunda).toBe(primeira);
     expect(await db.categoriasCartao.count()).toBe(1);
   });
+
+  it('duas chamadas simultâneas devolvem o mesmo id, sem duplicar', async () => {
+    const { cartao } = await montarCartao();
+    const [a, b] = await Promise.all([
+      repo.categoriaAssinaturasDe(cartao.id), repo.categoriaAssinaturasDe(cartao.id),
+    ]);
+
+    expect(b).toBe(a);
+    const doCartao = (await db.categoriasCartao.where('cartaoId').equals(cartao.id).toArray())
+      .filter((c) => c.nome === 'Assinaturas');
+    expect(doCartao).toHaveLength(1);
+    expect((await db.cartoes.get(cartao.id))?.categoriaAssinaturasId).toBe(a);
+  });
+});
+
+describe('categoriaParcelamentoDe', () => {
+  it('cria "Parcelamento" na primeira chamada e reaproveita nas seguintes', async () => {
+    const { cartao } = await montarCartao();
+    const primeira = await repo.categoriaParcelamentoDe(cartao.id);
+    const segunda = await repo.categoriaParcelamentoDe(cartao.id);
+
+    expect(segunda).toBe(primeira);
+    expect(await db.categoriasCartao.get(primeira)).toMatchObject({ cartaoId: cartao.id, nome: 'Parcelamento' });
+    expect((await db.cartoes.get(cartao.id))?.categoriaParcelamentoId).toBe(primeira);
+  });
+
+  it('duas chamadas simultâneas devolvem o mesmo id, sem duplicar', async () => {
+    const { cartao } = await montarCartao();
+    const [a, b] = await Promise.all([
+      repo.categoriaParcelamentoDe(cartao.id), repo.categoriaParcelamentoDe(cartao.id),
+    ]);
+
+    expect(b).toBe(a);
+    const doCartao = (await db.categoriasCartao.where('cartaoId').equals(cartao.id).toArray())
+      .filter((c) => c.nome === 'Parcelamento');
+    expect(doCartao).toHaveLength(1);
+    expect((await db.cartoes.get(cartao.id))?.categoriaParcelamentoId).toBe(a);
+  });
+
+  it('cartão inexistente rejeita sem criar categoria', async () => {
+    await expect(repo.categoriaParcelamentoDe('nao-existe')).rejects.toThrow();
+    expect(await db.categoriasCartao.count()).toBe(0);
+  });
 });
 
 describe('categoriaAClassificarDe', () => {
@@ -770,6 +813,30 @@ describe('categoriaAClassificarDe', () => {
     expect(idGasto).not.toBe(idGanho);
   });
 
+  it('duas chamadas simultâneas devolvem o mesmo id, sem duplicar', async () => {
+    const { box } = await boxECategoria();
+    const [a, b] = await Promise.all([
+      repo.categoriaAClassificarDe(box.id, 'gasto'), repo.categoriaAClassificarDe(box.id, 'gasto'),
+    ]);
+
+    expect(b).toBe(a);
+    const daBox = (await db.categorias.where('boxId').equals(box.id).toArray())
+      .filter((c) => c.nome === 'A classificar');
+    expect(daBox).toHaveLength(1);
+  });
+
+  it('ganho e gasto simultâneos criam uma de cada', async () => {
+    const { box } = await boxECategoria();
+    const [gasto, ganho] = await Promise.all([
+      repo.categoriaAClassificarDe(box.id, 'gasto'), repo.categoriaAClassificarDe(box.id, 'ganho'),
+    ]);
+
+    expect(gasto).not.toBe(ganho);
+    const nomes = (await db.categorias.where('boxId').equals(box.id).toArray())
+      .map((c) => c.nome).filter((n) => n.startsWith('A classificar')).sort();
+    expect(nomes).toEqual(['A classificar', 'A classificar (entrada)']);
+  });
+
   it('ignora uma homônima arquivada e cria outra', async () => {
     const { box } = await boxECategoria();
     const arquivada = await repo.salvarCategoria({
@@ -800,6 +867,18 @@ describe('categoriaCartaoAClassificarDe', () => {
     const segunda = await repo.categoriaCartaoAClassificarDe(cartao.id);
 
     expect(segunda).toBe(primeira);
+    const doCartao = (await db.categoriasCartao.where('cartaoId').equals(cartao.id).toArray())
+      .filter((c) => c.nome === 'A classificar');
+    expect(doCartao).toHaveLength(1);
+  });
+
+  it('duas chamadas simultâneas devolvem o mesmo id, sem duplicar', async () => {
+    const { cartao } = await montarCartao();
+    const [a, b] = await Promise.all([
+      repo.categoriaCartaoAClassificarDe(cartao.id), repo.categoriaCartaoAClassificarDe(cartao.id),
+    ]);
+
+    expect(b).toBe(a);
     const doCartao = (await db.categoriasCartao.where('cartaoId').equals(cartao.id).toArray())
       .filter((c) => c.nome === 'A classificar');
     expect(doCartao).toHaveLength(1);

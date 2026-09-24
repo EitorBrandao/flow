@@ -1,0 +1,1 @@
+- Corrigido: tocar duas vezes rápido ao salvar uma assinatura, registrar um parcelamento de fatura ou aplicar uma conferência por extrato podia criar a mesma categoria duas vezes ("Assinaturas", "Parcelamento" ou "A classificar").
