@@ -1,34 +1,30 @@
+import { Pencil } from 'lucide-react';
 import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { formatarDataBR } from '../../domain/dates';
+import type { Viagem } from '../../domain/types';
 import { viagensSobrepoem } from '../../domain/viagem';
 import { useApp } from '../../state/store';
 import CampoData from '../CampoData';
 
-export default function Viagens() {
-  const { dados, recarregar, hoje } = useApp();
-  const [nome, setNome] = useState('');
-  const [dataInicio, setDataInicio] = useState(hoje);
-  const [dataFim, setDataFim] = useState(hoje);
-  const [editandoId, setEditandoId] = useState<string | null>(null);
+interface CamposViagem { nome: string; dataInicio: string; dataFim: string }
+
+/** Campos de uma viagem, usados para criar (no topo) e para editar (dentro do item). */
+function FormViagem({ inicial, idExcluido, rotuloSalvar, onSalvo, onCancelar }: {
+  inicial: CamposViagem;
+  idExcluido?: string;
+  rotuloSalvar: 'Criar' | 'Salvar';
+  onSalvo: (campos: CamposViagem) => Promise<void>;
+  onCancelar?: () => void;
+}) {
+  const { dados } = useApp();
+  const [nome, setNome] = useState(inicial.nome);
+  const [dataInicio, setDataInicio] = useState(inicial.dataInicio);
+  const [dataFim, setDataFim] = useState(inicial.dataFim);
   const [aviso, setAviso] = useState('');
   const uid = useId();
-  if (!dados) return null;
-
-  const viagensOrdenadas = [...dados.viagens].sort((a, b) => (a.dataInicio < b.dataInicio ? 1 : -1));
-
-  function editar(id: string) {
-    const v = dados!.viagens.find((x) => x.id === id)!;
-    setEditandoId(id); setNome(v.nome); setDataInicio(v.dataInicio); setDataFim(v.dataFim);
-    setAviso('');
-  }
-
-  function limpar() {
-    setEditandoId(null); setNome(''); setDataInicio(hoje); setDataFim(hoje); setAviso('');
-  }
 
   async function salvar() {
-    // Este era o único guard da tela que voltava calado — os outros dois já explicavam.
     if (!nome.trim() || !dataInicio || !dataFim) {
       setAviso('Preencha nome, início e fim para salvar.');
       return;
@@ -37,14 +33,59 @@ export default function Viagens() {
       setAviso('A data final não pode ser anterior à data inicial.');
       return;
     }
-    if (viagensSobrepoem(dados!.viagens, dataInicio, dataFim, editandoId ?? undefined)) {
+    if (viagensSobrepoem(dados!.viagens, dataInicio, dataFim, idExcluido)) {
       setAviso('Já existe uma viagem cadastrada nesse período.');
       return;
     }
-    const campos = { nome: nome.trim(), dataInicio, dataFim };
-    if (editandoId) await repo.atualizarViagem(editandoId, campos);
-    else await repo.salvarViagem(campos);
-    limpar();
+    setAviso('');
+    await onSalvo({ nome: nome.trim(), dataInicio, dataFim });
+  }
+
+  return (
+    <>
+      {aviso && <p className="aviso">{aviso}</p>}
+      <div className="form-linha">
+        <div className="campo">
+          <label htmlFor={`${uid}-nome`}>Nome</label>
+          <input id={`${uid}-nome`} placeholder="ex.: Praia em janeiro" value={nome} onChange={(e) => setNome(e.target.value)} />
+        </div>
+      </div>
+      <div className="form-linha">
+        <div className="campo">
+          <label htmlFor={`${uid}-inicio`}>Data inicial</label>
+          <CampoData id={`${uid}-inicio`} value={dataInicio} onChange={setDataInicio} />
+        </div>
+        <div className="campo">
+          <label htmlFor={`${uid}-fim`}>Data final</label>
+          <CampoData id={`${uid}-fim`} value={dataFim} onChange={setDataFim} />
+        </div>
+      </div>
+      <div className="form-botoes">
+        {onCancelar && <button className="botao" onClick={onCancelar}>Cancelar</button>}
+        <button className="botao botao-primario" onClick={salvar}>{rotuloSalvar}</button>
+      </div>
+    </>
+  );
+}
+
+export default function Viagens() {
+  const { dados, recarregar, hoje } = useApp();
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  // Muda a cada criação para o formulário do topo voltar vazio (remonta com `key`).
+  const [versaoNova, setVersaoNova] = useState(0);
+  if (!dados) return null;
+
+  const viagensOrdenadas: Viagem[] = [...dados.viagens].sort((a, b) => (a.dataInicio < b.dataInicio ? 1 : -1));
+
+  async function criar(campos: CamposViagem) {
+    await repo.salvarViagem(campos);
+    setVersaoNova((v) => v + 1);
+    await recarregar();
+  }
+
+  async function atualizar(id: string, campos: CamposViagem) {
+    await repo.atualizarViagem(id, campos);
+    setEditandoId(null);
     await recarregar();
   }
 
@@ -57,39 +98,33 @@ export default function Viagens() {
   return (
     <div className="tela">
       <h2>Viagens</h2>
-      <h2>{editandoId ? 'Editar viagem' : 'Nova viagem'}</h2>
-      {aviso && <p className="aviso">{aviso}</p>}
-      <div className="linha">
-        <div className="campo cresce">
-          <label htmlFor={`${uid}-nome`}>Nome</label>
-          <input id={`${uid}-nome`} placeholder="ex.: Praia em janeiro" value={nome} onChange={(e) => setNome(e.target.value)} />
-        </div>
-      </div>
-      <div className="linha">
-        <div className="campo">
-          <label htmlFor={`${uid}-inicio`}>Data inicial</label>
-          <CampoData id={`${uid}-inicio`} value={dataInicio} onChange={setDataInicio} />
-        </div>
-        <div className="campo">
-          <label htmlFor={`${uid}-fim`}>Data final</label>
-          <CampoData id={`${uid}-fim`} value={dataFim} onChange={setDataFim} />
-        </div>
-        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={salvar}>
-          {editandoId ? 'Salvar' : 'Criar'}
-        </button>
-        {editandoId && <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={limpar}>Cancelar</button>}
-      </div>
+      {!editandoId && (
+        <>
+          <h2>Nova viagem</h2>
+          <FormViagem key={versaoNova} inicial={{ nome: '', dataInicio: hoje, dataFim: hoje }} rotuloSalvar="Criar" onSalvo={criar} />
+        </>
+      )}
 
       <div className="lista">
         {viagensOrdenadas.map((v) => (
-          <div className="item" key={v.id}>
-            <div className="cresce">
-              {v.nome}
-              <div className="sub">{formatarDataBR(v.dataInicio)} – {formatarDataBR(v.dataFim)}</div>
+          editandoId === v.id ? (
+            <div className="item item-coluna" key={v.id}>
+              <FormViagem
+                inicial={{ nome: v.nome, dataInicio: v.dataInicio, dataFim: v.dataFim }}
+                idExcluido={v.id} rotuloSalvar="Salvar"
+                onSalvo={(campos) => atualizar(v.id, campos)} onCancelar={() => setEditandoId(null)}
+              />
             </div>
-            <button className="botao" onClick={() => editar(v.id)}>Editar</button>
-            <button className="botao botao-perigo" onClick={() => excluir(v.id)}>Excluir</button>
-          </div>
+          ) : (
+            <div className="item" key={v.id}>
+              <div className="cresce">
+                {v.nome}
+                <div className="sub">{formatarDataBR(v.dataInicio)} – {formatarDataBR(v.dataFim)}</div>
+              </div>
+              <button className="botao" aria-label="Editar" onClick={() => setEditandoId(v.id)}><Pencil size={16} /></button>
+              <button className="botao botao-perigo" onClick={() => excluir(v.id)}>Excluir</button>
+            </div>
+          )
         ))}
         {viagensOrdenadas.length === 0 && <p className="sub">Nenhuma viagem cadastrada.</p>}
       </div>

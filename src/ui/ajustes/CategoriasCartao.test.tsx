@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
@@ -101,4 +101,75 @@ it('trocar a box no chip do topo troca os cartões oferecidos no seletor de Cate
 
   expect(screen.getByRole('button', { name: 'Santander' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Nubank' })).not.toBeInTheDocument();
+});
+
+it('trocar de cartão pela pílula com um item aberto traz "Nova categoria do cartão" de volta', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cartaoA = await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+  await repo.salvarCartao({ boxId: box.id, nome: 'Inter', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31');
+  await repo.salvarCategoriaCartao({ cartaoId: cartaoA.id, nome: 'mercado', ordem: 0 });
+  await useApp.getState().iniciar();
+
+  render(<CategoriasCartao />);
+  // Qual cartão vem selecionado por padrão não é garantido (a ordem de `dados.cartoes` segue
+  // a chave primária, não a ordem de criação) — seleciona o Nubank explicitamente, que é o
+  // dono da categoria "mercado" usada no teste.
+  await userEvent.click(screen.getByRole('button', { name: 'Nubank' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+  expect(screen.queryByText('Nova categoria do cartão')).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Inter' }));
+
+  expect(screen.getByText('Nova categoria do cartão')).toBeInTheDocument();
+});
+
+it('toca no lápis para editar: abre os campos dentro do item e some "Nova categoria do cartão"', async () => {
+  const cartao = await prepararCartao();
+  await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  await useApp.getState().iniciar();
+
+  render(<CategoriasCartao />);
+
+  expect(screen.getByText('Nova categoria do cartão')).toBeInTheDocument();
+  const item = screen.getByText('mercado').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  expect(screen.queryByText('Nova categoria do cartão')).not.toBeInTheDocument();
+  expect(within(item).getByLabelText('Editar nome')).toHaveValue('mercado');
+});
+
+it('no item aberto, os botões aparecem na ordem Cancelar, Salvar', async () => {
+  const cartao = await prepararCartao();
+  await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  await useApp.getState().iniciar();
+
+  render(<CategoriasCartao />);
+  const item = screen.getByText('mercado').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  const botoes = within(item).getAllByRole('button');
+  const nomes = botoes.map((b) => b.textContent);
+  expect(nomes.indexOf('Cancelar')).toBeLessThan(nomes.indexOf('Salvar'));
+  expect(within(item).getByRole('button', { name: 'Salvar' })).toHaveClass('botao-primario');
+});
+
+it('cancelar fecha o item sem gravar e traz "Nova categoria do cartão" de volta', async () => {
+  const cartao = await prepararCartao();
+  const cat = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  await useApp.getState().iniciar();
+
+  render(<CategoriasCartao />);
+  const item = screen.getByText('mercado').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const input = within(item).getByLabelText('Editar nome');
+  await userEvent.clear(input);
+  await userEvent.type(input, 'outro nome');
+  await userEvent.click(within(item).getByRole('button', { name: 'Cancelar' }));
+
+  expect(screen.getByText('Nova categoria do cartão')).toBeInTheDocument();
+  expect(screen.getByText('mercado')).toBeInTheDocument();
+  const atual = await db.categoriasCartao.get(cat.id);
+  expect(atual?.nome).toBe('mercado');
 });

@@ -1,0 +1,5 @@
+- As telas de cadastro em Ajustes passam a funcionar do mesmo jeito.
+  - O formulário de cima serve para criar; para editar, toque no lápis do próprio item.
+  - O item abre ali mesmo, com Cancelar e Salvar à direita.
+  - Os campos ocupam a largura toda da tela.
+  - Nova box fica no topo da tela, como nas outras.

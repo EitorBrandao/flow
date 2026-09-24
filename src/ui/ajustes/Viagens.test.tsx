@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
@@ -59,16 +59,69 @@ it('bloqueia viagem com período sobreposto a outra existente', async () => {
   expect(await db.viagens.count()).toBe(1);
 });
 
+it('o formulário de criação não tem botão Cancelar', async () => {
+  await useApp.getState().iniciar();
+  render(<Viagens />);
+
+  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument();
+});
+
+it('toca no lápis para editar: abre os campos dentro do item e some "Nova viagem"', async () => {
+  await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-10', dataFim: '2026-01-15' });
+  await useApp.getState().iniciar();
+  render(<Viagens />);
+
+  expect(screen.getByText('Nova viagem')).toBeInTheDocument();
+  const item = screen.getByText('Praia').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  expect(screen.queryByText('Nova viagem')).not.toBeInTheDocument();
+  expect(within(item).getByLabelText('Nome')).toHaveValue('Praia');
+});
+
+it('no item aberto, os botões aparecem na ordem Cancelar, Salvar', async () => {
+  await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-10', dataFim: '2026-01-15' });
+  await useApp.getState().iniciar();
+  render(<Viagens />);
+
+  const item = screen.getByText('Praia').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  const botoes = within(item).getAllByRole('button');
+  const nomes = botoes.map((b) => b.textContent);
+  expect(nomes.indexOf('Cancelar')).toBeLessThan(nomes.indexOf('Salvar'));
+  expect(within(item).getByRole('button', { name: 'Salvar' })).toHaveClass('botao-primario');
+});
+
+it('cancelar fecha o item sem gravar e traz "Nova viagem" de volta', async () => {
+  const v = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-10', dataFim: '2026-01-15' });
+  await useApp.getState().iniciar();
+  render(<Viagens />);
+
+  const item = screen.getByText('Praia').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const nome = within(item).getByLabelText('Nome') as HTMLInputElement;
+  await userEvent.clear(nome);
+  await userEvent.type(nome, 'Outro nome');
+  await userEvent.click(within(item).getByRole('button', { name: 'Cancelar' }));
+
+  expect(screen.getByText('Nova viagem')).toBeInTheDocument();
+  expect(within(item).getByText('Praia')).toBeInTheDocument();
+  const atual = await db.viagens.get(v.id);
+  expect(atual?.nome).toBe('Praia');
+});
+
 it('edita uma viagem existente', async () => {
   const v = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-10', dataFim: '2026-01-15' });
   await useApp.getState().iniciar();
   render(<Viagens />);
 
-  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
-  const nome = screen.getByLabelText('Nome') as HTMLInputElement;
+  const item = screen.getByText('Praia').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const nome = within(item).getByLabelText('Nome') as HTMLInputElement;
   await userEvent.clear(nome);
   await userEvent.type(nome, 'Praia em família');
-  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
 
   await waitFor(() => expect(screen.getByText('Praia em família')).toBeInTheDocument());
   const atualizada = await db.viagens.get(v.id);

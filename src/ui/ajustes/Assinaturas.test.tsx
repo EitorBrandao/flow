@@ -1,9 +1,10 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
+import { formatarBRL } from '../../domain/money';
 import { agoraISO, novoId } from '../../domain/types';
 import { useApp } from '../../state/store';
 import Assinaturas from './Assinaturas';
@@ -97,4 +98,95 @@ it('trocar a box no chip do topo troca os cartões oferecidos no seletor de Assi
 
   expect(screen.getByRole('button', { name: 'Santander' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Nubank' })).not.toBeInTheDocument();
+});
+
+it('o formulário de criação não tem botão Cancelar', async () => {
+  await prepararCartao();
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Assinaturas />);
+
+  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument();
+});
+
+it('toca no lápis para editar: abre os campos dentro do item e some "Nova assinatura"', async () => {
+  const cartao = await prepararCartao();
+  await repo.salvarAssinatura({
+    cartaoId: cartao.id, categoriaCartaoId: await repo.categoriaAssinaturasDe(cartao.id),
+    valor: 3990, dataInicio: '2026-07-01', diaDoMes: 8, parcelas: null, descricao: 'Netflix',
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Assinaturas />);
+
+  expect(screen.getByText('Nova assinatura')).toBeInTheDocument();
+  const item = screen.getByText('Netflix').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  expect(screen.queryByText('Nova assinatura')).not.toBeInTheDocument();
+  expect(within(item).getByLabelText('Valor')).toHaveValue(formatarBRL(3990));
+});
+
+it('no item aberto, os botões aparecem na ordem Cancelar, Salvar', async () => {
+  const cartao = await prepararCartao();
+  await repo.salvarAssinatura({
+    cartaoId: cartao.id, categoriaCartaoId: await repo.categoriaAssinaturasDe(cartao.id),
+    valor: 3990, dataInicio: '2026-07-01', diaDoMes: 8, parcelas: null, descricao: 'Netflix',
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Assinaturas />);
+
+  const item = screen.getByText('Netflix').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  const botoes = within(item).getAllByRole('button');
+  const nomes = botoes.map((b) => b.textContent);
+  expect(nomes.indexOf('Cancelar')).toBeLessThan(nomes.indexOf('Salvar'));
+  expect(within(item).getByRole('button', { name: 'Salvar' })).toHaveClass('botao-primario');
+});
+
+it('cancelar fecha o item sem gravar e traz "Nova assinatura" de volta', async () => {
+  const cartao = await prepararCartao();
+  const assinatura = await repo.salvarAssinatura({
+    cartaoId: cartao.id, categoriaCartaoId: await repo.categoriaAssinaturasDe(cartao.id),
+    valor: 3990, dataInicio: '2026-07-01', diaDoMes: 8, parcelas: null, descricao: 'Netflix',
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Assinaturas />);
+
+  const item = screen.getByText('Netflix').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const valorInput = within(item).getByLabelText('Valor');
+  await userEvent.clear(valorInput);
+  await userEvent.type(valorInput, '99,00');
+  await userEvent.click(within(item).getByRole('button', { name: 'Cancelar' }));
+
+  expect(screen.getByText('Nova assinatura')).toBeInTheDocument();
+  expect(within(item).getByText(formatarBRL(3990).replace(/\s/g, ' '))).toBeInTheDocument();
+  const atual = await db.recorrenciasCartao.get(assinatura.id);
+  expect(atual?.valor).toBe(3990);
+});
+
+it('edita uma assinatura existente pelo item', async () => {
+  const cartao = await prepararCartao();
+  const assinatura = await repo.salvarAssinatura({
+    cartaoId: cartao.id, categoriaCartaoId: await repo.categoriaAssinaturasDe(cartao.id),
+    valor: 3990, dataInicio: '2026-07-01', diaDoMes: 8, parcelas: null, descricao: 'Netflix',
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Assinaturas />);
+
+  const item = screen.getByText('Netflix').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const valorInput = within(item).getByLabelText('Valor');
+  await userEvent.clear(valorInput);
+  await userEvent.type(valorInput, '49,90');
+  await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(() => expect(screen.getByText(formatarBRL(4990).replace(/\s/g, ' '))).toBeInTheDocument());
+  const atualizada = await db.recorrenciasCartao.get(assinatura.id);
+  expect(atualizada?.valor).toBe(4990);
 });

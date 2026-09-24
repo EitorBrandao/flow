@@ -30,14 +30,14 @@ function ItemCategoriaCartao({
       dragListener={false} dragControls={controls}
     >
       {editando ? (
-        <>
-          <div className="campo cresce">
+        <div className="form-linha cresce">
+          <div className="campo">
             <label htmlFor={uidEditar}>Editar nome</label>
             <input id={uidEditar} value={nomeEdit} onChange={(e) => onEditarNome(e.target.value)} />
           </div>
-          <button className="botao botao-primario" onClick={onSalvarEdicao}>Salvar</button>
           <button className="botao" onClick={onCancelarEdicao}>Cancelar</button>
-        </>
+          <button className="botao botao-primario" onClick={onSalvarEdicao}>Salvar</button>
+        </div>
       ) : (
         <>
           <button className="botao" aria-label="Arrastar para reordenar" onPointerDown={(e) => controls.start(e)}>
@@ -118,6 +118,15 @@ export default function CategoriasCartao() {
     setNomeEdit('');
   }
 
+  // Trocar de cartão pela pílula com um item aberto não pode deixar o item sumido da lista
+  // (filtrada pelo cartão novo) e o formulário de criação escondido — mesmo cuidado de
+  // Cartoes/Recorrencias/Assinaturas ao trocar de box.
+  function selecionarCartao(id: string) {
+    setCartaoId(id);
+    setEditandoId(null);
+    setNomeEdit('');
+  }
+
   async function salvarEdicao() {
     if (!editandoId || !nomeEdit.trim()) return;
     await repo.atualizarCategoriaCartao(editandoId, { nome: nomeEdit.trim() });
@@ -153,17 +162,22 @@ export default function CategoriasCartao() {
             <SeletorPills
               opcoes={cartoesDaBox.map((c) => ({ id: c.id, nome: c.nome }))}
               selecionadaId={cartaoId}
-              onSelecionar={setCartaoId}
+              onSelecionar={selecionarCartao}
             />
           </div>
 
-          <div className="linha">
-            <div className="campo" style={{ flex: 1 }}>
-              <label htmlFor={`${uid}-nova`}>Nova categoria do cartão</label>
-              <input id={`${uid}-nova`} placeholder="nome" value={nome} onChange={(e) => setNome(e.target.value)} />
-            </div>
-            <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={criar}>Criar</button>
-          </div>
+          {!editandoId && (
+            <>
+              <h2>Nova categoria do cartão</h2>
+              <div className="form-linha">
+                <div className="campo">
+                  <label htmlFor={`${uid}-nova`}>Nome</label>
+                  <input id={`${uid}-nova`} placeholder="nome" value={nome} onChange={(e) => setNome(e.target.value)} />
+                </div>
+                <button className="botao botao-primario" onClick={criar}>Criar</button>
+              </div>
+            </>
+          )}
 
           <Reorder.Group as="div" className="lista" axis="y" values={ativas} onReorder={reordenar}>
             {ativas.map((c) => <ItemCategoriaCartao key={c.id} {...props(c)} />)}

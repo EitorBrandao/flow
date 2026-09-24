@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
@@ -184,6 +184,27 @@ it('não exclui quando a confirmação é cancelada', async () => {
   expect(screen.getByText('Banco Mantido')).toBeInTheDocument();
 });
 
+it('trocar a box no chip do topo com um banco aberto traz "Novo banco" de volta', async () => {
+  const agora = agoraISO();
+  const eitor = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  const ju = { id: novoId(), nome: 'ju', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(eitor);
+  await repo.salvarBox(ju);
+  await repo.salvarBanco({ boxId: eitor.id, nome: 'Banco Eitor', ordem: 0 });
+  await repo.salvarBanco({ boxId: ju.id, nome: 'Banco Ju', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: eitor.id, hoje: '2026-08-05' });
+
+  const { rerender } = render(<Bancos />);
+  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+  expect(screen.queryByText('Novo banco')).not.toBeInTheDocument();
+
+  useApp.setState({ boxSel: ju.id });
+  rerender(<Bancos />);
+
+  expect(screen.getByText('Novo banco')).toBeInTheDocument();
+});
+
 it('mostra a contagem de cartões vinculados a cada banco', async () => {
   const box = await comBox();
   const bancoComUm = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um Cartao', ordem: 0 });
@@ -204,4 +225,86 @@ it('mostra a contagem de cartões vinculados a cada banco', async () => {
   expect(await screen.findByText(/1 cartão/)).toBeInTheDocument();
   expect(await screen.findByText(/2 cartões/)).toBeInTheDocument();
   expect(await screen.findByText(/nenhum cartão/)).toBeInTheDocument();
+});
+
+it('o botão de editar é um ícone (lápis), não texto', async () => {
+  const box = await comBox();
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Original', ordem: 0 });
+  await recarregarDados();
+  render(<Bancos />);
+
+  const item = screen.getByText('Banco Original').closest('.item') as HTMLElement;
+  const botaoEditar = within(item).getByRole('button', { name: 'Editar' });
+  expect(botaoEditar.querySelector('svg')).toBeInTheDocument();
+  expect(botaoEditar).not.toHaveTextContent('Editar');
+});
+
+it('no item aberto, os botões aparecem na ordem Cancelar, Salvar, dentro de .form-botoes', async () => {
+  const box = await comBox();
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Original', ordem: 0 });
+  await recarregarDados();
+  render(<Bancos />);
+
+  const item = screen.getByText('Banco Original').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  const botoes = within(item).getAllByRole('button');
+  const nomes = botoes.map((b) => b.textContent);
+  expect(nomes.indexOf('Cancelar')).toBeLessThan(nomes.indexOf('Salvar'));
+  const botaoSalvar = within(item).getByRole('button', { name: 'Salvar' });
+  expect(botaoSalvar).toHaveClass('botao-primario');
+  expect(botaoSalvar.closest('.form-botoes')).toBeInTheDocument();
+});
+
+it('o formulário de criação some ao editar e volta ao cancelar', async () => {
+  const box = await comBox();
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Original', ordem: 0 });
+  await recarregarDados();
+  render(<Bancos />);
+
+  expect(screen.getByText('Novo banco')).toBeInTheDocument();
+  expect(screen.getByLabelText('Nome do banco')).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+  expect(screen.queryByText('Novo banco')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Nome do banco')).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+  expect(screen.getByText('Novo banco')).toBeInTheDocument();
+  expect(screen.getByLabelText('Nome do banco')).toBeInTheDocument();
+});
+
+it('o formulário de criação não tem botão Cancelar', async () => {
+  await comBox();
+  render(<Bancos />);
+
+  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument();
+});
+
+it('depois de abrir e cancelar um banco, o formulário de criação que volta continua sem Cancelar', async () => {
+  const box = await comBox();
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Original', ordem: 0 });
+  await recarregarDados();
+  render(<Bancos />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+  expect(screen.getByText('Novo banco')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument();
+});
+
+it('erro ao salvar um banco aberto mostra o aviso dentro do item, não no topo', async () => {
+  const box = await comBox();
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Original', ordem: 0 });
+  await recarregarDados();
+  render(<Bancos />);
+
+  const item = screen.getByText('Banco Original').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const nome = within(item).getByLabelText('Nome') as HTMLInputElement;
+  await userEvent.clear(nome);
+  await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
+
+  expect(await within(item).findByText('Dê um nome ao banco para salvar.')).toBeInTheDocument();
 });

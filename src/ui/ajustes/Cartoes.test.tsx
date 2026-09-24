@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
@@ -38,6 +38,26 @@ it('cadastra um cartão sem pedir categoria e cria a categoria da fatura sozinho
   expect(cartoes[0]).toMatchObject({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5, ativo: true });
   const categoria = await db.categorias.get(cartoes[0].categoriaFaturaId);
   expect(categoria).toMatchObject({ boxId: box.id, nome: 'Nubank', tipo: 'gasto' });
+});
+
+it('depois de criar, os dias de fechamento e vencimento continuam preenchidos — nome volta vazio', async () => {
+  await montarBox();
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Cartoes />);
+
+  await userEvent.type(screen.getByLabelText('Nome do cartão'), 'Nubank');
+  await userEvent.clear(screen.getByLabelText('Dia de fechamento'));
+  await userEvent.type(screen.getByLabelText('Dia de fechamento'), '10');
+  await userEvent.clear(screen.getByLabelText('Dia de vencimento'));
+  await userEvent.type(screen.getByLabelText('Dia de vencimento'), '20');
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+  await waitFor(() => expect(screen.getByText(/Nubank/)).toBeInTheDocument());
+
+  expect(screen.getByLabelText('Nome do cartão')).toHaveValue('');
+  expect((screen.getByLabelText('Dia de fechamento') as HTMLInputElement).value).toBe('10');
+  expect((screen.getByLabelText('Dia de vencimento') as HTMLInputElement).value).toBe('20');
 });
 
 it('permite dois cartões ativos na mesma box', async () => {
@@ -117,9 +137,10 @@ it('trocar para "— sem banco —" remove o vínculo de um cartão que tinha ba
   useApp.setState({ hoje: '2026-07-01' });
   render(<Cartoes />);
 
-  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
-  await userEvent.selectOptions(screen.getByLabelText('Banco'), '');
-  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  const item = screen.getByText('Nubank', { exact: false }).closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  await userEvent.selectOptions(within(item).getByLabelText('Banco'), '');
+  await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
 
   await waitFor(async () => {
     const cartoes = await db.cartoes.toArray();
@@ -175,4 +196,63 @@ it('bloquear compras não desativa o cartão, só o esconde do fluxo de nova com
     const [cartao] = await db.cartoes.toArray();
     expect(cartao.permiteCompra).toBe(true);
   });
+});
+
+it('o formulário de criação não tem botão Cancelar', async () => {
+  await montarBox();
+  await useApp.getState().iniciar();
+  render(<Cartoes />);
+
+  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument();
+});
+
+it('toca no lápis para editar: abre os campos dentro do item e some "Novo cartão"', async () => {
+  const box = await montarBox();
+  await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Cartoes />);
+
+  expect(screen.getByText('Novo cartão')).toBeInTheDocument();
+  const item = screen.getByText('Nubank', { exact: false }).closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  expect(screen.queryByText('Novo cartão')).not.toBeInTheDocument();
+  expect(within(item).getByLabelText('Nome do cartão')).toHaveValue('Nubank');
+});
+
+it('no item aberto, os botões aparecem na ordem Cancelar, Salvar', async () => {
+  const box = await montarBox();
+  await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Cartoes />);
+
+  const item = screen.getByText('Nubank', { exact: false }).closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  const botoes = within(item).getAllByRole('button');
+  const nomes = botoes.map((b) => b.textContent);
+  expect(nomes.indexOf('Cancelar')).toBeLessThan(nomes.indexOf('Salvar'));
+  expect(within(item).getByRole('button', { name: 'Salvar' })).toHaveClass('botao-primario');
+});
+
+it('cancelar fecha o item sem gravar e traz "Novo cartão" de volta', async () => {
+  const box = await montarBox();
+  const cartao = await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Cartoes />);
+
+  const item = screen.getByText('Nubank', { exact: false }).closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const nome = within(item).getByLabelText('Nome do cartão') as HTMLInputElement;
+  await userEvent.clear(nome);
+  await userEvent.type(nome, 'Outro nome');
+  await userEvent.click(within(item).getByRole('button', { name: 'Cancelar' }));
+
+  expect(screen.getByText('Novo cartão')).toBeInTheDocument();
+  expect(within(item).getByText('Nubank', { exact: false })).toBeInTheDocument();
+  const atual = await db.cartoes.get(cartao.id);
+  expect(atual?.nome).toBe('Nubank');
 });

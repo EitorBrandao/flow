@@ -1,4 +1,5 @@
-import { useId, useState } from 'react';
+import { Pencil } from 'lucide-react';
+import { useEffect, useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { bancosDaBox } from '../../domain/bancos';
 import { proximaOrdem } from '../../domain/categorias';
@@ -18,7 +19,8 @@ function textoContagemCartoes(n: number): string {
 export default function Bancos() {
   const { dados, boxSel, recarregar, hoje } = useApp();
   const [nomeNovo, setNomeNovo] = useState('');
-  const [aviso, setAviso] = useState('');
+  const [avisoCriacao, setAvisoCriacao] = useState('');
+  const [avisoEdicao, setAvisoEdicao] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nomeEdicao, setNomeEdicao] = useState('');
   const [temSaldo, setTemSaldo] = useState(false);
@@ -26,6 +28,13 @@ export default function Bancos() {
   const [negativo, setNegativo] = useState(false);
   const [dataEdicao, setDataEdicao] = useState<ISODate>(hoje);
   const uid = useId();
+
+  // Trocar de box com um banco aberto não pode deixar o item sumido da lista (filtrada pela
+  // box nova) e o formulário de criação escondido — mesmo cuidado de Cartoes/Recorrencias.
+  useEffect(() => {
+    setEditandoId(null);
+    setAvisoEdicao('');
+  }, [boxSel]);
 
   if (!dados) return null;
 
@@ -57,14 +66,14 @@ export default function Bancos() {
     // Guard silencioso deixaria quem está cadastrando o primeiro banco sem saber o que
     // faltou — mesmo cuidado já registrado em Boxes.tsx e Viagens.tsx.
     if (!nomeNovo.trim()) {
-      setAviso('Dê um nome ao banco para criar.');
+      setAvisoCriacao('Dê um nome ao banco para criar.');
       return;
     }
     const ordem = proximaOrdem(bancos.filter((b) => b.boxId === boxIdCriacao));
     await repo.salvarBanco({ boxId: boxIdCriacao!, nome: nomeNovo.trim(), ordem });
     await recarregar();
     setNomeNovo('');
-    setAviso('');
+    setAvisoCriacao('');
   }
 
   function editar(id: string) {
@@ -75,12 +84,12 @@ export default function Bancos() {
     setMagnitude(Math.abs(b.saldoDeclaradoCent ?? 0));
     setNegativo((b.saldoDeclaradoCent ?? 0) < 0);
     setDataEdicao(b.dataSaldoDeclarado ?? hoje);
-    setAviso('');
+    setAvisoEdicao('');
   }
 
   function cancelarEdicao() {
     setEditandoId(null);
-    setAviso('');
+    setAvisoEdicao('');
   }
 
   async function salvarEdicao() {
@@ -88,14 +97,14 @@ export default function Bancos() {
     const nome = nomeEdicao.trim();
     // Mesmo aviso da criação: sem isso, salvar com o nome apagado voltaria calado.
     if (!nome) {
-      setAviso('Dê um nome ao banco para salvar.');
+      setAvisoEdicao('Dê um nome ao banco para salvar.');
       return;
     }
     const saldoDeclaradoCent = temSaldo ? (negativo ? -magnitude : magnitude) : null;
     const dataSaldoDeclarado = temSaldo ? (dataEdicao || null) : null;
     await repo.atualizarBanco(editandoId, { nome, saldoDeclaradoCent, dataSaldoDeclarado });
     setEditandoId(null);
-    setAviso('');
+    setAvisoEdicao('');
     await recarregar();
   }
 
@@ -108,18 +117,23 @@ export default function Bancos() {
   return (
     <div className="tela">
       <h2>Bancos</h2>
-      {aviso && <p className="aviso">{aviso}</p>}
-      <div className="linha">
-        <div className="campo cresce">
-          <label htmlFor={`${uid}-nome`}>Nome do banco</label>
-          <input
-            id={`${uid}-nome`} placeholder="ex.: Banco Um" value={nomeNovo}
-            onChange={(e) => setNomeNovo(e.target.value)}
-          />
-        </div>
-        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={criar}>Criar</button>
-      </div>
-      <p className="sub">Será criado na box {nomeBoxCriacao}.</p>
+      {!editandoId && (
+        <>
+          <h2>Novo banco</h2>
+          {avisoCriacao && <p className="aviso">{avisoCriacao}</p>}
+          <div className="form-linha">
+            <div className="campo">
+              <label htmlFor={`${uid}-nome`}>Nome do banco</label>
+              <input
+                id={`${uid}-nome`} placeholder="ex.: Banco Um" value={nomeNovo}
+                onChange={(e) => setNomeNovo(e.target.value)}
+              />
+            </div>
+            <button className="botao botao-primario" onClick={criar}>Criar</button>
+          </div>
+          <p className="sub">Será criado na box {nomeBoxCriacao}.</p>
+        </>
+      )}
 
       <p className="rotulo-grupo">Bancos desta box</p>
       <div className="lista">
@@ -129,12 +143,15 @@ export default function Bancos() {
             <div className={`item${emEdicao ? ' item-coluna' : ''}`} key={b.id}>
               {emEdicao ? (
                 <>
-                  <div className="campo">
-                    <label htmlFor={`${b.id}-nome`}>Nome</label>
-                    <input
-                      id={`${b.id}-nome`} value={nomeEdicao}
-                      onChange={(e) => setNomeEdicao(e.target.value)}
-                    />
+                  {avisoEdicao && <p className="aviso">{avisoEdicao}</p>}
+                  <div className="form-linha">
+                    <div className="campo">
+                      <label htmlFor={`${b.id}-nome`}>Nome</label>
+                      <input
+                        id={`${b.id}-nome`} value={nomeEdicao}
+                        onChange={(e) => setNomeEdicao(e.target.value)}
+                      />
+                    </div>
                   </div>
                   <div className="campo">
                     <label htmlFor={`${b.id}-tem-saldo`}>
@@ -146,7 +163,7 @@ export default function Bancos() {
                     </label>
                   </div>
                   {temSaldo && (
-                    <>
+                    <div className="form-linha">
                       <div className="campo">
                         <label htmlFor={`${b.id}-saldo`}>Saldo</label>
                         {/* O rótulo fica ACIMA, como em todo campo do app; o botão de sinal
@@ -160,20 +177,18 @@ export default function Bancos() {
                           >
                             {negativo ? '−' : '+'}
                           </button>
-                          <CampoValor id={`${b.id}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} />
+                          <CampoValor id={`${b.id}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} style={{ flex: 1, minWidth: 0 }} />
                         </div>
                       </div>
                       <div className="campo">
                         <label htmlFor={`${b.id}-data`}>Data do saldo</label>
                         <CampoData id={`${b.id}-data`} value={dataEdicao} onChange={setDataEdicao} />
                       </div>
-                    </>
+                    </div>
                   )}
-                  {/* Ações no fim do formulário: no topo, ao lado do Nome, "Salvar" parecia
-                      salvar só o nome. */}
-                  <div className="acoes">
-                    <button className="botao botao-primario" onClick={salvarEdicao}>Salvar</button>
+                  <div className="form-botoes">
                     <button className="botao" onClick={cancelarEdicao}>Cancelar</button>
+                    <button className="botao botao-primario" onClick={salvarEdicao}>Salvar</button>
                   </div>
                 </>
               ) : (
@@ -187,7 +202,7 @@ export default function Bancos() {
                       {' · '}{textoContagemCartoes(cartoesDoBanco(b.id))}
                     </div>
                   </div>
-                  <button className="botao" onClick={() => editar(b.id)}>Editar</button>
+                  <button className="botao" aria-label="Editar" onClick={() => editar(b.id)}><Pencil size={16} /></button>
                   <button className="botao botao-perigo" onClick={() => excluir(b.id)}>Excluir</button>
                 </>
               )}

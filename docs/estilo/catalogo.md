@@ -41,6 +41,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.botao-ver-mais` | link azul de mostrar/ocultar uma lista longa (ex.: lançamentos da fatura, escondidos por padrão) |
 | `.secao` (+ `.acao`) | cabeçalho de seção: título à esquerda, ação/contagem em azul à direita |
 | `.campo` / `.linha` | `.campo` é wrapper label+input; `.linha` agrupa campos (ou outros elementos) lado a lado |
+| `.form-linha` / `.form-botoes` | largura dos formulários de Ajustes: `.form-linha` põe campos lado a lado dividindo a largura por igual (e, em formulário de um campo só, os botões no fim da mesma linha); `.form-botoes` é a linha de botões de um formulário de várias linhas, à direita, na ordem Cancelar, Salvar |
 | `.campo-busca` | input de busca avulso (fora de `.campo`) |
 | `.sub` | subtítulo/texto secundário 13px em `--muted` |
 | `.grade-categorias` | grade 3 colunas de seleção de categoria; `.selecionada` marca o item ativo |

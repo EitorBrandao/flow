@@ -1,9 +1,10 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
+import { formatarBRL } from '../../domain/money';
 import { agoraISO, novoId } from '../../domain/types';
 import { useApp } from '../../state/store';
 import Recorrencias from './Recorrencias';
@@ -130,4 +131,113 @@ it('box com recorrência não mostra cartão explicativo', async () => {
 
   expect(screen.queryByText('Recorrências geram previstos')).not.toBeInTheDocument();
   expect(screen.getByText('assinatura', { selector: 'div' })).toBeInTheDocument();
+});
+
+it('o formulário de criação não tem botão Cancelar', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  render(<Recorrencias />);
+
+  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument();
+});
+
+it('depois de criar, tipo, categoria, início e dia continuam preenchidos — só valor e parcelas voltam ao padrão', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'salário', tipo: 'ganho', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-02' });
+  render(<Recorrencias />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Ganho' }));
+  await userEvent.click(screen.getByRole('button', { name: 'salário' }));
+  await userEvent.type(screen.getByLabelText('Valor'), '500000');
+  await userEvent.clear(screen.getByLabelText('Início'));
+  await userEvent.type(screen.getByLabelText('Início'), '2026-08-15');
+  await userEvent.clear(screen.getByLabelText('Dia do mês'));
+  await userEvent.type(screen.getByLabelText('Dia do mês'), '20');
+  await userEvent.type(screen.getByLabelText('Parcelas'), '6');
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+  await waitFor(() => expect(screen.getByText('salário', { selector: 'div' })).toBeInTheDocument());
+
+  expect(screen.getByRole('button', { name: 'Ganho' })).toHaveClass('botao-primario');
+  expect(screen.getByRole('button', { name: 'salário' })).toHaveClass('selecionada');
+  expect(screen.getByLabelText('Início')).toHaveValue('2026-08-15');
+  expect((screen.getByLabelText('Dia do mês') as HTMLInputElement).value).toBe('20');
+  expect(screen.getByLabelText('Valor')).toHaveValue(formatarBRL(0));
+  expect((screen.getByLabelText('Parcelas') as HTMLInputElement).value).toBe('');
+});
+
+it('toca no lápis para editar: abre os campos dentro do item e some "Nova recorrência"', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
+  await repo.salvarRecorrencia({
+    boxId: box.id, categoriaId: cat.id, valor: 5000, dataInicio: '2026-07-01',
+    diaDoMes: 5, parcelas: 3,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-02' });
+  render(<Recorrencias />);
+
+  expect(screen.getByText('Nova recorrência')).toBeInTheDocument();
+  const item = screen.getByText('assinatura', { selector: 'div' }).closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  expect(screen.queryByText('Nova recorrência')).not.toBeInTheDocument();
+  expect(within(item).getByLabelText('Valor')).toHaveValue(formatarBRL(5000));
+});
+
+it('no item aberto, os botões aparecem na ordem Cancelar, Salvar', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
+  await repo.salvarRecorrencia({
+    boxId: box.id, categoriaId: cat.id, valor: 5000, dataInicio: '2026-07-01',
+    diaDoMes: 5, parcelas: 3,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-02' });
+  render(<Recorrencias />);
+
+  const item = screen.getByText('assinatura', { selector: 'div' }).closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  const botoes = within(item).getAllByRole('button');
+  const nomes = botoes.map((b) => b.textContent);
+  expect(nomes.indexOf('Cancelar')).toBeLessThan(nomes.indexOf('Salvar'));
+  expect(within(item).getByRole('button', { name: 'Salvar' })).toHaveClass('botao-primario');
+});
+
+it('cancelar fecha o item sem gravar e traz "Nova recorrência" de volta', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
+  const rec = await repo.salvarRecorrencia({
+    boxId: box.id, categoriaId: cat.id, valor: 5000, dataInicio: '2026-07-01',
+    diaDoMes: 5, parcelas: 3,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-02' });
+  render(<Recorrencias />);
+
+  const item = screen.getByText('assinatura', { selector: 'div' }).closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const valorInput = within(item).getByLabelText('Valor');
+  await userEvent.clear(valorInput);
+  await userEvent.type(valorInput, '99,00');
+  await userEvent.click(within(item).getByRole('button', { name: 'Cancelar' }));
+
+  expect(screen.getByText('Nova recorrência')).toBeInTheDocument();
+  expect(within(item).getByText(formatarBRL(5000).replace(/\s/g, ' '))).toBeInTheDocument();
+  const atual = await db.recorrencias.get(rec.id);
+  expect(atual?.valor).toBe(5000);
 });
