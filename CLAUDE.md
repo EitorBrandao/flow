@@ -120,6 +120,39 @@ Convenções do domínio:
 - **O ciclo de entrega é obrigatório.** O passo a passo está na skill `ciclo-de-entrega` (`.claude/skills/ciclo-de-entrega/SKILL.md`). **Invoque essa skill antes de integrar qualquer trabalho.** Ela cobre tudo, da criação do worktree ao deploy. Ela também define os dois pontos onde o ciclo para e espera você — o mockup aprovado, e a confirmação literal da revisão do changelog —, o critério que decide se há release, e o que fazer quando um guard aborta. Resumo em uma linha: worktree → mockup aprovado, se for UI → `npm test` verde → **wiki atualizada, se a feature mudou** → fragmento em `changelog.d/` mais confirmação do usuário → merge na `main` mais `npm run release` → push → `npm run deploy`. Uma mudança **não** visível ao usuário — refactor, docs, tooling — termina no merge: sem fragmento, sem wiki, sem release, sem deploy.
 - **Toda feature incluída, alterada ou removida atualiza `docs/wiki/`, no mesmo branch.** O critério é o mesmo do fragmento de changelog: a mudança alterou o que o usuário vê? A wiki explica o app a quem chega agora. Uma wiki desatualizada ensina o app errado, com autoridade. O parser da wiki aceita só um subconjunto **fechado** de markdown (`docs/wiki/README.md`) e **lança uma exceção** fora dele: valide com `npx vitest run src/ui/ajustes/capitulos.test.ts`.
 
+## Regras de trabalho
+
+Estas regras vêm de atritos que se repetiram entre sessões. Valem também para subagentes.
+
+### Mockups e prévias
+
+- O usuário revisa pelo celular. Envie o mockup pelo chat, com `SendUserFile`. Abra o navegador do PC só se o usuário pedir.
+- Monte o mockup com as classes e os tokens reais de `src/styles.css`. Um estilo inventado não mostra como a tela vai ficar.
+- Antes de enviar, confira cada link e cada navegação do mockup.
+
+### Worktree
+
+- Antes da primeira edição, rode `git rev-parse --show-toplevel`. O resultado deve ser o worktree, não o checkout principal.
+- Todo prompt de subagente leva o caminho absoluto do worktree e a frase "não toque no checkout principal".
+- Antes de encerrar, rode `git -C <checkout principal> status --porcelain`. A saída deve vir vazia.
+- Antes de `git worktree remove`, encerre os servidores de desenvolvimento abertos no worktree. Um servidor ativo trava a pasta.
+
+### Planejamento
+
+- Um plano que muda uma função de domínio ou um fluxo de dados lista **todos** os pontos de chamada, achados por grep. Inclua os caminhos de exclusão, importação, backup e pagamento. Um ponto de chamada esquecido já causou perda silenciosa de dados.
+- Antes de estimar o impacto de uma dependência no bundle, meça o tamanho real: `npm view <pacote> dist.unpackedSize`.
+- Recalcule à mão todo valor esperado num teste planejado: datas, meses, totais.
+
+### Subagentes de implementação
+
+- O subagente roda a suíte completa (`npm test`) antes de dizer que terminou. Rodar só o arquivo que ele mexeu não basta.
+- O subagente escreve testes de caso-limite, não só do caminho feliz.
+- O subagente segue o mockup aprovado à risca. Um desvio precisa de nova aprovação do usuário.
+
+### Codificação
+
+- Salve todo arquivo em UTF-8 sem BOM. Um BOM já quebrou o verificador em modo estrito. No PowerShell 5.1, `Set-Content` e `Out-File` não garantem isso: prefira as ferramentas de edição de arquivo.
+
 ## Regras de dados (`src/db/`, `src/backup/`)
 
 Um erro aqui custa dados financeiros do usuário. Esses dados não têm servidor, nem cópia automática. `docs/dominio.md` descreve o modelo conceitual e os invariantes: o que cada entidade significa, o que o código garante, e o que é só expectativa.
