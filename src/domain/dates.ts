@@ -53,6 +53,14 @@ export function nomeDoMes(mes: string): string {
   return new Date(`${mes}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 }
 
+/** "AAAA-MM" → "out/2026", para cabeçalhos estreitos (colunas de tabela). */
+export function mesAbreviado(mes: string): string {
+  const abrev = new Date(`${mes}-15T12:00:00`)
+    .toLocaleDateString('pt-BR', { month: 'short' })
+    .replace('.', '');
+  return `${abrev}/${mes.slice(0, 4)}`;
+}
+
 export function addMeses(mes: string, n: number): string {
   const [y, m] = mes.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7);

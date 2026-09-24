@@ -20,8 +20,7 @@ Sem categoria não dá para lançar — a tela Lançar fica sem nada para escolh
 
 - Categorias pertencem a **uma box**: criar em uma não cria na outra.
 - O **tipo** (ganho ou gasto) decide se o valor soma ou subtrai — o mesmo nome pode existir nos dois tipos, como "pix".
-- A **ordem** (↑↓) é a ordem em que elas aparecem na tela Lançar. Vale pôr as do dia a dia no topo: é o que faz o lançamento caber em três toques.
-- Vai usar cartão? Crie desde já uma categoria de gasto chamada "cartão" — é ela que vai receber a fatura.
+- A **ordem** é a ordem em que elas aparecem na tela Lançar — arraste pela alça, à esquerda do nome, para mudar. Vale pôr as do dia a dia no topo: é o que faz o lançamento caber em três toques.
 
 **Obrigatórios:** nome, box. **Tem padrão:** tipo (gasto).
 
@@ -49,16 +48,16 @@ Aqui o app deixa de ser um caderno e vira uma projeção. Uma recorrência é um
 
 O cartão tem um mundo próprio: as compras não entram no fluxo de caixa uma a uma — elas viram **uma fatura só**, lançada na box no dia do vencimento. Sem contagem dupla. Fica em Ajustes, Cartões.
 
-- A **categoria da fatura** é uma categoria de gasto da box (aquela "cartão" do passo anterior) — é nela que a [[fatura]] aparece no seu fluxo.
+- Você não precisa criar categoria para a [[fatura]]: o app cria sozinho uma categoria de gasto com o nome do cartão, e é nela que a fatura aparece no seu fluxo.
 - **Dia de fechamento** e **dia de vencimento** saem da fatura do seu banco. Compra feita no próprio dia do fechamento cai na fatura seguinte.
 - Um cartão ativo por box: para cadastrar outro, desative o atual primeiro.
 - Depois do cartão, crie ao menos uma categoria do cartão — elas são separadas das categorias da box, porque o que você compra no cartão raramente segue o mesmo recorte do orçamento.
 
-**Obrigatórios:** nome, categoria da fatura. **Têm padrão:** box, dia de fechamento (28), dia de vencimento (5).
+**Obrigatório:** nome. **Têm padrão:** box, dia de fechamento (28), dia de vencimento (5).
 
 ## A primeira compra no cartão
 
-Aba Cartão → **+ compra**.
+O botão **+** no meio da barra de baixo → **Compra no cartão**.
 
 - **Parcelas:** 1 é à vista. Em mais de uma, o app divide ao centavo e joga o resto na primeira parcela — e cada parcela cai na fatura do mês correspondente, sem você precisar lançar de novo.
 - Assinaturas (streaming, mensalidades) não se lançam a cada mês: cadastre uma vez em Ajustes → Assinaturas do cartão.

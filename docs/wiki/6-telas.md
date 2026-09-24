@@ -65,11 +65,11 @@ Aba dedicada à fatura do cartão da box selecionada (ou os dois cartões empilh
 - **Resumo:** valor pago ou a pagar, com atalho para corrigir; resumo por categoria do cartão aparece sempre que há ao menos uma categoria — tocar numa categoria filtra os lançamentos para ela, pula para a aba Lançamentos e deixa a categoria destacada no Resumo; tocar de novo na mesma categoria tira o filtro.
 - **Lançamentos:** busca por descrição, categoria, data ou valor; itens agrupados em À vista/Parceladas, com marcação de parcela (ex.: "3/12"); tocar abre edição; excluir remove a compra e todas as parcelas dela.
 - **Conferência:** campo "valor no app do banco"; mostra a diferença nas mesmas frases da conferência de saldo em Hoje ("bate certinho", "falta inserir no cartão" ou "sobra no cartão — confira duplicado") — o valor da diferença segue a mesma regra da conferência de saldo em Hoje: vermelho e negativo quando faltam itens, verde e positivo quando os itens passam do banco; checkbox "usar este valor no Flow" (desmarcada por padrão). O rótulo da aba mostra ✔️ ou ⚠️ assim que existe uma conferência salva — dá para saber se bate sem entrar na aba.
-- Botão "+ compra" na própria tela (valor, data, categoria do cartão, parcelas, descrição).
+- Compra nova entra pelo botão **+** no meio da barra de baixo → **Compra no cartão** (valor, data, categoria do cartão, parcelas, descrição).
 - Sem cartão cadastrado para a seleção: mostra atalho direto para cadastrar em Ajustes.
 - Tocar numa fatura no Fluxo, ou tocar uma categoria de cartão em Análises, abre uma sheet com o cabeçalho do cartão (nome, mês, total, fechamento e vencimento), a lista da fatura — os itens, quando vem do Fluxo; as categorias, quando vem das Análises — e o link "Ver fatura completa na aba Cartão".
 
-**+ compra — obrigatórios:** valor, categoria do cartão. **Têm padrão:** data (hoje), parcelas (1). **Opcional:** descrição. Com 2 parcelas ou mais aparece também **Parcelas já pagas**, para registrar uma compra parcelada que já está em andamento: a data da compra recua um mês para cada parcela já paga.
+**Compra no cartão — obrigatórios:** valor, categoria do cartão. **Têm padrão:** data (hoje), parcelas (1). **Opcional:** descrição. Com 2 parcelas ou mais aparece também **Parcelas já pagas**, para registrar uma compra parcelada que já está em andamento: a data da compra recua um mês para cada parcela já paga.
 **Conferência — obrigatório:** nenhum; campo vazio só limpa a conferência do mês (não bloqueia nada).
 
 ## Análises
@@ -79,9 +79,7 @@ Resumo mensal e comparativos, navegando mês a mês com as setas ‹ › — o m
 - Caixa "incluir previstos" — desligada, mostra só o que já é efetivo no mês.
 - **Resumo:** ganhos, gastos e sobra do mês.
 - **Por categoria:** total de cada categoria e seu percentual da renda do mês (só para categorias de gasto). Tocar numa categoria de cartão abre a fatura desse mês (veja o capítulo [Cartão de crédito](#cartao)).
-- **Comparativo:** mês atual × mês anterior × mesmo mês do ano passado × média móvel de 3 meses, por categoria.
-
-O detalhamento do cartão fica na própria aba Cartão — ainda não está integrado aqui.
+- **Comparativo:** mês atual × mês anterior × mesmo mês do ano passado × média móvel de 3 meses, por categoria. A coluna do mês atual mostra o mês abreviado (out/2026).
 
 ## Simulador (oculta da navegação)
 

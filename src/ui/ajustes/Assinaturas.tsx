@@ -106,13 +106,13 @@ export default function Assinaturas() {
   if (boxId == null) {
     return (
       <div className="tela">
-        <h2>Assinaturas</h2>
+        <h2>Assinaturas do cartão</h2>
         <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
       </div>
     );
   }
   if (dados.cartoes.length === 0) {
-    return <div className="tela"><h2>Assinaturas</h2><p className="sub">Cadastre um cartão primeiro.</p></div>;
+    return <div className="tela"><h2>Assinaturas do cartão</h2><p className="sub">Cadastre um cartão primeiro.</p></div>;
   }
   const horizonte = dados.config.horizonteProjecao;
   const cartoesDaBox = dados.cartoes.filter((c) => c.boxId === boxId && c.ativo);
@@ -153,7 +153,7 @@ export default function Assinaturas() {
 
   return (
     <div className="tela">
-      <h2>Assinaturas</h2>
+      <h2>Assinaturas do cartão</h2>
 
       {cartoesDaBox.length === 0 ? (
         <p className="sub">Nenhum cartão ativo nesta box.</p>
@@ -205,7 +205,7 @@ export default function Assinaturas() {
                   </div>
                   <div className="acoes">
                     <button className="botao" aria-label="Editar" onClick={() => setEditandoId(a.id)}><Pencil size={16} /></button>
-                    <button className="botao" onClick={() => alternarAtiva(a.id)}>{a.ativa ? 'Pausar' : 'Ativar'}</button>
+                    <button className="botao" onClick={() => alternarAtiva(a.id)}>{a.ativa ? 'Desativar' : 'Ativar'}</button>
                     <button className="botao botao-perigo" onClick={() => excluir(a.id)}>Excluir</button>
                   </div>
                 </div>

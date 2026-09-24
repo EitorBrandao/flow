@@ -173,7 +173,7 @@ it('sem categoria na box, diz o que falta em vez de só desabilitar o botão', a
   expect(screen.getByText('Nenhuma categoria nesta box — crie em Ajustes, Categorias.')).toBeInTheDocument();
 });
 
-it('com categoria mas sem valor, pede o valor', async () => {
+it('com categoria mas sem valor, não mostra aviso — o campo Valor já abre em foco', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
@@ -183,7 +183,11 @@ it('com categoria mas sem valor, pede o valor', async () => {
 
   render(<TelaLancar />);
 
-  expect(screen.getByText('Digite um valor.')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Lançar' })).toBeDisabled();
+  expect(screen.queryByText('Digite um valor.')).not.toBeInTheDocument();
+  // com valor, o aviso seguinte aparece sozinho
+  await userEvent.type(screen.getByLabelText('Valor'), '10,00');
+  expect(screen.getByText('Escolha uma categoria.')).toBeInTheDocument();
 });
 
 it('consome o rascunho: preenche valor, categoria e tipo, e limpa o rascunho', async () => {
@@ -221,7 +225,7 @@ it('rascunho com categoria que não existe mais não quebra a tela e é descarta
 
   render(<TelaLancar />);
 
-  expect(await screen.findByRole('heading', { name: 'Lançar' })).toBeInTheDocument();
+  expect(await screen.findByRole('button', { name: 'Lançar' })).toBeInTheDocument();
   expect(useApp.getState().rascunhoLancar).toBeNull();
   // rascunho inválido não pode semear nada parcialmente: o campo de valor fica em zero
   expect(screen.getByLabelText('Valor')).toHaveValue('R$ 0,00');

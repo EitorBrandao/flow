@@ -3,6 +3,7 @@ import * as repo from '../db/repo';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import SeletorCategoria from './SeletorCategoria';
+import SeletorPills, { OPCOES_TIPO } from './SeletorPills';
 import { categoriasFaturaIds } from '../domain/fatura';
 import { categoriasTransferenciaIds } from '../domain/transferencia';
 import type { TipoCategoria } from '../domain/types';
@@ -67,9 +68,10 @@ export default function TelaLancar() {
 
   // Uma frase por vez, na ordem em que a pessoa preenche — dizer tudo que falta de uma vez
   // vira ruído, e o campo seguinte já vai aparecer sozinho quando o anterior for resolvido.
+  // Sem valor, nada: o campo Valor já abre em foco, e a frase aparecia antes de qualquer toque.
   const oQueFalta = categorias.length === 0
     ? 'Nenhuma categoria nesta box — crie em Ajustes, Categorias.'
-    : cents === 0 ? 'Digite um valor.'
+    : cents === 0 ? ''
       : categoriaId == null ? 'Escolha uma categoria.'
         : data === '' ? 'Escolha uma data.'
           : '';
@@ -91,21 +93,14 @@ export default function TelaLancar() {
 
   return (
     <div className="tela">
-      <h2>Lançar</h2>
       <div className="campo">
         <label htmlFor="valor">Valor</label>
         <CampoValor id="valor" valorCentavos={cents} onChange={setCents} autoFocus style={{ fontSize: 28 }} />
       </div>
-      <div className="linha" role="radiogroup" aria-label="Tipo">
-        <button
-          className={`botao ${tipo === 'gasto' ? 'botao-primario' : ''}`}
-          onClick={() => { setTipo('gasto'); setCategoriaId(null); }}
-        >Gasto</button>
-        <button
-          className={`botao ${tipo === 'ganho' ? 'botao-primario' : ''}`}
-          onClick={() => { setTipo('ganho'); setCategoriaId(null); }}
-        >Ganho</button>
-      </div>
+      <SeletorPills
+        rotulo="Tipo" opcoes={OPCOES_TIPO} selecionadaId={tipo}
+        onSelecionar={(id) => { setTipo(id as TipoCategoria); setCategoriaId(null); }}
+      />
       <SeletorCategoria categorias={categorias} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
       <div className="linha">
         <div className="campo">
@@ -117,32 +112,28 @@ export default function TelaLancar() {
           <input id="nota" value={nota} onChange={(e) => setNota(e.target.value)} />
         </div>
       </div>
-      <div className="campo">
-        <label htmlFor="previsto">
-          <input
-            id="previsto" type="checkbox"
-            checked={previsto} onChange={(e) => setPrevisto(e.target.checked)}
-          />
-          {' '}Marcar como previsto
-        </label>
-      </div>
+      <label htmlFor="previsto">
+        <input
+          id="previsto" type="checkbox"
+          checked={previsto} onChange={(e) => setPrevisto(e.target.checked)}
+        />
+        {' '}Marcar como previsto
+      </label>
       {viagemAtiva && (
-        <div className="campo">
-          <label htmlFor="viagem">
-            <input
-              id="viagem" type="checkbox"
-              checked={viagemMarcada} onChange={(e) => setViagemMarcada(e.target.checked)}
-            />
-            {' '}Viagem: {viagemAtiva.nome}
-          </label>
-        </div>
+        <label htmlFor="viagem">
+          <input
+            id="viagem" type="checkbox"
+            checked={viagemMarcada} onChange={(e) => setViagemMarcada(e.target.checked)}
+          />
+          {' '}Viagem: {viagemAtiva.nome}
+        </label>
       )}
       <button className="botao botao-primario" disabled={!valido} onClick={lancar} style={{ padding: 14 }}>
         Lançar
       </button>
       {/* Botão desabilitado sem explicação deixa a pessoa sem saber o que falta — e quem
           acabou de instalar cai justamente no caso "não há categoria nenhuma". */}
-      {!valido && !salvo && <p className="sub">{oQueFalta}</p>}
+      {!valido && !salvo && oQueFalta && <p className="sub">{oQueFalta}</p>}
       {salvo && <p className="aviso">Lançado ✓</p>}
     </div>
   );

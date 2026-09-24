@@ -1,15 +1,15 @@
-import { useId, useRef, useState } from 'react';
+import { useId, useState } from 'react';
 import { gerarBackup, mesclar, validarBackup } from '../../backup/backup';
 import * as repo from '../../db/repo';
 import { hojeISO } from '../../domain/dates';
 import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../../domain/estadoBackup';
 import { useApp } from '../../state/store';
+import EscolherArquivo from '../EscolherArquivo';
 
 export default function Backup() {
   const { dados, hoje, recarregar } = useApp();
   const [modo, setModo] = useState<'substituir' | 'mesclar'>('substituir');
   const [msg, setMsg] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
   const uid = useId();
   if (!dados) return null;
 
@@ -70,7 +70,7 @@ export default function Backup() {
 
   return (
     <div className="tela">
-      <h2>Backup</h2>
+      <h2>Backup e restauração</h2>
       <p className="sub">
         Último backup: {estadoBackup(dados.config, hoje).idade}
         {dados.config.ultimoBackupEm && !Number.isNaN(Date.parse(dados.config.ultimoBackupEm))
@@ -85,11 +85,7 @@ export default function Backup() {
       </div>
       <div className="campo">
         <label htmlFor={`${uid}-arquivo`}>Arquivo de backup (.json)</label>
-        <input
-          id={`${uid}-arquivo`}
-          ref={inputRef} type="file" accept="application/json,.json"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) void restaurar(f); e.target.value = ''; }}
-        />
+        <EscolherArquivo id={`${uid}-arquivo`} accept="application/json,.json" onEscolher={(f) => void restaurar(f)} />
       </div>
       {msg && <p className="aviso">{msg}</p>}
     </div>

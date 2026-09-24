@@ -46,7 +46,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.campo-busca` | input de busca avulso (fora de `.campo`) |
 | `.sub` | subtítulo/texto secundário 13px em `--muted` |
 | `.grade-categorias` | grade 3 colunas de seleção de categoria; `.selecionada` marca o item ativo |
-| `.pills` | pílulas em linha pra escolher entre poucas opções (Box, Cartão); `button.ativo` marca a opção atual |
+| `.pills` | pílulas em linha pra escolher entre poucas opções (Box, Cartão, Gasto/Ganho); `button.ativo` marca a opção atual. Como seletor, o grupo é `role="radiogroup"` e cada pílula `role="radio"` com `aria-checked` — prefira o `SeletorPills`. Como abas de seção (Hoje, Fluxo, Cartão), `role="tablist"` |
 | `.tabela` (elemento `table`) | tabela numérica (Fluxo, Análises) — alinhado à direita exceto 1ª coluna, sem linhas verticais |
 | `.rolavel` | wrapper com `overflow-x: auto` para conteúdo largo (tabelas) |
 | `.recuo-1` / `.recuo-2` | recuo horizontal (ambos os lados) pra indicar nível de hierarquia numa lista aninhada — ex.: grupo/data em `LancamentosSheet` |
@@ -80,7 +80,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.escanear-nota-video` | preview da câmera em `EscanearNotaSheet.tsx` |
 | `.nota-bloco` | resumo da nota fiscal anexada a uma compra do cartão (`FormCompra.tsx`) — emitente, data, total da nota e contagem de itens sobre `--surface2`; também envolve o painel de anexar o XML |
 | `.nota-itens` / `.nota-item` / `.nota-item-diferenca` | lista compacta "item → valor → % do total" dentro do `.nota-bloco`, com rolagem própria; cada `.nota-item` é uma linha de duas colunas (descrição e quantidade à esquerda, valor em negrito e percentual à direita); `.nota-item-diferenca` marca a linha final de desconto/frete |
-| `.selecionar-arquivo` | wrapper de um seletor de arquivo estilizado como `.botao`: um botão decorativo (`aria-hidden`, `tabIndex={-1}`) chama `input.click()`, e o `input[type=file]` real fica por cima dele com opacity 0 (não `display:none`), como o alvo de toque de verdade — mesma técnica de `.campo-data`/`.campo-data-input` (`CampoData.tsx`). Usado em `Importar.tsx` |
+| `.selecionar-arquivo` | wrapper de um seletor de arquivo estilizado como `.botao`: um botão decorativo (`aria-hidden`, `tabIndex={-1}`) chama `input.click()`, e o `input[type=file]` real fica por cima dele com opacity 0 (não `display:none`), como o alvo de toque de verdade — mesma técnica de `.campo-data`/`.campo-data-input` (`CampoData.tsx`). Não monte à mão: use o `EscolherArquivo` |
 | `.importar-resumo` / `.importar-contagem` | resumo de contagens por estado no topo da conferência (`ListaConferencia.tsx`): `.importar-resumo` é a linha de pílulas, `.importar-contagem` cada pílula, um `<button>` (ponto colorido + número + rótulo, `min-height: 44px`) que filtra a lista abaixo pelo estado dela — `aria-pressed` marca a pílula ativa, `.ativo` dá a cor (`--ac-dim`/`--ac`, mesmo padrão de `.botao.ativo`), e uma pílula de contagem zero vem `disabled` (`opacity: .45`) |
 | `.importar-ponto` | ponto colorido de 8px que marca o estado de um item da conferência; usado sozinho no resumo (`.importar-contagem`) e junto de `.importar-estado` em cada linha (`LinhaConferencia.tsx`). Seis modificadores compostos, um por `EstadoItem` (confere/previsto/divergente/novo/sobra/interno), dão a cor de fundo — `--pos`/`--ac`/`--aviso-fg`/`--estado-novo`/`--neg`/`--muted`, nessa ordem |
 | `.importar-estado` | nome do estado de um item da conferência (`LinhaConferencia.tsx`), com os mesmos seis modificadores compostos do `.importar-ponto` acima dando a cor do texto |
@@ -124,8 +124,10 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `TelaSimulador.tsx`.
 - **`SeletorMes.tsx`** — navegação de mês: `‹` e `›` em `.botao` (rótulos "Mês anterior" e "Mês seguinte") com o mês por nome no meio (`nomeDoMes`, "outubro de 2026"). Props `mes` (`AAAA-MM`) e `onMudar`. Usado nas Análises e no Cartão — qualquer tela nova que navegue por mês usa este componente.
 - **`SeletorPills.tsx`** — pílulas em linha (`.pills`) pra escolher entre poucas opções sem
-  abrir o picker nativo do `<select>`. Usado em `CategoriasCartao.tsx` e `Assinaturas.tsx`
-  (Cartão) — a box em si não tem mais seletor próprio nessas telas: todas as telas de
+  abrir o picker nativo do `<select>`; cada pílula é `role="radio"` com `aria-checked`, e a
+  prop opcional `rotulo` nomeia o grupo. Exporta `OPCOES_TIPO` (Gasto/Ganho), o controle
+  único de tipo em `TelaLancar.tsx`, `Recorrencias.tsx` e `Categorias.tsx`. Usado também em
+  `CategoriasCartao.tsx` e `Assinaturas.tsx` (Cartão) — a box em si não tem mais seletor próprio nessas telas: todas as telas de
   Ajustes seguem a box selecionada no chip do topo (`boxIdEfetivo`, `state/store.ts`),
   reforçando a sensação de "perfil" (ver `docs/superpowers/specs/`).
 - **`PagamentoFaturaSheet.tsx`** — conteúdo da folha que registra o pagamento de uma fatura
@@ -135,7 +137,13 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   lançamento da fatura e o total dela, porque nem sempre um é o outro (fatura já paga em
   parte tem valor menor que o total calculado).
 - **`AssinaturasResumoSheet.tsx`** — sheet de Análises com o total de assinaturas do mês,
-  agrupado por cartão (`.rotulo-grupo` + `.recuo-1`, mesmo padrão do `LancamentosSheet`).
+  agrupado por cartão, no mesmo padrão do `LancamentosSheet`: cabeçalho do grupo em
+  `.recuo-1` com o subtotal, itens em `.recuo-2`.
+- **`EscolherArquivo.tsx`** — o botão "Escolher arquivo" do app sobre um `input[type=file]`
+  invisível (`.selecionar-arquivo`), no lugar do controle nativo, cujo texto vem do navegador.
+  Props `id`, `accept`, `onEscolher(arquivo)`; `primario` só quando escolher o arquivo é a
+  ação principal da tela; `rotulo` quando não há `<label htmlFor>`. Usado em `Importar.tsx`,
+  `Backup.tsx`, `FormCompra.tsx` e `EscanearNotaSheet.tsx`.
 - **`ComposicaoBarChart.tsx`** — barras horizontais de composição por categoria na aba
   Análises (substitui a antiga tabela "Por categoria"); escala compartilhada com as
   barrinhas do card resumo (`base = max(totalGanhos, totalGastos)`), mesmo contrato de

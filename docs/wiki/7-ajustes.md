@@ -6,7 +6,7 @@ Nas seções de cadastro, o formulário no topo serve para criar; para editar, t
 
 ## Categorias
 
-Por box selecionada: criar, renomear, reordenar (↑↓) e arquivar/restaurar. Ganhos aparecem antes dos gastos, cada grupo na ordem definida.
+Por box selecionada: criar, renomear, reordenar (arrastando pela alça) e arquivar/restaurar. Ganhos aparecem antes dos gastos, cada grupo na ordem definida.
 
 **Nova categoria — obrigatórios:** nome, box. **Tem padrão:** tipo (gasto).
 
@@ -15,7 +15,7 @@ Por box selecionada: criar, renomear, reordenar (↑↓) e arquivar/restaurar. G
 CRUD das regras que geram previstos automaticamente (veja [Recorrência](#conceitos/recorrencia), no capítulo Conceitos e modelo de dados).
 
 - Ao editar (toque no lápis), recalcula os previstos futuros ainda não confirmados na hora.
-- "Pausar" desativa sem apagar a regra; "Ativar" retoma a materialização.
+- "Desativar" para a regra sem apagá-la; "Ativar" retoma a materialização.
 - Excluir remove a regra e seus previstos — os já confirmados como `efetivo` ficam.
 
 **Obrigatórios:** valor, categoria. **Têm padrão:** início (hoje), dia do mês (1). **Opcional:** parcelas (vazio = sem fim).
@@ -43,13 +43,13 @@ Cada banco mostra o saldo informado com a data e quantos cartões estão vincula
 
 ## Cartões
 
-Cadastre cartões no formulário no topo; para editar, toque no lápis do item. Configure: nome, dia de fechamento, dia de vencimento, a categoria de gasto do Flow que recebe a [[fatura]] e, se a box tiver bancos cadastrados, o banco dono do cartão.
+Cadastre cartões no formulário no topo; para editar, toque no lápis do item. Configure: nome, dia de fechamento, dia de vencimento e, se a box tiver bancos cadastrados, o banco dono do cartão. A categoria de gasto que recebe a [[fatura]] o app cria sozinho, com o nome do cartão.
 
 Uma box pode ter vários cartões **ativos** ao mesmo tempo. "Desativar" desliga o cartão por completo: para de sincronizar a fatura como lançamento, e some da tela Cartão e do menu Adicionar.
 
 Cada cartão tem ainda um segundo controle, independente: **"Bloquear"/"Permitir"**. Ele só afeta o menu Adicionar → "Compra no cartão" — um cartão bloqueado não entra na lista de escolha, nem no [atalho](#glossario/atalho-de-lancamento) que pula direto pro formulário quando sobra um só. A fatura continua sincronizando, e as assinaturas do cartão continuam gerando compra todo mês. Serve para um cartão que só existe para receber assinaturas, sem você nunca lançar uma compra avulsa nele.
 
-**Obrigatórios:** nome, categoria da fatura (pré-preenchida com a categoria "cartão" da box, se existir). **Têm padrão:** box (a primeira com saldo próprio), dia de fechamento (28), dia de vencimento (5), banco (sem banco). O campo de banco só aparece se a box tiver algum cadastrado.
+**Obrigatório:** nome. **Têm padrão:** box (a primeira com saldo próprio), dia de fechamento (28), dia de vencimento (5), banco (sem banco). O campo de banco só aparece se a box tiver algum cadastrado.
 
 ## Categorias do cartão
 

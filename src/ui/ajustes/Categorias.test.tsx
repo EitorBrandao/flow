@@ -50,7 +50,7 @@ it('categoria da fatura de um cartão não aparece na lista de categorias', asyn
   expect(screen.queryByText('Nubank')).not.toBeInTheDocument();
 });
 
-it('arquivar move a categoria para a seção Arquivados, com badge de tipo', async () => {
+it('arquivar move a categoria para a seção Arquivadas, com badge de tipo', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
@@ -59,11 +59,11 @@ it('arquivar move a categoria para a seção Arquivados, com badge de tipo', asy
   useApp.setState({ boxSel: box.id });
 
   render(<Categorias />);
-  expect(screen.queryByText('Arquivados')).not.toBeInTheDocument();
+  expect(screen.queryByText('Arquivadas')).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'Arquivar' }));
 
-  expect(await screen.findByText('Arquivados')).toBeInTheDocument();
+  expect(await screen.findByText('Arquivadas')).toBeInTheDocument();
   expect(screen.getByText('gasto', { selector: '.badge' })).toBeInTheDocument();
 });
 
@@ -121,11 +121,11 @@ it('restaurar devolve a categoria para a seção do seu tipo', async () => {
   useApp.setState({ boxSel: box.id });
 
   render(<Categorias />);
-  expect(screen.getByText('Arquivados')).toBeInTheDocument();
+  expect(screen.getByText('Arquivadas')).toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'Restaurar' }));
 
-  await waitFor(() => expect(screen.queryByText('Arquivados')).not.toBeInTheDocument());
+  await waitFor(() => expect(screen.queryByText('Arquivadas')).not.toBeInTheDocument());
   const atualizado = await db.categorias.get(cat.id);
   expect(atualizado?.arquivada).toBe(false);
 });
@@ -361,4 +361,24 @@ it('puxador de arrastar bloqueia a rolagem por toque (senão o celular cancela o
   expect(screen.getByRole('button', { name: 'Arrastar para reordenar' })).toHaveClass('alca-arrastar');
   const css = readFileSync(resolve(__dirname, '../../styles.css'), 'utf8');
   expect(css).toMatch(/\.alca-arrastar\s*\{[^}]*touch-action:\s*none/);
+});
+
+it('o tipo da categoria nova se escolhe pelas pílulas Gasto/Ganho', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+
+  render(<Categorias />);
+  expect(screen.getByRole('radio', { name: 'Gasto' })).toBeChecked();
+  await userEvent.click(screen.getByRole('radio', { name: 'Ganho' }));
+  await userEvent.type(screen.getByLabelText('Nome'), 'salário');
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+  await waitFor(async () => {
+    const criada = (await db.categorias.toArray()).find((c) => c.nome === 'salário');
+    expect(criada?.tipo).toBe('ganho');
+  });
 });

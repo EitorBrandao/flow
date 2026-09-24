@@ -1,6 +1,6 @@
 # Consistência entre telas — parte 3: formulários de Ajustes e textos
 
-Status: aprovada em 2026-09-23 — não implementada
+Status: aprovada em 2026-09-23 — entrega A lançada na v0.38.0; entrega B implementada em 2026-09-24
 
 Item 26 do `TODO.md`, itens 9 a 13 e "menores" da auditoria de consistência de 2026-09-23,
 mais os restos da parte 2 (item 25). Duas entregas, cada uma com mockup e release próprios:
@@ -100,6 +100,20 @@ celular, dados sintéticos), incluídos a pedido do usuário.
       do topo.
 13. **Viagem com total zero nas Análises:** pílula na cor normal, não em vermelho — a mesma
     regra da fatura sem gasto (versão 0.36.0).
+
+### Decisões da entrega B (mockup de 2026-09-24)
+
+- **Item 10:** o título segue o menu — "Assinaturas do cartão" e "Backup e restauração".
+- **Item 12, aviso de valor:** o botão Lançar continua apagado; só a frase "Digite um valor."
+  deixa de aparecer. As outras frases seguem aparecendo sozinhas.
+- **Item 11:** um componente só, `EscolherArquivo`, nos quatro lugares. No Backup o botão é
+  comum: o azul da tela é "Exportar backup".
+- **Item 13:** sem gasto, o valor da viagem fica sem pílula, na cor do texto.
+- **Acrescentados no mockup:** a caixa de marcação dentro de `.campo` herdava o estilo de
+  campo de texto; saiu do `.campo` também em "Viagem: …" (Lançar e compra no cartão), "Esta box
+  tem saldo próprio" (Boxes) e "Saldo informado" (Bancos). A aba Cartão sem cartão perdeu o
+  título repetido. As pílulas de seleção passaram a anunciar `aria-checked`, inclusive as de
+  Importar e conferir.
 
 ## Fora de escopo
 

@@ -2,7 +2,7 @@ import { Suspense, lazy, useState } from 'react';
 import {
   compararMeses, mediaMovel3, resumoMensal, serieMensal, serieMensalResumo,
 } from '../domain/aggregations';
-import { addMeses, formatarDataBR, mesDe } from '../domain/dates';
+import { addMeses, formatarDataBR, mesAbreviado, mesDe } from '../domain/dates';
 import { resumoAssinaturasDoMes } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import type { ID, Viagem } from '../domain/types';
@@ -124,13 +124,14 @@ export default function TelaAnalises() {
         <h2>Viagens</h2>
         <div className="lista">
           {viagensComTotal.map(({ viagem, total }) => (
-            <div className="item" key={viagem.id} style={{ cursor: 'pointer' }} onClick={() => setViagemAberta(viagem)}>
+            <button className="item" key={viagem.id} onClick={() => setViagemAberta(viagem)}>
               <div className="cresce">
                 {viagem.nome}
                 <div className="sub">{formatarDataBR(viagem.dataInicio)} – {formatarDataBR(viagem.dataFim)}</div>
               </div>
-              <span className="valor-gasto">{formatarBRL(total)}</span>
-            </div>
+              {/* sem gasto, sem pílula vermelha — mesma regra da fatura sem gasto */}
+              <span className={total > 0 ? 'valor-gasto' : undefined}>{formatarBRL(total)}</span>
+            </button>
           ))}
           {viagensComTotal.length === 0 && <p className="sub">Nenhuma viagem cadastrada — crie em Ajustes.</p>}
         </div>
@@ -141,7 +142,7 @@ export default function TelaAnalises() {
         <div className="rolavel">
           <table className="tabela">
             <thead>
-              <tr><th>Categoria</th><th>{mes.split('-').reverse().join('/')}</th><th>mês anterior</th><th>ano passado</th><th>média 3m</th></tr>
+              <tr><th>Categoria</th><th>{mesAbreviado(mes)}</th><th>mês anterior</th><th>ano passado</th><th>média 3m</th></tr>
             </thead>
             <tbody>
               {comparativo.map((c) => {

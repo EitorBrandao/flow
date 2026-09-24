@@ -29,10 +29,13 @@ export default function AssinaturasResumoSheet({ aberto, itens, totalCent, onFec
       <div className="lista" style={{ marginTop: 12 }}>
         {[...porCartao.entries()].map(([cartaoId, grupo]) => (
           <div key={cartaoId}>
-            <p className="rotulo-grupo">{grupo.cartaoNome}</p>
-            <div className="lista recuo-1" style={{ marginTop: 6 }}>
+            <div className="linha recuo-1" style={{ justifyContent: 'space-between' }}>
+              <p className="rotulo-grupo">{grupo.cartaoNome}</p>
+              <span className="valor-gasto">{formatarBRL(grupo.itens.reduce((soma, it) => soma + it.valorCent, 0))}</span>
+            </div>
+            <div className="lista" style={{ marginTop: 6 }}>
               {grupo.itens.map((it) => (
-                <div className="item" key={it.recorrenciaCartaoId}>
+                <div className="item recuo-2" key={it.recorrenciaCartaoId}>
                   <span className="cresce">{it.descricao}</span>
                   <span className="valor-gasto">{formatarBRL(it.valorCent)}</span>
                 </div>

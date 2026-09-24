@@ -1,0 +1,14 @@
+- Gasto e Ganho se escolhem do mesmo jeito em Lançar, Recorrências e Categorias: pelas pílulas, como Box e Cartão.
+- Os mesmos textos em todas as telas de cadastro.
+  - Recorrências e Assinaturas dizem "Desativar", como Cartões, em vez de "Pausar".
+  - A lista de Recorrências, Cartões e Bancos se chama "Nesta box"; a de Viagens, "Cadastradas".
+  - O grupo de categorias arquivadas se chama "Arquivadas".
+  - Assinaturas do cartão e Backup e restauração têm o mesmo nome no menu e no título da tela.
+- Escolher arquivo, no Backup e no anexo da nota fiscal, usa o botão "Escolher arquivo" do app, igual ao de Importar e conferir.
+- A caixa de marcação fica na mesma linha do texto: "Marcar como previsto", "Viagem", "Esta box tem saldo próprio" e "Saldo informado".
+- A tela Lançar e a aba Cartão sem cartão não repetem o título do topo.
+- A tela Lançar não mostra "Digite um valor." antes de você começar a preencher.
+- Análises
+  - O resumo de assinaturas mostra o subtotal de cada cartão, como a lista de lançamentos de uma categoria.
+  - Viagem sem gasto mostra o total na cor normal, não em vermelho, como a fatura sem gasto.
+  - O comparativo mostra o mês abreviado no cabeçalho da coluna (out/2026).

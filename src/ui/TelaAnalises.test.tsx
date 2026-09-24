@@ -235,3 +235,25 @@ it('título Comparativo fica fora do container que rola horizontalmente', async 
   expect(titulo.closest('.rolavel')).toBeNull();
   expect(screen.getByRole('table').closest('.rolavel')).not.toBeNull();
 });
+
+it('viagem sem gasto não ganha pílula vermelha, e a linha responde ao teclado', async () => {
+  const { box } = await seedBoxComCategoria();
+  await repo.salvarViagem({ nome: 'Serra', dataInicio: '2026-11-02', dataFim: '2026-11-05' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  render(<TelaAnalises />);
+  const cardViagens = screen.getByText('Viagens').closest('.card') as HTMLElement;
+  const linha = within(cardViagens).getByRole('button', { name: /Serra/ });
+  expect(within(linha).getByText('R$ 0,00')).not.toHaveClass('valor-gasto');
+});
+
+it('cabeçalho do comparativo mostra o mês abreviado', async () => {
+  const { box, catPix } = await seedBoxComCategoria();
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2026-10-05', valor: 30000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-10-15' });
+
+  render(<TelaAnalises />);
+  expect(within(screen.getByRole('table')).getByRole('columnheader', { name: 'out/2026' })).toBeInTheDocument();
+});

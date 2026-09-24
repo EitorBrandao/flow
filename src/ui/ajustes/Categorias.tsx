@@ -8,6 +8,7 @@ import { categoriasTransferenciaIds } from '../../domain/transferencia';
 import { CATEGORIAS_SUGERIDAS } from '../../domain/categoriasSugeridas';
 import type { Categoria, TipoCategoria } from '../../domain/types';
 import { boxIdEfetivo, useApp } from '../../state/store';
+import SeletorPills, { OPCOES_TIPO } from '../SeletorPills';
 
 interface ItemProps {
   cat: Categoria;
@@ -238,11 +239,11 @@ export default function Categorias() {
               <input id={`${uid}-nova`} placeholder="nome" value={nome} onChange={(e) => setNome(e.target.value)} />
             </div>
             <div className="campo">
-              <label htmlFor={`${uid}-tipo`}>Tipo</label>
-              <select id={`${uid}-tipo`} value={tipo} onChange={(e) => setTipo(e.target.value as TipoCategoria)}>
-                <option value="gasto">gasto</option>
-                <option value="ganho">ganho</option>
-              </select>
+              <label>Tipo</label>
+              <SeletorPills
+                rotulo="Tipo" opcoes={OPCOES_TIPO} selecionadaId={tipo}
+                onSelecionar={(id) => setTipo(id as TipoCategoria)}
+              />
             </div>
             <button className="botao botao-primario" onClick={criar}>Criar</button>
           </div>
@@ -261,7 +262,7 @@ export default function Categorias() {
 
       {arquivadas.length > 0 && (
         <>
-          <p className="rotulo-grupo">Arquivados</p>
+          <p className="rotulo-grupo">Arquivadas</p>
           <Reorder.Group as="div" className="lista" axis="y" values={arquivadas} onReorder={reordenar}>
             {arquivadas.map((c) => <ItemCategoria key={c.id} {...props(c, true)} />)}
           </Reorder.Group>

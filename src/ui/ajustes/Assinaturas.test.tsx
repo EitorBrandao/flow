@@ -71,12 +71,12 @@ it('trocar de cartão mostra só as assinaturas daquele cartão', async () => {
   useApp.setState({ hoje: '2026-07-01' });
 
   render(<Assinaturas />);
-  await userEvent.click(screen.getByRole('button', { name: 'Nubank' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Nubank' }));
 
   expect(await screen.findByText('Netflix')).toBeInTheDocument();
   expect(screen.queryByText('iCloud')).not.toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole('button', { name: 'Inter' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Inter' }));
 
   expect(await screen.findByText('iCloud')).toBeInTheDocument();
   expect(screen.queryByText('Netflix')).not.toBeInTheDocument();
@@ -90,14 +90,14 @@ it('trocar a box no chip do topo troca os cartões oferecidos no seletor de Assi
 
   const { rerender } = render(<Assinaturas />);
 
-  expect(screen.getByRole('button', { name: 'Nubank' })).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Santander' })).not.toBeInTheDocument();
+  expect(screen.getByRole('radio', { name: 'Nubank' })).toBeInTheDocument();
+  expect(screen.queryByRole('radio', { name: 'Santander' })).not.toBeInTheDocument();
 
   useApp.setState({ boxSel: ju.id });
   rerender(<Assinaturas />);
 
-  expect(screen.getByRole('button', { name: 'Santander' })).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Nubank' })).not.toBeInTheDocument();
+  expect(screen.getByRole('radio', { name: 'Santander' })).toBeInTheDocument();
+  expect(screen.queryByRole('radio', { name: 'Nubank' })).not.toBeInTheDocument();
 });
 
 it('o formulário de criação não tem botão Cancelar', async () => {

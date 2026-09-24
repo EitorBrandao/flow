@@ -10,6 +10,7 @@ import type {
 } from '../../importar/tipos';
 import type { ID } from '../../domain/types';
 import { boxIdEfetivo, useApp } from '../../state/store';
+import EscolherArquivo from '../EscolherArquivo';
 import ListaConferencia, { type ItemComContexto } from './ListaConferencia';
 
 const NAO_IMPORTAR = 'nao-importar' as const;
@@ -18,7 +19,6 @@ type DestinoBloco = ID | typeof NAO_IMPORTAR | undefined;
 export default function Importar() {
   const { dados, boxSel, recarregar } = useApp();
   const uid = useId();
-  const inputArquivoRef = useRef<HTMLInputElement>(null);
   // Trava síncrona contra o duplo toque: `aplicando` (estado) só vale depois do re-render, e
   // dois cliques seguidos acontecem antes disso. Sem esta ref, os dois disparam `aplicar`.
   const aplicandoRef = useRef(false);
@@ -282,21 +282,10 @@ export default function Importar() {
         <div className="secao"><h3>1. Arquivo</h3></div>
         {!nomeArquivo ? (
           <>
-            <div className="selecionar-arquivo">
-              <button
-                type="button" className="botao botao-primario" aria-hidden="true" tabIndex={-1}
-                style={{ width: '100%' }} onClick={() => inputArquivoRef.current?.click()}
-              >Escolher arquivo</button>
-              <input
-                ref={inputArquivoRef} id={`${uid}-arquivo`} type="file" accept=".csv,.pdf"
-                aria-label="Escolher arquivo"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void onArquivoEscolhido(f);
-                  e.target.value = '';
-                }}
-              />
-            </div>
+            <EscolherArquivo
+              id={`${uid}-arquivo`} accept=".csv,.pdf" primario rotulo="Escolher arquivo"
+              onEscolher={(f) => void onArquivoEscolhido(f)}
+            />
             <p className="sub">
               Escolha o CSV do extrato do Nubank ou o PDF da fatura do Santander. Nada é
               gravado até você conferir e confirmar.
@@ -325,6 +314,7 @@ export default function Importar() {
                 {ADAPTERS.map((a) => (
                   <button
                     key={a.id}
+                    role="radio" aria-checked={adapterAtual?.id === a.id}
                     className={adapterAtual?.id === a.id ? 'ativo' : ''}
                     onClick={() => escolherFormatoManualmente(a)}
                   >{a.rotulo}</button>
@@ -385,6 +375,7 @@ export default function Importar() {
             {dados.boxes.map((b) => (
               <button
                 key={b.id}
+                role="radio" aria-checked={boxIdEscolhida === b.id}
                 className={boxIdEscolhida === b.id ? 'ativo' : ''}
                 onClick={() => { setBoxIdEscolhida(b.id); setFiltro(null); }}
               >{b.nome}</button>
@@ -404,11 +395,13 @@ export default function Importar() {
                 {cartoesAtivos.map((c) => (
                   <button
                     key={c.id}
+                    role="radio" aria-checked={destinoBlocos[i] === c.id}
                     className={destinoBlocos[i] === c.id ? 'ativo' : ''}
                     onClick={() => { setDestinoBlocos((d) => ({ ...d, [i]: c.id })); setFiltro(null); }}
                   >{c.nome}</button>
                 ))}
                 <button
+                  role="radio" aria-checked={destinoBlocos[i] === NAO_IMPORTAR}
                   className={destinoBlocos[i] === NAO_IMPORTAR ? 'ativo' : ''}
                   onClick={() => { setDestinoBlocos((d) => ({ ...d, [i]: NAO_IMPORTAR })); setFiltro(null); }}
                 >Não importar</button>

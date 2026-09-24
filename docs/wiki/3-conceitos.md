@@ -38,7 +38,7 @@ Regra que gera lançamentos `previsto` automaticamente no futuro — salário, a
 
 : `diaDoMes` | 1–31, adaptado ao fim de meses curtos (ex.: dia 31 em fevereiro cai no último dia do mês)
 : `parcelas` | número de ocorrências ou `null` = sem fim
-: `ativa` | pausar não apaga a regra, só para de gerar novos previstos
+: `ativa` | desativar não apaga a regra, só para de gerar novos previstos
 
 **Materialização (a regra que evita bagunça)**
 

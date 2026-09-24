@@ -224,7 +224,7 @@ describe('Importar', () => {
     // Escolhe destino só do segundo bloco (POSTO BETA) primeiro — ele fica na posição 0 da
     // lista exibida, sozinho.
     const radiogroupB = screen.getByRole('radiogroup', { name: `Destino de ${rotuloBlocoB}` });
-    await userEvent.click(within(radiogroupB).getByRole('button', { name: cartaoA.nome }));
+    await userEvent.click(within(radiogroupB).getByRole('radio', { name: cartaoA.nome }));
 
     const linhaPosto = linhaDoItem(screen.getByText('POSTO BETA'));
     await userEvent.click(within(linhaPosto).getByRole('button', { name: 'Descartar' }));
@@ -234,7 +234,7 @@ describe('Importar', () => {
     // ALFA pra posição 0 e POSTO BETA pra posição 1 na lista recalculada.
     const rotuloBlocoA = 'FULANO DE TAL - 0000 XXXX XXXX 0000';
     const radiogroupA = screen.getByRole('radiogroup', { name: `Destino de ${rotuloBlocoA}` });
-    await userEvent.click(within(radiogroupA).getByRole('button', { name: cartaoA.nome }));
+    await userEvent.click(within(radiogroupA).getByRole('radio', { name: cartaoA.nome }));
 
     const containerMercado = linhaDoItem(await screen.findByText('MERCADO ALFA'));
     // MERCADO ALFA nunca foi tocado: continua com a ação padrão (Adicionar), não "descartado".
@@ -277,8 +277,8 @@ describe('Importar', () => {
     );
     // Só o cartão da box selecionada (A) aparece, não o da outra box (B) — e, por sobrar
     // exatamente um cartão elegível, ele já vem pré-selecionado.
-    expect(within(radiogroup).queryByRole('button', { name: cartaoB.nome })).not.toBeInTheDocument();
-    expect(within(radiogroup).getByRole('button', { name: cartaoA.nome })).toHaveClass('ativo');
+    expect(within(radiogroup).queryByRole('radio', { name: cartaoB.nome })).not.toBeInTheDocument();
+    expect(within(radiogroup).getByRole('radio', { name: cartaoA.nome })).toHaveClass('ativo');
   });
 
   // CRÍTICO 2: se um `aplicar` falhar depois de outro já ter gravado, o app precisa recarregar
@@ -426,7 +426,7 @@ describe('Importar', () => {
     expect(screen.getByText(/Mostrando só os itens com estado "novo"/)).toBeInTheDocument();
 
     const radiogroupDestino = screen.getByRole('radiogroup', { name: 'Box de destino' });
-    await userEvent.click(within(radiogroupDestino).getByRole('button', { name: 'segunda' }));
+    await userEvent.click(within(radiogroupDestino).getByRole('radio', { name: 'segunda' }));
 
     expect(screen.queryByText(/Mostrando só os itens com estado/)).not.toBeInTheDocument();
   });

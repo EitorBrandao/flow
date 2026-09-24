@@ -332,7 +332,6 @@ export default function TelaCartao() {
   if (cartoes.length === 0) {
     return (
       <div className="tela">
-        <h2>Cartão</h2>
         <p className="sub">Nenhum cartão cadastrado para esta seleção.</p>
         <button className="botao botao-primario" style={{ alignSelf: 'flex-start' }}
           onClick={() => setAba('ajustes')}>Cadastrar cartão</button>
