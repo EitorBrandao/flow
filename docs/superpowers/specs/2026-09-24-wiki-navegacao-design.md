@@ -25,7 +25,7 @@ A wiki fica mais fácil de navegar e de ler. Hoje:
 Sem busca, a gaveta lista os capítulos, como hoje. Muda:
 
 - O capítulo atual aparece expandido. Suas seções vêm logo abaixo, recuadas.
-- A seção atual fica destacada (mesmo destaque do capítulo ativo, `--ac-dim`/`--ac`).
+- A seção atual fica destacada só na cor (`--ac`), sem fundo — para não competir com o destaque do capítulo ativo (`--ac-dim`/`--ac`).
 - Tocar numa seção rola até ela e fecha a gaveta. Os títulos ganham `scroll-margin-top` igual à altura do `.topo` mais a barra, para não ficarem escondidos sob ela. Vale também para links internos e termos em `.wiki-campos`.
 - Tocar em outro capítulo abre esse capítulo no topo e fecha a gaveta (comportamento de hoje).
 - Outros capítulos não expandem. Uma árvore inteira aberta vira uma lista longa demais no celular.
@@ -67,7 +67,7 @@ interface Resultado { capitulo: string; tituloCapitulo: string; secao?: string; 
 ## Estilo
 
 - Classes novas (barra, seção na gaveta, resultado de busca, destaque) entram em `src/styles.css` e em `docs/estilo/catalogo.md`.
-- Só tokens existentes. A barra usa o mesmo fundo translúcido com desfoque do `.topo`.
+- Só tokens existentes. A barra usa fundo sólido, `--bg` (o mockup aprovado descartou o desfoque translúcido do `.topo`).
 - Mockup com as classes reais, enviado pelo chat, antes de codar a UI.
 
 ## Testes
