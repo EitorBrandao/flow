@@ -19,7 +19,8 @@ function textoContagemCartoes(n: number): string {
 export default function Bancos() {
   const { dados, boxSel, recarregar, hoje } = useApp();
   const [nomeNovo, setNomeNovo] = useState('');
-  const [aviso, setAviso] = useState('');
+  const [avisoCriacao, setAvisoCriacao] = useState('');
+  const [avisoEdicao, setAvisoEdicao] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nomeEdicao, setNomeEdicao] = useState('');
   const [temSaldo, setTemSaldo] = useState(false);
@@ -58,14 +59,14 @@ export default function Bancos() {
     // Guard silencioso deixaria quem está cadastrando o primeiro banco sem saber o que
     // faltou — mesmo cuidado já registrado em Boxes.tsx e Viagens.tsx.
     if (!nomeNovo.trim()) {
-      setAviso('Dê um nome ao banco para criar.');
+      setAvisoCriacao('Dê um nome ao banco para criar.');
       return;
     }
     const ordem = proximaOrdem(bancos.filter((b) => b.boxId === boxIdCriacao));
     await repo.salvarBanco({ boxId: boxIdCriacao!, nome: nomeNovo.trim(), ordem });
     await recarregar();
     setNomeNovo('');
-    setAviso('');
+    setAvisoCriacao('');
   }
 
   function editar(id: string) {
@@ -76,12 +77,12 @@ export default function Bancos() {
     setMagnitude(Math.abs(b.saldoDeclaradoCent ?? 0));
     setNegativo((b.saldoDeclaradoCent ?? 0) < 0);
     setDataEdicao(b.dataSaldoDeclarado ?? hoje);
-    setAviso('');
+    setAvisoEdicao('');
   }
 
   function cancelarEdicao() {
     setEditandoId(null);
-    setAviso('');
+    setAvisoEdicao('');
   }
 
   async function salvarEdicao() {
@@ -89,14 +90,14 @@ export default function Bancos() {
     const nome = nomeEdicao.trim();
     // Mesmo aviso da criação: sem isso, salvar com o nome apagado voltaria calado.
     if (!nome) {
-      setAviso('Dê um nome ao banco para salvar.');
+      setAvisoEdicao('Dê um nome ao banco para salvar.');
       return;
     }
     const saldoDeclaradoCent = temSaldo ? (negativo ? -magnitude : magnitude) : null;
     const dataSaldoDeclarado = temSaldo ? (dataEdicao || null) : null;
     await repo.atualizarBanco(editandoId, { nome, saldoDeclaradoCent, dataSaldoDeclarado });
     setEditandoId(null);
-    setAviso('');
+    setAvisoEdicao('');
     await recarregar();
   }
 
@@ -109,10 +110,10 @@ export default function Bancos() {
   return (
     <div className="tela">
       <h2>Bancos</h2>
-      {aviso && <p className="aviso">{aviso}</p>}
       {!editandoId && (
         <>
           <h2>Novo banco</h2>
+          {avisoCriacao && <p className="aviso">{avisoCriacao}</p>}
           <div className="form-linha">
             <div className="campo">
               <label htmlFor={`${uid}-nome`}>Nome do banco</label>
@@ -135,6 +136,7 @@ export default function Bancos() {
             <div className={`item${emEdicao ? ' item-coluna' : ''}`} key={b.id}>
               {emEdicao ? (
                 <>
+                  {avisoEdicao && <p className="aviso">{avisoEdicao}</p>}
                   <div className="form-linha">
                     <div className="campo">
                       <label htmlFor={`${b.id}-nome`}>Nome</label>

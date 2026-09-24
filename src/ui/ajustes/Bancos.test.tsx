@@ -259,3 +259,31 @@ it('o formulário de criação não tem botão Cancelar', async () => {
 
   expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument();
 });
+
+it('depois de abrir e cancelar um banco, o formulário de criação que volta continua sem Cancelar', async () => {
+  const box = await comBox();
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Original', ordem: 0 });
+  await recarregarDados();
+  render(<Bancos />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+  expect(screen.getByText('Novo banco')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument();
+});
+
+it('erro ao salvar um banco aberto mostra o aviso dentro do item, não no topo', async () => {
+  const box = await comBox();
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Original', ordem: 0 });
+  await recarregarDados();
+  render(<Bancos />);
+
+  const item = screen.getByText('Banco Original').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const nome = within(item).getByLabelText('Nome') as HTMLInputElement;
+  await userEvent.clear(nome);
+  await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
+
+  expect(await within(item).findByText('Dê um nome ao banco para salvar.')).toBeInTheDocument();
+});
