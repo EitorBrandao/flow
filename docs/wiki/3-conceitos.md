@@ -1,6 +1,6 @@
 # Conceitos e modelo de dados
 
-As entidades que tudo mais no app é construído em cima. Todas têm `id` e timestamps de criação/alteração.
+As entidades sobre as quais tudo mais no app é construído. Todas têm `id` e timestamps de criação e alteração.
 
 ## Box
 
@@ -10,7 +10,7 @@ Um fluxo de caixa com saldo próprio — nos exemplos desta documentação, `{{b
 : `dataSaldoInicial` | dia a partir do qual o saldo é contado
 : `saldoDeclaradoCent` / `dataSaldoDeclarado` | último saldo real do banco, informado manualmente na tela Hoje para conferência
 
-A [[box casa]] é especial: `saldoInicial` é sempre `null`, ela não tem saldo próprio — só guarda lançamentos compartilhados. A visão consolidada da casa é **calculada pelo motor** — {{boxA}} + {{boxB}} + lançamentos da box casa —, nunca armazenada. Veja [Consolidação da casa](#motor/consolidacao-da-casa), no capítulo Motor por baixo dos panos.
+A [[box casa]] é especial: `saldoInicial` é sempre `null` — ela não tem saldo próprio, só guarda lançamentos compartilhados. A visão consolidada da casa é **calculada pelo motor** ({{boxA}} + {{boxB}} + lançamentos da box casa), nunca armazenada. Veja [Consolidação da casa](#motor/consolidacao-da-casa), no capítulo Motor por baixo dos panos.
 
 ## Categoria
 
@@ -47,7 +47,7 @@ A cada boot e após qualquer mudança, o app recalcula as ocorrências esperadas
 - Ocorrências futuras que faltam → são criadas como `previsto`.
 - Previstos que não correspondem mais a nenhuma ocorrência esperada (regra editada) → são apagados.
 - Lançamentos com status `efetivo` **nunca são tocados**, mesmo que a regra mude depois.
-- Uma ocorrência esperada no passado que o usuário já descartou **não ressuscita** — só se cria previsto para datas futuras (trade-off aceito para não reviver o que foi excluído de propósito).
+- Uma ocorrência esperada no passado que o usuário já descartou **não ressuscita**: só se cria previsto para datas futuras. Isso evita reviver o que foi excluído de propósito.
 
 ## Cenário
 
@@ -59,10 +59,10 @@ Um "e se?" — lançamentos hipotéticos (pontuais ou parcelados) agrupados sob 
 
 ## Viagem
 
-Um período com nome — data inicial e data final, inclusive — que junta os gastos feitos durante ele, para você ver quanto a viagem custou no total.
+Um período com nome — data inicial e data final, inclusive — que junta os gastos feitos nele, para você ver quanto a viagem custou no total.
 
 - **Cadastro:** em Ajustes → Viagens. Duas viagens não podem ter períodos que se sobrepõem.
-- **Marcação:** em Lançar e em Nova compra do cartão, quando a data do lançamento cai dentro de uma viagem, aparece a opção "Viagem: nome", já marcada. Desmarque se aquele gasto não faz parte da viagem.
+- **Marcação:** em Lançar e em Nova compra do cartão, quando a data do lançamento cai numa viagem, aparece a opção "Viagem: nome", já marcada. Desmarque se o gasto não for da viagem.
 - **Onde aparece:** nas [Análises](#telas/analises), o card Viagens lista cada viagem com o total gasto; tocar abre o detalhamento, agrupado pela descrição. Em "Por categoria", a viagem vira uma linha própria com o que ela pesou naquele mês.
 - Compra parcelada no cartão conta pelo valor cheio no total da viagem, mas, em "Por categoria", cada parcela cai no mês da fatura em que vence.
 - Excluir uma viagem não apaga nada: os lançamentos e as compras continuam existindo, só perdem a marcação.
