@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import jsQR from 'jsqr';
 import { extrairChaveDoQrCode, parsearNotaFiscal, type NotaFiscalExtraida } from '../domain/notaFiscal';
+import EscolherArquivo from './EscolherArquivo';
 
 type Etapa = 'chave' | 'xml';
 
@@ -82,9 +83,7 @@ export default function EscanearNotaSheet({ onConcluir, onFechar }: {
     confirmarChave(limpa);
   }
 
-  async function onArquivoXml(e: ChangeEvent<HTMLInputElement>) {
-    const arquivo = e.target.files?.[0];
-    if (!arquivo) return;
+  async function onArquivoXml(arquivo: File) {
     setErro(null);
     setResultadoPendente(null);
     try {
@@ -150,7 +149,7 @@ export default function EscanearNotaSheet({ onConcluir, onFechar }: {
       </p>
       <div className="campo">
         <label htmlFor="escanear-nota-arquivo">Arquivo XML</label>
-        <input id="escanear-nota-arquivo" type="file" accept=".xml,text/xml" onChange={onArquivoXml} />
+        <EscolherArquivo id="escanear-nota-arquivo" accept=".xml,text/xml" onEscolher={(f) => void onArquivoXml(f)} />
       </div>
       <div className="campo">
         <label htmlFor="escanear-nota-texto">Ou cole o texto do XML</label>

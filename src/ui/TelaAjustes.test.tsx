@@ -113,7 +113,7 @@ it('estando numa subtela, abrirAjustes leva para outra subtela sem remontagem', 
   });
 
   // Deve ir direto para Backup, sem passar pelo menu
-  expect(screen.getByText('Backup', { selector: 'h2' })).toBeInTheDocument();
+  expect(screen.getByText('Backup e restauração', { selector: 'h2' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Categorias/i })).not.toBeInTheDocument();
 });
 

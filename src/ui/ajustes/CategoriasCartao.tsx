@@ -185,7 +185,7 @@ export default function CategoriasCartao() {
 
           {arquivadas.length > 0 && (
             <>
-              <p className="rotulo-grupo">Arquivados</p>
+              <p className="rotulo-grupo">Arquivadas</p>
               <Reorder.Group as="div" className="lista" axis="y" values={arquivadas} onReorder={reordenar}>
                 {arquivadas.map((c) => <ItemCategoriaCartao key={c.id} {...props(c)} />)}
               </Reorder.Group>

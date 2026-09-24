@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import * as repo from '../db/repo';
 import { addMesesData, formatarDataBR } from '../domain/dates';
 import { categoriasCartaoReservadasIds } from '../domain/categorias';
@@ -9,6 +9,7 @@ import { viagemAtivaEm } from '../domain/viagem';
 import { useApp } from '../state/store';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
+import EscolherArquivo from './EscolherArquivo';
 import SeletorCategoria from './SeletorCategoria';
 
 /** Semente de uma compra NOVA (atalho da sheet Adicionar ou nota fiscal escaneada). Cada
@@ -111,9 +112,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
     setData(addMesesData(hoje, -pClamped));
   }
 
-  async function onArquivoXml(e: ChangeEvent<HTMLInputElement>) {
-    const arquivo = e.target.files?.[0];
-    if (!arquivo) return;
+  async function onArquivoXml(arquivo: File) {
     setErroNota(null);
     try {
       setXmlTexto(await arquivo.text());
@@ -218,7 +217,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
           </p>
           <div className="campo">
             <label htmlFor={`${uid}-nota-arquivo`}>Arquivo XML</label>
-            <input id={`${uid}-nota-arquivo`} type="file" accept=".xml,text/xml" onChange={onArquivoXml} />
+            <EscolherArquivo id={`${uid}-nota-arquivo`} accept=".xml,text/xml" onEscolher={(f) => void onArquivoXml(f)} />
           </div>
           <div className="campo">
             <label htmlFor={`${uid}-nota-texto`}>Ou cole o texto do XML</label>
@@ -285,15 +284,13 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
           <input id={`${uid}-desc`} value={descricao} onChange={(e) => setDescricao(e.target.value)} />
         </div>
         {viagemAtiva && (
-          <div className="campo">
-            <label htmlFor={`${uid}-viagem`}>
-              <input
-                id={`${uid}-viagem`} type="checkbox"
-                checked={viagemMarcada} onChange={(e) => setViagemMarcada(e.target.checked)}
-              />
-              {' '}Viagem: {viagemAtiva.nome}
-            </label>
-          </div>
+          <label htmlFor={`${uid}-viagem`}>
+            <input
+              id={`${uid}-viagem`} type="checkbox"
+              checked={viagemMarcada} onChange={(e) => setViagemMarcada(e.target.checked)}
+            />
+            {' '}Viagem: {viagemAtiva.nome}
+          </label>
         )}
         <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={salvar}>Salvar</button>
         <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={onFechar}>Cancelar</button>

@@ -1,5 +1,5 @@
 import {
-  addDias, addMeses, addMesesData, dataComDia, dataDeISODatetime, diasEntre, formatarDataBR, hojeISO, mesDe,
+  addDias, addMeses, addMesesData, dataComDia, dataDeISODatetime, diasEntre, formatarDataBR, hojeISO, mesAbreviado, mesDe,
   nomeDoMes, serialExcelParaISO, ultimoDiaDoMes,
 } from './dates';
 
@@ -71,5 +71,12 @@ describe('nomeDoMes', () => {
   it('escreve o mês por extenso com o ano', () => {
     expect(nomeDoMes('2026-10')).toBe('outubro de 2026');
     expect(nomeDoMes('2027-01')).toBe('janeiro de 2027');
+  });
+});
+
+describe('mesAbreviado', () => {
+  it('escreve o mês abreviado, sem ponto, com o ano', () => {
+    expect(mesAbreviado('2026-10')).toBe('out/2026');
+    expect(mesAbreviado('2027-01')).toBe('jan/2027');
   });
 });

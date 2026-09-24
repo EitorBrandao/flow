@@ -145,7 +145,7 @@ export default function Cartoes() {
         </>
       )}
 
-      <p className="rotulo-grupo">Cadastrados nesta box</p>
+      <p className="rotulo-grupo">Nesta box</p>
       <div className="lista">
         {cartoesDaBox.map((c) => (
           editandoId === c.id ? (

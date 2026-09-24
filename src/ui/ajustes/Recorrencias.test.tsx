@@ -153,7 +153,7 @@ it('depois de criar, tipo, categoria, início e dia continuam preenchidos — s�
   useApp.setState({ hoje: '2026-07-02' });
   render(<Recorrencias />);
 
-  await userEvent.click(screen.getByRole('button', { name: 'Ganho' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Ganho' }));
   await userEvent.click(screen.getByRole('button', { name: 'salário' }));
   await userEvent.type(screen.getByLabelText('Valor'), '500000');
   await userEvent.clear(screen.getByLabelText('Início'));
@@ -165,7 +165,7 @@ it('depois de criar, tipo, categoria, início e dia continuam preenchidos — s�
 
   await waitFor(() => expect(screen.getByText('salário', { selector: 'div' })).toBeInTheDocument());
 
-  expect(screen.getByRole('button', { name: 'Ganho' })).toHaveClass('botao-primario');
+  expect(screen.getByRole('radio', { name: 'Ganho' })).toBeChecked();
   expect(screen.getByRole('button', { name: 'salário' })).toHaveClass('selecionada');
   expect(screen.getByLabelText('Início')).toHaveValue('2026-08-15');
   expect((screen.getByLabelText('Dia do mês') as HTMLInputElement).value).toBe('20');

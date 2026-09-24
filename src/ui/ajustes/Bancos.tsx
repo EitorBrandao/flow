@@ -135,7 +135,7 @@ export default function Bancos() {
         </>
       )}
 
-      <p className="rotulo-grupo">Bancos desta box</p>
+      <p className="rotulo-grupo">Nesta box</p>
       <div className="lista">
         {bancos.map((b) => {
           const emEdicao = editandoId === b.id;
@@ -153,15 +153,13 @@ export default function Bancos() {
                       />
                     </div>
                   </div>
-                  <div className="campo">
-                    <label htmlFor={`${b.id}-tem-saldo`}>
-                      <input
-                        id={`${b.id}-tem-saldo`} type="checkbox" checked={temSaldo}
-                        onChange={(e) => setTemSaldo(e.target.checked)}
-                      />
-                      {' '}Saldo informado
-                    </label>
-                  </div>
+                  <label htmlFor={`${b.id}-tem-saldo`}>
+                    <input
+                      id={`${b.id}-tem-saldo`} type="checkbox" checked={temSaldo}
+                      onChange={(e) => setTemSaldo(e.target.checked)}
+                    />
+                    {' '}Saldo informado
+                  </label>
                   {temSaldo && (
                     <div className="form-linha">
                       <div className="campo">

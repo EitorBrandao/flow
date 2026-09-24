@@ -371,7 +371,7 @@ heading: Viagens
 Nenhuma viagem cadastrada — crie em Ajustes.
 heading: Comparativo
 columnheader: Categoria
-columnheader: 01/2026
+columnheader: jan/2026
 columnheader: mês anterior
 columnheader: ano passado
 columnheader: média 3m
@@ -394,10 +394,9 @@ option: carteira
 option: reserva
 option: casa
 Lançar
-heading: Lançar
 label: Valor
-button: Gasto
-button: Ganho
+radio: Gasto
+radio: Ganho
 button: mercado
 button: transporte
 button: moradia
@@ -406,7 +405,6 @@ label: Data
 label: Nota (opcional)
 label: Marcar como previsto
 button: Lançar
-Digite um valor.
 ```
 
 ### Aba Ajustes
@@ -808,7 +806,7 @@ heading: Viagens
 Nenhuma viagem cadastrada — crie em Ajustes.
 heading: Comparativo
 columnheader: Categoria
-columnheader: 01/2026
+columnheader: jan/2026
 columnheader: mês anterior
 columnheader: ano passado
 columnheader: média 3m
@@ -831,10 +829,9 @@ option: carteira
 option: reserva
 option: casa
 Lançar
-heading: Lançar
 label: Valor
-button: Gasto
-button: Ganho
+radio: Gasto
+radio: Ganho
 button: mercado
 button: transporte
 button: moradia
@@ -843,7 +840,6 @@ label: Data
 label: Nota (opcional)
 label: Marcar como previsto
 button: Lançar
-Digite um valor.
 ```
 
 ### Aba Ajustes
@@ -1294,7 +1290,7 @@ heading: Viagens
 Nenhuma viagem cadastrada — crie em Ajustes.
 heading: Comparativo
 columnheader: Categoria
-columnheader: 02/2026
+columnheader: fev/2026
 columnheader: mês anterior
 columnheader: ano passado
 columnheader: média 3m
@@ -1332,10 +1328,9 @@ option: carteira
 option: reserva
 option: casa
 Lançar
-heading: Lançar
 label: Valor
-button: Gasto
-button: Ganho
+radio: Gasto
+radio: Ganho
 button: moradia
 button: mercado
 button: transporte
@@ -1344,7 +1339,6 @@ label: Data
 label: Nota (opcional)
 label: Marcar como previsto
 button: Lançar
-Digite um valor.
 ```
 
 ### Aba Ajustes
@@ -1742,7 +1736,7 @@ heading: Viagens
 Nenhuma viagem cadastrada — crie em Ajustes.
 heading: Comparativo
 columnheader: Categoria
-columnheader: 06/2026
+columnheader: jun/2026
 columnheader: mês anterior
 columnheader: ano passado
 columnheader: média 3m
@@ -1775,10 +1769,9 @@ option: carteira
 option: reserva
 option: casa
 Lançar
-heading: Lançar
 label: Valor
-button: Gasto
-button: Ganho
+radio: Gasto
+radio: Ganho
 button: moradia
 button: mercado
 button: transporte
@@ -1787,7 +1780,6 @@ label: Data
 label: Nota (opcional)
 label: Marcar como previsto
 button: Lançar
-Digite um valor.
 ```
 
 ### Aba Ajustes
@@ -2194,7 +2186,7 @@ praia
 R$ 140,00
 heading: Comparativo
 columnheader: Categoria
-columnheader: 07/2026
+columnheader: jul/2026
 columnheader: mês anterior
 columnheader: ano passado
 columnheader: média 3m
@@ -2232,10 +2224,9 @@ option: carteira
 option: reserva
 option: casa
 Lançar
-heading: Lançar
 label: Valor
-button: Gasto
-button: Ganho
+radio: Gasto
+radio: Ganho
 button: moradia
 button: mercado
 button: transporte
@@ -2245,7 +2236,6 @@ label: Nota (opcional)
 label: Marcar como previsto
 label: Viagem: praia
 button: Lançar
-Digite um valor.
 ```
 
 ### Aba Ajustes
@@ -2612,7 +2602,7 @@ praia
 R$ 140,00
 heading: Comparativo
 columnheader: Categoria
-columnheader: 09/2026
+columnheader: set/2026
 columnheader: mês anterior
 columnheader: ano passado
 columnheader: média 3m
@@ -2645,10 +2635,9 @@ option: carteira
 option: reserva
 option: casa
 Lançar
-heading: Lançar
 label: Valor
-button: Gasto
-button: Ganho
+radio: Gasto
+radio: Ganho
 button: moradia
 button: mercado
 button: transporte
@@ -2657,7 +2646,6 @@ label: Data
 label: Nota (opcional)
 label: Marcar como previsto
 button: Lançar
-Digite um valor.
 ```
 
 ### Aba Ajustes
@@ -3015,7 +3003,7 @@ praia
 R$ 140,00
 heading: Comparativo
 columnheader: Categoria
-columnheader: 10/2026
+columnheader: out/2026
 columnheader: mês anterior
 columnheader: ano passado
 columnheader: média 3m
@@ -3048,10 +3036,9 @@ option: carteira
 option: reserva
 option: casa
 Lançar
-heading: Lançar
 label: Valor
-button: Gasto
-button: Ganho
+radio: Gasto
+radio: Ganho
 button: moradia
 button: mercado
 button: transporte
@@ -3060,7 +3047,6 @@ label: Data
 label: Nota (opcional)
 label: Marcar como previsto
 button: Lançar
-Digite um valor.
 ```
 
 ### Aba Ajustes
@@ -3388,7 +3374,7 @@ praia
 R$ 140,00
 heading: Comparativo
 columnheader: Categoria
-columnheader: 11/2026
+columnheader: nov/2026
 columnheader: mês anterior
 columnheader: ano passado
 columnheader: média 3m
@@ -3421,10 +3407,9 @@ option: carteira
 option: reserva
 option: casa
 Lançar
-heading: Lançar
 label: Valor
-button: Gasto
-button: Ganho
+radio: Gasto
+radio: Ganho
 button: moradia
 button: mercado
 button: transporte
@@ -3433,7 +3418,6 @@ label: Data
 label: Nota (opcional)
 label: Marcar como previsto
 button: Lançar
-Digite um valor.
 ```
 
 ### Aba Ajustes

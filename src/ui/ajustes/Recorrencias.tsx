@@ -10,6 +10,7 @@ import { boxIdEfetivo, useApp } from '../../state/store';
 import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 import SeletorCategoria from '../SeletorCategoria';
+import SeletorPills, { OPCOES_TIPO } from '../SeletorPills';
 
 interface CamposRecorrenciaInicial {
   tipo: TipoCategoria;
@@ -71,16 +72,10 @@ function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
           <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} />
         </div>
       </div>
-      <div className="linha" role="radiogroup" aria-label="Tipo">
-        <button
-          className={`botao ${tipo === 'gasto' ? 'botao-primario' : ''}`}
-          onClick={() => trocarTipo('gasto')}
-        >Gasto</button>
-        <button
-          className={`botao ${tipo === 'ganho' ? 'botao-primario' : ''}`}
-          onClick={() => trocarTipo('ganho')}
-        >Ganho</button>
-      </div>
+      <SeletorPills
+        rotulo="Tipo" opcoes={OPCOES_TIPO} selecionadaId={tipo}
+        onSelecionar={(id) => trocarTipo(id as TipoCategoria)}
+      />
       <div className="campo">
         <label>Categoria</label>
         <SeletorCategoria categorias={categoriasDaBox} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
@@ -223,7 +218,7 @@ export default function Recorrencias() {
               </div>
               <div className="acoes">
                 <button className="botao" aria-label="Editar" onClick={() => setEditandoId(r.id)}><Pencil size={16} /></button>
-                <button className="botao" onClick={() => alternarAtiva(r.id)}>{r.ativa ? 'Pausar' : 'Ativar'}</button>
+                <button className="botao" onClick={() => alternarAtiva(r.id)}>{r.ativa ? 'Desativar' : 'Ativar'}</button>
                 <button className="botao botao-perigo" onClick={() => excluir(r.id)}>Excluir</button>
               </div>
             </div>

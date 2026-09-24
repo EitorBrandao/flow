@@ -138,3 +138,9 @@ it('exclui uma viagem, desvinculando sem apagar lançamentos', async () => {
 
   await waitFor(async () => expect(await db.viagens.count()).toBe(0));
 });
+
+it('a lista tem o título de grupo "Cadastradas"', async () => {
+  await useApp.getState().iniciar();
+  render(<Viagens />);
+  expect(screen.getByText('Cadastradas')).toHaveClass('rotulo-grupo');
+});

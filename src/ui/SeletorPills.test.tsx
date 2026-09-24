@@ -11,9 +11,12 @@ it('marca a opção selecionada e chama onSelecionar ao clicar em outra', async 
       onSelecionar={onSelecionar}
     />,
   );
-  expect(screen.getByRole('button', { name: 'Eitor' })).toHaveClass('ativo');
-  expect(screen.getByRole('button', { name: 'Conjunta' })).not.toHaveClass('ativo');
+  expect(screen.getByRole('radio', { name: 'Eitor' })).toHaveClass('ativo');
+  expect(screen.getByRole('radio', { name: 'Conjunta' })).not.toHaveClass('ativo');
+  // leitor de tela ouve qual está marcada, não só vê a cor
+  expect(screen.getByRole('radio', { name: 'Eitor' })).toBeChecked();
+  expect(screen.getByRole('radio', { name: 'Conjunta' })).not.toBeChecked();
 
-  await userEvent.click(screen.getByRole('button', { name: 'Conjunta' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Conjunta' }));
   expect(onSelecionar).toHaveBeenCalledWith('b');
 });

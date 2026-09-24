@@ -105,6 +105,7 @@ export default function Viagens() {
         </>
       )}
 
+      <p className="rotulo-grupo">Cadastradas</p>
       <div className="lista">
         {viagensOrdenadas.map((v) => (
           editandoId === v.id ? (

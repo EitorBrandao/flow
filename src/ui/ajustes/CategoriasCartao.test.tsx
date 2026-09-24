@@ -45,17 +45,17 @@ it('renomeia uma categoria de cartão existente via edição inline', async () =
   expect(atualizado?.nome).toBe('supermercado');
 });
 
-it('arquivar move a categoria de cartão para a seção Arquivados', async () => {
+it('arquivar move a categoria de cartão para a seção Arquivadas', async () => {
   const cartao = await prepararCartao();
   await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
   await useApp.getState().iniciar();
 
   render(<CategoriasCartao />);
-  expect(screen.queryByText('Arquivados')).not.toBeInTheDocument();
+  expect(screen.queryByText('Arquivadas')).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'Arquivar' }));
 
-  expect(await screen.findByText('Arquivados')).toBeInTheDocument();
+  expect(await screen.findByText('Arquivadas')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Restaurar' })).toBeInTheDocument();
 });
 
@@ -66,11 +66,11 @@ it('restaurar devolve a categoria de cartão pra lista ativa', async () => {
   await useApp.getState().iniciar();
 
   render(<CategoriasCartao />);
-  expect(screen.getByText('Arquivados')).toBeInTheDocument();
+  expect(screen.getByText('Arquivadas')).toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'Restaurar' }));
 
-  await waitFor(() => expect(screen.queryByText('Arquivados')).not.toBeInTheDocument());
+  await waitFor(() => expect(screen.queryByText('Arquivadas')).not.toBeInTheDocument());
   const atualizado = await db.categoriasCartao.get(cat.id);
   expect(atualizado?.arquivada).toBe(false);
 });
@@ -93,14 +93,14 @@ it('trocar a box no chip do topo troca os cartões oferecidos no seletor de Cate
 
   const { rerender } = render(<CategoriasCartao />);
 
-  expect(screen.getByRole('button', { name: 'Nubank' })).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Santander' })).not.toBeInTheDocument();
+  expect(screen.getByRole('radio', { name: 'Nubank' })).toBeInTheDocument();
+  expect(screen.queryByRole('radio', { name: 'Santander' })).not.toBeInTheDocument();
 
   useApp.setState({ boxSel: ju.id });
   rerender(<CategoriasCartao />);
 
-  expect(screen.getByRole('button', { name: 'Santander' })).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Nubank' })).not.toBeInTheDocument();
+  expect(screen.getByRole('radio', { name: 'Santander' })).toBeInTheDocument();
+  expect(screen.queryByRole('radio', { name: 'Nubank' })).not.toBeInTheDocument();
 });
 
 it('trocar de cartão pela pílula com um item aberto traz "Nova categoria do cartão" de volta', async () => {
@@ -116,11 +116,11 @@ it('trocar de cartão pela pílula com um item aberto traz "Nova categoria do ca
   // Qual cartão vem selecionado por padrão não é garantido (a ordem de `dados.cartoes` segue
   // a chave primária, não a ordem de criação) — seleciona o Nubank explicitamente, que é o
   // dono da categoria "mercado" usada no teste.
-  await userEvent.click(screen.getByRole('button', { name: 'Nubank' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Nubank' }));
   await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
   expect(screen.queryByText('Nova categoria do cartão')).not.toBeInTheDocument();
 
-  await userEvent.click(screen.getByRole('button', { name: 'Inter' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Inter' }));
 
   expect(screen.getByText('Nova categoria do cartão')).toBeInTheDocument();
 });

@@ -40,12 +40,10 @@ function FormBox({ inicial, onSalvo, onCancelar }: {
           <input id={`${uid}-nome`} value={nome} onChange={(e) => setNome(e.target.value)} />
         </div>
       </div>
-      <div className="campo">
-        <label htmlFor={`${uid}-saldo-proprio`}>
-          <input id={`${uid}-saldo-proprio`} type="checkbox" checked={temSaldoProprio} onChange={(e) => setTemSaldoProprio(e.target.checked)} />
-          {' '}Esta box tem saldo próprio
-        </label>
-      </div>
+      <label htmlFor={`${uid}-saldo-proprio`}>
+        <input id={`${uid}-saldo-proprio`} type="checkbox" checked={temSaldoProprio} onChange={(e) => setTemSaldoProprio(e.target.checked)} />
+        {' '}Esta box tem saldo próprio
+      </label>
       {temSaldoProprio && (
         <div className="form-linha">
           <div className="campo">
