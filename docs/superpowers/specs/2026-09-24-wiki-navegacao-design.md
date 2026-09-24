@@ -79,7 +79,7 @@ interface Resultado { capitulo: string; tituloCapitulo: string; secao?: string; 
 
 ### Playwright (varredura como usuário)
 
-Fora do projeto, na pasta de rascunho da sessão — nunca no `package.json` (não é dependência do Flow). Servidor `npx vite` do worktree em porta própria, só `localhost`. Tela do celular do usuário, Samsung Galaxy S25+: viewport 384 × 832 CSS px, `deviceScaleFactor` 2,8125, `isMobile` e `hasTouch` ligados. Outros tamanhos ficam para depois.
+Fora do projeto, na pasta de rascunho da sessão — nunca no `package.json` (não é dependência do Flow). Servidor `npx vite` do worktree em porta própria, só `localhost`. Tela do celular do usuário, Samsung Galaxy S25+: viewport 411 × 744 CSS px (tela 412 × 892), `deviceScaleFactor` 2,63 — medidos no aparelho, `isMobile` e `hasTouch` ligados. Outros tamanhos ficam para depois.
 
 Roteiro:
 
