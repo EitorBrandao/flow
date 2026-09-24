@@ -133,13 +133,14 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   abrir o picker nativo do `<select>`; cada pílula é `role="radio"` com `aria-checked`, e a
   prop opcional `rotulo` nomeia o grupo. Exporta `OPCOES_TIPO` (Gasto/Ganho), o controle
   único de tipo em `TelaLancar.tsx`, `Recorrencias.tsx` e `Categorias.tsx`. Usado também em
-  `CategoriasCartao.tsx` e `Assinaturas.tsx` (Cartão) — a box em si não tem mais seletor próprio nessas telas: todas as telas de
+  `CategoriasCartao.tsx`, `Assinaturas.tsx` (Cartão) e `PagamentoFaturaSheet.tsx` (destino
+  da sobra da fatura) — a box em si não tem mais seletor próprio nessas telas: todas as telas de
   Ajustes seguem a box selecionada no chip do topo (`boxIdEfetivo`, `state/store.ts`),
   reforçando a sensação de "perfil" (ver `docs/superpowers/specs/`).
 - **`PagamentoFaturaSheet.tsx`** — conteúdo da folha que registra o pagamento de uma fatura
-  por valor diferente do total e o parcelamento do restante. Exporta o conteúdo puro (default,
+  por valor diferente do total e o destino do que sobrou (mês seguinte, parcelamento ou nada). Exporta o conteúdo puro (default,
   para o teste montar sem backdrop) e `PagamentoFaturaSheetModal`, que o embrulha no `Sheet`.
-  Consumido pela fila de pendentes da `TelaHoje` e pela fatura da `TelaCartao`; recebe o
+  Consumido pela fila de pendentes da `TelaHoje`, pela fatura da `TelaCartao` e pelo `FaturaResumo`; recebe o
   lançamento da fatura e o total dela, porque nem sempre um é o outro (fatura já paga em
   parte tem valor menor que o total calculado).
 - **`AssinaturasResumoSheet.tsx`** — sheet de Análises com o total de assinaturas do mês,

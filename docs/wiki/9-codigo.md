@@ -76,3 +76,9 @@ A fatura nunca é uma entidade salva: é sempre recalculada a partir das compras
 - Previsto descartado não ressuscita — um novo só é criado se o vencimento for depois de hoje.
 - Um previsto já existente é atualizado ao vivo mesmo com vencimento no passado (é aí que ele vira pendente).
 - Fatura que zera (ou cartão desativado) remove o previsto; lançamentos efetivos ficam intactos.
+
+**Restante e parcelamento da fatura:** a sobra de um pagamento vira uma `CompraCartao` na categoria reservada "Parcelamento" do cartão (`categoriaParcelamentoId`, criada no primeiro uso). A data da compra é o fechamento da fatura paga, por isso ela cai na fatura seguinte.
+
+- "Mês seguinte" grava uma parcela só, com a descrição "Restante da fatura de MM/AAAA".
+- "Parcelei" grava as parcelas informadas, com a descrição "Parcelamento da fatura de MM/AAAA".
+- O aviso de fatura fora do Fluxo e a folha de pagamento somam essas compras pela mesma regra (`jaLancadoDaFatura`), para nunca discordarem.

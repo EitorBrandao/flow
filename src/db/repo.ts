@@ -543,7 +543,8 @@ export async function registrarPagamentoFatura(p: PagamentoFatura): Promise<void
         data: datasFaturaDoMes(cartao, p.faturaMes, ajustes).dataFechamento,
         valorTotal: parcelamento.parcelas * parcelamento.valorParcelaCent,
         parcelas: parcelamento.parcelas,
-        descricao: `Parcelamento da fatura de ${mes}/${ano}`,
+        // Uma parcela só não é parcelamento: é o que sobrou, jogado inteiro no mês seguinte.
+        descricao: `${parcelamento.parcelas === 1 ? 'Restante' : 'Parcelamento'} da fatura de ${mes}/${ano}`,
         criadoEm: agora, alteradoEm: agora,
       });
     }

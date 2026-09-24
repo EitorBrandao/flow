@@ -1,7 +1,7 @@
 import type { AjusteFechamento, Cartao, CompraCartao, ConferenciaFatura, Lancamento, RecorrenciaCartao } from './types';
 import {
   ajustesDoCartao, calcularFaturas, categoriasFaturaIds, datasFaturaDoMes, dedupAjustesFechamento,
-  diffSincronizacao, faturaForaDoFluxo, mesFaturaDaCompra, mesFechamentoDaCompra, resumoAssinaturasDoMes, resumoParcelamento,
+  diffSincronizacao, faturaForaDoFluxo, jaLancadoDaFatura, mesFaturaDaCompra, mesFechamentoDaCompra, resumoAssinaturasDoMes, resumoParcelamento,
   resumoPorCategoria, valorParcela,
 } from './fatura';
 
@@ -413,5 +413,28 @@ describe('faturaForaDoFluxo', () => {
       cartao: cartaoK, fatura: fatura08(compras), compras, lancFatura: pago, hoje: '2026-08-03',
       conferencia: conf('2026-08', 10800, true),
     })).toEqual({ tipo: 'paga-a-menor', diferencaCent: 800, valorSugeridoCent: 10800 });
+  });
+});
+
+describe('jaLancadoDaFatura', () => {
+  const cartao = { ...cartaoK, categoriaParcelamentoId: 'catParc' };
+
+  it('soma só as compras da categoria de parcelamento com a data do fechamento', () => {
+    const compras = [
+      compra('2026-07-28', 60000, 1, 'catParc'),  // restante desta fatura
+      compra('2026-07-28', 30000, 3, 'catParc'),  // parcelamento desta fatura
+      compra('2026-07-28', 5000),                 // compra comum no dia do fechamento
+      compra('2026-06-28', 40000, 1, 'catParc'),  // restante da fatura anterior
+    ];
+    expect(jaLancadoDaFatura(cartao, '2026-07-28', compras)).toBe(90000);
+  });
+
+  it('cartão sem categoria de parcelamento: zero', () => {
+    const compras = [compra('2026-07-28', 60000, 1, 'catParc')];
+    expect(jaLancadoDaFatura(cartaoK, '2026-07-28', compras)).toBe(0);
+  });
+
+  it('nada lançado: zero', () => {
+    expect(jaLancadoDaFatura(cartao, '2026-07-28', [])).toBe(0);
   });
 });

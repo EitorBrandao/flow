@@ -47,16 +47,25 @@ Nem toda fatura é paga inteira, nem no vencimento. Na fila de pendentes da tela
 
 - **Quanto pagou:** já vem preenchido com o total, então confirmar sem mexer é o caminho curto.
 - **Quando pagou:** numa fatura em aberto vem com hoje, o que permite registrar pagamento adiantado — o valor sai da conta no dia certo, não no vencimento. Numa fatura já paga, o campo preserva a data registrada: corrigir o valor não move o dia.
-- **Parcelou o restante no banco:** informe em quantas vezes e quanto é cada parcela, como o app do banco mostra.
+
+Pagou menos que o total? A folha pergunta o que acontece com o que sobrou:
+
+- **Mês seguinte** (já vem marcada): o que sobrou vai inteiro para a próxima fatura. O valor vem preenchido. Se o banco cobrou juros, digite por cima o valor que ele mostra.
+- **Parcelei:** o banco fez um [parcelamento](#glossario/parcelamento-de-fatura). Informe em quantas vezes e quanto é cada parcela, como o app do banco mostra.
+- **Não volta:** para desconto ou estorno. A tela avisa **em destaque** que esse valor some da projeção.
 
 > O Flow não calcula juros. Você digita a parcela que o banco cobrou; se houver juros, eles já estão embutidos ali. A tela só mostra a diferença entre o que vai ser pago e o que ficou de fora.
 
-Sobrou valor e você não informou [parcelamento](#glossario/parcelamento-de-fatura)? A tela avisa **em destaque** que esse valor some da projeção e não volta em nenhuma fatura. Salvar assim continua permitido — desconto e estorno existem —, mas só depois de você ler o aviso.
-
-O parcelamento vira uma compra parcelada numa categoria reservada, "Parcelamento". Por isso aparece nas faturas seguintes como qualquer parcelada, com a contagem "1/3". Quem manda na data das parcelas é o fechamento do cartão, não o dia em que você quitou a fatura anterior.
+O restante e o parcelamento viram uma compra do cartão. Por isso aparecem nas faturas seguintes como qualquer compra; o parcelamento mostra a contagem "1/3". Quem manda na data das parcelas é o fechamento do cartão, não o dia em que você quitou a fatura anterior.
 
 - Parcelas cujo vencimento já passou não viram lançamento — registrar um parcelamento meses depois não ressuscita faturas antigas nem cobra duas vezes.
 - Excluir a compra do parcelamento remove as parcelas futuras, mas **não** devolve o valor original à fatura que já foi paga. Essa reversão é na mão.
+
+Vai corrigir uma fatura cujo restante já foi lançado? A folha mostra quanto já está na próxima fatura e abre em **Não volta**, para não lançar duas vezes.
+
+Pagou **mais** que a fatura? A folha avisa o excesso. O banco costuma abater da próxima fatura, mas o Flow ainda não registra esse crédito.
+
+[Como o restante e o parcelamento são gravados](#codigo/cartao-e-fatura-no-codigo).
 
 ## Quando a fatura não bate com o Fluxo
 
@@ -65,4 +74,4 @@ A aba Cartão mostra um aviso âmbar logo abaixo das datas da fatura — a folha
 - **"Essa fatura ficou de fora do Fluxo":** todas as compras da fatura foram lançadas depois do vencimento, e fatura vencida não vira lançamento novo. Se ela já foi paga no banco, o saldo está certo e não há nada a fazer.
 - **"Tem R$ X nessa fatura que não chegaram no Fluxo":** a fatura foi paga, e depois entrou mais compra no mesmo ciclo. Fatura paga nunca é recalculada, então a diferença fica de fora. O link **Corrigir o valor pago** abre a mesma folha de "corrigir ou parcelar", já com o valor que fecha a conta.
 
-O aviso não aparece quando a diferença tem explicação: um parcelamento registrado da fatura, ou um pagamento maior que a fatura (aí o saldo já está certo, e quem mostra as compras que faltam é a aba Conferência).
+O aviso não aparece quando a diferença tem explicação: um restante ou parcelamento já lançado da fatura, ou um pagamento maior que a fatura (aí o saldo já está certo, e quem mostra as compras que faltam é a aba Conferência).
