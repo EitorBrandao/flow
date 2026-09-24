@@ -1,11 +1,11 @@
-import { Suspense, lazy, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Maximize2, Search } from 'lucide-react';
 import { addDias, formatarDataBR } from '../domain/dates';
 import { ajustesDoCartao, calcularFaturas, type Fatura } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import { projetarBoxes } from '../domain/projection';
 import type { Lancamento } from '../domain/types';
-import { boxIdsSelecionadas, cenariosLigados, useApp } from '../state/store';
+import { boxIdsSelecionadas, cenariosLigados, useApp, type AbaFluxo } from '../state/store';
 import BalanceChart from './BalanceChart';
 import CampoData from './CampoData';
 import FaturaResumo from './FaturaResumo';
@@ -17,7 +17,6 @@ const FluxoChartModal = lazy(() => import('./FluxoChartModal'));
 // NOTA DE PATCH (nível 1): abas Gráfico/Lista via `.pills` (sem classe nova) — o gráfico
 // deixa de ficar sempre expandido no topo, e a busca/filtros da lista ficam recolhidos
 // atrás do ícone de lupa (`filtrosAbertos`), abrindo sozinhos se algum filtro já está ativo.
-type AbaFluxo = 'grafico' | 'lista';
 
 function dataBonita(d: string): string {
   const [ano, mes, dia] = d.split('-');
@@ -26,7 +25,7 @@ function dataBonita(d: string): string {
 }
 
 export default function TelaFluxo() {
-  const { dados, boxSel, hoje } = useApp();
+  const { dados, boxSel, hoje, fluxoAba, limparFluxoAba } = useApp();
   const [editando, setEditando] = useState<Lancamento | null>(null);
   const [faturaSel, setFaturaSel] = useState<Lancamento | null>(null);
   const [transferenciaSel, setTransferenciaSel] = useState<Lancamento | null>(null);
@@ -36,7 +35,11 @@ export default function TelaFluxo() {
   const [dataDe, setDataDe] = useState('');
   const [dataAte, setDataAte] = useState('');
   const [periodoAtivo, setPeriodoAtivo] = useState(false);
-  const [abaFluxo, setAbaFluxo] = useState<AbaFluxo>('lista');
+  // A aba pedida de fora (Hoje → "Ver gráfico completo") vale só na chegada.
+  const [abaFluxo, setAbaFluxo] = useState<AbaFluxo>(() => fluxoAba ?? 'lista');
+  useEffect(() => {
+    if (fluxoAba) limparFluxoAba();
+  }, [fluxoAba, limparFluxoAba]);
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
   const ids = dados ? boxIdsSelecionadas(dados, boxSel) : [];
   const ligados = dados ? cenariosLigados(dados) : new Set<string>();
@@ -109,6 +112,7 @@ export default function TelaFluxo() {
   }
   const saldoPorDia = new Map(serie.map((s) => [s.data, s.saldoProjetado]));
   const horizonte = dados.config.horizonteProjecao;
+  const inicioSerie = serie[0]?.data;
   const diasSet = new Set(porDia.keys());
   if (!filtroAtivo) diasSet.add(hoje);
   // Filtro de data responde "quanto vou ter no dia X?" — o dia (e as pontas do período)
@@ -218,6 +222,9 @@ export default function TelaFluxo() {
                   })()}
                   {saldo == null && dia > horizonte && (
                     <p className="sub">A projeção vai até {formatarDataBR(horizonte)}.</p>
+                  )}
+                  {saldo == null && inicioSerie != null && dia < inicioSerie && (
+                    <p className="sub">A projeção começa em {formatarDataBR(inicioSerie)}.</p>
                   )}
                   {/* Depois do horizonte não existe lançamento: "A projeção vai até" já diz tudo. */}
                   {dataAtiva && lancsDia.length === 0 && dia <= horizonte && (

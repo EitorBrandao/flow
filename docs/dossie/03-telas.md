@@ -31,6 +31,7 @@ R$ 4.300,00
 · máx
 R$ 8.970,00
 21/02
+button: Ver gráfico completo ›
 button: Último backup: nunca · há mudanças não salvas em backup
 ```
 
@@ -460,6 +461,7 @@ R$ 4.300,00
 · máx
 R$ 8.970,00
 25/02
+button: Ver gráfico completo ›
 button: Último backup: nunca · há mudanças não salvas em backup
 ```
 
@@ -897,6 +899,7 @@ R$ 4.300,00
 · máx
 R$ 12.280,10
 10/03
+button: Ver gráfico completo ›
 button: Último backup: nunca · há mudanças não salvas em backup
 ```
 
@@ -1396,6 +1399,7 @@ R$ 7.880,00
 · máx
 R$ 25.752,00
 18/07
+button: Ver gráfico completo ›
 button: Último backup: nunca · há mudanças não salvas em backup
 ```
 
@@ -1837,6 +1841,7 @@ R$ 7.800,00
 · máx
 R$ 29.048,80
 15/08
+button: Ver gráfico completo ›
 button: Último backup: nunca · há mudanças não salvas em backup
 ```
 
@@ -2293,6 +2298,7 @@ R$ 7.676,80
 · máx
 R$ 35.945,70
 10/10
+button: Ver gráfico completo ›
 button: Último backup: há 2 dias
 ```
 
@@ -2703,6 +2709,7 @@ R$ 7.676,80
 · máx
 R$ 39.405,80
 12/11
+button: Ver gráfico completo ›
 button: Último backup: há 35 dias · há mudanças não salvas em backup
 ```
 
@@ -3104,6 +3111,7 @@ R$ 7.676,80
 · máx
 R$ 42.865,90
 28/12
+button: Ver gráfico completo ›
 button: Último backup: há 81 dias · há mudanças não salvas em backup
 ```
 

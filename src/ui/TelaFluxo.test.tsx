@@ -11,6 +11,7 @@ import TelaFluxo from './TelaFluxo';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ fluxoAba: null });
 });
 
 async function seedBoxComCategoria() {
@@ -582,4 +583,33 @@ it('o valor de cada lançamento sai sem sinal, igual às outras telas — a cor 
   // Texto exato: com sinal ("−R$ 50,00") o findByText não casaria.
   expect(await screen.findByText(brl(5000))).toHaveClass('valor-gasto');
   expect(screen.getByText(brl(300000))).toHaveClass('valor-ganho');
+});
+
+it('abre na aba Gráfico quando pedida por abrirFluxo, e só na chegada', async () => {
+  const { box } = await seedBoxComCategoria();
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-05' });
+  useApp.getState().abrirFluxo('grafico');
+
+  const { unmount } = render(<TelaFluxo />);
+  expect(screen.getByRole('tab', { name: 'Gráfico' })).toHaveAttribute('aria-selected', 'true');
+  expect(useApp.getState().fluxoAba).toBeNull();
+
+  unmount();
+  render(<TelaFluxo />);
+  expect(screen.getByRole('tab', { name: 'Lista' })).toHaveAttribute('aria-selected', 'true');
+});
+
+it('dia antes do início da projeção mostra traço e quando a projeção começa', async () => {
+  const { box } = await seedBoxComCategoria(); // dataSaldoInicial 2025-01-01
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-05' });
+
+  render(<TelaFluxo />);
+  await abrirFiltros();
+  fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2024-06-01' } });
+
+  expect(await screen.findByText(`A projeção começa em ${formatarDataBR('2025-01-01')}.`)).toBeInTheDocument();
+  expect(screen.getByText('—')).toBeInTheDocument();
+  expect(screen.getByText('Nenhum lançamento neste dia.')).toBeInTheDocument();
 });
