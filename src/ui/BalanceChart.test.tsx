@@ -85,3 +85,25 @@ it('o rótulo "mín" mostra o menor saldo real, não o zero da escala', () => {
   expect(semNbsp(rodape)).toContain(`mín ${semNbsp(formatarBRL(300000))}`);
   expect(semNbsp(rodape)).toContain(`máx ${semNbsp(formatarBRL(420000))}`);
 });
+
+describe('BalanceChart — datas das pontas do rodapé', () => {
+  const ponta = (data: string): DiaSaldo => ({ data, saldoEfetivo: 100000, saldoProjetado: 100000, saldoComCenarios: 100000 });
+
+  it('no mesmo ano, mostra só dia e mês', () => {
+    const { container } = render(<BalanceChart serie={[ponta('2026-09-16'), ponta('2026-10-21')]} hoje="2026-09-16" />);
+    expect(container.querySelector('.grafico-rodape')).not.toHaveClass('duas-linhas');
+    const spans = container.querySelectorAll('.grafico-rodape > span');
+    expect(spans[0].textContent).toBe('16/09');
+    expect(spans[2].textContent).toBe('21/10');
+  });
+
+  it('entre anos diferentes, mostra as datas completas numa linha e o mín/máx na seguinte', () => {
+    const { container } = render(<BalanceChart serie={[ponta('2026-08-01'), ponta('2027-12-31')]} hoje="2026-09-23" />);
+    const rodape = container.querySelector('.grafico-rodape')!;
+    expect(rodape).toHaveClass('duas-linhas');
+    const datas = rodape.querySelectorAll('.grafico-rodape-datas > span');
+    expect(datas[0].textContent).toBe('01/08/2026');
+    expect(datas[1].textContent).toBe('31/12/2027');
+    expect(rodape.querySelector('.grafico-rodape-minmax')!.textContent).toMatch(/^mín .* · máx /);
+  });
+});

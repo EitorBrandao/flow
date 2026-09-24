@@ -51,7 +51,7 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 A linha do tempo do dinheiro. Duas abas: Lista (padrão) e Gráfico.
 
 - **Lista** mostra por padrão os últimos 14 dias para frente; o ícone de lupa abre busca e filtros (texto, data única ou período; botão "+30 dias atrás" estende a janela). A busca por texto também alcança as compras dentro da fatura de um cartão: bater numa delas (descrição, categoria do cartão ou valor) mostra o lançamento da fatura na lista. Cada dia mostra seu saldo projetado no cabeçalho. Com filtro de data, o dia escolhido aparece mesmo sem lançamento — é o jeito de saber quanto você vai ter num dia em que nada acontece. Num período, aparecem o primeiro e o último dia, mais os dias com lançamento. Cada dia futuro filtrado mostra também a diferença em relação a hoje, em verde se o saldo sobe e em vermelho se desce. Um dia depois do fim da projeção mostra um traço no lugar do saldo e até quando a projeção vai.
-- **Gráfico** mostra o histórico e a projeção completa até o horizonte configurado, numa área maior que o mini-gráfico de Hoje; linha extra tracejada quando há cenário ligado; toque no card abre em tela cheia.
+- **Gráfico** mostra o histórico e a projeção completa até o horizonte configurado, numa área maior que o mini-gráfico de Hoje; linha extra tracejada quando há cenário ligado; toque no card abre em tela cheia. Embaixo, o menor e o maior saldo do período; quando o período passa de um ano para outro, as datas das pontas mostram o ano, e o mínimo e o máximo descem para a linha de baixo.
 - Tocar num lançamento, na Lista, abre o editor (valor, data, categoria, nota); previstos podem ser confirmados ali mesmo; previstos vindos de recorrência avisam para editar a regra em Ajustes se for para mudar valor/data permanentemente. Uma transferência entre bancos (feita em Hoje → Conferir) abre, em vez disso, um resumo só de leitura com os dois bancos, a data e o valor, e um botão para excluir as duas pernas — não dá para editar valor/data/categoria de uma transferência, só apagar e refazer.
 
 **Editor de lançamento — obrigatórios:** valor, data, categoria. **Opcional:** nota.
@@ -69,7 +69,7 @@ Aba dedicada à fatura do cartão da box selecionada (ou os dois cartões empilh
 - Sem cartão cadastrado para a seleção: mostra atalho direto para cadastrar em Ajustes.
 - Tocar numa fatura no Fluxo, ou tocar uma categoria de cartão em Análises, abre uma sheet com o cabeçalho do cartão (nome, mês, total, fechamento e vencimento), a lista da fatura — os itens, quando vem do Fluxo; as categorias, quando vem das Análises — e o link "Ver fatura completa na aba Cartão".
 
-**+ compra — obrigatórios:** valor, categoria do cartão. **Têm padrão:** data (hoje), parcelas (1). **Opcional:** descrição.
+**+ compra — obrigatórios:** valor, categoria do cartão. **Têm padrão:** data (hoje), parcelas (1). **Opcional:** descrição. Com 2 parcelas ou mais aparece também **Parcelas já pagas**, para registrar uma compra parcelada que já está em andamento: a data da compra recua um mês para cada parcela já paga.
 **Conferência — obrigatório:** nenhum; campo vazio só limpa a conferência do mês (não bloqueia nada).
 
 ## Análises

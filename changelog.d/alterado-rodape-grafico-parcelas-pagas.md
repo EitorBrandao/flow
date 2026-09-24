@@ -1,0 +1,3 @@
+- No gráfico do Fluxo, quando o período passa de um ano para outro, as datas das pontas mostram o ano.
+  - O mínimo e o máximo descem para a linha de baixo, para caber em celular estreito.
+- Na compra no cartão, "Parcelas já pagas" só aparece com 2 parcelas ou mais.

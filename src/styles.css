@@ -160,6 +160,10 @@ strong.valor-ganho, strong.valor-gasto {
   display: flex; align-items: center; justify-content: space-between;
   font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums;
 }
+/* período que cruza anos: datas completas numa linha, mín · máx centralizado na seguinte */
+.grafico-rodape.duas-linhas { flex-direction: column; align-items: stretch; gap: 2px; }
+.grafico-rodape-datas { display: flex; justify-content: space-between; }
+.grafico-rodape-minmax { text-align: center; }
 .grafico-rodape .pos, .grafico-expandido-rodape .pos { color: var(--pos); }
 .grafico-rodape .neg, .grafico-expandido-rodape .neg { color: var(--neg); }
 
