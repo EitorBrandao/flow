@@ -236,16 +236,27 @@ function localizar(texto: string, alvo: string): [number, number] | null {
   return [origem[k], origem[k + alvo.length - 1] + 1];
 }
 
-/** Busca na wiki: um resultado por seção, com trecho em volta da primeira ocorrência. */
+/** Busca na wiki: um resultado por seção, com trecho em volta da primeira ocorrência.
+ *  Procura primeiro no corpo da seção (sem o título do capítulo ou da seção); só se o termo
+ *  não estiver no corpo, procura no título — o trecho não repete o que "Capítulo · Seção" já
+ *  mostra, a menos que o termo só exista ali. */
 export function buscar(capitulos: Capitulo[], termo: string): Resultado[] {
   const alvo = normalizar(termo.trim());
   if (!alvo) return [];
   const resultados: Resultado[] = [];
   for (const c of capitulos) {
     for (const s of secoesDoCapitulo(c)) {
-      const pos = localizar(s.texto, alvo);
+      const cabecalho = s.titulo ?? c.titulo;
+      const corpo = s.texto.length > cabecalho.length ? s.texto.slice(cabecalho.length + 1) : '';
+      let pos = localizar(corpo, alvo);
+      let deslocamento = cabecalho.length + 1;
+      if (!pos) {
+        pos = localizar(cabecalho, alvo);
+        deslocamento = 0;
+      }
       if (!pos) continue;
-      const [ini, fim] = pos;
+      const ini = pos[0] + deslocamento;
+      const fim = pos[1] + deslocamento;
       let a = Math.max(0, ini - CONTEXTO);
       let b = Math.min(s.texto.length, fim + CONTEXTO);
       if (a > 0) { const e = s.texto.indexOf(' ', a); a = e >= 0 && e < ini ? e + 1 : ini; }

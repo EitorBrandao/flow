@@ -285,4 +285,22 @@ describe('buscar', () => {
     expect(buscar([cartao], '   ')).toEqual([]);
     expect(buscar([cartao], 'jabuticaba')).toEqual([]);
   });
+
+  it('termo no título e no corpo: o trecho vem do corpo, não repete o título', () => {
+    const duplicado = parseCapitulo('duplicado', '# Outro\n## Fatura\nA fatura vence dia dez.', nomes);
+    const [r] = buscar([duplicado], 'fatura');
+    expect(r).toEqual({
+      capitulo: 'duplicado', tituloCapitulo: 'Outro', secao: 'fatura', tituloSecao: 'Fatura',
+      antes: 'Fatura A ', achado: 'fatura', depois: ' vence dia dez.',
+    });
+  });
+
+  it('termo só no título: o trecho é o título (comportamento de hoje)', () => {
+    const soTitulo = parseCapitulo('so-titulo', '# Outro\n## Pagamento\nTexto sem o termo especial aqui.', nomes);
+    const [r] = buscar([soTitulo], 'pagamento');
+    expect(r).toEqual({
+      capitulo: 'so-titulo', tituloCapitulo: 'Outro', secao: 'pagamento', tituloSecao: 'Pagamento',
+      antes: '', achado: 'Pagamento', depois: ' Texto sem o termo especial aqui.',
+    });
+  });
 });
