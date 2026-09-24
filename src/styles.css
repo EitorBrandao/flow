@@ -287,6 +287,7 @@ table.tabela th:first-child, table.tabela td:first-child {
 }
 .sheet-cabecalho {
   flex: 0 0 auto; padding: 0 20px 8px;
+  touch-action: none; /* o cabeçalho também arrasta o sheet (ver Sheet.tsx) */
 }
 .sheet-conteudo {
   overflow-y: auto; min-height: 0;

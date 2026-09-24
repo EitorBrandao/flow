@@ -6,7 +6,7 @@ Nas seções de cadastro, o formulário no topo serve para criar; para editar, t
 
 ## Categorias
 
-Por box selecionada: criar, renomear, reordenar (arrastando pela alça) e arquivar/restaurar. Ganhos aparecem antes dos gastos, cada grupo na ordem definida.
+Por box selecionada: criar, renomear, reordenar (arraste pela alça ⋮⋮) e arquivar/restaurar. Ganhos aparecem antes dos gastos, cada grupo na ordem definida.
 
 **Nova categoria — obrigatórios:** nome, box. **Tem padrão:** tipo (gasto).
 

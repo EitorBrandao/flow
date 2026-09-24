@@ -20,7 +20,7 @@ Sem categoria não dá para lançar — a tela Lançar fica sem nada para escolh
 
 - Categorias pertencem a **uma box**: criar em uma não cria na outra.
 - O **tipo** (ganho ou gasto) decide se o valor soma ou subtrai — o mesmo nome pode existir nos dois tipos, como "pix".
-- A **ordem** é a ordem em que elas aparecem na tela Lançar — arraste pela alça, à esquerda do nome, para mudar. Vale pôr as do dia a dia no topo: é o que faz o lançamento caber em três toques.
+- A **ordem** (arraste pela alça ⋮⋮, à esquerda do nome) é a ordem em que elas aparecem na tela Lançar. Vale pôr as do dia a dia no topo: é o que faz o lançamento caber em três toques.
 
 **Obrigatórios:** nome, box. **Tem padrão:** tipo (gasto).
 

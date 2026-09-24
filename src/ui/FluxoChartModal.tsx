@@ -9,6 +9,7 @@ import { formatarBRL } from '../domain/money';
 import type { DiaSaldo } from '../domain/projection';
 import type { ISODate } from '../domain/types';
 import { janelaInicial, panJanela, zoomJanela, type Janela } from './chartGestures';
+import { useTravarRolagem } from './useTravarRolagem';
 
 interface Props {
   serie: DiaSaldo[];
@@ -26,6 +27,7 @@ function semana(d: ISODate): string {
 }
 
 export default function FluxoChartModal({ serie, hoje, mostrarCenarios, onFechar }: Props) {
+  useTravarRolagem();
   const uid = useId();
   const hojeIdxBruto = serie.findIndex((s) => s.data >= hoje);
   const hojeIdx = hojeIdxBruto === -1 ? serie.length - 1 : hojeIdxBruto;
