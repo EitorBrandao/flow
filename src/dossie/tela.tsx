@@ -184,7 +184,7 @@ export async function renderComCaptura(elemento: ReactNode): Promise<string> {
 export async function textoDaTela(retrato: Retrato, aba: Aba): Promise<string> {
   useApp.setState({
     dados: retrato.dados, hoje: retrato.data, aba,
-    boxSel: boxSelInicial(retrato.dados), carregado: true, ajustesSecao: null,
+    boxSel: boxSelInicial(retrato.dados), carregado: true, ajustesSecao: null, fluxoAba: null,
   });
   const ambiente = instalarAmbiente(retrato.data);
   try {
