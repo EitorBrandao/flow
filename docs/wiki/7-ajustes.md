@@ -15,8 +15,8 @@ Por box selecionada: criar, renomear, reordenar (arraste pela alça ⋮⋮) e ar
 CRUD das regras que geram previstos automaticamente (veja [Recorrência](#conceitos/recorrencia), no capítulo Conceitos e modelo de dados).
 
 - Ao editar (toque no lápis), recalcula os previstos futuros ainda não confirmados na hora.
-- "Desativar" para a regra sem apagá-la; "Ativar" retoma a materialização.
-- Excluir remove a regra e seus previstos — os já confirmados como `efetivo` ficam.
+- "Desativar" para a regra sem apagar nada; "Ativar" volta a gerar os previstos seguintes.
+- Excluir remove a regra e seus previstos — os já confirmados ficam.
 
 **Obrigatórios:** valor, categoria. **Têm padrão:** início (hoje), dia do mês (1). **Opcional:** parcelas (vazio = sem fim).
 
@@ -59,7 +59,7 @@ Mesmo padrão de Categorias, mas por cartão em vez de por box — sem separaç�
 
 ## Assinaturas do cartão
 
-CRUD das `RecorrenciaCartao` — gastos recorrentes no cartão (streaming, mensalidades…) que viram `CompraCartao` automaticamente todo mês.
+Gastos recorrentes no cartão — streaming, mensalidades — cadastrados uma vez só: uma compra nova aparece sozinha todo mês, na fatura certa.
 
 Excluir mantém as compras passadas geradas pela assinatura; só as futuras somem.
 
@@ -75,11 +75,11 @@ Excluir tira só a marcação de viagem; os lançamentos e as compras continuam 
 
 ## Backup e restauração
 
-- **Exportar:** gera um `.json` com tudo (schema + dados); no Android abre o menu de compartilhamento do sistema, no PC baixa o arquivo.
-- **Restaurar:** escolher **substituir tudo** ou **mesclar** (por `id`; em conflito, vence o registro alterado mais recentemente). A confirmação é sempre pedida antes de aplicar.
+- **Exportar:** gera um `.json` com tudo; no Android abre o menu de compartilhamento do sistema, no PC baixa o arquivo.
+- **Restaurar:** escolher **substituir tudo** ou **mesclar** (registro a registro; em conflito, vence o alterado mais recentemente). A confirmação é sempre pedida antes de aplicar.
 - Depois de **mesclar**, a tela Hoje avisa que há mudanças não salvas em backup: o resultado não está inteiro em nenhum arquivo, e recuperá-lo exigiria os dois. Faça um backup novo para juntar tudo num arquivo só. Depois de **substituir tudo**, não há aviso: os dados são exatamente os do arquivo.
-- Backup de versão de schema mais nova que o app entende é rejeitado com mensagem clara — nada é alterado.
-- Backup antigo (de antes da aba Cartão) restaura normalmente; as tabelas novas entram vazias.
+- Backup feito numa versão do Flow mais nova que a que você está usando é rejeitado, com mensagem clara — nada é alterado.
+- Backup antigo (de antes da aba Cartão) restaura normalmente; o que ainda não existia na época — cartões, faturas — entra vazio.
 
 **Restaurar — obrigatório:** selecionar um arquivo `.json` de backup do Flow.
 
