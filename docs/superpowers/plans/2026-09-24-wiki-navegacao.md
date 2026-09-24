@@ -315,6 +315,13 @@ it('antes da primeira seção, a barra mostra só o capítulo', async () => {
 
 - [ ] **Passo 3: implementar em `Wiki.tsx`**
 
+Constante no topo do módulo, junto de `BRUTOS`:
+
+```tsx
+/** Espaço entre a barra e o título de destino. O mesmo valor decide a seção atual: um salto para a seção a deixa como atual. */
+const FOLGA = 8;
+```
+
 Novos estados e refs, junto dos existentes:
 
 ```tsx
@@ -333,23 +340,23 @@ const tituloSecao = secoes.find((s) => s.id === secaoAtual)?.titulo;
 Efeitos novos:
 
 ```tsx
-// A barra gruda logo abaixo do .topo do app; títulos e campos param abaixo da barra ao rolar até eles.
+// A barra gruda logo abaixo do .topo do app; títulos e campos param FOLGA px abaixo da barra ao rolar até eles.
 useEffect(() => {
   const medir = () => {
     const topo = document.querySelector<HTMLElement>('.topo')?.offsetHeight ?? 0;
     const altura = barra.current?.offsetHeight ?? 0;
     raiz.current?.style.setProperty('--wiki-topo', `${topo}px`);
-    raiz.current?.style.setProperty('--wiki-rolagem', `${topo + altura + 8}px`);
+    raiz.current?.style.setProperty('--wiki-rolagem', `${topo + altura + FOLGA}px`);
   };
   medir();
   window.addEventListener('resize', medir);
   return () => window.removeEventListener('resize', medir);
 }, []);
 
-// Seção atual: o último título cujo topo já passou pela base da barra.
+// Seção atual: o último título cujo topo já chegou à base da barra mais a FOLGA — onde um salto para a seção o deixa.
 useEffect(() => {
   const atualizar = () => {
-    const limite = (barra.current?.getBoundingClientRect().bottom ?? 0) + 1;
+    const limite = (barra.current?.getBoundingClientRect().bottom ?? 0) + FOLGA + 1;
     let id: string | null = null;
     corpo.current?.querySelectorAll<HTMLElement>('h3[id]').forEach((h) => {
       if (h.getBoundingClientRect().top <= limite) id = h.id;
