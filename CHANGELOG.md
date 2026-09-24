@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.39.0] - 2026-09-23
+
+### Alterado
+
+- Janelas abertas por cima da tela tomam o toque só para si.
+  - Enquanto a janela está aberta, a tela de trás não rola nem recarrega sem querer.
+  - Vale para as janelas que sobem de baixo, o gráfico em tela cheia e o índice da wiki.
+- Fechar a janela que sobe de baixo ficou mais fácil.
+  - Dá para puxar para baixo pelo título ou pelo próprio conteúdo, quando ele já está no começo, além da barrinha do topo.
+
 ## [0.38.1] - 2026-09-23
 
 ### Alterado
