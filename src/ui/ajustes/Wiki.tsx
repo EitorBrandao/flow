@@ -3,6 +3,7 @@ import {
   idDoCapitulo, normalizar, parseCapitulo, sortearNomes, termosDoGlossario,
   type Bloco, type Capitulo, type Inline, type ItemCampo,
 } from './capitulos';
+import { useTravarRolagem } from '../useTravarRolagem';
 
 // Carrega capítulos (exclui README que não é um capítulo)
 const BRUTOS_TODOS = import.meta.glob('../../../docs/wiki/*.md', {
@@ -89,6 +90,7 @@ export default function Wiki() {
   }, [capitulos]);
   const [atualId, setAtualId] = useState(capitulos[0].id);
   const [indiceAberto, setIndiceAberto] = useState(false);
+  useTravarRolagem(indiceAberto);
   const [busca, setBusca] = useState('');
   const [destino, setDestino] = useState<{ secao?: string } | null>(null);
   const [balao, setBalao] = useState<Balao | null>(null);

@@ -4,6 +4,8 @@ Todas respeitam o seletor de box no topo (no exemplo: `{{boxA}}` / `{{boxB}}` / 
 
 > **Sobre "obrigatório" nesta wiki:** a UI do app não marca campos com asterisco — isso é só documentação. "Obrigatório" quer dizer que o botão de salvar/criar não faz nada (silenciosamente) se o campo estiver vazio ou inválido. Campos com valor padrão pronto (ex.: data = hoje, parcelas = 1) contam como preenchidos mesmo sem o usuário tocar neles.
 
+> **Janelas por cima da tela:** enquanto uma janela está aberta (a que sobe de baixo, o gráfico em tela cheia, o índice da wiki), o toque vale só para ela — a tela de trás não rola. Para fechar a janela que sobe de baixo, puxe para baixo pela barrinha do topo, pelo título ou pelo próprio conteúdo, quando ele já está no começo. Tocar no fundo escuro também fecha.
+
 ## Hoje
 
 Tela inicial. Foco em "onde estou agora" e no que precisa de atenção. Três abas: Visão, Conferir e Pendentes.
