@@ -204,7 +204,7 @@ export function normalizar(s: string): string {
 
 export interface SecaoTexto { id?: string; titulo?: string; texto: string }
 
-/** Texto puro por se\u00e7\u00e3o. O primeiro item \u00e9 a introdu\u00e7\u00e3o (t\u00edtulo do cap\u00edtulo + texto antes do primeiro ##). */
+/** Texto puro por seção. O primeiro item é a introdução (título do capítulo + texto antes do primeiro ##). */
 export function secoesDoCapitulo(c: Capitulo): SecaoTexto[] {
   const secoes: { id?: string; titulo?: string; pedacos: string[] }[] = [{ pedacos: [c.titulo] }];
   for (const b of c.blocos) {
@@ -222,7 +222,7 @@ export interface Resultado {
 
 const CONTEXTO = 40;
 
-/** Posi\u00e7\u00e3o [in\u00edcio, fim) no texto original do primeiro trecho que casa com `alvo` j\u00e1 normalizado. */
+/** Posição [início, fim) no texto original do primeiro trecho que casa com `alvo` já normalizado. */
 function localizar(texto: string, alvo: string): [number, number] | null {
   let norm = '';
   const origem: number[] = [];
@@ -236,7 +236,7 @@ function localizar(texto: string, alvo: string): [number, number] | null {
   return [origem[k], origem[k + alvo.length - 1] + 1];
 }
 
-/** Busca na wiki: um resultado por se\u00e7\u00e3o, com trecho em volta da primeira ocorr\u00eancia. */
+/** Busca na wiki: um resultado por seção, com trecho em volta da primeira ocorrência. */
 export function buscar(capitulos: Capitulo[], termo: string): Resultado[] {
   const alvo = normalizar(termo.trim());
   if (!alvo) return [];
@@ -246,18 +246,16 @@ export function buscar(capitulos: Capitulo[], termo: string): Resultado[] {
       const pos = localizar(s.texto, alvo);
       if (!pos) continue;
       const [ini, fim] = pos;
-      const a0 = Math.max(0, ini - CONTEXTO);
-      let a = a0;
+      let a = Math.max(0, ini - CONTEXTO);
+      let b = Math.min(s.texto.length, fim + CONTEXTO);
       if (a > 0) { const e = s.texto.indexOf(' ', a); a = e >= 0 && e < ini ? e + 1 : ini; }
-      const b0 = a == a0 ? s.texto.length : Math.min(s.texto.length, fim + CONTEXTO);
-      let b = b0;
-      if (a > a0 && b < s.texto.length) { const e = s.texto.lastIndexOf(' ', b); b = e >= fim ? e : fim; }
+      if (b < s.texto.length) { const e = s.texto.lastIndexOf(' ', b); b = e >= fim ? e : fim; }
       resultados.push({
         capitulo: c.id, tituloCapitulo: c.titulo,
         ...(s.id ? { secao: s.id, tituloSecao: s.titulo } : {}),
-        antes: (a > a0 ? '\u2026' : '') + s.texto.slice(a, ini),
+        antes: (a > 0 ? '…' : '') + s.texto.slice(a, ini),
         achado: s.texto.slice(ini, fim),
-        depois: s.texto.slice(fim, b) + (a > a0 && b < b0 ? '\u2026' : ''),
+        depois: s.texto.slice(fim, b) + (b < s.texto.length ? '…' : ''),
       });
     }
   }

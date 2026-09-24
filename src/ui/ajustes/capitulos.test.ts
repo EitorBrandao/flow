@@ -242,7 +242,11 @@ describe('buscar', () => {
   it('um resultado por seção, na primeira ocorrência, sem reticências quando nada foi cortado', () => {
     expect(buscar([cartao], 'FECHA')).toEqual([{
       capitulo: 'cartao', tituloCapitulo: 'Cartão', secao: 'fatura', tituloSecao: 'Fatura',
-      antes: 'Fatura A fatura ', achado: 'fecha', depois: ' no dia do fechamento e vence depois. Nota sobre juros.',
+      // Corte independente por lado (correção pós-revisão): o texto da seção tem 76
+      // caracteres; "fecha" começa no 16 e termina no 21. À esquerda, ini - 40 é negativo,
+      // então não há corte (sem "…"). À direita, fim + 40 = 61 < 76: há texto sobrando de
+      // verdade, então o lado direito corta e ganha "…", mesmo o esquerdo não tendo cortado.
+      antes: 'Fatura A fatura ', achado: 'fecha', depois: ' no dia do fechamento e vence depois.…',
     }]);
   });
 
@@ -262,6 +266,13 @@ describe('buscar', () => {
     expect(r.antes).toBe('…quatro cinco seis sete oito nove dez ');
     expect(r.achado).toBe('alvo');
     expect(r.depois).toBe(' onze doze treze catorze quinze…');
+  });
+
+  it('corta só a direita quando o termo está perto do início', () => {
+    const curta = parseCapitulo('curta', '# Outro\n## Curta\nalvo um dois tres quatro cinco seis sete oito nove dez onze doze treze', nomes);
+    const [r] = buscar([curta], 'alvo');
+    expect(r.antes).toBe('Curta ');
+    expect(r.depois).toBe(' um dois tres quatro cinco seis sete…');
   });
 
   it('percorre vários capítulos na ordem recebida', () => {
