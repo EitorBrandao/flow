@@ -11,7 +11,7 @@ import TelaHoje from './TelaHoje';
 
 beforeEach(async () => {
   await limparDb();
-  useApp.setState({ aba: 'hoje', ajustesSecao: null });
+  useApp.setState({ aba: 'hoje', ajustesSecao: null, fluxoAba: null });
 });
 
 /** As três abas (Visão/Conferir/Pendentes) trocam o conteúdo visível — quem quiser o que
@@ -812,4 +812,33 @@ it('conferência: um centavo de diferença não é "Bate certinho", e a data sai
   expect(screen.queryByText(/Bate certinho/)).not.toBeInTheDocument();
   expect(screen.getByText(/Diferença/)).toBeInTheDocument();
   expect(screen.getByText(/conferido em 02\/07\/2026/)).toBeInTheDocument();
+});
+
+it('link sob o mini-gráfico leva ao Fluxo na aba Gráfico', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaHoje />);
+  await userEvent.click(screen.getByRole('button', { name: 'Ver gráfico completo ›' }));
+
+  expect(useApp.getState().aba).toBe('fluxo');
+  expect(useApp.getState().fluxoAba).toBe('grafico');
+});
+
+it('sem série para desenhar, não mostra o link do gráfico', async () => {
+  const agora = agoraISO();
+  // saldo começa depois de hoje + 28: a janela do mini-gráfico fica vazia
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-12-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaHoje />);
+  expect(screen.getByText(/Saldo hoje/)).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Ver gráfico completo ›' })).not.toBeInTheDocument();
 });

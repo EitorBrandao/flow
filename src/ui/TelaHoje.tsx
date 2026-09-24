@@ -244,7 +244,7 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
 }
 
 export default function TelaHoje() {
-  const { dados, boxSel, hoje, recarregar, abrirAjustes } = useApp();
+  const { dados, boxSel, hoje, recarregar, abrirAjustes, abrirFluxo } = useApp();
   const [pagando, setPagando] = useState<Lancamento | null>(null);
   const [avisoSalvarBancos, setAvisoSalvarBancos] = useState<string | null>(null);
   const [abaHoje, setAbaHoje] = useState<AbaHoje>('visao');
@@ -378,6 +378,12 @@ export default function TelaHoje() {
                 </p>
               )}
               <BalanceChart serie={janela} hoje={hoje} altura={120} mostrarCenarios={ligados.size > 0} />
+              {/* mesma condição do BalanceChart, que não desenha com menos de 2 dias */}
+              {janela.length >= 2 && (
+                <button type="button" className="botao-ver-mais" style={{ marginTop: 10 }} onClick={() => abrirFluxo('grafico')}>
+                  Ver gráfico completo ›
+                </button>
+              )}
             </div>
             <button type="button" className={classeBackup} onClick={() => abrirAjustes('backup')}>
               Último backup: {backup.idade}{dados.config.mudancasDesdeBackup && SUFIXO_MUDANCAS_BACKUP}
