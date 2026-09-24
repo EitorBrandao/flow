@@ -5,8 +5,18 @@ import Wiki from './Wiki';
 import { normalizar } from './capitulos';
 
 describe('Wiki', () => {
+  const propriedadesAlteradas: Array<[object, string, PropertyDescriptor | undefined]> = [];
+  function definirPropriedade(alvo: object, prop: string, valor: unknown) {
+    propriedadesAlteradas.push([alvo, prop, Object.getOwnPropertyDescriptor(alvo, prop)]);
+    Object.defineProperty(alvo, prop, { configurable: true, value: valor });
+  }
+
   afterEach(() => {
     vi.restoreAllMocks();
+    for (const [alvo, prop, descritor] of propriedadesAlteradas.splice(0)) {
+      if (descritor) Object.defineProperty(alvo, prop, descritor);
+      else delete (alvo as Record<string, unknown>)[prop];
+    }
   });
 
   it('abre no primeiro capítulo', async () => {
@@ -171,6 +181,8 @@ describe('Wiki', () => {
       const top = i === -1 ? 0 : i < passaram ? -100 + i : 500;
       return { top, bottom: top + 20, left: 0, right: 0, width: 0, height: 20, x: 0, y: top, toJSON() {} } as DOMRect;
     });
+    // Página bem mais alta que a tela: não está no fim, então vale só a regra normal (base da barra).
+    definirPropriedade(document.documentElement, 'scrollHeight', 100000);
   }
 
   it('a barra mostra a última seção que passou por baixo dela', async () => {
@@ -189,6 +201,52 @@ describe('Wiki', () => {
     simularPosicoes(titulos, 0);
     fireEvent.scroll(window);
     expect(screen.getByRole('button', { name: 'Índice' }).textContent).not.toContain('·');
+  });
+
+  function simularPosicoesExplicitas(titulos: Element[], tops: number[]) {
+    // Barra: topo 0, base 20 (igual a simularPosicoes). Cada título usa o topo dado em `tops`.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const i = titulos.indexOf(this);
+      const top = i === -1 ? 0 : tops[i];
+      return { top, bottom: top + 20, left: 0, right: 0, width: 0, height: 20, x: 0, y: top, toJSON() {} } as DOMRect;
+    });
+  }
+
+  // Só o primeiro título passou da barra; os dois últimos, embora não tenham passado, já estão visíveis na tela.
+  function tituloTopos(n: number) {
+    const tops = new Array(n).fill(400);
+    tops[0] = -50;
+    tops[n - 2] = 200;
+    tops[n - 1] = 250;
+    return tops;
+  }
+
+  describe('fim da página', () => {
+    it('no fim da página, a barra mostra o último título visível, mesmo que não tenha passado por baixo dela', async () => {
+      render(<Wiki />);
+      const titulos = [...(await screen.findByRole('article')).querySelectorAll('h3[id]')];
+      expect(titulos.length).toBeGreaterThan(2);
+      simularPosicoesExplicitas(titulos, tituloTopos(titulos.length));
+      definirPropriedade(window, 'innerHeight', 300);
+      definirPropriedade(window, 'scrollY', 700);
+      definirPropriedade(document.documentElement, 'scrollHeight', 1000);
+      fireEvent.scroll(window);
+      expect(screen.getByRole('button', { name: 'Índice' }))
+        .toHaveTextContent(`Os primeiros passos · ${titulos.at(-1)!.textContent}`);
+    });
+
+    it('fora do fim da página, as mesmas posições valem a regra normal (mostra o primeiro título)', async () => {
+      render(<Wiki />);
+      const titulos = [...(await screen.findByRole('article')).querySelectorAll('h3[id]')];
+      expect(titulos.length).toBeGreaterThan(2);
+      simularPosicoesExplicitas(titulos, tituloTopos(titulos.length));
+      definirPropriedade(window, 'innerHeight', 300);
+      definirPropriedade(window, 'scrollY', 0);
+      definirPropriedade(document.documentElement, 'scrollHeight', 1000);
+      fireEvent.scroll(window);
+      expect(screen.getByRole('button', { name: 'Índice' }))
+        .toHaveTextContent(`Os primeiros passos · ${titulos[0].textContent}`);
+    });
   });
 
   it('a gaveta lista as seções do capítulo atual e leva até a seção', async () => {

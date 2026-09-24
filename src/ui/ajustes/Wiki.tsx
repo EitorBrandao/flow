@@ -130,11 +130,21 @@ export default function Wiki() {
   }, []);
 
   // Seção atual: o último título cujo topo já chegou à base da barra mais a FOLGA — onde um salto para a seção o deixa.
+  // No fim da página, quando a rolagem não alcança esse ponto, vale o último título visível na tela, se houver algum.
   useEffect(() => {
     const atualizar = () => {
+      const titulos = corpo.current?.querySelectorAll<HTMLElement>('h3[id]');
+      const noFim = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+      if (noFim) {
+        let idVisivel: string | null = null;
+        titulos?.forEach((h) => {
+          if (h.getBoundingClientRect().top < window.innerHeight) idVisivel = h.id;
+        });
+        if (idVisivel) { setSecaoAtual(idVisivel); return; }
+      }
       const limite = (barra.current?.getBoundingClientRect().bottom ?? 0) + FOLGA + 1;
       let id: string | null = null;
-      corpo.current?.querySelectorAll<HTMLElement>('h3[id]').forEach((h) => {
+      titulos?.forEach((h) => {
         if (h.getBoundingClientRect().top <= limite) id = h.id;
       });
       setSecaoAtual(id);
