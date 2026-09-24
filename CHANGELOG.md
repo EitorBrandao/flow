@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.38.0] - 2026-09-23
+
+### Alterado
+
+- As telas de cadastro em Ajustes passam a funcionar do mesmo jeito.
+  - O formulário de cima serve para criar; para editar, toque no lápis do próprio item.
+  - O item abre ali mesmo, com Cancelar e Salvar à direita.
+  - Os campos ocupam a largura toda da tela.
+  - Nova box fica no topo da tela, como nas outras.
+
 ## [0.37.0] - 2026-09-23
 
 ### Adicionado
