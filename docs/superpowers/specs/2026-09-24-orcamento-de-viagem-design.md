@@ -62,7 +62,7 @@ Um componente novo, `LinhaOrcamentoViagem`, usado nos três lugares, para o text
 
 - Dentro do orçamento: `R$ 1.200,00 de R$ 3.000,00 · falta <strong class="valor-ganho">R$ 1.800,00</strong>`.
 - Exatamente no limite: `falta` com `R$ 0,00`, verde.
-- Passou: ícone `TriangleAlert` (lucide-react, 16px) + `R$ 3.200,00 de R$ 3.000,00 · passou <strong class="valor-gasto">R$ 200,00</strong>`.
+- Passou: `R$ 3.200,00 de R$ 3.000,00 · passou <strong class="valor-gasto">⚠ R$ 200,00</strong>`, com o ícone `TriangleAlert` (lucide-react, 16px) **dentro** do `<strong>`, para herdar o vermelho sem `style` de cor.
 - Prefixo opcional `Com este gasto: ` quando a linha já soma o valor digitado.
 - Container: `<p className="sub">` — nenhuma classe CSS nova.
 
