@@ -1,2 +1,0 @@
-- Hoje: novo link "Ver gráfico completo na aba Fluxo →" sob o mini-gráfico, que abre o Fluxo direto na aba Gráfico
-- Fluxo: filtrar um dia anterior ao início da projeção agora diz quando ela começa

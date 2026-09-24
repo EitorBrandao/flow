@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.42.0] - 2026-09-24
+
+### Alterado
+
+- Hoje: novo link "Ver gráfico completo na aba Fluxo →" sob o mini-gráfico, que abre o Fluxo direto na aba Gráfico
+- Fluxo: filtrar um dia anterior ao início da projeção agora diz quando ela começa
+
 ## [0.41.0] - 2026-09-24
 
 ### Alterado
