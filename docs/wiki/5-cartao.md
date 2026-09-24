@@ -54,7 +54,7 @@ Nem toda fatura é paga inteira nem no dia do vencimento. Na fila de pendentes d
 Quando você paga menos que o total, a folha pergunta o destino da diferença:
 
 - **Mês seguinte** (já vem marcada): o que sobrou vai inteiro para a próxima fatura. O valor vem preenchido; se o banco cobrou juros, digite por cima o valor que ele mostra.
-- **Parcelei:** informe em quantas vezes e quanto é cada parcela, como o app do banco mostra.
+- **Parcelei:** o banco fez um [parcelamento](#glossario/parcelamento-de-fatura). Informe em quantas vezes e quanto é cada parcela, como o app do banco mostra.
 - **Não volta:** para desconto ou estorno. A tela avisa **em destaque** que esse valor some da projeção.
 
 > O Flow não calcula juros. Você digita a parcela que o banco cobrou; se houver juros, eles já estão embutidos ali. A tela só mostra a diferença entre o que vai ser pago e o que ficou de fora.
