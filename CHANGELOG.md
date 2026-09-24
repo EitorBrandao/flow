@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.42.2] - 2026-09-24
+
+### Alterado
+
+- Corrigido: tocar duas vezes rápido ao salvar uma assinatura, registrar um parcelamento de fatura ou aplicar uma conferência por extrato podia criar a mesma categoria duas vezes ("Assinaturas", "Parcelamento" ou "A classificar").
+
 ## [0.42.1] - 2026-09-24
 
 ### Alterado
