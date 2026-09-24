@@ -1,3 +1,4 @@
+import { Pencil } from 'lucide-react';
 import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { bancosDaBox } from '../../domain/bancos';
@@ -109,17 +110,22 @@ export default function Bancos() {
     <div className="tela">
       <h2>Bancos</h2>
       {aviso && <p className="aviso">{aviso}</p>}
-      <div className="linha">
-        <div className="campo cresce">
-          <label htmlFor={`${uid}-nome`}>Nome do banco</label>
-          <input
-            id={`${uid}-nome`} placeholder="ex.: Banco Um" value={nomeNovo}
-            onChange={(e) => setNomeNovo(e.target.value)}
-          />
-        </div>
-        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={criar}>Criar</button>
-      </div>
-      <p className="sub">Será criado na box {nomeBoxCriacao}.</p>
+      {!editandoId && (
+        <>
+          <h2>Novo banco</h2>
+          <div className="form-linha">
+            <div className="campo">
+              <label htmlFor={`${uid}-nome`}>Nome do banco</label>
+              <input
+                id={`${uid}-nome`} placeholder="ex.: Banco Um" value={nomeNovo}
+                onChange={(e) => setNomeNovo(e.target.value)}
+              />
+            </div>
+            <button className="botao botao-primario" onClick={criar}>Criar</button>
+          </div>
+          <p className="sub">Será criado na box {nomeBoxCriacao}.</p>
+        </>
+      )}
 
       <p className="rotulo-grupo">Bancos desta box</p>
       <div className="lista">
@@ -129,24 +135,28 @@ export default function Bancos() {
             <div className={`item${emEdicao ? ' item-coluna' : ''}`} key={b.id}>
               {emEdicao ? (
                 <>
-                  <div className="campo">
-                    <label htmlFor={`${b.id}-nome`}>Nome</label>
-                    <input
-                      id={`${b.id}-nome`} value={nomeEdicao}
-                      onChange={(e) => setNomeEdicao(e.target.value)}
-                    />
-                  </div>
-                  <div className="campo">
-                    <label htmlFor={`${b.id}-tem-saldo`}>
+                  <div className="form-linha">
+                    <div className="campo">
+                      <label htmlFor={`${b.id}-nome`}>Nome</label>
                       <input
-                        id={`${b.id}-tem-saldo`} type="checkbox" checked={temSaldo}
-                        onChange={(e) => setTemSaldo(e.target.checked)}
+                        id={`${b.id}-nome`} value={nomeEdicao}
+                        onChange={(e) => setNomeEdicao(e.target.value)}
                       />
-                      {' '}Saldo informado
-                    </label>
+                    </div>
+                  </div>
+                  <div className="form-linha">
+                    <div className="campo">
+                      <label htmlFor={`${b.id}-tem-saldo`}>
+                        <input
+                          id={`${b.id}-tem-saldo`} type="checkbox" checked={temSaldo}
+                          onChange={(e) => setTemSaldo(e.target.checked)}
+                        />
+                        {' '}Saldo informado
+                      </label>
+                    </div>
                   </div>
                   {temSaldo && (
-                    <>
+                    <div className="form-linha">
                       <div className="campo">
                         <label htmlFor={`${b.id}-saldo`}>Saldo</label>
                         {/* O rótulo fica ACIMA, como em todo campo do app; o botão de sinal
@@ -167,13 +177,11 @@ export default function Bancos() {
                         <label htmlFor={`${b.id}-data`}>Data do saldo</label>
                         <CampoData id={`${b.id}-data`} value={dataEdicao} onChange={setDataEdicao} />
                       </div>
-                    </>
+                    </div>
                   )}
-                  {/* Ações no fim do formulário: no topo, ao lado do Nome, "Salvar" parecia
-                      salvar só o nome. */}
-                  <div className="acoes">
-                    <button className="botao botao-primario" onClick={salvarEdicao}>Salvar</button>
+                  <div className="form-botoes">
                     <button className="botao" onClick={cancelarEdicao}>Cancelar</button>
+                    <button className="botao botao-primario" onClick={salvarEdicao}>Salvar</button>
                   </div>
                 </>
               ) : (
@@ -187,7 +195,7 @@ export default function Bancos() {
                       {' · '}{textoContagemCartoes(cartoesDoBanco(b.id))}
                     </div>
                   </div>
-                  <button className="botao" onClick={() => editar(b.id)}>Editar</button>
+                  <button className="botao" aria-label="Editar" onClick={() => editar(b.id)}><Pencil size={16} /></button>
                   <button className="botao botao-perigo" onClick={() => excluir(b.id)}>Excluir</button>
                 </>
               )}
