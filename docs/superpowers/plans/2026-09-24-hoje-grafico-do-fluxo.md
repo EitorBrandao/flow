@@ -2,7 +2,7 @@
 
 > **Para agentes:** SUB-SKILL OBRIGATÓRIA: use superpowers:subagent-driven-development (recomendado) ou superpowers:executing-plans para executar este plano tarefa a tarefa. Os passos usam checkbox (`- [ ]`).
 
-**Objetivo:** a Visão da Hoje ganha o link "Ver gráfico completo ›", que abre o Fluxo já na aba Gráfico; o filtro por data do Fluxo explica o `—` de um dia anterior ao início da projeção.
+**Objetivo:** a Visão da Hoje ganha o link "Ver gráfico completo na aba Fluxo →", que abre o Fluxo já na aba Gráfico; o filtro por data do Fluxo explica o `—` de um dia anterior ao início da projeção.
 
 **Arquitetura:** o store ganha `fluxoAba` + `abrirFluxo(aba)` + `limparFluxoAba()`, no molde de `ajustesSecao`/`abrirAjustes`. O `TelaFluxo` lê `fluxoAba` como estado inicial e o limpa. A Hoje só chama `abrirFluxo('grafico')`.
 
@@ -225,7 +225,7 @@ git commit -m "feat(fluxo): abre na aba pedida e diz quando a projeção começa
 
 ---
 
-### Tarefa 3: Hoje — link "Ver gráfico completo ›"
+### Tarefa 3: Hoje — link "Ver gráfico completo na aba Fluxo →"
 
 **Arquivos:**
 - Modificar: `src/ui/TelaHoje.tsx` (card da Visão, perto da linha 380)
@@ -252,7 +252,7 @@ it('link sob o mini-gráfico leva ao Fluxo na aba Gráfico', async () => {
   useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
 
   render(<TelaHoje />);
-  await userEvent.click(screen.getByRole('button', { name: 'Ver gráfico completo ›' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Ver gráfico completo na aba Fluxo →' }));
 
   expect(useApp.getState().aba).toBe('fluxo');
   expect(useApp.getState().fluxoAba).toBe('grafico');
@@ -269,7 +269,7 @@ it('sem série para desenhar, não mostra o link do gráfico', async () => {
 
   render(<TelaHoje />);
   expect(screen.getByText(/Saldo hoje/)).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Ver gráfico completo ›' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Ver gráfico completo na aba Fluxo →' })).not.toBeInTheDocument();
 });
 ```
 
@@ -294,7 +294,7 @@ acrescentar:
               {/* mesma condição do BalanceChart, que não desenha com menos de 2 dias */}
               {janela.length >= 2 && (
                 <button type="button" className="botao-ver-mais" style={{ marginTop: 10 }} onClick={() => abrirFluxo('grafico')}>
-                  Ver gráfico completo ›
+                  Ver gráfico completo na aba Fluxo →
                 </button>
               )}
 ```
@@ -324,13 +324,13 @@ git commit -m "feat(hoje): link do mini-gráfico para o gráfico completo do Flu
 - [ ] **Passo 1: catálogo** — trocar a descrição de `.botao-ver-mais` por:
 
 ```
-| `.botao-ver-mais` | link azul de texto: mostrar/ocultar uma lista longa (ex.: lançamentos da fatura, escondidos por padrão) ou levar a outra tela a partir de um card (ex.: "Ver gráfico completo ›" na Hoje, "abrir o cartão" na fatura) |
+| `.botao-ver-mais` | link azul de texto: mostrar/ocultar uma lista longa (ex.: lançamentos da fatura, escondidos por padrão) ou levar a outra tela a partir de um card (ex.: "Ver gráfico completo na aba Fluxo →" na Hoje, "abrir o cartão" na fatura) |
 ```
 
 - [ ] **Passo 2: wiki** — em `docs/wiki/6-telas.md`, no bullet **Visão**, trocar a frase final `Mini-gráfico da janela de 7 dias atrás a 28 dias à frente.` por:
 
 ```
-Mini-gráfico da janela de 7 dias atrás a 28 dias à frente; embaixo dele, "Ver gráfico completo ›" abre o Fluxo direto na aba Gráfico, com a projeção inteira.
+Mini-gráfico da janela de 7 dias atrás a 28 dias à frente; embaixo dele, "Ver gráfico completo na aba Fluxo →" abre o Fluxo direto na aba Gráfico, com a projeção inteira.
 ```
 
 Na seção do Fluxo, bullet **Lista**, trocar a última frase `Um dia depois do fim da projeção mostra um traço no lugar do saldo e até quando a projeção vai.` por:
@@ -344,7 +344,7 @@ Validar o parser: `npx vitest run src/ui/ajustes/capitulos.test.ts` → PASS.
 - [ ] **Passo 3: fragmento** — criar `changelog.d/alterado-hoje-grafico-do-fluxo.md`:
 
 ```
-- Hoje: novo link "Ver gráfico completo ›" sob o mini-gráfico, que abre o Fluxo direto na aba Gráfico
+- Hoje: novo link "Ver gráfico completo na aba Fluxo →" sob o mini-gráfico, que abre o Fluxo direto na aba Gráfico
 - Fluxo: filtrar um dia anterior ao início da projeção agora diz quando ela começa
 ```
 

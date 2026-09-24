@@ -381,7 +381,7 @@ export default function TelaHoje() {
               {/* mesma condição do BalanceChart, que não desenha com menos de 2 dias */}
               {janela.length >= 2 && (
                 <button type="button" className="botao-ver-mais" style={{ marginTop: 10 }} onClick={() => abrirFluxo('grafico')}>
-                  Ver gráfico completo ›
+                  Ver gráfico completo na aba Fluxo →
                 </button>
               )}
             </div>

@@ -823,7 +823,7 @@ it('link sob o mini-gráfico leva ao Fluxo na aba Gráfico', async () => {
   useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
 
   render(<TelaHoje />);
-  await userEvent.click(screen.getByRole('button', { name: 'Ver gráfico completo ›' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Ver gráfico completo na aba Fluxo →' }));
 
   expect(useApp.getState().aba).toBe('fluxo');
   expect(useApp.getState().fluxoAba).toBe('grafico');
@@ -840,5 +840,5 @@ it('sem série para desenhar, não mostra o link do gráfico', async () => {
 
   render(<TelaHoje />);
   expect(screen.getByText(/Saldo hoje/)).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Ver gráfico completo ›' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Ver gráfico completo na aba Fluxo →' })).not.toBeInTheDocument();
 });

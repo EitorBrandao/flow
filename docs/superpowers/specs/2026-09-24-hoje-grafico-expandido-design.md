@@ -25,7 +25,7 @@ só no gráfico expandido, que já existe.
 
 ## 1. Link na Hoje
 
-- Abaixo do mini-gráfico, dentro do card da Visão, um botão `Ver gráfico completo ›` com a
+- Abaixo do mini-gráfico, dentro do card da Visão, um botão `Ver gráfico completo na aba Fluxo →` com a
   classe `.botao-ver-mais`. Nenhuma classe nova.
 - O botão leva à aba Fluxo, já na aba Gráfico.
 - O card em si não fica tocável.
@@ -54,7 +54,7 @@ só no gráfico expandido, que já existe.
 ## Consistência
 
 - O link reusa o precedente de `.botao-ver-mais` como navegação (`FaturaCategoriaSheet`,
-  "abrir o cartão"). O `catalogo.md` hoje descreve a classe só como "mostrar/ocultar uma
+  "Ver fatura completa na aba Cartão →"). O `catalogo.md` hoje descreve a classe só como "mostrar/ocultar uma
   lista longa" — a descrição passa a incluir o uso como link de navegação dentro de um card.
 - As duas frases de borda da projeção usam a mesma forma e a mesma classe (`sub`).
 
