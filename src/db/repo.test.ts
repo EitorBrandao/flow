@@ -1097,6 +1097,38 @@ describe('registrarPagamentoFatura', () => {
       expect(parcelas.map((l) => l.faturaMes).sort()).toEqual(['2026-09', '2026-10', '2026-11']);
     } finally { vi.useRealTimers(); }
   });
+
+  it('uma parcela só vira "Restante da fatura" e cai inteira na fatura seguinte', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      // fecha 28/07, vence 05/08
+      const { cartao, fatura } = await comFatura(28, 5, 90000);
+
+      await repo.registrarPagamentoFatura({
+        lancamentoId: fatura.id, cartaoId: cartao.id, faturaMes: '2026-08',
+        valorPagoCent: 30000, dataPagamento: fatura.data,
+        parcelamento: { parcelas: 1, valorParcelaCent: 64000 }, // 600,00 + 40,00 de juros
+        horizonte: '2027-12-31',
+      });
+
+      const atualizado = (await db.cartoes.get(cartao.id))!;
+      const restante = (await db.comprasCartao.toArray())
+        .find((c) => c.categoriaCartaoId === atualizado.categoriaParcelamentoId)!;
+      expect(restante).toMatchObject({
+        data: '2026-07-28', valorTotal: 64000, parcelas: 1,
+        descricao: 'Restante da fatura de 08/2026',
+      });
+
+      const faturas = (await db.lancamentos.toArray())
+        .filter((l) => l.origem === 'cartao')
+        .sort((a, b) => a.data.localeCompare(b.data));
+      expect(faturas.map((l) => [l.faturaMes, l.valor, l.status])).toEqual([
+        ['2026-08', 30000, 'efetivo'],
+        ['2026-09', 64000, 'previsto'],
+      ]);
+    } finally { vi.useRealTimers(); }
+  });
 });
 
 describe('bancos', () => {
