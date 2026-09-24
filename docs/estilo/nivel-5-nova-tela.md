@@ -33,6 +33,11 @@
    `Shell`; não adicione outra animação de entrada.
 10. Subtela de Ajustes: formulário **inline** (sem sheet), seguindo o padrão de
     `TelaAjustes.tsx` e `src/ui/ajustes/`.
+11. **Padrão de formulário de subtela de Ajustes:** criar no topo (formulário sem Cancelar);
+    editar na própria linha, pelo lápis (`Pencil`, `aria-label="Editar"`), com os mesmos campos
+    da criação num componente local; um item aberto por vez, e o formulário de criação some
+    enquanto isso (regra 6: um primário por tela); botões Cancelar, Salvar, à direita, Salvar
+    primário; campos em `.form-linha`, ocupando a largura toda.
 
 ## Checklist de saída
 

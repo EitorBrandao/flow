@@ -2,6 +2,8 @@
 
 Atrás do ícone ⚙️ no topo. Um menu simples leva a cada seção abaixo.
 
+Em todas as seções, o formulário no topo serve para criar; para editar, toque no lápis do próprio item.
+
 ## Categorias
 
 Por box selecionada: criar, renomear, reordenar (↑↓) e arquivar/restaurar. Ganhos aparecem antes dos gastos, cada grupo na ordem definida.
@@ -12,7 +14,7 @@ Por box selecionada: criar, renomear, reordenar (↑↓) e arquivar/restaurar. G
 
 CRUD das regras que geram previstos automaticamente (veja [Recorrência](#conceitos/recorrencia), no capítulo Conceitos e modelo de dados).
 
-- Editar recalcula os previstos futuros ainda não confirmados na hora.
+- Ao editar (toque no lápis), recalcula os previstos futuros ainda não confirmados na hora.
 - "Pausar" desativa sem apagar a regra; "Ativar" retoma a materialização.
 - Excluir remove a regra e seus previstos — os já confirmados como `efetivo` ficam.
 
@@ -20,12 +22,12 @@ CRUD das regras que geram previstos automaticamente (veja [Recorrência](#concei
 
 ## Boxes
 
-Editar nome, saldo inicial e data de cada box; criar boxes novas; escolher a box padrão que abre ao iniciar o app.
+Toque no lápis de cada box para editar nome, saldo inicial e data; crie boxes novas pelo formulário no topo; escolha a box padrão que abre ao iniciar o app.
 
 Saldo inicial negativo é aceito (digitar com "−" na frente). Uma box sem saldo próprio (como a casa) aparece como "compartilhada" e não pode virar padrão.
 
 **Nova box — obrigatório:** nome. **Têm padrão:** saldo inicial (0), data (hoje).
-**Editar box — obrigatório:** nenhum; deixar saldo/data em branco torna a box "sem saldo próprio" (compartilhada).
+**Ao editar — obrigatório:** nenhum; deixar saldo/data em branco torna a box "sem saldo próprio" (compartilhada).
 
 ## Bancos
 
@@ -41,7 +43,7 @@ Cada banco mostra o saldo informado com a data e quantos cartões estão vincula
 
 ## Cartões
 
-Cadastrar/editar o cartão de cada box: nome, dia de fechamento, dia de vencimento, a categoria de gasto do Flow que recebe a [[fatura]] e, se a box tiver bancos cadastrados, o banco dono do cartão.
+Cadastre cartões no formulário no topo; para editar, toque no lápis do item. Configure: nome, dia de fechamento, dia de vencimento, a categoria de gasto do Flow que recebe a [[fatura]] e, se a box tiver bancos cadastrados, o banco dono do cartão.
 
 Uma box pode ter vários cartões **ativos** ao mesmo tempo. "Desativar" desliga o cartão por completo: para de sincronizar a fatura como lançamento, e some da tela Cartão e do menu Adicionar.
 
