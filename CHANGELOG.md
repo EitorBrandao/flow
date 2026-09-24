@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.36.2] - 2026-09-23
+
+### Alterado
+
+- No gráfico do Fluxo, quando o período passa de um ano para outro, as datas das pontas mostram o ano.
+  - O mínimo e o máximo descem para a linha de baixo, para caber em celular estreito.
+- Na compra no cartão, "Parcelas já pagas" só aparece com 2 parcelas ou mais.
+
 ## [0.36.1] - 2026-09-23
 
 ### Alterado
