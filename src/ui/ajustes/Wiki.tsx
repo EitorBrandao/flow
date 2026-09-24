@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
+import { createContext, Fragment, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import {
   idDoCapitulo, normalizar, parseCapitulo, sortearNomes, termosDoGlossario,
   type Bloco, type Capitulo, type Inline, type ItemCampo,
@@ -220,7 +220,25 @@ export default function Wiki() {
               id="wiki-busca" className="campo-busca" type="search" value={busca}
               onChange={(e) => setBusca(e.target.value)} aria-label="Buscar na wiki"
             />
-            {filtrados.map((c) => (
+            {!alvo && capitulos.map((c) => (
+              <Fragment key={c.id}>
+                <button
+                  className={`wiki-item${c.id === atual.id ? ' ativo' : ''}`}
+                  onClick={() => { setBalao(null); setAtualId(c.id); setIndiceAberto(false); }}
+                >
+                  {c.titulo}
+                </button>
+                {c.id === atual.id && secoes.map((s) => (
+                  <button
+                    key={s.id} className={`wiki-item wiki-secao${s.id === secaoAtual ? ' ativo' : ''}`}
+                    onClick={() => { setIndiceAberto(false); acoes.ir(c.id, s.id); }}
+                  >
+                    {s.titulo}
+                  </button>
+                ))}
+              </Fragment>
+            ))}
+            {alvo && filtrados.map((c) => (
               <button
                 key={c.id} className={`wiki-item${c.id === atual.id ? ' ativo' : ''}`}
                 onClick={() => { setBalao(null); setAtualId(c.id); setIndiceAberto(false); }}
@@ -228,7 +246,7 @@ export default function Wiki() {
                 {c.titulo}
               </button>
             ))}
-            {filtrados.length === 0 && <p className="sub">Nada encontrado.</p>}
+            {alvo && filtrados.length === 0 && <p className="sub">Nada encontrado.</p>}
           </nav>
         </>
       )}

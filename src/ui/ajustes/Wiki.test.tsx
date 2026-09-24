@@ -179,4 +179,29 @@ describe('Wiki', () => {
     fireEvent.scroll(window);
     expect(screen.getByRole('button', { name: 'Índice' }).textContent).not.toContain('·');
   });
+
+  it('a gaveta lista as seções do capítulo atual e leva até a seção', async () => {
+    const original = Element.prototype.scrollIntoView; // jsdom não implementa
+    const rolar = vi.fn();
+    Element.prototype.scrollIntoView = rolar;
+    try {
+      await abrirConceitos();
+      const titulos = [...screen.getByRole('article').querySelectorAll('h3[id]')];
+      await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+      const gaveta = screen.getByRole('navigation');
+      for (const t of titulos) expect(within(gaveta).getByRole('button', { name: t.textContent! })).toBeInTheDocument();
+      await userEvent.click(within(gaveta).getByRole('button', { name: titulos[2].textContent! }));
+      expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+      expect(rolar.mock.contexts.at(-1)).toBe(titulos[2]);
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
+  });
+
+  it('a gaveta não expande capítulos que não são o atual', async () => {
+    render(<Wiki />);
+    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+    // "Box" é seção de Conceitos; o capítulo atual é Os primeiros passos.
+    expect(within(screen.getByRole('navigation')).queryByRole('button', { name: 'Box' })).not.toBeInTheDocument();
+  });
 });

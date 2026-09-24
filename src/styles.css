@@ -440,6 +440,9 @@ table.tabela th:first-child, table.tabela td:first-child {
   padding: 10px 12px; text-align: left; min-height: 44px;
 }
 .wiki-item.ativo { background: var(--ac-dim); color: var(--ac); }
+/* Seção do capítulo atual, recuada sob ele. Ativa = só a cor, para não competir com o fundo do capítulo. */
+.wiki-item.wiki-secao { padding-left: 28px; min-height: 40px; font-size: 14px; color: var(--muted); }
+.wiki-item.wiki-secao.ativo { background: none; color: var(--ac); }
 
 /* ---- PrimeiroUso (PrimeiroUso.tsx) ---- */
 .primeiro-uso {
