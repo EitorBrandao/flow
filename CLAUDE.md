@@ -117,7 +117,7 @@ Convenções do domínio:
 - **Tudo em `public/` vai, sem alteração, para o site público** — entra em `dist/` e é publicado. Um arquivo novo ali é uma decisão explícita, nunca um depósito de trabalho. Antes de mudar a configuração de PWA ou de service worker, confirme com o usuário: um erro de cache pode prender usuários numa versão velha do app.
 - **Topologia de branches:** `main` é o branch fonte canônico — o código vive ali. O site publicado, o build `dist/`, vive num branch separado, **`gh-pages`**, gerado por `npm run deploy`. Nunca edite `gh-pages` à mão. Nunca trabalhe direto na `main`: crie um branch antes de alterar qualquer arquivo. Sessões concorrentes rodam no mesmo checkout — por isso, todo trabalho com commits deve ir para um git worktree próprio, em `.worktrees/`.
 - **Versão e changelog só mudam na integração.** Essa regra evita colisão entre sessões paralelas. Branches de feature **nunca** editam `"version"` em `package.json`, nem o topo do `CHANGELOG.md`. Toda mudança visível ao usuário vira um **fragmento** em `changelog.d/`: um arquivo `<tipo>-<slug>.md`, com `tipo` igual a `adicionado`, `alterado` ou `removido`, em até dois níveis — tópico e, opcionalmente, detalhe indentado (ver `changelog.d/README.md`). O número da versão é decidido **uma única vez**, na integração, por `npm run release`.
-- **O ciclo de entrega é obrigatório.** O passo a passo está na skill `ciclo-de-entrega` (`.claude/skills/ciclo-de-entrega/SKILL.md`). **Invoque essa skill antes de integrar qualquer trabalho.** Ela cobre tudo, da criação do worktree ao deploy. Ela também define os dois pontos onde o ciclo para e espera você — o mockup aprovado, e a confirmação literal da revisão do changelog —, o critério que decide se há release, e o que fazer quando um guard aborta. Resumo em uma linha: worktree → mockup aprovado, se for UI → `npm test` verde → **wiki atualizada, se a feature mudou** → fragmento em `changelog.d/` mais confirmação do usuário → merge na `main` mais `npm run release` → push → `npm run deploy`. Uma mudança **não** visível ao usuário — refactor, docs, tooling — termina no merge: sem fragmento, sem wiki, sem release, sem deploy.
+- **O ciclo de entrega é obrigatório.** O passo a passo está na skill `ciclo-de-entrega` (`.claude/skills/ciclo-de-entrega/SKILL.md`). **Invoque essa skill antes de integrar qualquer trabalho.** Ela cobre tudo, da criação do worktree ao deploy. Ela também define os dois pontos onde o ciclo para e espera você — o mockup aprovado, e a confirmação literal da revisão do changelog —, o critério que decide se há release, e o que fazer quando um guard aborta. Resumo em uma linha: worktree → mockup aprovado, se for UI → `npm test` verde → **varredura com Playwright, se a mudança for visível** → **wiki atualizada, se a feature mudou** → fragmento em `changelog.d/` mais confirmação do usuário → merge na `main` mais `npm run release` → push → `npm run deploy`. Uma mudança **não** visível ao usuário — refactor, docs, tooling — termina no merge: sem fragmento, sem wiki, sem release, sem deploy.
 - **Toda feature incluída, alterada ou removida atualiza `docs/wiki/`, no mesmo branch.** O critério é o mesmo do fragmento de changelog: a mudança alterou o que o usuário vê? A wiki explica o app a quem chega agora. Uma wiki desatualizada ensina o app errado, com autoridade. O parser da wiki aceita só um subconjunto **fechado** de markdown (`docs/wiki/README.md`) e **lança uma exceção** fora dele: valide com `npx vitest run src/ui/ajustes/capitulos.test.ts`.
 
 ## Regras de trabalho
@@ -148,6 +148,16 @@ Estas regras vêm de atritos que se repetiram entre sessões. Valem também para
 - O subagente roda a suíte completa (`npm test`) antes de dizer que terminou. Rodar só o arquivo que ele mexeu não basta.
 - O subagente escreve testes de caso-limite, não só do caminho feliz.
 - O subagente segue o mockup aprovado à risca. Um desvio precisa de nova aprovação do usuário.
+
+### Teste como usuário (Playwright)
+
+- Toda feature visível ao usuário passa por uma varredura com Playwright antes do merge. A varredura soma ao `npm test`, não o substitui.
+- A varredura usa a tela do celular do usuário, um Galaxy S25+: viewport 411 × 744, screen 412 × 892, `deviceScaleFactor` 2,63, `isMobile` e `hasTouch` ligados, `locale` `pt-BR`. Outros tamanhos só com pedido do usuário.
+- O Playwright roda fora do projeto, na pasta de rascunho da sessão. Nunca entra no `package.json`.
+- O app roda com `npx vite`, a partir do worktree, numa porta própria, só em `localhost`. Nunca teste no site publicado: ali estão os dados reais do usuário.
+- Dados de teste são sintéticos. Grave-os pelo próprio `src/db/repo.ts`, com `import` dentro de `page.evaluate`.
+- Envie as capturas de tela ao usuário pelo chat.
+- Antes de `git worktree remove`, encerre o processo que ocupa a porta. O `node` filho do `vite` pode continuar vivo e travar a pasta.
 
 ### Codificação
 
