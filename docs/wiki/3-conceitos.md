@@ -57,6 +57,16 @@ Um "e se?" — lançamentos hipotéticos (pontuais ou parcelados) agrupados sob 
 - Lançamentos de cenário nunca ficam `efetivo`; não contam nas Análises nem nos totais mensais.
 - **Tornar real** converte os lançamentos (ou a recorrência) do cenário em dados reais da box de origem.
 
+## Viagem
+
+Um período com nome — data inicial e data final, inclusive — que junta os gastos feitos durante ele, para você ver quanto a viagem custou no total.
+
+- **Cadastro:** em Ajustes → Viagens. Duas viagens não podem ter períodos que se sobrepõem.
+- **Marcação:** em Lançar e em Nova compra do cartão, quando a data do lançamento cai dentro de uma viagem, aparece a opção "Viagem: nome", já marcada. Desmarque se aquele gasto não faz parte da viagem.
+- **Onde aparece:** nas [Análises](#telas/analises), o card Viagens lista cada viagem com o total gasto; tocar abre o detalhamento, agrupado pela descrição. Em "Por categoria", a viagem vira uma linha própria com o que ela pesou naquele mês.
+- Compra parcelada no cartão conta pelo valor cheio no total da viagem, mas, em "Por categoria", cada parcela cai no mês da fatura em que vence.
+- Excluir uma viagem não apaga nada: os lançamentos e as compras continuam existindo, só perdem a marcação.
+
 ## Configurações
 
 Registro único de preferências do app.

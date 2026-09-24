@@ -19,6 +19,8 @@ Um lançamento `previsto` com data igual ou anterior a hoje não vira efetivo so
 - **Confirmar** (✓): marca `efetivo`, com chance de ajustar o valor antes.
 - **Descartar** (✕): exclui o lançamento — e ele não é recriado na próxima [materialização](#glossario/materializar).
 
+> Com um previsto **futuro** é o contrário. Se ele veio de uma recorrência ou de uma fatura de cartão, apagá-lo pelo Fluxo não adianta: ele volta na próxima materialização, porque a regra ainda o espera. Para mudar de vez, edite a regra — a recorrência em Ajustes → Recorrências, ou as compras do cartão.
+
 Resultado: o saldo efetivo nunca contém suposição, só o que de fato aconteceu.
 
 ## Consolidação da casa
