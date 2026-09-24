@@ -3,6 +3,15 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.37.0] - 2026-09-23
+
+### Adicionado
+
+- A aba Cartão avisa quando a fatura não bate com o Fluxo.
+  - Fatura vencida cujas compras foram todas lançadas depois do vencimento: o aviso explica que ela ficou de fora do Fluxo.
+  - Fatura paga que recebeu compra depois do pagamento: o aviso mostra quanto não chegou no Fluxo e leva direto à correção do valor pago.
+  - A folha que abre ao tocar na fatura no Fluxo mostra o mesmo aviso.
+
 ## [0.36.2] - 2026-09-23
 
 ### Alterado
