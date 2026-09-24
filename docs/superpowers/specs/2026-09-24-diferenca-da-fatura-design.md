@@ -64,7 +64,9 @@ Depois de "Quanto você pagou" e "Quando pagou", aparece o rótulo
 - Exceção: a fatura já tem restante ou parcelamento gravado (compra na categoria reservada de
   parcelamento do cartão, com `data` igual ao fechamento dessa fatura). Nesse caso a folha
   marca **Não volta** e mostra, acima das pílulas: "Já lançado na próxima fatura:
-  **R$ Y**." Isso evita um segundo restante ao corrigir uma fatura já paga.
+  **R$ Y**." Isso evita um segundo restante ao corrigir uma fatura já paga. Nesse caso, "Não
+  volta" **não** mostra o aviso "somem da projeção": o valor já está na próxima fatura, e o
+  aviso mentiria.
 
 A regra de "já lançado" é a mesma que `faturaForaDoFluxo` usa hoje
 (`fatura.ts`, filtro `categoriaParcelamentoId` + `dataFechamento`). Extrair esse filtro para
