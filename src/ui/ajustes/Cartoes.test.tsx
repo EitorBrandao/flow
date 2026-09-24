@@ -40,6 +40,26 @@ it('cadastra um cartão sem pedir categoria e cria a categoria da fatura sozinho
   expect(categoria).toMatchObject({ boxId: box.id, nome: 'Nubank', tipo: 'gasto' });
 });
 
+it('depois de criar, os dias de fechamento e vencimento continuam preenchidos — nome volta vazio', async () => {
+  await montarBox();
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Cartoes />);
+
+  await userEvent.type(screen.getByLabelText('Nome do cartão'), 'Nubank');
+  await userEvent.clear(screen.getByLabelText('Dia de fechamento'));
+  await userEvent.type(screen.getByLabelText('Dia de fechamento'), '10');
+  await userEvent.clear(screen.getByLabelText('Dia de vencimento'));
+  await userEvent.type(screen.getByLabelText('Dia de vencimento'), '20');
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+  await waitFor(() => expect(screen.getByText(/Nubank/)).toBeInTheDocument());
+
+  expect(screen.getByLabelText('Nome do cartão')).toHaveValue('');
+  expect((screen.getByLabelText('Dia de fechamento') as HTMLInputElement).value).toBe('10');
+  expect((screen.getByLabelText('Dia de vencimento') as HTMLInputElement).value).toBe('20');
+});
+
 it('permite dois cartões ativos na mesma box', async () => {
   const box = await montarBox();
   await repo.salvarCartao({

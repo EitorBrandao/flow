@@ -88,6 +88,27 @@ it('trocar a box no chip do topo troca as categorias mostradas em Ajustes', asyn
   expect(screen.queryByText('aluguel')).not.toBeInTheDocument();
 });
 
+it('trocar a box no chip do topo com um item aberto traz "Nova categoria" de volta', async () => {
+  const agora = agoraISO();
+  const eitor = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  const ju = { id: novoId(), nome: 'ju', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(eitor);
+  await repo.salvarBox(ju);
+  await repo.salvarCategoria({ boxId: eitor.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+  await repo.salvarCategoria({ boxId: ju.id, nome: 'faculdade', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+
+  useApp.setState({ boxSel: eitor.id });
+  const { rerender } = render(<Categorias />);
+  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+  expect(screen.queryByText('Nova categoria')).not.toBeInTheDocument();
+
+  useApp.setState({ boxSel: ju.id });
+  rerender(<Categorias />);
+
+  expect(screen.getByText('Nova categoria')).toBeInTheDocument();
+});
+
 it('restaurar devolve a categoria para a seção do seu tipo', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };

@@ -114,10 +114,18 @@ export default function Recorrencias() {
   const [editandoId, setEditandoId] = useState<string | null>(null);
   // Muda a cada criação para o formulário do topo voltar vazio (remonta com `key`).
   const [versaoNova, setVersaoNova] = useState(0);
+  // O formulário antigo não zerava tipo, categoria, início e dia depois de criar — só valor
+  // e parcelas. Guardado à parte porque o remount por `versaoNova` reinicia TODO o estado
+  // local do FormRecorrencia.
+  const [ultimosCampos, setUltimosCampos] = useState<{
+    tipo: TipoCategoria; categoriaId: string | null; dataInicio: string; diaDoMes: string;
+  }>({ tipo: 'gasto', categoriaId: null, dataInicio: hoje, diaDoMes: '1' });
   const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
 
   useEffect(() => {
     setEditandoId(null);
+    setUltimosCampos({ tipo: 'gasto', categoriaId: null, dataInicio: hoje, diaDoMes: '1' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boxId]);
 
   if (!dados) return null;
@@ -135,6 +143,12 @@ export default function Recorrencias() {
 
   async function criar(campos: CamposRecorrenciaSalvos) {
     await repo.salvarRecorrencia({ boxId: boxId!, ...campos }, dados!.config.horizonteProjecao);
+    setUltimosCampos({
+      tipo: tipoCat(campos.categoriaId) ?? 'gasto',
+      categoriaId: campos.categoriaId,
+      dataInicio: campos.dataInicio,
+      diaDoMes: String(campos.diaDoMes),
+    });
     setVersaoNova((v) => v + 1);
     await recarregar();
   }
@@ -175,7 +189,7 @@ export default function Recorrencias() {
           <h2>Nova recorrência</h2>
           <FormRecorrencia
             key={`${boxId}-${versaoNova}`}
-            inicial={{ tipo: 'gasto', valor: 0, categoriaId: null, dataInicio: hoje, diaDoMes: '1', parcelas: '' }}
+            inicial={{ ...ultimosCampos, valor: 0, parcelas: '' }}
             rotuloSalvar="Criar" onSalvo={criar}
           />
         </>

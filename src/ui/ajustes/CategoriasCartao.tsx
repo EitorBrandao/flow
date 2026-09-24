@@ -118,6 +118,15 @@ export default function CategoriasCartao() {
     setNomeEdit('');
   }
 
+  // Trocar de cartão pela pílula com um item aberto não pode deixar o item sumido da lista
+  // (filtrada pelo cartão novo) e o formulário de criação escondido — mesmo cuidado de
+  // Cartoes/Recorrencias/Assinaturas ao trocar de box.
+  function selecionarCartao(id: string) {
+    setCartaoId(id);
+    setEditandoId(null);
+    setNomeEdit('');
+  }
+
   async function salvarEdicao() {
     if (!editandoId || !nomeEdit.trim()) return;
     await repo.atualizarCategoriaCartao(editandoId, { nome: nomeEdit.trim() });
@@ -153,7 +162,7 @@ export default function CategoriasCartao() {
             <SeletorPills
               opcoes={cartoesDaBox.map((c) => ({ id: c.id, nome: c.nome }))}
               selecionadaId={cartaoId}
-              onSelecionar={setCartaoId}
+              onSelecionar={selecionarCartao}
             />
           </div>
 

@@ -1,5 +1,5 @@
 import { Pencil } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { bancosDaBox } from '../../domain/bancos';
 import { proximaOrdem } from '../../domain/categorias';
@@ -28,6 +28,13 @@ export default function Bancos() {
   const [negativo, setNegativo] = useState(false);
   const [dataEdicao, setDataEdicao] = useState<ISODate>(hoje);
   const uid = useId();
+
+  // Trocar de box com um banco aberto não pode deixar o item sumido da lista (filtrada pela
+  // box nova) e o formulário de criação escondido — mesmo cuidado de Cartoes/Recorrencias.
+  useEffect(() => {
+    setEditandoId(null);
+    setAvisoEdicao('');
+  }, [boxSel]);
 
   if (!dados) return null;
 
@@ -146,16 +153,14 @@ export default function Bancos() {
                       />
                     </div>
                   </div>
-                  <div className="form-linha">
-                    <div className="campo">
-                      <label htmlFor={`${b.id}-tem-saldo`}>
-                        <input
-                          id={`${b.id}-tem-saldo`} type="checkbox" checked={temSaldo}
-                          onChange={(e) => setTemSaldo(e.target.checked)}
-                        />
-                        {' '}Saldo informado
-                      </label>
-                    </div>
+                  <div className="campo">
+                    <label htmlFor={`${b.id}-tem-saldo`}>
+                      <input
+                        id={`${b.id}-tem-saldo`} type="checkbox" checked={temSaldo}
+                        onChange={(e) => setTemSaldo(e.target.checked)}
+                      />
+                      {' '}Saldo informado
+                    </label>
                   </div>
                   {temSaldo && (
                     <div className="form-linha">
@@ -172,7 +177,7 @@ export default function Bancos() {
                           >
                             {negativo ? '−' : '+'}
                           </button>
-                          <CampoValor id={`${b.id}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} />
+                          <CampoValor id={`${b.id}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} style={{ flex: 1, minWidth: 0 }} />
                         </div>
                       </div>
                       <div className="campo">

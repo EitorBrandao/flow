@@ -184,6 +184,27 @@ it('não exclui quando a confirmação é cancelada', async () => {
   expect(screen.getByText('Banco Mantido')).toBeInTheDocument();
 });
 
+it('trocar a box no chip do topo com um banco aberto traz "Novo banco" de volta', async () => {
+  const agora = agoraISO();
+  const eitor = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  const ju = { id: novoId(), nome: 'ju', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(eitor);
+  await repo.salvarBox(ju);
+  await repo.salvarBanco({ boxId: eitor.id, nome: 'Banco Eitor', ordem: 0 });
+  await repo.salvarBanco({ boxId: ju.id, nome: 'Banco Ju', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: eitor.id, hoje: '2026-08-05' });
+
+  const { rerender } = render(<Bancos />);
+  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+  expect(screen.queryByText('Novo banco')).not.toBeInTheDocument();
+
+  useApp.setState({ boxSel: ju.id });
+  rerender(<Bancos />);
+
+  expect(screen.getByText('Novo banco')).toBeInTheDocument();
+});
+
 it('mostra a contagem de cartões vinculados a cada banco', async () => {
   const box = await comBox();
   const bancoComUm = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um Cartao', ordem: 0 });

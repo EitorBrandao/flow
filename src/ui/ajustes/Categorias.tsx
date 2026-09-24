@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Reorder, useDragControls } from 'framer-motion';
 import { GripVertical, Pencil } from 'lucide-react';
 import * as repo from '../../db/repo';
@@ -69,8 +69,16 @@ export default function Categorias() {
     new Set(CATEGORIAS_SUGERIDAS.filter((c) => c.marcadaPorPadrao).map((c) => `${c.nome}:${c.tipo}`)),
   );
   const uid = useId();
+  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+
+  // Trocar de box com um item aberto não pode deixar o item sumido da lista (filtrada pela
+  // box nova) e o formulário de criação escondido — mesmo cuidado de Cartoes/Recorrencias.
+  useEffect(() => {
+    setEditandoId(null);
+    setNomeEdit('');
+  }, [boxId]);
+
   if (!dados) return null;
-  const boxId = boxIdEfetivo(dados, boxSel);
   if (boxId == null) {
     return (
       <div className="tela">

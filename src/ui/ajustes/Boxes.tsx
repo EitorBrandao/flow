@@ -54,7 +54,7 @@ function FormBox({ inicial, onSalvo, onCancelar }: {
               <button type="button" className="botao botao-sinal" aria-label="Alternar sinal (positivo/negativo)" onClick={() => setNegativo(n => !n)}>
                 {negativo ? '−' : '+'}
               </button>
-              <CampoValor id={`${uid}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} />
+              <CampoValor id={`${uid}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} style={{ flex: 1, minWidth: 0 }} />
             </div>
           </div>
           <div className="campo">

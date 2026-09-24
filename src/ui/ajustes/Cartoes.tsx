@@ -82,10 +82,14 @@ export default function Cartoes() {
   const [editandoId, setEditandoId] = useState<string | null>(null);
   // Muda a cada criação para o formulário do topo voltar vazio (remonta com `key`).
   const [versaoNova, setVersaoNova] = useState(0);
+  // O formulário antigo não zerava os dias depois de criar — só nome e banco. Guardado à
+  // parte porque o remount por `versaoNova` reinicia TODO o estado local do FormCartao.
+  const [ultimosDias, setUltimosDias] = useState({ diaFechamento: '28', diaVencimento: '5' });
   const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
 
   useEffect(() => {
     setEditandoId(null);
+    setUltimosDias({ diaFechamento: '28', diaVencimento: '5' });
   }, [boxId]);
 
   if (!dados) return null;
@@ -102,6 +106,7 @@ export default function Cartoes() {
 
   async function criar(campos: CamposCartaoSalvos) {
     await repo.salvarCartao({ boxId: boxId!, ...campos }, horizonte);
+    setUltimosDias({ diaFechamento: String(campos.diaFechamento), diaVencimento: String(campos.diaVencimento) });
     setVersaoNova((v) => v + 1);
     await recarregar();
   }
@@ -134,7 +139,7 @@ export default function Cartoes() {
           <h2>Novo cartão</h2>
           <FormCartao
             key={`${boxId}-${versaoNova}`}
-            inicial={{ nome: '', bancoId: '', diaFechamento: '28', diaVencimento: '5' }}
+            inicial={{ nome: '', bancoId: '', ...ultimosDias }}
             rotuloSalvar="Criar" onSalvo={criar}
           />
         </>

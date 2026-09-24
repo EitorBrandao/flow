@@ -2,7 +2,7 @@
 
 Atrás do ícone ⚙️ no topo. Um menu simples leva a cada seção abaixo.
 
-Em todas as seções, o formulário no topo serve para criar; para editar, toque no lápis do próprio item.
+Nas seções de cadastro, o formulário no topo serve para criar; para editar, toque no lápis do próprio item.
 
 ## Categorias
 

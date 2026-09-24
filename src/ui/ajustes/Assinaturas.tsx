@@ -124,6 +124,7 @@ export default function Assinaturas() {
   }
 
   async function criar(campos: CamposAssinaturaSalvos) {
+    if (!cartaoId) return;
     const categoriaCartaoId = await repo.categoriaAssinaturasDe(cartaoId);
     await repo.salvarAssinatura({ cartaoId, categoriaCartaoId, ...campos }, horizonte);
     setVersaoNova((v) => v + 1);
