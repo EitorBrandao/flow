@@ -99,7 +99,7 @@ e depois de `limparAjustesSecao: ...`:
 Run: `npx vitest run src/state/store.test.ts`
 Esperado: PASS.
 
-- [ ] **Passo 5: `src/dossie/tela.tsx`** — a linha 187 monta um estado completo do store com `ajustesSecao: null`. Acrescentar `fluxoAba: null,` ao lado, para o tipo continuar completo. Rodar `npx tsc -b` e confirmar zero erros.
+- [ ] **Passo 5: `src/dossie/tela.tsx`** — a linha 187 zera o estado de navegação do store (`ajustesSecao: null`) antes de cada retrato. Acrescentar `fluxoAba: null,` ao lado, para o dossiê sempre abrir o Fluxo na Lista. Rodar `npx tsc -b` e confirmar zero erros.
 
 - [ ] **Passo 6: commit**
 
