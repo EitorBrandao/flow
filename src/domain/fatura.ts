@@ -124,6 +124,21 @@ export type FaturaForaDoFluxo =
   | { tipo: 'paga-a-menor'; diferencaCent: number; valorSugeridoCent: number };
 
 /**
+ * Quanto desta fatura já foi empurrado para as faturas seguintes: restante (1 parcela) ou
+ * parcelamento, gravados por `registrarPagamentoFatura` na categoria reservada do cartão com a
+ * data do fechamento da fatura paga. Regra única — o aviso "não chegaram no Fluxo" e a folha
+ * de pagamento leem daqui, para nunca discordarem.
+ */
+export function jaLancadoDaFatura(
+  cartao: Pick<Cartao, 'categoriaParcelamentoId'>, dataFechamento: ISODate, compras: CompraCartao[],
+): number {
+  if (!cartao.categoriaParcelamentoId) return 0;
+  return compras
+    .filter((c) => c.categoriaCartaoId === cartao.categoriaParcelamentoId && c.data === dataFechamento)
+    .reduce((s, c) => s + c.valorTotal, 0);
+}
+
+/**
  * A fatura da aba Cartão diz um valor e o Fluxo considera outro, sem nada que explique a
  * diferença. Dois casos:
  *
@@ -159,9 +174,7 @@ export function faturaForaDoFluxo(p: {
   }
 
   if (lancFatura.status !== 'efetivo') return null;
-  const parcelado = compras
-    .filter((c) => c.categoriaCartaoId === cartao.categoriaParcelamentoId && c.data === fatura.dataFechamento)
-    .reduce((s, c) => s + c.valorTotal, 0);
+  const parcelado = jaLancadoDaFatura(cartao, fatura.dataFechamento, compras);
   const diferencaCent = valor - lancFatura.valor - parcelado;
   return diferencaCent > 0
     ? { tipo: 'paga-a-menor', diferencaCent, valorSugeridoCent: lancFatura.valor + diferencaCent }

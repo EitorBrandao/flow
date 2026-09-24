@@ -50,16 +50,25 @@ Nem toda fatura é paga inteira nem no dia do vencimento. Na fila de pendentes d
 
 - **Quanto pagou:** já vem preenchido com o total, então confirmar sem mexer é o caminho curto.
 - **Quando pagou:** numa fatura ainda em aberto vem com hoje, o que permite registrar pagamento adiantado — o valor sai da conta no dia certo, não no vencimento. Numa fatura já paga, o campo preserva a data registrada, para corrigir um valor não mover o dia sem querer.
-- **Parcelou o restante no banco:** informe em quantas vezes e quanto é cada parcela, como o app do banco mostra.
+
+Quando você paga menos que o total, a folha pergunta o destino da diferença:
+
+- **Mês seguinte** (já vem marcada): o que sobrou vai inteiro para a próxima fatura. O valor vem preenchido; se o banco cobrou juros, digite por cima o valor que ele mostra.
+- **Parcelei:** o banco fez um [parcelamento](#glossario/parcelamento-de-fatura). Informe em quantas vezes e quanto é cada parcela, como o app do banco mostra.
+- **Não volta:** para desconto ou estorno. A tela avisa **em destaque** que esse valor some da projeção.
 
 > O Flow não calcula juros. Você digita a parcela que o banco cobrou; se houver juros, eles já estão embutidos ali. A tela só mostra a diferença entre o que vai ser pago e o que ficou de fora.
-
-Sobrou valor e você não informou [parcelamento](#glossario/parcelamento-de-fatura)? A tela avisa **em destaque** que esse valor some da projeção e não volta em nenhuma fatura. Salvar assim continua permitido — desconto e estorno existem —, mas depois de você ler o que vai acontecer.
 
 O parcelamento vira uma compra parcelada numa categoria reservada chamada "Parcelamento", então ele aparece nas faturas seguintes como qualquer outra parcelada, com a contagem `1/3`. Quem manda na data das parcelas é o fechamento do cartão, não o dia em que você quitou a fatura anterior.
 
 - Parcelas cujo vencimento já passou não viram lançamento — registrar um parcelamento meses depois não ressuscita faturas antigas nem cobra duas vezes.
 - Excluir a compra do parcelamento remove as parcelas futuras, mas **não** devolve o valor original à fatura que já foi paga. Essa reversão é na mão.
+
+O "Mês seguinte" usa o mesmo caminho: vira uma compra de uma parcela só, chamada "Restante da fatura de MM/AAAA", na mesma categoria "Parcelamento".
+
+Corrigindo uma fatura cujo restante já foi lançado, a folha mostra quanto já está na próxima fatura e abre em **Não volta**, para não lançar duas vezes.
+
+Pagou **mais** que a fatura? A folha avisa o excesso. O banco costuma abater da fatura seguinte, mas o Flow ainda não registra esse crédito.
 
 ## Quando a fatura não bate com o Fluxo
 
