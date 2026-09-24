@@ -52,6 +52,13 @@ Suíte inteira, não só os arquivos que você tocou. Rodar um subconjunto e rep
 aconteceu e escondeu cinco falhas. Se um teste cair, rode-o isolado antes de concluir que
 quebrou: a máquina local fica na fronteira sob paralelismo.
 
+## Passo 3.4 — Varredura com Playwright, se a mudança for visível
+
+Toda feature visível ao usuário passa por uma varredura com Playwright antes do merge — soma
+ao passo 3, não o substitui. O detalhe do procedimento (viewport do celular do usuário, onde
+rodar o app, dados sintéticos) está no `CLAUDE.md`, seção "Teste como usuário (Playwright)".
+Refactor, teste e tooling não precisam de varredura.
+
 ## Passo 3.5 — Wiki, se a feature mudou
 
 **Toda feature incluída, alterada ou removida atualiza `docs/wiki/` no mesmo branch.** A wiki
