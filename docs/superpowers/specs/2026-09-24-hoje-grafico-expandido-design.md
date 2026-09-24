@@ -1,4 +1,4 @@
-# Hoje abre o gráfico expandido — design
+# Hoje leva ao gráfico do Fluxo — design
 
 Fecha o item 8 do TODO (entrega 2 e o resto da entrega 1) e o item 24, juntos.
 
@@ -7,35 +7,43 @@ Fecha o item 8 do TODO (entrega 2 e o resto da entrega 1) e o item 24, juntos.
 O item 8 previa, na entrega 2, um tooltip ao tocar no `BalanceChart`, em três lugares: Hoje,
 Fluxo e gráfico expandido. A exploração mostrou que o gráfico expandido (`FluxoChartModal`)
 **já tem** leitura por toque: arrastar o dedo mostra o saldo e a data do dia no cabeçalho. O
-card do Fluxo já abre esse modal ao toque.
+card da aba Gráfico do Fluxo já abre esse modal ao toque.
 
-O único gráfico sem resposta ao toque é o mini-gráfico da Hoje. O item 24 pedia justo isso:
-tocar nele leva à projeção inteira.
+O item 24 pedia que a Hoje levasse ao gráfico do Fluxo. Hoje isso exige dois toques, e o
+segundo é descoberta: o Fluxo abre sempre na Lista.
 
 ## Decisão
 
-Um único gesto de leitura em todo o app: o do gráfico expandido. Nenhum tooltip novo. Um
-tooltip num gráfico de 120 px ficaria minúsculo, e disputaria o toque com a navegação.
+Cada gráfico tem um papel:
 
-## 1. Hoje → gráfico expandido
+- **Hoje:** resumo curto, de 7 dias atrás a 28 à frente. Não responde a toque. A janela não
+  muda.
+- **Fluxo, aba Gráfico:** a projeção inteira, com a leitura dia a dia no gráfico expandido.
 
-- O card da Visão (rótulo, saldo, pílula, projetado e mini-gráfico) vira um botão inteiro.
-- O botão usa as classes do card do Fluxo: `card grafico-expandido-abrir`. O ícone ⤢
-  (`Maximize2`, classe `grafico-expandido-icone`) fica no canto superior direito. Nenhuma
-  classe nova.
-- O botão tem `aria-label="Expandir gráfico de saldo"`, igual ao do Fluxo.
-- Tocar abre o `FluxoChartModal` por cima da Hoje. O modal recebe a **série inteira** (`serie`,
-  a mesma de `projetarBoxes` que o Fluxo usa: boxes selecionadas e cenários ligados), não a
-  janela de 35 dias do mini-gráfico.
-- Fechar o modal volta para a Hoje, na aba Visão.
-- Série com menos de 2 dias: o card fica como hoje, sem botão e sem ícone — igual ao Fluxo.
-- O botão "Último backup" continua fora do card. Não há botão dentro de botão.
-- O modal carrega com `lazy` + `Suspense`, como no Fluxo.
-- O conteúdo do card usa só elementos de frase dentro do botão (`span` com `display: block`
-  no lugar de `p`), porque `button` não aceita `p` como filho. Se a troca mudar a aparência, o
-  estilo inline existente se mantém nos `span`.
+A Hoje ganha um link para o gráfico do Fluxo. Nenhum tooltip novo: a leitura de um dia fica
+só no gráfico expandido, que já existe.
 
-## 2. Fluxo: "A projeção começa em …"
+## 1. Link na Hoje
+
+- Abaixo do mini-gráfico, dentro do card da Visão, um botão `Ver gráfico completo ›` com a
+  classe `.botao-ver-mais`. Nenhuma classe nova.
+- O botão leva à aba Fluxo, já na aba Gráfico.
+- O card em si não fica tocável.
+- Série com menos de 2 dias (o mini-gráfico não aparece): o link também não aparece.
+
+## 2. Abrir o Fluxo numa aba escolhida
+
+- A aba interna do Fluxo hoje é estado local (`useState<AbaFluxo>('lista')`, `TelaFluxo.tsx`).
+- O store ganha `fluxoAba: AbaFluxo | null` e `abrirFluxo(aba)`, no molde de `ajustesSecao` e
+  `abrirAjustes(secao)`. `abrirFluxo` troca `aba` para `'fluxo'` e guarda a aba pedida.
+- O `TelaFluxo` usa `fluxoAba` como estado inicial, quando presente, e o limpa em seguida
+  (`limparFluxoAba`), como a tela de Ajustes faz com `ajustesSecao`.
+- A aba pedida vale **só na chegada**. Entrar no Fluxo pela barra de navegação continua
+  abrindo na Lista.
+- O tipo `AbaFluxo` sai de `TelaFluxo.tsx` para um lugar que o store importa sem depender da
+  UI.
+
+## 3. Fluxo: "A projeção começa em …"
 
 - Com filtro por data ativo, um dia **anterior** ao primeiro dia da série mostra hoje `—` e
   "Nenhum lançamento neste dia.", sem explicar o traço.
@@ -45,21 +53,22 @@ tooltip num gráfico de 120 px ficaria minúsculo, e disputaria o toque com a na
 
 ## Consistência
 
-- Os dois cards com gráfico (Hoje e Fluxo) passam a ter o mesmo sinal (⤢), o mesmo gesto e o
-  mesmo destino.
+- O link reusa o precedente de `.botao-ver-mais` como navegação (`FaturaCategoriaSheet`,
+  "abrir o cartão"). O `catalogo.md` hoje descreve a classe só como "mostrar/ocultar uma
+  lista longa" — a descrição passa a incluir o uso como link de navegação dentro de um card.
 - As duas frases de borda da projeção usam a mesma forma e a mesma classe (`sub`).
 
 ## Testes
 
-- Hoje: tocar no card abre o gráfico expandido; o modal mostra o período da série inteira;
-  fechar volta à Hoje.
-- Hoje: série curta não mostra o botão.
+- Hoje: o link aparece sob o mini-gráfico; tocar leva ao Fluxo na aba Gráfico.
+- Hoje: série curta não mostra o link.
+- Fluxo: entrar pela navegação depois disso abre na Lista.
 - Fluxo: filtrar um dia antes do início da série mostra "A projeção começa em …".
 
 ## Entrega
 
 - Mockup aprovado antes do código (mudança de UI).
-- Wiki: `docs/wiki/6-telas.md`, parágrafo da Visão (toque no card abre em tela cheia) e, se
-  couber, o do filtro por data do Fluxo.
-- Fragmento `changelog.d/alterado-hoje-grafico-expandido.md`.
+- Wiki: `docs/wiki/6-telas.md`, parágrafo da Visão (o link) e, se couber, o do filtro por data
+  do Fluxo.
+- Fragmento `changelog.d/alterado-hoje-grafico-do-fluxo.md`.
 - TODO: itens 8 e 24 fecham.
