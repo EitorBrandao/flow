@@ -128,7 +128,8 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   abrir o picker nativo do `<select>`; cada pílula é `role="radio"` com `aria-checked`, e a
   prop opcional `rotulo` nomeia o grupo. Exporta `OPCOES_TIPO` (Gasto/Ganho), o controle
   único de tipo em `TelaLancar.tsx`, `Recorrencias.tsx` e `Categorias.tsx`. Usado também em
-  `CategoriasCartao.tsx` e `Assinaturas.tsx` (Cartão) — a box em si não tem mais seletor próprio nessas telas: todas as telas de
+  `CategoriasCartao.tsx`, `Assinaturas.tsx` (Cartão) e `PagamentoFaturaSheet.tsx` (destino
+  da sobra da fatura) — a box em si não tem mais seletor próprio nessas telas: todas as telas de
   Ajustes seguem a box selecionada no chip do topo (`boxIdEfetivo`, `state/store.ts`),
   reforçando a sensação de "perfil" (ver `docs/superpowers/specs/`).
 - **`PagamentoFaturaSheet.tsx`** — conteúdo da folha que registra o pagamento de uma fatura
