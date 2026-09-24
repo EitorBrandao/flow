@@ -1,17 +1,16 @@
 # Glossário
 
-: `efetivo` | Lançamento confirmado; entra no saldo real.
-: `previsto` | Ainda não aconteceu (ou não foi confirmado); entra só na projeção.
+: efetivo | Lançamento confirmado; entra no saldo real.
+: previsto | Ainda não aconteceu (ou não foi confirmado); entra só na projeção.
 : pendente | [Previsto](#glossario/previsto) cuja data já chegou/passou — espera confirmação na tela Hoje.
-: box casa | Visão consolidada das boxes pessoais + gastos compartilhados; sem saldo próprio, calculada ao vivo.
+: box casa | Visão consolidada das boxes pessoais + gastos compartilhados; sem saldo próprio, calculada na hora.
 : cenário | Conjunto de lançamentos hipotéticos, ligável/desligável, para simular "e se?" — aba Simular temporariamente oculta da navegação.
-: materializar | Gerar/atualizar os previstos futuros de uma recorrência a partir da regra.
-: fatura | Não é uma entidade salva — é calculada a partir das compras do cartão e do ciclo de fechamento.
-: ciclo de fechamento | Janela de datas de compra que cai numa mesma fatura, definida por `diaFechamento`.
+: fatura | Não fica pronta guardada em lugar nenhum: o app monta ela na hora, a partir das compras do cartão e do ciclo de fechamento.
+: ciclo de fechamento | Janela de datas de compra que cai numa mesma fatura, contada a partir do dia de fechamento do cartão.
 : conferência | Comparação manual entre o saldo/fatura do app do banco e o que está lançado no Flow.
 : banco | Conta bancária dentro de uma box, com saldo informado por você. Serve para conferir cada conta em separado; não é calculado a partir dos lançamentos.
 : parcelamento de fatura | Sobra de uma fatura paga em parte, dividida em parcelas pelo banco. Vira uma compra parcelada numa categoria reservada e entra nas faturas seguintes.
-: horizonte de projeção | Data até onde o motor projeta o saldo futuro (configurável em Ajustes → Boxes/Config).
+: horizonte de projeção | Até onde o app calcula o saldo projetado à frente.
 : atalho de lançamento | Combinação de categoria e destino (box ou cartão) que você mais repetiu nos últimos dois meses, com o valor da última vez. Aparece ao tocar no (+), para encurtar o caminho — abre o formulário preenchido, sem gravar nada.
 : chave de acesso | Número de 44 dígitos que identifica uma nota fiscal eletrônica; extraído do QR-code, é usado para buscar o XML da nota fora do Flow.
 : item da nota | Uma linha de produto do XML da nota fiscal (nome e valor); o Flow usa os itens para mostrar como o total de uma compra do cartão se distribuiu.
