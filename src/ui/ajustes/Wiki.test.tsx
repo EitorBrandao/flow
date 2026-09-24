@@ -26,14 +26,14 @@ describe('Wiki', () => {
 
   it('troca de capítulo pelo índice', async () => {
     render(<Wiki />);
-    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Índice/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Glossário' }));
     expect(await screen.findByRole('heading', { name: 'Glossário' })).toBeInTheDocument();
   });
 
   it('a busca mostra onde o termo está, com o trecho destacado, sem acento e sem caixa', async () => {
     render(<Wiki />);
-    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Índice/ }));
     await userEvent.type(screen.getByLabelText('Buscar na wiki'), 'CREDITO');
     const resultados = await screen.findAllByRole('button', { name: /^Cartão de crédito/ });
     for (const r of resultados) expect(normalizar(r.querySelector('mark')!.textContent!)).toBe('credito');
@@ -46,7 +46,7 @@ describe('Wiki', () => {
     Element.prototype.scrollIntoView = rolar;
     try {
       render(<Wiki />);
-      await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+      await userEvent.click(screen.getByRole('button', { name: /^Índice/ }));
       await userEvent.type(screen.getByLabelText('Buscar na wiki'), 'pendente');
       const [r] = await screen.findAllByRole('button', { name: /^Conceitos e modelo de dados · / });
       const secao = r.querySelector('.wiki-resultado-onde')!.textContent!.split(' · ')[1];
@@ -60,14 +60,14 @@ describe('Wiki', () => {
 
   it('avisa quando a busca não acha nada', async () => {
     render(<Wiki />);
-    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Índice/ }));
     await userEvent.type(screen.getByLabelText('Buscar na wiki'), 'jabuticaba');
     expect(await screen.findByText(/nada encontrado/i)).toBeInTheDocument();
   });
 
   it('usa nomes do conjunto nos exemplos, nunca um nome fixo', async () => {
     render(<Wiki />);
-    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Índice/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Conceitos e modelo de dados' }));
     const corpo = await screen.findByRole('article');
     expect(corpo.textContent).not.toMatch(/\{\{/);
@@ -75,7 +75,7 @@ describe('Wiki', () => {
 
   async function abrirConceitos() {
     render(<Wiki />);
-    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Índice/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Conceitos e modelo de dados' }));
   }
 
@@ -114,7 +114,7 @@ describe('Wiki', () => {
 
   it('link externo abre em aba nova', async () => {
     render(<Wiki />);
-    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Índice/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Código e versão' }));
     const link = await screen.findByRole('link', { name: /github\.com\/EitorBrandao\/flow/ });
     expect(link).toHaveAttribute('target', '_blank');
@@ -123,7 +123,7 @@ describe('Wiki', () => {
 
   it('balão no Glossário mostra definição de link interno', async () => {
     render(<Wiki />);
-    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Índice/ }));
     await userEvent.click(await screen.findByRole('button', { name: 'Glossário' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Previsto' }));
     const balao = await screen.findByRole('dialog', { name: 'Definição: previsto' });
@@ -171,7 +171,7 @@ describe('Wiki', () => {
   it('a barra do índice mostra o capítulo atual', async () => {
     render(<Wiki />);
     await screen.findByRole('article');
-    expect(screen.getByRole('button', { name: 'Índice' })).toHaveTextContent('Os primeiros passos');
+    expect(screen.getByRole('button', { name: /^Índice/ })).toHaveTextContent('Os primeiros passos');
   });
 
   function simularPosicoes(titulos: Element[], passaram: number) {
@@ -191,7 +191,7 @@ describe('Wiki', () => {
     expect(titulos.length).toBeGreaterThan(2);
     simularPosicoes(titulos, 2);
     fireEvent.scroll(window);
-    expect(screen.getByRole('button', { name: 'Índice' }))
+    expect(screen.getByRole('button', { name: /^Índice/ }))
       .toHaveTextContent(`Os primeiros passos · ${titulos[1].textContent}`);
   });
 
@@ -200,7 +200,7 @@ describe('Wiki', () => {
     const titulos = [...(await screen.findByRole('article')).querySelectorAll('h3[id]')];
     simularPosicoes(titulos, 0);
     fireEvent.scroll(window);
-    expect(screen.getByRole('button', { name: 'Índice' }).textContent).not.toContain('·');
+    expect(screen.getByRole('button', { name: /^Índice/ }).textContent).not.toContain('·');
   });
 
   function simularPosicoesExplicitas(titulos: Element[], tops: number[]) {
@@ -231,7 +231,7 @@ describe('Wiki', () => {
       definirPropriedade(window, 'scrollY', 700);
       definirPropriedade(document.documentElement, 'scrollHeight', 1000);
       fireEvent.scroll(window);
-      expect(screen.getByRole('button', { name: 'Índice' }))
+      expect(screen.getByRole('button', { name: /^Índice/ }))
         .toHaveTextContent(`Os primeiros passos · ${titulos.at(-1)!.textContent}`);
     });
 
@@ -244,7 +244,7 @@ describe('Wiki', () => {
       definirPropriedade(window, 'scrollY', 0);
       definirPropriedade(document.documentElement, 'scrollHeight', 1000);
       fireEvent.scroll(window);
-      expect(screen.getByRole('button', { name: 'Índice' }))
+      expect(screen.getByRole('button', { name: /^Índice/ }))
         .toHaveTextContent(`Os primeiros passos · ${titulos[0].textContent}`);
     });
 
@@ -256,7 +256,7 @@ describe('Wiki', () => {
       definirPropriedade(window, 'scrollY', 0);
       definirPropriedade(document.documentElement, 'scrollHeight', 1000);
       fireEvent.scroll(window);
-      expect(screen.getByRole('button', { name: 'Índice' }))
+      expect(screen.getByRole('button', { name: /^Índice/ }))
         .toHaveTextContent(`Os primeiros passos · ${titulos[0].textContent}`);
     });
   });
@@ -268,7 +268,7 @@ describe('Wiki', () => {
     try {
       await abrirConceitos();
       const titulos = [...screen.getByRole('article').querySelectorAll('h3[id]')];
-      await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+      await userEvent.click(screen.getByRole('button', { name: /^Índice/ }));
       const gaveta = screen.getByRole('navigation');
       for (const t of titulos) expect(within(gaveta).getByRole('button', { name: t.textContent! })).toBeInTheDocument();
       await userEvent.click(within(gaveta).getByRole('button', { name: titulos[2].textContent! }));
@@ -281,7 +281,7 @@ describe('Wiki', () => {
 
   it('a gaveta não expande capítulos que não são o atual', async () => {
     render(<Wiki />);
-    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Índice/ }));
     // "Box" é seção de Conceitos; o capítulo atual é Os primeiros passos.
     expect(within(screen.getByRole('navigation')).queryByRole('button', { name: 'Box' })).not.toBeInTheDocument();
   });
@@ -293,7 +293,7 @@ describe('Wiki', () => {
     try {
       render(<Wiki />);
       const artigo = await screen.findByRole('article');
-      await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+      await userEvent.click(screen.getByRole('button', { name: /^Índice/ }));
       await userEvent.click(await screen.findByRole('button', { name: 'Glossário' }));
       expect(await screen.findByRole('heading', { name: 'Glossário' })).toBeInTheDocument();
       expect(rolar.mock.contexts.at(-1)).toBe(artigo);

@@ -198,7 +198,11 @@ export default function Wiki() {
   return (
     <div className="tela" ref={raiz}>
       <h2>Wiki</h2>
-      <button ref={barra} className="wiki-barra" aria-label="Índice" onClick={() => setIndiceAberto(true)}>
+      <button
+        ref={barra} className="wiki-barra"
+        aria-label={`Índice: ${atual.titulo}${tituloSecao ? ` · ${tituloSecao}` : ''}`}
+        onClick={() => setIndiceAberto(true)}
+      >
         <span aria-hidden="true">☰</span>
         <span className="wiki-barra-texto">
           {atual.titulo}
