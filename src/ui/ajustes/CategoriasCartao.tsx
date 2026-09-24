@@ -30,14 +30,14 @@ function ItemCategoriaCartao({
       dragListener={false} dragControls={controls}
     >
       {editando ? (
-        <>
-          <div className="campo cresce">
+        <div className="form-linha cresce">
+          <div className="campo">
             <label htmlFor={uidEditar}>Editar nome</label>
             <input id={uidEditar} value={nomeEdit} onChange={(e) => onEditarNome(e.target.value)} />
           </div>
-          <button className="botao botao-primario" onClick={onSalvarEdicao}>Salvar</button>
           <button className="botao" onClick={onCancelarEdicao}>Cancelar</button>
-        </>
+          <button className="botao botao-primario" onClick={onSalvarEdicao}>Salvar</button>
+        </div>
       ) : (
         <>
           <button className="botao" aria-label="Arrastar para reordenar" onPointerDown={(e) => controls.start(e)}>
@@ -157,13 +157,18 @@ export default function CategoriasCartao() {
             />
           </div>
 
-          <div className="linha">
-            <div className="campo" style={{ flex: 1 }}>
-              <label htmlFor={`${uid}-nova`}>Nova categoria do cartão</label>
-              <input id={`${uid}-nova`} placeholder="nome" value={nome} onChange={(e) => setNome(e.target.value)} />
-            </div>
-            <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={criar}>Criar</button>
-          </div>
+          {!editandoId && (
+            <>
+              <h2>Nova categoria do cartão</h2>
+              <div className="form-linha">
+                <div className="campo">
+                  <label htmlFor={`${uid}-nova`}>Nome</label>
+                  <input id={`${uid}-nova`} placeholder="nome" value={nome} onChange={(e) => setNome(e.target.value)} />
+                </div>
+                <button className="botao botao-primario" onClick={criar}>Criar</button>
+              </div>
+            </>
+          )}
 
           <Reorder.Group as="div" className="lista" axis="y" values={ativas} onReorder={reordenar}>
             {ativas.map((c) => <ItemCategoriaCartao key={c.id} {...props(c)} />)}
