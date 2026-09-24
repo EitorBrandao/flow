@@ -42,6 +42,7 @@ function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
   const [dataInicio, setDataInicio] = useState(inicial.dataInicio);
   const [diaDoMes, setDiaDoMes] = useState(inicial.diaDoMes);
   const [parcelas, setParcelas] = useState(inicial.parcelas);
+  const [aviso, setAviso] = useState('');
   const uid = useId();
 
   const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
@@ -58,7 +59,17 @@ function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
   }
 
   async function salvar() {
-    if (valor <= 0 || categoriaId == null) return;
+    const acao = rotuloSalvar === 'Criar' ? 'criar' : 'salvar';
+    // Uma frase por vez, na ordem dos campos — mesmo critério da tela Lançar.
+    if (valor <= 0) {
+      setAviso(`Digite um valor para ${acao}.`);
+      return;
+    }
+    if (categoriaId == null) {
+      setAviso(`Escolha uma categoria para ${acao}.`);
+      return;
+    }
+    setAviso('');
     const diaDoMesNum = Math.min(31, Math.max(1, Number(diaDoMes) || 1));
     const parcelasNum = parcelas ? Number(parcelas) : null;
     await onSalvo({ categoriaId, valor, dataInicio, diaDoMes: diaDoMesNum, parcelas: parcelasNum });
@@ -69,7 +80,7 @@ function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
       <div className="form-linha">
         <div className="campo">
           <label htmlFor={`${uid}-valor`}>Valor</label>
-          <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} />
+          <CampoValor id={`${uid}-valor`} autoFocus={onCancelar != null} valorCentavos={valor} onChange={setValor} />
         </div>
       </div>
       <SeletorPills
@@ -100,6 +111,7 @@ function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
         {onCancelar && <button className="botao" onClick={onCancelar}>Cancelar</button>}
         <button className="botao botao-primario" onClick={salvar}>{rotuloSalvar}</button>
       </div>
+      {aviso && <p className="aviso">{aviso}</p>}
     </>
   );
 }

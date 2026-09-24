@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
@@ -165,7 +165,7 @@ it('trocar de box na tela de Cartões mostra só os cartões daquela box', async
   expect(screen.getByText('Nubank', { exact: false })).toBeInTheDocument();
   expect(screen.queryByText('Santander', { exact: false })).not.toBeInTheDocument();
 
-  useApp.setState({ boxSel: ju.id });
+  act(() => { useApp.setState({ boxSel: ju.id }); });
   rerender(<Cartoes />);
 
   expect(screen.getByText('Santander', { exact: false })).toBeInTheDocument();
@@ -255,4 +255,29 @@ it('cancelar fecha o item sem gravar e traz "Novo cartão" de volta', async () =
   expect(within(item).getByText('Nubank', { exact: false })).toBeInTheDocument();
   const atual = await db.cartoes.get(cartao.id);
   expect(atual?.nome).toBe('Nubank');
+});
+
+it('criar sem nome avisa embaixo dos botões em vez de não fazer nada', async () => {
+  await montarBox();
+  await useApp.getState().iniciar();
+  render(<Cartoes />);
+  const criar = screen.getByRole('button', { name: 'Criar' });
+  await userEvent.click(criar);
+  const aviso = screen.getByText('Dê um nome ao cartão para criar.');
+  expect(aviso).toHaveClass('aviso');
+  expect(aviso.previousElementSibling).toContainElement(criar);
+  expect(await db.cartoes.count()).toBe(0);
+});
+
+it('salvar com o nome apagado avisa e não grava', async () => {
+  const box = await montarBox();
+  await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+  await useApp.getState().iniciar();
+  render(<Cartoes />);
+  await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+  expect(screen.getByLabelText('Nome do cartão')).toHaveFocus();
+  await userEvent.clear(screen.getByLabelText('Nome do cartão'));
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  expect(screen.getByText('Dê um nome ao cartão para salvar.')).toBeInTheDocument();
+  expect((await db.cartoes.toArray())[0].nome).toBe('Nubank');
 });

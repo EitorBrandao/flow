@@ -394,7 +394,6 @@ export default function TelaHoje() {
 
       {abaHoje === 'conferir' && (
         <div className="card">
-          {avisoSalvarBancos && <p className="aviso">{avisoSalvarBancos}</p>}
           {bancos.length === 0 ? (
             <ConferenciaSaldo key={boxSel} saldoApp={deHoje?.saldoEfetivo ?? 0} declaradoCent={declaradoCent}
               dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} />
@@ -403,6 +402,8 @@ export default function TelaHoje() {
               agruparPorBox={boxSel === 'casa'} saldoApp={deHoje?.saldoEfetivo ?? 0} hoje={hoje}
               onSalvarBancos={salvarSaldosBancos} onTransferir={recarregar} />
           )}
+          {/* Embaixo, depois do Salvar — mesma posição de todo aviso de validação. */}
+          {avisoSalvarBancos && <p className="aviso">{avisoSalvarBancos}</p>}
         </div>
       )}
 

@@ -314,10 +314,11 @@ option: carteira
 option: reserva
 option: casa
 Cartão
+heading: sigma
 button: ‹
 fevereiro de 2026
 button: ›
-Fatura · sigma
+Fatura
 R$ 330,00
 fecha 25/01/2026 · vence 05/02/2026
 tab: Resumo
@@ -752,10 +753,11 @@ option: carteira
 option: reserva
 option: casa
 Cartão
+heading: sigma
 button: ‹
 março de 2026
 button: ›
-Fatura · sigma
+Fatura
 R$ 150,00
 fecha 25/02/2026 · vence 05/03/2026
 tab: Resumo
@@ -1231,10 +1233,11 @@ option: carteira
 option: reserva
 option: casa
 Cartão
+heading: sigma
 button: ‹
 março de 2026
 button: ›
-Fatura · sigma
+Fatura
 R$ 189,90
 fecha 25/02/2026 · vence 05/03/2026
 tab: Resumo
@@ -1673,10 +1676,11 @@ option: carteira
 option: reserva
 option: casa
 Cartão
+heading: sigma
 button: ‹
 julho de 2026
 button: ›
-Fatura · sigma
+Fatura
 R$ 213,20
 fecha 25/06/2026 · vence 05/07/2026
 tab: Resumo
@@ -2115,10 +2119,11 @@ option: carteira
 option: reserva
 option: casa
 Cartão
+heading: sigma
 button: ‹
 agosto de 2026
 button: ›
-Fatura · sigma
+Fatura
 R$ 123,20
 fecha 25/07/2026 · vence 05/08/2026
 tab: Resumo
@@ -2541,10 +2546,11 @@ option: carteira
 option: reserva
 option: casa
 Cartão
+heading: sigma
 button: ‹
 outubro de 2026
 button: ›
-Fatura · sigma
+Fatura
 R$ 39,90
 fecha 25/09/2026 · vence 05/10/2026
 tab: Resumo
@@ -2943,10 +2949,11 @@ option: carteira
 option: reserva
 option: casa
 Cartão
+heading: sigma
 button: ‹
 novembro de 2026
 button: ›
-Fatura · sigma
+Fatura
 R$ 39,90
 fecha 25/10/2026 · vence 05/11/2026
 tab: Resumo
@@ -3315,10 +3322,11 @@ option: carteira
 option: reserva
 option: casa
 Cartão
+heading: sigma
 button: ‹
 janeiro de 2027
 button: ›
-Fatura · sigma
+Fatura
 R$ 39,90
 fecha 25/12/2026 · vence 05/01/2027
 tab: Resumo

@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
@@ -92,7 +92,7 @@ it('trocar de box na tela de Recorrências mostra só as recorrências e categor
   expect(screen.getByRole('button', { name: 'aluguel' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'contas da casa' })).not.toBeInTheDocument();
 
-  useApp.setState({ boxSel: conjunta.id });
+  act(() => { useApp.setState({ boxSel: conjunta.id }); });
   rerender(<Recorrencias />);
 
   expect(screen.getByText('contas da casa', { selector: 'div' })).toBeInTheDocument();
@@ -240,4 +240,22 @@ it('cancelar fecha o item sem gravar e traz "Nova recorrência" de volta', async
   expect(within(item).getByText(formatarBRL(5000).replace(/\s/g, ' '))).toBeInTheDocument();
   const atual = await db.recorrencias.get(rec.id);
   expect(atual?.valor).toBe(5000);
+});
+
+it('criar sem valor e sem categoria avisa uma coisa por vez, embaixo dos botões', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  render(<Recorrencias />);
+  const criar = screen.getByRole('button', { name: 'Criar' });
+  await userEvent.click(criar);
+  const aviso = screen.getByText('Digite um valor para criar.');
+  expect(aviso.previousElementSibling).toContainElement(criar);
+  await userEvent.type(screen.getByLabelText('Valor'), '100,00');
+  await userEvent.click(criar);
+  expect(screen.getByText('Escolha uma categoria para criar.')).toBeInTheDocument();
+  expect(screen.queryByText('Digite um valor para criar.')).not.toBeInTheDocument();
+  expect(await db.recorrencias.count()).toBe(0);
 });

@@ -35,10 +35,15 @@ function FormAssinatura({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
   const [diaDoMes, setDiaDoMes] = useState(inicial.diaDoMes);
   const [parcelas, setParcelas] = useState(inicial.parcelas);
   const [descricao, setDescricao] = useState(inicial.descricao);
+  const [aviso, setAviso] = useState('');
   const uid = useId();
 
   async function salvar() {
-    if (valor <= 0) return;
+    if (valor <= 0) {
+      setAviso(`Digite um valor para ${rotuloSalvar === 'Criar' ? 'criar' : 'salvar'}.`);
+      return;
+    }
+    setAviso('');
     const diaDoMesNum = Math.min(31, Math.max(1, Number(diaDoMes) || 1));
     const parcelasNum = parcelas ? Number(parcelas) : null;
     await onSalvo({
@@ -52,7 +57,7 @@ function FormAssinatura({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
       <div className="form-linha">
         <div className="campo">
           <label htmlFor={`${uid}-valor`}>Valor</label>
-          <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} />
+          <CampoValor id={`${uid}-valor`} autoFocus={onCancelar != null} valorCentavos={valor} onChange={setValor} />
         </div>
       </div>
       <div className="form-linha">
@@ -83,6 +88,7 @@ function FormAssinatura({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
         {onCancelar && <button className="botao" onClick={onCancelar}>Cancelar</button>}
         <button className="botao botao-primario" onClick={salvar}>{rotuloSalvar}</button>
       </div>
+      {aviso && <p className="aviso">{aviso}</p>}
     </>
   );
 }
@@ -132,7 +138,9 @@ export default function Assinaturas() {
   }
 
   async function atualizar(id: string, campos: CamposAssinaturaSalvos) {
-    const original = assinsDoCartao.find((a) => a.id === id)!;
+    // A descrição sai do original: `campos` só a traz quando preenchida, e o spread
+    // manteria a antiga — apagar a descrição e salvar não a removia.
+    const { descricao: _descricaoAntiga, ...original } = assinsDoCartao.find((a) => a.id === id)!;
     const categoriaCartaoId = await repo.categoriaAssinaturasDe(cartaoId);
     await repo.salvarAssinatura({ ...original, ...campos, cartaoId, categoriaCartaoId }, horizonte);
     setEditandoId(null);

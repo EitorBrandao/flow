@@ -120,7 +120,6 @@ export default function Bancos() {
       {!editandoId && (
         <>
           <h2>Novo banco</h2>
-          {avisoCriacao && <p className="aviso">{avisoCriacao}</p>}
           <div className="form-linha">
             <div className="campo">
               <label htmlFor={`${uid}-nome`}>Nome do banco</label>
@@ -131,6 +130,7 @@ export default function Bancos() {
             </div>
             <button className="botao botao-primario" onClick={criar}>Criar</button>
           </div>
+          {avisoCriacao && <p className="aviso">{avisoCriacao}</p>}
           <p className="sub">Será criado na box {nomeBoxCriacao}.</p>
         </>
       )}
@@ -143,12 +143,11 @@ export default function Bancos() {
             <div className={`item${emEdicao ? ' item-coluna' : ''}`} key={b.id}>
               {emEdicao ? (
                 <>
-                  {avisoEdicao && <p className="aviso">{avisoEdicao}</p>}
                   <div className="form-linha">
                     <div className="campo">
                       <label htmlFor={`${b.id}-nome`}>Nome</label>
                       <input
-                        id={`${b.id}-nome`} value={nomeEdicao}
+                        id={`${b.id}-nome`} autoFocus value={nomeEdicao}
                         onChange={(e) => setNomeEdicao(e.target.value)}
                       />
                     </div>
@@ -178,6 +177,12 @@ export default function Bancos() {
                           <CampoValor id={`${b.id}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} style={{ flex: 1, minWidth: 0 }} />
                         </div>
                       </div>
+                    </div>
+                  )}
+                  {/* Saldo e data em linhas próprias, como em Boxes: dividindo a linha, o
+                      valor cortava a 360 px. */}
+                  {temSaldo && (
+                    <div className="form-linha">
                       <div className="campo">
                         <label htmlFor={`${b.id}-data`}>Data do saldo</label>
                         <CampoData id={`${b.id}-data`} value={dataEdicao} onChange={setDataEdicao} />
@@ -188,6 +193,7 @@ export default function Bancos() {
                     <button className="botao" onClick={cancelarEdicao}>Cancelar</button>
                     <button className="botao botao-primario" onClick={salvarEdicao}>Salvar</button>
                   </div>
+                  {avisoEdicao && <p className="aviso">{avisoEdicao}</p>}
                 </>
               ) : (
                 <>

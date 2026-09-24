@@ -2,7 +2,7 @@
 
 Todas respeitam o seletor de box no topo (no exemplo: `{{boxA}}` / `{{boxB}}` / `casa`), exceto onde indicado.
 
-> **Sobre "obrigatório" nesta wiki:** a UI do app não marca campos com asterisco — isso é só documentação. "Obrigatório" quer dizer que o botão de salvar/criar não faz nada (silenciosamente) se o campo estiver vazio ou inválido. Campos com valor padrão pronto (ex.: data = hoje, parcelas = 1) contam como preenchidos mesmo sem o usuário tocar neles.
+> **Sobre "obrigatório" nesta wiki:** a UI do app não marca campos com asterisco — isso é só documentação. "Obrigatório" quer dizer que o botão de salvar/criar não grava nada se o campo estiver vazio ou inválido — o app diz o que falta, uma coisa por vez, num aviso logo abaixo dos botões. Campos com valor padrão pronto (ex.: data = hoje, parcelas = 1) contam como preenchidos mesmo sem o usuário tocar neles.
 
 > **Janelas por cima da tela:** enquanto uma janela está aberta (a que sobe de baixo, o gráfico em tela cheia, o índice da wiki), o toque vale só para ela — a tela de trás não rola. Para fechar a janela que sobe de baixo, puxe para baixo pela barrinha do topo, pelo título ou pelo próprio conteúdo, quando ele já está no começo. Tocar no fundo escuro também fecha.
 
@@ -62,8 +62,9 @@ A linha do tempo do dinheiro. Duas abas: Lista (padrão) e Gráfico.
 
 Aba dedicada à fatura do cartão da box selecionada (ou os dois cartões empilhados, na visão casa). Cada fatura tem três abas: Resumo, Lançamentos e Conferência.
 
+- Cada cartão abre com o nome dele num título, acima da navegação de mês — na visão casa, é o título que separa um cartão do outro.
 - Mostra a fatura do mês atual por padrão, com navegação ‹ mês anterior / mês seguinte › — o mês aparece por nome (janeiro, fevereiro etc.).
-- Cabeçalho, sempre visível fora das abas: nome do cartão, total da fatura, dia de fechamento e de vencimento.
+- Cabeçalho da fatura, sempre visível fora das abas: total da fatura, dia de fechamento e de vencimento.
 - **Resumo:** valor pago ou a pagar, com atalho para corrigir; resumo por categoria do cartão aparece sempre que há ao menos uma categoria — tocar numa categoria filtra os lançamentos para ela, pula para a aba Lançamentos e deixa a categoria destacada no Resumo; tocar de novo na mesma categoria tira o filtro.
 - **Lançamentos:** busca por descrição, categoria, data ou valor; itens agrupados em À vista/Parceladas, com marcação de parcela (ex.: "3/12"); tocar abre edição; excluir remove a compra e todas as parcelas dela.
 - **Conferência:** campo "valor no app do banco"; mostra a diferença nas mesmas frases da conferência de saldo em Hoje ("bate certinho", "falta inserir no cartão" ou "sobra no cartão — confira duplicado") — o valor da diferença segue a mesma regra da conferência de saldo em Hoje: vermelho e negativo quando faltam itens, verde e positivo quando os itens passam do banco; checkbox "usar este valor no Flow" (desmarcada por padrão). O rótulo da aba mostra ✔️ ou ⚠️ assim que existe uma conferência salva — dá para saber se bate sem entrar na aba.
