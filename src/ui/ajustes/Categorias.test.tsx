@@ -1,4 +1,6 @@
 import 'fake-indexeddb/auto';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { limparDb } from '../../test-setup';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -345,4 +347,18 @@ it('cancelar fecha o item sem gravar e traz "Nova categoria" de volta', async ()
   expect(screen.getByText('mercado')).toBeInTheDocument();
   const atual = await db.categorias.get(cat.id);
   expect(atual?.nome).toBe('mercado');
+});
+
+it('puxador de arrastar bloqueia a rolagem por toque (senão o celular cancela o arrasto)', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+
+  render(<Categorias />);
+  expect(screen.getByRole('button', { name: 'Arrastar para reordenar' })).toHaveClass('alca-arrastar');
+  const css = readFileSync(resolve(__dirname, '../../styles.css'), 'utf8');
+  expect(css).toMatch(/\.alca-arrastar\s*\{[^}]*touch-action:\s*none/);
 });
