@@ -1,6 +1,6 @@
 import { createContext, Fragment, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import {
-  idDoCapitulo, normalizar, parseCapitulo, sortearNomes, termosDoGlossario,
+  buscar, idDoCapitulo, normalizar, parseCapitulo, sortearNomes, termosDoGlossario,
   type Bloco, type Capitulo, type Inline, type ItemCampo,
 } from './capitulos';
 import { useTravarRolagem } from '../useTravarRolagem';
@@ -103,7 +103,7 @@ export default function Wiki() {
   const raiz = useRef<HTMLDivElement>(null);
 
   const alvo = normalizar(busca.trim());
-  const filtrados = alvo ? capitulos.filter((c) => normalizar(c.texto).includes(alvo)) : capitulos;
+  const resultados = useMemo(() => buscar(capitulos, busca), [capitulos, busca]);
   const atual = capitulos.find((c) => c.id === atualId) ?? capitulos[0];
   const secoes = atual.blocos.filter((b): b is Extract<Bloco, { tipo: 'topico' }> => b.tipo === 'topico');
   const tituloSecao = secoes.find((s) => s.id === secaoAtual)?.titulo;
@@ -238,15 +238,16 @@ export default function Wiki() {
                 ))}
               </Fragment>
             ))}
-            {alvo && filtrados.map((c) => (
+            {alvo && resultados.map((r) => (
               <button
-                key={c.id} className={`wiki-item${c.id === atual.id ? ' ativo' : ''}`}
-                onClick={() => { setBalao(null); setAtualId(c.id); setIndiceAberto(false); }}
+                key={`${r.capitulo}/${r.secao ?? ''}`} className="wiki-item wiki-resultado"
+                onClick={() => { setIndiceAberto(false); acoes.ir(r.capitulo, r.secao); }}
               >
-                {c.titulo}
+                <span className="wiki-resultado-onde">{r.tituloCapitulo}{r.tituloSecao && ` · ${r.tituloSecao}`}</span>
+                <span className="wiki-resultado-trecho">{r.antes}<mark>{r.achado}</mark>{r.depois}</span>
               </button>
             ))}
-            {alvo && filtrados.length === 0 && <p className="sub">Nada encontrado.</p>}
+            {alvo && resultados.length === 0 && <p className="sub">Nada encontrado.</p>}
           </nav>
         </>
       )}

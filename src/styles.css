@@ -443,6 +443,10 @@ table.tabela th:first-child, table.tabela td:first-child {
 /* Seção do capítulo atual, recuada sob ele. Ativa = só a cor, para não competir com o fundo do capítulo. */
 .wiki-item.wiki-secao { padding-left: 28px; min-height: 40px; font-size: 14px; color: var(--muted); }
 .wiki-item.wiki-secao.ativo { background: none; color: var(--ac); }
+.wiki-item.wiki-resultado { display: flex; flex-direction: column; gap: 2px; }
+.wiki-resultado-onde { font-size: 13px; color: var(--muted); }
+.wiki-resultado-trecho { font-size: 14px; }
+.wiki-resultado mark { background: var(--ac-dim); color: var(--ac); }
 
 /* ---- PrimeiroUso (PrimeiroUso.tsx) ---- */
 .primeiro-uso {

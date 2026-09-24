@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Wiki from './Wiki';
+import { normalizar } from './capitulos';
 
 describe('Wiki', () => {
   afterEach(() => {
@@ -20,21 +21,31 @@ describe('Wiki', () => {
     expect(await screen.findByRole('heading', { name: 'Glossário' })).toBeInTheDocument();
   });
 
-  it('a busca filtra o índice, sem acento e sem caixa', async () => {
+  it('a busca mostra onde o termo está, com o trecho destacado, sem acento e sem caixa', async () => {
     render(<Wiki />);
     await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
     await userEvent.type(screen.getByLabelText('Buscar na wiki'), 'CREDITO');
-    expect(await screen.findByRole('button', { name: 'Cartão de crédito' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Glossário' })).not.toBeInTheDocument();
+    const resultados = await screen.findAllByRole('button', { name: /^Cartão de crédito/ });
+    for (const r of resultados) expect(normalizar(r.querySelector('mark')!.textContent!)).toBe('credito');
+    expect(within(screen.getByRole('navigation')).queryByRole('button', { name: 'Glossário' })).not.toBeInTheDocument();
   });
 
-  it('a busca filtra pelo texto do capítulo, não só pelo título', async () => {
-    render(<Wiki />);
-    await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
-    await userEvent.type(screen.getByLabelText('Buscar na wiki'), 'teclado');
-    expect(await screen.findByRole('button', { name: 'Os primeiros passos' })).toBeInTheDocument();
-    expect(await screen.findByRole('button', { name: 'Telas' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Glossário' })).not.toBeInTheDocument();
+  it('a busca acha pelo texto, não só pelo título, e o resultado leva à seção', async () => {
+    const original = Element.prototype.scrollIntoView;
+    const rolar = vi.fn();
+    Element.prototype.scrollIntoView = rolar;
+    try {
+      render(<Wiki />);
+      await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+      await userEvent.type(screen.getByLabelText('Buscar na wiki'), 'pendente');
+      const [r] = await screen.findAllByRole('button', { name: /^Conceitos e modelo de dados · / });
+      const secao = r.querySelector('.wiki-resultado-onde')!.textContent!.split(' · ')[1];
+      await userEvent.click(r);
+      expect(await screen.findByRole('heading', { name: 'Conceitos e modelo de dados' })).toBeInTheDocument();
+      expect((rolar.mock.contexts.at(-1) as HTMLElement).textContent).toBe(secao);
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
   });
 
   it('avisa quando a busca não acha nada', async () => {
