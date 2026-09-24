@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
+import { createContext, Fragment, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import {
-  idDoCapitulo, normalizar, parseCapitulo, sortearNomes, termosDoGlossario,
+  buscar, idDoCapitulo, normalizar, parseCapitulo, sortearNomes, termosDoGlossario,
   type Bloco, type Capitulo, type Inline, type ItemCampo,
 } from './capitulos';
 import { useTravarRolagem } from '../useTravarRolagem';
@@ -12,6 +12,9 @@ const BRUTOS_TODOS = import.meta.glob('../../../docs/wiki/*.md', {
 const BRUTOS = Object.fromEntries(
   Object.entries(BRUTOS_TODOS).filter(([caminho]) => !caminho.includes('README'))
 );
+
+/** Espaço entre a barra e o título de destino. O mesmo valor decide a seção atual: um salto para a seção a deixa como atual. */
+const FOLGA = 8;
 
 interface Acoes {
   ir: (capitulo: string, secao?: string) => void;
@@ -94,11 +97,16 @@ export default function Wiki() {
   const [busca, setBusca] = useState('');
   const [destino, setDestino] = useState<{ secao?: string } | null>(null);
   const [balao, setBalao] = useState<Balao | null>(null);
+  const [secaoAtual, setSecaoAtual] = useState<string | null>(null);
   const corpo = useRef<HTMLElement>(null);
+  const barra = useRef<HTMLButtonElement>(null);
+  const raiz = useRef<HTMLDivElement>(null);
 
   const alvo = normalizar(busca.trim());
-  const filtrados = alvo ? capitulos.filter((c) => normalizar(c.texto).includes(alvo)) : capitulos;
+  const resultados = useMemo(() => buscar(capitulos, busca), [capitulos, busca]);
   const atual = capitulos.find((c) => c.id === atualId) ?? capitulos[0];
+  const secoes = atual.blocos.filter((b): b is Extract<Bloco, { tipo: 'topico' }> => b.tipo === 'topico');
+  const tituloSecao = secoes.find((s) => s.id === secaoAtual)?.titulo;
 
   // Depois de trocar de capítulo por link: rola até a seção, ou ao topo do capítulo.
   useEffect(() => {
@@ -107,6 +115,46 @@ export default function Wiki() {
     el?.scrollIntoView?.({ block: 'start' });
     setDestino(null);
   }, [destino, atualId]);
+
+  // A barra gruda logo abaixo do .topo do app; títulos e campos param FOLGA px abaixo da barra ao rolar até eles.
+  useEffect(() => {
+    const medir = () => {
+      const topo = document.querySelector<HTMLElement>('.topo')?.offsetHeight ?? 0;
+      const altura = barra.current?.offsetHeight ?? 0;
+      raiz.current?.style.setProperty('--wiki-topo', `${topo}px`);
+      raiz.current?.style.setProperty('--wiki-rolagem', `${topo + altura + FOLGA}px`);
+    };
+    medir();
+    window.addEventListener('resize', medir);
+    return () => window.removeEventListener('resize', medir);
+  }, []);
+
+  // Seção atual: o último título cujo topo já chegou à base da barra mais a FOLGA — onde um salto para a seção o deixa.
+  // No fim da página, quando a rolagem não alcança esse ponto, vale o último título visível na tela, se houver algum.
+  // Página que cabe inteira na tela (sem rolagem) segue a regra normal: ao abrir, a barra mostra só o capítulo.
+  useEffect(() => {
+    const atualizar = () => {
+      const titulos = corpo.current?.querySelectorAll<HTMLElement>('h3[id]');
+      const noFim = window.scrollY > 0
+        && window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+      if (noFim) {
+        let idVisivel: string | null = null;
+        titulos?.forEach((h) => {
+          if (h.getBoundingClientRect().top < window.innerHeight) idVisivel = h.id;
+        });
+        if (idVisivel) { setSecaoAtual(idVisivel); return; }
+      }
+      const limite = (barra.current?.getBoundingClientRect().bottom ?? 0) + FOLGA + 1;
+      let id: string | null = null;
+      titulos?.forEach((h) => {
+        if (h.getBoundingClientRect().top <= limite) id = h.id;
+      });
+      setSecaoAtual(id);
+    };
+    atualizar();
+    window.addEventListener('scroll', atualizar, { passive: true });
+    return () => window.removeEventListener('scroll', atualizar);
+  }, [atualId]);
 
   // Balão aberto: fecha ao tocar fora dele (o termo cuida do próprio toque), ao rolar, ou ao pressionar Esc.
   useEffect(() => {
@@ -148,9 +196,19 @@ export default function Wiki() {
   const termo = balao ? glossario.get(balao.id) : undefined;
 
   return (
-    <div className="tela">
+    <div className="tela" ref={raiz}>
       <h2>Wiki</h2>
-      <button className="botao wiki-abrir-indice" aria-label="Índice" onClick={() => setIndiceAberto(true)}>☰ Índice</button>
+      <button
+        ref={barra} className="wiki-barra"
+        aria-label={`Índice: ${atual.titulo}${tituloSecao ? ` · ${tituloSecao}` : ''}`}
+        onClick={() => setIndiceAberto(true)}
+      >
+        <span aria-hidden="true">☰</span>
+        <span className="wiki-barra-texto">
+          {atual.titulo}
+          {tituloSecao && <span className="wiki-barra-secao"> · {tituloSecao}</span>}
+        </span>
+      </button>
 
       <AcoesWiki.Provider value={acoes}>
         <article className="wiki-corpo" ref={corpo}>
@@ -178,15 +236,34 @@ export default function Wiki() {
               id="wiki-busca" className="campo-busca" type="search" value={busca}
               onChange={(e) => setBusca(e.target.value)} aria-label="Buscar na wiki"
             />
-            {filtrados.map((c) => (
+            {!alvo && capitulos.map((c) => (
+              <Fragment key={c.id}>
+                <button
+                  className={`wiki-item${c.id === atual.id ? ' ativo' : ''}`}
+                  onClick={() => { setIndiceAberto(false); acoes.ir(c.id); }}
+                >
+                  {c.titulo}
+                </button>
+                {c.id === atual.id && secoes.map((s) => (
+                  <button
+                    key={s.id} className={`wiki-item wiki-secao${s.id === secaoAtual ? ' ativo' : ''}`}
+                    onClick={() => { setIndiceAberto(false); acoes.ir(c.id, s.id); }}
+                  >
+                    {s.titulo}
+                  </button>
+                ))}
+              </Fragment>
+            ))}
+            {alvo && resultados.map((r) => (
               <button
-                key={c.id} className={`wiki-item${c.id === atual.id ? ' ativo' : ''}`}
-                onClick={() => { setBalao(null); setAtualId(c.id); setIndiceAberto(false); }}
+                key={`${r.capitulo}/${r.secao ?? ''}`} className="wiki-item wiki-resultado"
+                onClick={() => { setIndiceAberto(false); acoes.ir(r.capitulo, r.secao); }}
               >
-                {c.titulo}
+                <span className="wiki-resultado-onde">{r.tituloCapitulo}{r.tituloSecao && ` · ${r.tituloSecao}`}</span>
+                <span className="wiki-resultado-trecho">{r.antes}<mark>{r.achado}</mark>{r.depois}</span>
               </button>
             ))}
-            {filtrados.length === 0 && <p className="sub">Nada encontrado.</p>}
+            {alvo && resultados.length === 0 && <p className="sub">Nada encontrado.</p>}
           </nav>
         </>
       )}

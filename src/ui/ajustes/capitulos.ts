@@ -186,20 +186,91 @@ function inlineTexto(partes: Inline[]): string {
   return partes.map((p) => p.texto).join('');
 }
 
+function textoDoBloco(b: Bloco): string[] {
+  if (b.tipo === 'topico') return [b.titulo];
+  if (b.tipo === 'lista') return b.itens.map(inlineTexto);
+  if (b.tipo === 'campos') return b.itens.map((i) => `${inlineTexto(i.termo)} ${inlineTexto(i.definicao)}`);
+  return [inlineTexto(b.conteudo)];
+}
+
 function textoPuro(titulo: string, blocos: Bloco[]): string {
-  const pedacos = [titulo];
-  for (const b of blocos) {
-    if (b.tipo === 'topico') pedacos.push(b.titulo);
-    else if (b.tipo === 'lista') pedacos.push(...b.itens.map(inlineTexto));
-    else if (b.tipo === 'campos') pedacos.push(...b.itens.map((i) => `${inlineTexto(i.termo)} ${inlineTexto(i.definicao)}`));
-    else pedacos.push(inlineTexto(b.conteudo));
-  }
-  return pedacos.join(' ');
+  return [titulo, ...blocos.flatMap(textoDoBloco)].join(' ');
 }
 
 /** Normaliza para busca: sem acento, sem caixa. */
 export function normalizar(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+export interface SecaoTexto { id?: string; titulo?: string; texto: string }
+
+/** Texto puro por seção. O primeiro item é a introdução (título do capítulo + texto antes do primeiro ##). */
+export function secoesDoCapitulo(c: Capitulo): SecaoTexto[] {
+  const secoes: { id?: string; titulo?: string; pedacos: string[] }[] = [{ pedacos: [c.titulo] }];
+  for (const b of c.blocos) {
+    if (b.tipo === 'topico') secoes.push({ id: b.id, titulo: b.titulo, pedacos: [b.titulo] });
+    else secoes[secoes.length - 1].pedacos.push(...textoDoBloco(b));
+  }
+  return secoes.map(({ pedacos, ...resto }) => ({ ...resto, texto: pedacos.join(' ') }));
+}
+
+export interface Resultado {
+  capitulo: string; tituloCapitulo: string;
+  secao?: string; tituloSecao?: string;
+  antes: string; achado: string; depois: string;
+}
+
+const CONTEXTO = 40;
+
+/** Posição [início, fim) no texto original do primeiro trecho que casa com `alvo` já normalizado. */
+function localizar(texto: string, alvo: string): [number, number] | null {
+  let norm = '';
+  const origem: number[] = [];
+  for (let i = 0; i < texto.length; i++) {
+    const n = normalizar(texto[i]);
+    for (let j = 0; j < n.length; j++) origem.push(i);
+    norm += n;
+  }
+  const k = norm.indexOf(alvo);
+  if (k < 0) return null;
+  return [origem[k], origem[k + alvo.length - 1] + 1];
+}
+
+/** Busca na wiki: um resultado por seção, com trecho em volta da primeira ocorrência.
+ *  Procura primeiro no corpo da seção (sem o título do capítulo ou da seção); só se o termo
+ *  não estiver no corpo, procura no título — o trecho não repete o que "Capítulo · Seção" já
+ *  mostra, a menos que o termo só exista ali. */
+export function buscar(capitulos: Capitulo[], termo: string): Resultado[] {
+  const alvo = normalizar(termo.trim());
+  if (!alvo) return [];
+  const resultados: Resultado[] = [];
+  for (const c of capitulos) {
+    for (const s of secoesDoCapitulo(c)) {
+      const cabecalho = s.titulo ?? c.titulo;
+      const corpo = s.texto.length > cabecalho.length ? s.texto.slice(cabecalho.length + 1) : '';
+      let pos = localizar(corpo, alvo);
+      let deslocamento = cabecalho.length + 1;
+      if (!pos) {
+        pos = localizar(cabecalho, alvo);
+        deslocamento = 0;
+      }
+      if (!pos) continue;
+      const ini = pos[0] + deslocamento;
+      const fim = pos[1] + deslocamento;
+      let a = Math.max(0, ini - CONTEXTO);
+      let b = Math.min(s.texto.length, fim + CONTEXTO);
+      if (a > 0) { const e = s.texto.indexOf(' ', a); a = e >= 0 && e < ini ? e + 1 : ini; }
+      if (b < s.texto.length) { const e = s.texto.lastIndexOf(' ', b); b = e >= fim ? e : fim; }
+      resultados.push({
+        capitulo: c.id, tituloCapitulo: c.titulo,
+        ...(s.id ? { secao: s.id, tituloSecao: s.titulo } : {}),
+        antes: (a > 0 ? '…' : '') + s.texto.slice(a, ini),
+        achado: s.texto.slice(ini, fim),
+        depois: s.texto.slice(fim, b) + (b < s.texto.length ? '…' : ''),
+      });
+    }
+  }
+  return resultados;
 }
 
 function inlinesDoBloco(b: Bloco): Inline[] {

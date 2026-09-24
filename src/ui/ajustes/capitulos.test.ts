@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { NOMES, idDoCapitulo, parseCapitulo, sortearNomes, termosDoGlossario, validarLinks } from './capitulos';
+import { NOMES, buscar, idDoCapitulo, parseCapitulo, secoesDoCapitulo, sortearNomes, termosDoGlossario, validarLinks } from './capitulos';
 
 const NOMES_FIXOS = { a: 'Ana', b: 'Bruno' };
 
@@ -219,5 +219,88 @@ describe('capítulos de docs/wiki', () => {
     const todos = arquivos.map(([, raw]) => raw).join('\n');
     expect(todos).toMatch(/\]\(#motor\/consolidacao-da-casa\)/);
     expect(todos).toMatch(/\[\[pendente\]\]/);
+  });
+});
+
+describe('secoesDoCapitulo', () => {
+  const nomes = { a: 'Ana', b: 'Bruno' };
+  it('separa a introdução e cada seção, com o título dentro do texto', () => {
+    const cap = parseCapitulo('cartao', '# Cartão\nIntro curta.\n## Fatura\nA fatura fecha.\n- item um\n## Pagamento\n: campo | definição', nomes);
+    expect(secoesDoCapitulo(cap)).toEqual([
+      { texto: 'Cartão Intro curta.' },
+      { id: 'fatura', titulo: 'Fatura', texto: 'Fatura A fatura fecha. item um' },
+      { id: 'pagamento', titulo: 'Pagamento', texto: 'Pagamento campo definição' },
+    ]);
+  });
+});
+
+describe('buscar', () => {
+  const nomes = { a: 'Ana', b: 'Bruno' };
+  const cartao = parseCapitulo('cartao', '# Cartão\nIntro curta.\n## Fatura\nA fatura fecha no dia do fechamento e vence depois.\n> Nota sobre juros.', nomes);
+  const longo = parseCapitulo('longo', '# Outro\n## Longa\num dois tres quatro cinco seis sete oito nove dez alvo onze doze treze catorze quinze dezesseis dezessete dezoito', nomes);
+
+  it('um resultado por seção, na primeira ocorrência, reticências só na ponta cortada', () => {
+    expect(buscar([cartao], 'FECHA')).toEqual([{
+      capitulo: 'cartao', tituloCapitulo: 'Cartão', secao: 'fatura', tituloSecao: 'Fatura',
+      // Corte independente por lado (correção pós-revisão): o texto da seção tem 76
+      // caracteres; "fecha" começa no 16 e termina no 21. À esquerda, ini - 40 é negativo,
+      // então não há corte (sem "…"). À direita, fim + 40 = 61 < 76: há texto sobrando de
+      // verdade, então o lado direito corta e ganha "…", mesmo o esquerdo não tendo cortado.
+      antes: 'Fatura A fatura ', achado: 'fecha', depois: ' no dia do fechamento e vence depois.…',
+    }]);
+  });
+
+  it('acha sem acento e devolve o texto original; introdução não tem seção', () => {
+    expect(buscar([cartao], 'cartao')).toEqual([{
+      capitulo: 'cartao', tituloCapitulo: 'Cartão',
+      antes: '', achado: 'Cartão', depois: ' Intro curta.',
+    }]);
+  });
+
+  it('acha em nota', () => {
+    expect(buscar([cartao], 'juros').map((r) => r.secao)).toEqual(['fatura']);
+  });
+
+  it('corta o contexto em limite de palavra, com reticências nas pontas cortadas', () => {
+    const [r] = buscar([longo], 'alvo');
+    expect(r.antes).toBe('…quatro cinco seis sete oito nove dez ');
+    expect(r.achado).toBe('alvo');
+    expect(r.depois).toBe(' onze doze treze catorze quinze…');
+  });
+
+  it('corta só a direita quando o termo está perto do início', () => {
+    const curta = parseCapitulo('curta', '# Outro\n## Curta\nalvo um dois tres quatro cinco seis sete oito nove dez onze doze treze', nomes);
+    const [r] = buscar([curta], 'alvo');
+    expect(r.antes).toBe('Curta ');
+    expect(r.depois).toBe(' um dois tres quatro cinco seis sete…');
+  });
+
+  it('percorre vários capítulos na ordem recebida', () => {
+    const outro = parseCapitulo('outro', '# Outro\n## Fatura extra\nTexto da fatura.', nomes);
+    expect(buscar([cartao, outro], 'fatura').map((r) => `${r.capitulo}/${r.secao}`))
+      .toEqual(['cartao/fatura', 'outro/fatura-extra']);
+  });
+
+  it('termo vazio ou ausente não devolve nada', () => {
+    expect(buscar([cartao], '   ')).toEqual([]);
+    expect(buscar([cartao], 'jabuticaba')).toEqual([]);
+  });
+
+  it('termo no título e no corpo: o trecho vem do corpo, não repete o título', () => {
+    const duplicado = parseCapitulo('duplicado', '# Outro\n## Fatura\nA fatura vence dia dez.', nomes);
+    const [r] = buscar([duplicado], 'fatura');
+    expect(r).toEqual({
+      capitulo: 'duplicado', tituloCapitulo: 'Outro', secao: 'fatura', tituloSecao: 'Fatura',
+      antes: 'Fatura A ', achado: 'fatura', depois: ' vence dia dez.',
+    });
+  });
+
+  it('termo só no título: o trecho é o título (comportamento de hoje)', () => {
+    const soTitulo = parseCapitulo('so-titulo', '# Outro\n## Pagamento\nTexto sem o termo especial aqui.', nomes);
+    const [r] = buscar([soTitulo], 'pagamento');
+    expect(r).toEqual({
+      capitulo: 'so-titulo', tituloCapitulo: 'Outro', secao: 'pagamento', tituloSecao: 'Pagamento',
+      antes: '', achado: 'Pagamento', depois: ' Texto sem o termo especial aqui.',
+    });
   });
 });
