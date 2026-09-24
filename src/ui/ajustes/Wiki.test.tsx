@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Wiki from './Wiki';
 
@@ -145,5 +145,38 @@ describe('Wiki', () => {
     } finally {
       spy.mockRestore();
     }
+  });
+
+  it('a barra do índice mostra o capítulo atual', async () => {
+    render(<Wiki />);
+    await screen.findByRole('article');
+    expect(screen.getByRole('button', { name: 'Índice' })).toHaveTextContent('Os primeiros passos');
+  });
+
+  function simularPosicoes(titulos: Element[], passaram: number) {
+    // Barra: topo 0, base 20. Títulos até `passaram` já subiram além da barra; os demais estão abaixo.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const i = titulos.indexOf(this);
+      const top = i === -1 ? 0 : i < passaram ? -100 + i : 500;
+      return { top, bottom: top + 20, left: 0, right: 0, width: 0, height: 20, x: 0, y: top, toJSON() {} } as DOMRect;
+    });
+  }
+
+  it('a barra mostra a última seção que passou por baixo dela', async () => {
+    render(<Wiki />);
+    const titulos = [...(await screen.findByRole('article')).querySelectorAll('h3[id]')];
+    expect(titulos.length).toBeGreaterThan(2);
+    simularPosicoes(titulos, 2);
+    fireEvent.scroll(window);
+    expect(screen.getByRole('button', { name: 'Índice' }))
+      .toHaveTextContent(`Os primeiros passos · ${titulos[1].textContent}`);
+  });
+
+  it('antes da primeira seção, a barra mostra só o capítulo', async () => {
+    render(<Wiki />);
+    const titulos = [...(await screen.findByRole('article')).querySelectorAll('h3[id]')];
+    simularPosicoes(titulos, 0);
+    fireEvent.scroll(window);
+    expect(screen.getByRole('button', { name: 'Índice' }).textContent).not.toContain('·');
   });
 });

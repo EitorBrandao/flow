@@ -57,7 +57,9 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.resumo-barras` / `.resumo-barra-trilho` / `.resumo-barra-preenchimento` | barras de composição ganho/gasto do card resumo em `TelaAnalises.tsx` |
 | `.composicao-*` | classes internas do `ComposicaoBarChart.tsx` (mesmo padrão de prefixo por componente) |
 | `.evolucao-*` | classes internas do `EvolucaoMensalChart.tsx` (mesmo padrão de prefixo por componente) |
-| `.wiki-abrir-indice` | botão de abertura do índice da wiki (align-self flex-start) |
+| `.wiki-barra` | barra do índice da wiki: `<button>` sticky sob o `.topo` (`top: var(--wiki-topo)`, medido no Wiki.tsx), z-index 9, largura total (margem −16px), `--bg`, 44px mínimo; `☰ Capítulo · Seção atual`; `h3[id]` e `.wiki-campos > div` ganham `scroll-margin-top: var(--wiki-rolagem)` |
+| `.wiki-barra-texto` | texto da barra numa linha só, cortado com reticências |
+| `.wiki-barra-secao` | nome da seção atual na barra, em `--muted` e peso normal |
 | `.wiki-corpo` | artigo com conteúdo da wiki; `h3` (22px margem superior), `p` (10px margem inferior), `ul` (12px margem, 20px padding-left), `li` (5px margem), `code` (quebra de overflow); position: relative (âncora do .wiki-balao) |
 | `.wiki-titulo` | título do capítulo (4px margem superior) |
 | `.wiki-link` | link interno da wiki (outro capítulo ou seção) — `--ac`, sublinhado; o mesmo estilo vale para todo `a` em `.wiki-corpo`, links externos inclusive; dentro de `.aviso` todo link herda a cor da nota |

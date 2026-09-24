@@ -367,7 +367,18 @@ table.tabela th:first-child, table.tabela td:first-child {
 .evolucao-legenda-cor.gasto { background: var(--neg); }
 
 /* --- Wiki ------------------------------------------------------------- */
-.wiki-abrir-indice { align-self: flex-start; }
+/* Barra do índice: gruda sob o .topo (--wiki-topo vem do Wiki.tsx) e ocupa a largura toda,
+   anulando o padding lateral de .conteudo. Fica abaixo do .topo (z-index 10). */
+.wiki-barra {
+  position: sticky; top: var(--wiki-topo, 0px); z-index: 9;
+  display: flex; align-items: center; gap: 10px; min-height: 44px;
+  margin: 0 -16px; padding: 8px 16px; border: none; text-align: left;
+  background: var(--bg); color: var(--fg); font-weight: 600;
+}
+.wiki-barra-texto { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wiki-barra-secao { color: var(--muted); font-weight: 400; }
+/* Destino de rolagem para abaixo da barra, não por trás dela. */
+.wiki-corpo h3[id], .wiki-campos > div { scroll-margin-top: var(--wiki-rolagem, 0px); }
 
 .wiki-corpo { max-width: 70ch; position: relative; }
 .wiki-corpo h3 { margin: 22px 0 6px; font-size: 17px; }

@@ -13,6 +13,9 @@ const BRUTOS = Object.fromEntries(
   Object.entries(BRUTOS_TODOS).filter(([caminho]) => !caminho.includes('README'))
 );
 
+/** Espaço entre a barra e o título de destino. O mesmo valor decide a seção atual: um salto para a seção a deixa como atual. */
+const FOLGA = 8;
+
 interface Acoes {
   ir: (capitulo: string, secao?: string) => void;
   alternarTermo: (id: string, alvo: HTMLElement) => void;
@@ -94,11 +97,16 @@ export default function Wiki() {
   const [busca, setBusca] = useState('');
   const [destino, setDestino] = useState<{ secao?: string } | null>(null);
   const [balao, setBalao] = useState<Balao | null>(null);
+  const [secaoAtual, setSecaoAtual] = useState<string | null>(null);
   const corpo = useRef<HTMLElement>(null);
+  const barra = useRef<HTMLButtonElement>(null);
+  const raiz = useRef<HTMLDivElement>(null);
 
   const alvo = normalizar(busca.trim());
   const filtrados = alvo ? capitulos.filter((c) => normalizar(c.texto).includes(alvo)) : capitulos;
   const atual = capitulos.find((c) => c.id === atualId) ?? capitulos[0];
+  const secoes = atual.blocos.filter((b): b is Extract<Bloco, { tipo: 'topico' }> => b.tipo === 'topico');
+  const tituloSecao = secoes.find((s) => s.id === secaoAtual)?.titulo;
 
   // Depois de trocar de capítulo por link: rola até a seção, ou ao topo do capítulo.
   useEffect(() => {
@@ -107,6 +115,34 @@ export default function Wiki() {
     el?.scrollIntoView?.({ block: 'start' });
     setDestino(null);
   }, [destino, atualId]);
+
+  // A barra gruda logo abaixo do .topo do app; títulos e campos param FOLGA px abaixo da barra ao rolar até eles.
+  useEffect(() => {
+    const medir = () => {
+      const topo = document.querySelector<HTMLElement>('.topo')?.offsetHeight ?? 0;
+      const altura = barra.current?.offsetHeight ?? 0;
+      raiz.current?.style.setProperty('--wiki-topo', `${topo}px`);
+      raiz.current?.style.setProperty('--wiki-rolagem', `${topo + altura + FOLGA}px`);
+    };
+    medir();
+    window.addEventListener('resize', medir);
+    return () => window.removeEventListener('resize', medir);
+  }, []);
+
+  // Seção atual: o último título cujo topo já chegou à base da barra mais a FOLGA — onde um salto para a seção o deixa.
+  useEffect(() => {
+    const atualizar = () => {
+      const limite = (barra.current?.getBoundingClientRect().bottom ?? 0) + FOLGA + 1;
+      let id: string | null = null;
+      corpo.current?.querySelectorAll<HTMLElement>('h3[id]').forEach((h) => {
+        if (h.getBoundingClientRect().top <= limite) id = h.id;
+      });
+      setSecaoAtual(id);
+    };
+    atualizar();
+    window.addEventListener('scroll', atualizar, { passive: true });
+    return () => window.removeEventListener('scroll', atualizar);
+  }, [atualId]);
 
   // Balão aberto: fecha ao tocar fora dele (o termo cuida do próprio toque), ao rolar, ou ao pressionar Esc.
   useEffect(() => {
@@ -148,9 +184,15 @@ export default function Wiki() {
   const termo = balao ? glossario.get(balao.id) : undefined;
 
   return (
-    <div className="tela">
+    <div className="tela" ref={raiz}>
       <h2>Wiki</h2>
-      <button className="botao wiki-abrir-indice" aria-label="Índice" onClick={() => setIndiceAberto(true)}>☰ Índice</button>
+      <button ref={barra} className="wiki-barra" aria-label="Índice" onClick={() => setIndiceAberto(true)}>
+        <span aria-hidden="true">☰</span>
+        <span className="wiki-barra-texto">
+          {atual.titulo}
+          {tituloSecao && <span className="wiki-barra-secao"> · {tituloSecao}</span>}
+        </span>
+      </button>
 
       <AcoesWiki.Provider value={acoes}>
         <article className="wiki-corpo" ref={corpo}>
