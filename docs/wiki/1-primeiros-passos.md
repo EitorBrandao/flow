@@ -50,7 +50,7 @@ O cartão tem um mundo próprio: as compras não entram no fluxo de caixa uma a 
 
 - Você não precisa criar categoria para a [[fatura]]: o app cria sozinho uma categoria de gasto com o nome do cartão, e é nela que a fatura aparece no seu fluxo.
 - **Dia de fechamento** e **dia de vencimento** saem da fatura do seu banco. Compra feita no próprio dia do fechamento cai na fatura seguinte.
-- Um cartão ativo por box: para cadastrar outro, desative o atual primeiro.
+- Uma box pode ter vários cartões ativos ao mesmo tempo.
 - Depois do cartão, crie ao menos uma categoria do cartão. Elas são separadas das categorias da box, porque o cartão raramente segue o mesmo recorte de orçamento.
 
 **Obrigatório:** nome. **Têm padrão:** box, dia de fechamento (28), dia de vencimento (5).

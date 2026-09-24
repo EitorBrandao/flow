@@ -25,7 +25,7 @@ O registro central do fluxo de caixa. Tem um status — efetivo ou previsto — 
 
 Regra que gera lançamentos previstos automaticamente no futuro — salário, aluguel, empréstimos, assinaturas do Flow (fora do cartão).
 
-Editar a regra ajusta na hora os previstos futuros ainda não confirmados; desativar para de gerar novos, sem apagar os que já existem. Um previsto já confirmado nunca é mexido, mesmo que a regra mude depois. [Como o app mantém os previstos em dia](#codigo/recorrencias-e-materializacao).
+Editar a regra ajusta na hora os previstos ainda não confirmados que não batem mais com ela — pendentes (data já passada) inclusive. Desativar tira da projeção todos os previstos ainda não confirmados da regra; ativar volta a gerar os previstos a partir de hoje. Um previsto já confirmado nunca é mexido, mesmo que a regra mude depois. [Como o app mantém os previstos em dia](#codigo/recorrencias-e-materializacao).
 
 ## Cenário
 

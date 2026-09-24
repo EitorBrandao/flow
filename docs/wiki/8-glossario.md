@@ -4,7 +4,7 @@
 : previsto | Ainda não aconteceu (ou não foi confirmado); entra só na projeção.
 : pendente | [Previsto](#glossario/previsto) cuja data já chegou/passou — espera confirmação na tela Hoje.
 : box casa | Visão consolidada das boxes pessoais + gastos compartilhados; sem saldo próprio, calculada na hora.
-: cenário | Conjunto de lançamentos hipotéticos, ligável/desligável, para simular "e se?" — aba Simular temporariamente oculta da navegação.
+: cenário | Conjunto de lançamentos hipotéticos, ligável/desligável, para simular "e se?" — aba Simulador temporariamente oculta da navegação.
 : fatura | Não fica pronta guardada em lugar nenhum: o app monta ela na hora, a partir das compras do cartão e do ciclo de fechamento.
 : ciclo de fechamento | Janela de datas de compra que cai numa mesma fatura, contada a partir do dia de fechamento do cartão.
 : conferência | Comparação manual entre o saldo/fatura do app do banco e o que está lançado no Flow.

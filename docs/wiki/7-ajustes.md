@@ -14,8 +14,8 @@ Por box selecionada: criar, renomear, reordenar (arraste pela alça ⋮⋮) e ar
 
 CRUD das regras que geram previstos automaticamente (veja [Recorrência](#conceitos/recorrencia), no capítulo Conceitos e modelo de dados).
 
-- Ao editar (toque no lápis), recalcula os previstos futuros ainda não confirmados na hora.
-- "Desativar" para a regra sem apagar nada; "Ativar" volta a gerar os previstos seguintes.
+- Ao editar (toque no lápis), recalcula na hora os previstos ainda não confirmados — pendentes (data já passada) inclusive.
+- "Desativar" para a regra e tira os previstos dela ainda não confirmados; os confirmados ficam. "Ativar" volta a gerar os previstos a partir de hoje.
 - Excluir remove a regra e seus previstos — os já confirmados ficam.
 
 **Obrigatórios:** valor, categoria. **Têm padrão:** início (hoje), dia do mês (1). **Opcional:** parcelas (vazio = sem fim).
@@ -78,8 +78,8 @@ Excluir tira só a marcação de viagem; os lançamentos e as compras continuam 
 - **Exportar:** gera um `.json` com tudo; no Android abre o menu de compartilhamento do sistema, no PC baixa o arquivo.
 - **Restaurar:** escolher **substituir tudo** ou **mesclar** (registro a registro; em conflito, vence o alterado mais recentemente). A confirmação é sempre pedida antes de aplicar.
 - Depois de **mesclar**, a tela Hoje avisa que há mudanças não salvas em backup: o resultado não está inteiro em nenhum arquivo, e recuperá-lo exigiria os dois. Faça um backup novo para juntar tudo num arquivo só. Depois de **substituir tudo**, não há aviso: os dados são exatamente os do arquivo.
-- Backup feito numa versão do Flow mais nova que a que você está usando é rejeitado, com mensagem clara — nada é alterado.
-- Backup antigo (de antes da aba Cartão) restaura normalmente; o que ainda não existia na época — cartões, faturas — entra vazio.
+- Backup com formato de dados mais novo do que este app ainda entende é rejeitado, com mensagem clara — nada é alterado.
+- Backup antigo (de antes da aba Cartão) restaura normalmente; o que ainda não existia na época — cartões, compras e assinaturas — entra vazio.
 
 **Restaurar — obrigatório:** selecionar um arquivo `.json` de backup do Flow.
 

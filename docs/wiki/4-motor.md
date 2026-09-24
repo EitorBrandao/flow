@@ -4,7 +4,7 @@ Não há estado escondido: tudo é recalculado em memória a partir dos dados br
 
 ## Projeção de saldo
 
-O app calcula o saldo dia a dia, do início da box selecionada até o [[horizonte de projeção]], em três versões: o saldo efetivo (só o que já é confirmado), o saldo projetado (efetivo mais previstos) e o saldo com cenários (projetado mais os lançamentos dos [cenários](#glossario/cenario) ligados).
+O app calcula o saldo dia a dia, do início das boxes selecionadas até o [[horizonte de projeção]], em três versões: o saldo efetivo (só o que já é confirmado), o saldo projetado (efetivo mais previstos) e o saldo com cenários (projetado mais os lançamentos dos [cenários](#glossario/cenario) ligados).
 
 É a mesma conta que alimenta o gráfico do Fluxo, o card do Hoje e a linha tracejada de cenário. [Como o motor calcula por dentro](#codigo/motor-de-projecao).
 
