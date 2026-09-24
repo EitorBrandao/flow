@@ -79,7 +79,7 @@ interface Resultado { capitulo: string; tituloCapitulo: string; secao?: string; 
 
 ### Playwright (varredura como usuário)
 
-Fora do projeto, na pasta de rascunho da sessão — nunca no `package.json` (não é dependência do Flow). Servidor `npx vite` do worktree em porta própria, só `localhost`. Celular `Pixel 7` e largura de 360 px.
+Fora do projeto, na pasta de rascunho da sessão — nunca no `package.json` (não é dependência do Flow). Servidor `npx vite` do worktree em porta própria, só `localhost`. Tela do celular do usuário, Samsung Galaxy S25+: viewport 384 × 832 CSS px, `deviceScaleFactor` 2,8125, `isMobile` e `hasTouch` ligados. Outros tamanhos ficam para depois.
 
 Roteiro:
 
@@ -87,7 +87,7 @@ Roteiro:
 2. A seção na barra muda ao passar cada título.
 3. Abrir a gaveta: seções do capítulo atual listadas, a atual destacada. Tocar numa seção: o título fica visível logo abaixo da barra, não escondido por ela.
 4. Buscar um termo com acento sem digitar o acento: resultados com trecho e destaque. Tocar num resultado leva à seção.
-5. 360 px: título longo corta com reticências; nada de rolagem horizontal.
+5. Título longo corta com reticências; nada de rolagem horizontal.
 6. Balão do glossário continua abrindo e fechando ao rolar.
 
 Capturas de tela da varredura vão pelo chat.
