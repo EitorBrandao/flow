@@ -236,7 +236,7 @@ export default function Wiki() {
               <Fragment key={c.id}>
                 <button
                   className={`wiki-item${c.id === atual.id ? ' ativo' : ''}`}
-                  onClick={() => { setBalao(null); setAtualId(c.id); setIndiceAberto(false); }}
+                  onClick={() => { setIndiceAberto(false); acoes.ir(c.id); }}
                 >
                   {c.titulo}
                 </button>

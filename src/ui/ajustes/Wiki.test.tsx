@@ -285,4 +285,20 @@ describe('Wiki', () => {
     // "Box" é seção de Conceitos; o capítulo atual é Os primeiros passos.
     expect(within(screen.getByRole('navigation')).queryByRole('button', { name: 'Box' })).not.toBeInTheDocument();
   });
+
+  it('trocar de capítulo pela gaveta volta ao topo do capítulo novo', async () => {
+    const original = Element.prototype.scrollIntoView; // jsdom não implementa
+    const rolar = vi.fn();
+    Element.prototype.scrollIntoView = rolar;
+    try {
+      render(<Wiki />);
+      const artigo = await screen.findByRole('article');
+      await userEvent.click(screen.getByRole('button', { name: 'Índice' }));
+      await userEvent.click(await screen.findByRole('button', { name: 'Glossário' }));
+      expect(await screen.findByRole('heading', { name: 'Glossário' })).toBeInTheDocument();
+      expect(rolar.mock.contexts.at(-1)).toBe(artigo);
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
+  });
 });
