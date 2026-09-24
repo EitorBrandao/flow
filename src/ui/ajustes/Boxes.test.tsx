@@ -22,15 +22,16 @@ it('salva saldo inicial "0,00" como zero, não como sem-saldo-próprio', async (
   await useApp.getState().iniciar();
 
   render(<Boxes />);
-  const cardEitor = within(screen.getByText('eitor').closest('.card') as HTMLElement);
-  const checkbox = cardEitor.getByLabelText('Esta box tem saldo próprio');
+  const item = screen.getByText('eitor').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const checkbox = within(item).getByLabelText('Esta box tem saldo próprio');
   await userEvent.click(checkbox);
-  const saldoInput = cardEitor.getByLabelText('Saldo inicial');
+  const saldoInput = within(item).getByLabelText('Saldo inicial');
   await userEvent.click(saldoInput);
-  const dataInput = cardEitor.getByLabelText('Data do saldo');
+  const dataInput = within(item).getByLabelText('Data do saldo');
   await userEvent.clear(dataInput);
   await userEvent.type(dataInput, '2026-01-01');
-  await userEvent.click(cardEitor.getByRole('button', { name: 'Salvar' }));
+  await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
 
   const atualizado = await db.boxes.get(box.id);
   expect(atualizado?.saldoInicial).toBe(0);
@@ -44,11 +45,12 @@ it('desmarcar "tem saldo próprio" salva null', async () => {
   await useApp.getState().iniciar();
 
   render(<Boxes />);
-  const cardEitor = within(screen.getByText('eitor').closest('.card') as HTMLElement);
-  const checkbox = cardEitor.getByLabelText('Esta box tem saldo próprio');
+  const item = screen.getByText('eitor').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const checkbox = within(item).getByLabelText('Esta box tem saldo próprio');
   expect(checkbox).toBeChecked();
   await userEvent.click(checkbox);
-  await userEvent.click(cardEitor.getByRole('button', { name: 'Salvar' }));
+  await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
 
   const atualizado = await db.boxes.get(box.id);
   expect(atualizado?.saldoInicial).toBe(null);
@@ -71,7 +73,7 @@ it('a box criada já fica selecionada no topo', async () => {
   expect(useApp.getState().boxSel).toBe('casa');
 
   render(<Boxes />);
-  await userEvent.type(screen.getByLabelText('Nova box'), 'pessoal');
+  await userEvent.type(screen.getByLabelText('Nome'), 'pessoal');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
 
   // Esperar a box aparecer na lista: `criar` é uma cadeia assíncrona (salvar → recarregar →
@@ -90,7 +92,76 @@ it('a data do saldo já vem preenchida com hoje numa box sem data', async () => 
   useApp.setState({ hoje: '2026-07-02' });
 
   render(<Boxes />);
-  const cardEitor = within(screen.getByText('eitor').closest('.card') as HTMLElement);
-  await userEvent.click(cardEitor.getByLabelText('Esta box tem saldo próprio'));
-  expect(cardEitor.getByLabelText('Data do saldo')).toHaveValue('2026-07-02');
+  const item = screen.getByText('eitor').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  await userEvent.click(within(item).getByLabelText('Esta box tem saldo próprio'));
+  expect(within(item).getByLabelText('Data do saldo')).toHaveValue('2026-07-02');
+});
+
+it('o formulário de criação não tem botão Cancelar', async () => {
+  await useApp.getState().iniciar();
+  render(<Boxes />);
+
+  expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument();
+});
+
+it('o campo Nome e o botão Criar ficam na mesma linha de formulário', async () => {
+  await useApp.getState().iniciar();
+  render(<Boxes />);
+
+  const campoNome = screen.getByLabelText('Nome');
+  const formLinha = campoNome.closest('.form-linha') as HTMLElement;
+  expect(formLinha).not.toBeNull();
+  expect(within(formLinha).getByRole('button', { name: 'Criar' })).toBeInTheDocument();
+});
+
+it('toca no lápis para editar: abre os campos dentro do item e some "Nova box"', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  render(<Boxes />);
+
+  expect(screen.getByText('Nova box')).toBeInTheDocument();
+  const item = screen.getByText('eitor').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  expect(screen.queryByText('Nova box')).not.toBeInTheDocument();
+  expect(within(item).getByLabelText('Nome')).toHaveValue('eitor');
+});
+
+it('no item aberto, os botões aparecem na ordem Cancelar, Salvar', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  render(<Boxes />);
+
+  const item = screen.getByText('eitor').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  const botoes = within(item).getAllByRole('button');
+  const nomes = botoes.map((b) => b.textContent);
+  expect(nomes.indexOf('Cancelar')).toBeLessThan(nomes.indexOf('Salvar'));
+  expect(within(item).getByRole('button', { name: 'Salvar' })).toHaveClass('botao-primario');
+});
+
+it('cancelar fecha o item sem gravar e traz "Nova box" de volta', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  render(<Boxes />);
+
+  const item = screen.getByText('eitor').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const nome = within(item).getByLabelText('Nome') as HTMLInputElement;
+  await userEvent.clear(nome);
+  await userEvent.type(nome, 'Outro nome');
+  await userEvent.click(within(item).getByRole('button', { name: 'Cancelar' }));
+
+  expect(screen.getByText('Nova box')).toBeInTheDocument();
+  expect(within(item).getByText('eitor')).toBeInTheDocument();
+  const atual = await db.boxes.get(box.id);
+  expect(atual?.nome).toBe('eitor');
 });

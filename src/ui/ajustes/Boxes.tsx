@@ -1,3 +1,4 @@
+import { Pencil } from 'lucide-react';
 import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { formatarDataBR } from '../../domain/dates';
@@ -7,33 +8,37 @@ import { useApp } from '../../state/store';
 import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 
-function EditorBox({ box }: { box: Box }) {
-  const { recarregar, hoje } = useApp();
-  const [nome, setNome] = useState(box.nome);
-  const [temSaldoProprio, setTemSaldoProprio] = useState(box.saldoInicial != null);
-  const [magnitude, setMagnitude] = useState(Math.abs(box.saldoInicial ?? 0));
-  const [negativo, setNegativo] = useState((box.saldoInicial ?? 0) < 0);
+interface CamposBox { nome: string; saldoInicial: number | null; dataSaldoInicial: string | null }
+
+/** Campos de uma box, usados só para editar dentro do item — a criação usa apenas o nome. */
+function FormBox({ inicial, onSalvo, onCancelar }: {
+  inicial: CamposBox;
+  onSalvo: (campos: CamposBox) => Promise<void>;
+  onCancelar: () => void;
+}) {
+  const { hoje } = useApp();
+  const [nome, setNome] = useState(inicial.nome);
+  const [temSaldoProprio, setTemSaldoProprio] = useState(inicial.saldoInicial != null);
+  const [magnitude, setMagnitude] = useState(Math.abs(inicial.saldoInicial ?? 0));
+  const [negativo, setNegativo] = useState((inicial.saldoInicial ?? 0) < 0);
   // Box sem data ainda cai em hoje, que é a resposta certa em quase todo caso: o saldo que
   // a pessoa acabou de ler no app do banco é o de hoje. Quem quiser outra data, troca.
-  const [data, setData] = useState(box.dataSaldoInicial ?? hoje);
+  const [data, setData] = useState(inicial.dataSaldoInicial ?? hoje);
   const uid = useId();
 
   async function salvar() {
     const saldoInicial = temSaldoProprio ? (negativo ? -magnitude : magnitude) : null;
     const dataSaldoInicial = temSaldoProprio ? (data || null) : null;
-    await repo.salvarBox({
-      ...box, nome: nome.trim() || box.nome,
-      saldoInicial,
-      dataSaldoInicial,
-    });
-    await recarregar();
+    await onSalvo({ nome: nome.trim() || inicial.nome, saldoInicial, dataSaldoInicial });
   }
 
   return (
-    <div className="linha">
-      <div className="campo">
-        <label htmlFor={`${uid}-nome`}>Nome</label>
-        <input id={`${uid}-nome`} value={nome} onChange={(e) => setNome(e.target.value)} style={{ width: 100 }} />
+    <>
+      <div className="form-linha">
+        <div className="campo">
+          <label htmlFor={`${uid}-nome`}>Nome</label>
+          <input id={`${uid}-nome`} value={nome} onChange={(e) => setNome(e.target.value)} />
+        </div>
       </div>
       <div className="campo">
         <label htmlFor={`${uid}-saldo-proprio`}>
@@ -42,7 +47,7 @@ function EditorBox({ box }: { box: Box }) {
         </label>
       </div>
       {temSaldoProprio && (
-        <>
+        <div className="form-linha">
           <div className="campo">
             <label htmlFor={`${uid}-saldo`}>Saldo inicial</label>
             <div className="linha">
@@ -56,10 +61,13 @@ function EditorBox({ box }: { box: Box }) {
             <label htmlFor={`${uid}-data`}>Data do saldo</label>
             <CampoData id={`${uid}-data`} value={data} onChange={setData} />
           </div>
-        </>
+        </div>
       )}
-      <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={salvar}>Salvar</button>
-    </div>
+      <div className="form-botoes">
+        <button className="botao" onClick={onCancelar}>Cancelar</button>
+        <button className="botao botao-primario" onClick={salvar}>Salvar</button>
+      </div>
+    </>
   );
 }
 
@@ -67,6 +75,7 @@ export default function Boxes() {
   const { dados, recarregar, setBoxSel } = useApp();
   const [nomeNova, setNomeNova] = useState('');
   const [aviso, setAviso] = useState('');
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   const uid = useId();
   if (!dados) return null;
 
@@ -91,6 +100,12 @@ export default function Boxes() {
     setAviso('');
   }
 
+  async function atualizar(box: Box, campos: CamposBox) {
+    await repo.salvarBox({ ...box, ...campos });
+    setEditandoId(null);
+    await recarregar();
+  }
+
   async function definirPadrao(id: string) {
     await repo.salvarConfig({ boxPadraoId: id });
     await recarregar();
@@ -99,32 +114,50 @@ export default function Boxes() {
   return (
     <div className="tela">
       <h2>Boxes</h2>
-      {dados.boxes.map((b) => (
-        <div className="card" key={b.id}>
-          <div className="linha" style={{ justifyContent: 'space-between' }}>
-            <strong>{b.nome}</strong>
-            <span className="sub">
-              {b.saldoInicial != null
-                ? `${formatarBRL(b.saldoInicial)}${b.dataSaldoInicial ? ` em ${formatarDataBR(b.dataSaldoInicial)}` : ''}`
-                : 'sem saldo próprio (compartilhada)'}
-            </span>
-            {dados.config.boxPadraoId === b.id ? (
-              <span className="badge">padrão</span>
-            ) : b.saldoInicial != null ? (
-              <button className="botao" onClick={() => definirPadrao(b.id)}>Tornar padrão</button>
-            ) : null}
+      {!editandoId && (
+        <>
+          <h2>Nova box</h2>
+          <div className="form-linha">
+            <div className="campo">
+              <label htmlFor={`${uid}-novabox`}>Nome</label>
+              <input id={`${uid}-novabox`} placeholder="nome" value={nomeNova} onChange={(e) => setNomeNova(e.target.value)} />
+            </div>
+            <button className="botao botao-primario" onClick={criar}>Criar</button>
           </div>
-          <EditorBox box={b} />
-        </div>
-      ))}
-      <div className="linha">
-        <div className="campo" style={{ flex: 1 }}>
-          <label htmlFor={`${uid}-novabox`}>Nova box</label>
-          <input id={`${uid}-novabox`} placeholder="nome" value={nomeNova} onChange={(e) => setNomeNova(e.target.value)} />
-        </div>
-        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={criar}>Criar</button>
+          {aviso && <p className="aviso">{aviso}</p>}
+        </>
+      )}
+
+      <div className="lista">
+        {dados.boxes.map((b) => (
+          editandoId === b.id ? (
+            <div className="item item-coluna" key={b.id}>
+              <FormBox
+                inicial={{ nome: b.nome, saldoInicial: b.saldoInicial, dataSaldoInicial: b.dataSaldoInicial }}
+                onSalvo={(campos) => atualizar(b, campos)}
+                onCancelar={() => setEditandoId(null)}
+              />
+            </div>
+          ) : (
+            <div className="item" key={b.id}>
+              <div className="cresce">
+                <strong>{b.nome}</strong>
+                <div className="sub">
+                  {b.saldoInicial != null
+                    ? `${formatarBRL(b.saldoInicial)}${b.dataSaldoInicial ? ` em ${formatarDataBR(b.dataSaldoInicial)}` : ''}`
+                    : 'sem saldo próprio (compartilhada)'}
+                </div>
+              </div>
+              {dados.config.boxPadraoId === b.id ? (
+                <span className="badge">padrão</span>
+              ) : b.saldoInicial != null ? (
+                <button className="botao" onClick={() => definirPadrao(b.id)}>Tornar padrão</button>
+              ) : null}
+              <button className="botao" aria-label="Editar" onClick={() => setEditandoId(b.id)}><Pencil size={16} /></button>
+            </div>
+          )
+        ))}
       </div>
-      {aviso && <p className="aviso">{aviso}</p>}
     </div>
   );
 }
