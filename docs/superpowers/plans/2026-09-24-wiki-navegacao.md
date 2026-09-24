@@ -635,7 +635,7 @@ const ctx = await nav.newContext({
 const p = await ctx.newPage();
 const erros = [];
 p.on('pageerror', (e) => erros.push(e.message));
-await p.goto('http://localhost:5198/flow/');
+await p.goto('http://localhost:5198/');
 await p.getByRole('button', { name: 'Ajustes' }).tap();
 await p.getByRole('button', { name: 'Wiki' }).tap();
 const barra = p.getByRole('button', { name: 'Índice' });
@@ -695,7 +695,7 @@ await nav.close();
 process.exit(erros.length ? 1 : 0);
 ```
 
-Confira a URL base em `vite.config.ts` (`base`) antes de rodar; ajuste o `goto` se não for `/flow/`.
+O `base` do `vite.config.ts` é `'./'`: em desenvolvimento o app responde na raiz.
 
 - [ ] **Passo 4:** rodar `node varredura-wiki.mjs <pasta-das-capturas>`. Esperado: `OK`. Falha → corrigir no código (com teste Vitest que reproduza, quando possível), commit, rodar de novo.
 - [ ] **Passo 5:** olhar as 4 capturas. Enviar ao usuário pelo chat (`SendUserFile`).
