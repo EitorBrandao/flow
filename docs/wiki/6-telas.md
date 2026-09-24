@@ -81,7 +81,8 @@ Resumo mensal e comparativos, navegando mês a mês com as setas ‹ › — o m
 
 - Caixa "incluir previstos" — desligada, mostra só o que já é efetivo no mês.
 - **Resumo:** ganhos, gastos e sobra do mês.
-- **Por categoria:** total de cada categoria e seu percentual da renda do mês (só para categorias de gasto). Tocar numa categoria de cartão abre a fatura desse mês (veja o capítulo [Cartão de crédito](#cartao)).
+- **Por categoria:** total de cada categoria e seu percentual da renda do mês (só para categorias de gasto). Tocar numa categoria de cartão abre a fatura desse mês (veja o capítulo [Cartão de crédito](#cartao)). Uma [viagem](#conceitos/viagem) com gasto no mês aparece aqui como linha própria.
+- **Viagens:** cada viagem cadastrada, com o total gasto nela. Tocar abre o detalhamento, agrupado pela descrição.
 - **Comparativo:** mês atual × mês anterior × mesmo mês do ano passado × média móvel de 3 meses, por categoria. A coluna do mês atual mostra o mês abreviado (out/2026).
 
 ## Simulador (oculta da navegação)

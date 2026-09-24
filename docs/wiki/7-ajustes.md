@@ -65,6 +65,14 @@ Excluir mantém as compras passadas geradas pela assinatura; só as futuras some
 
 **Obrigatórios:** valor, categoria do cartão. **Têm padrão:** início (hoje), dia do mês (1). **Opcionais:** parcelas (vazio = sem fim), descrição.
 
+## Viagens
+
+Cadastro das [viagens](#conceitos/viagem): nome, data inicial e data final. O app recusa um período que se sobrepõe a outra viagem.
+
+Excluir tira só a marcação de viagem; os lançamentos e as compras continuam existindo.
+
+**Obrigatórios:** nome, data inicial, data final.
+
 ## Backup e restauração
 
 - **Exportar:** gera um `.json` com tudo (schema + dados); no Android abre o menu de compartilhamento do sistema, no PC baixa o arquivo.
