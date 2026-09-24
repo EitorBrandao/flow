@@ -60,3 +60,12 @@ O parcelamento vira uma compra parcelada numa categoria reservada chamada "Parce
 
 - Parcelas cujo vencimento já passou não viram lançamento — registrar um parcelamento meses depois não ressuscita faturas antigas nem cobra duas vezes.
 - Excluir a compra do parcelamento remove as parcelas futuras, mas **não** devolve o valor original à fatura que já foi paga. Essa reversão é na mão.
+
+## Quando a fatura não bate com o Fluxo
+
+A aba Cartão mostra um aviso âmbar, logo abaixo das datas da fatura — e a folha que abre ao tocar na fatura no Fluxo mostra o mesmo aviso —, quando o total dela e o que o Fluxo considera são diferentes e o app não tem como explicar a diferença:
+
+- **"Essa fatura ficou de fora do Fluxo":** todas as compras da fatura foram lançadas depois do vencimento, e fatura vencida não vira lançamento novo. Se ela já foi paga no banco, o saldo está certo e não há nada a fazer.
+- **"Tem R$ X nessa fatura que não chegaram no Fluxo":** a fatura foi paga, e depois entrou mais compra no mesmo ciclo. Fatura paga nunca é recalculada, então a diferença fica de fora. O link **Corrigir o valor pago** abre a mesma folha de "corrigir ou parcelar", já com o valor que fecha a conta.
+
+O aviso não aparece quando a diferença tem explicação: um parcelamento registrado da fatura, ou um pagamento maior que a fatura (aí o saldo já está certo, e quem mostra as compras que faltam é a aba Conferência).

@@ -371,6 +371,9 @@ table.tabela th:first-child, table.tabela td:first-child {
 .wiki-termo.aberto { color: var(--ac); text-decoration-color: var(--ac); }
 /* Dentro de nota, termo e link herdam a cor da nota. */
 .aviso a, .aviso .wiki-termo { color: inherit; text-decoration-color: currentColor; }
+/* ação dentro do aviso (ex.: "Corrigir o valor pago" na aba Cartão): herda a cor âmbar e
+   o tamanho do texto, sublinhada para se ler como link */
+.aviso .botao-ver-mais { color: inherit; font-size: inherit; padding: 0; text-decoration: underline; }
 /* Termo dentro do rótulo de campo: acompanha o cinza do rótulo. */
 .wiki-campos dt .wiki-termo:not(.aberto) { color: inherit; }
 

@@ -1,7 +1,7 @@
 import type { AjusteFechamento, Cartao, CompraCartao, ConferenciaFatura, Lancamento, RecorrenciaCartao } from './types';
 import {
   ajustesDoCartao, calcularFaturas, categoriasFaturaIds, datasFaturaDoMes, dedupAjustesFechamento,
-  diffSincronizacao, mesFaturaDaCompra, mesFechamentoDaCompra, resumoAssinaturasDoMes, resumoParcelamento,
+  diffSincronizacao, faturaForaDoFluxo, mesFaturaDaCompra, mesFechamentoDaCompra, resumoAssinaturasDoMes, resumoParcelamento,
   resumoPorCategoria, valorParcela,
 } from './fatura';
 
@@ -339,5 +339,79 @@ describe('resumoParcelamento', () => {
   it('juros negativo quando o parcelado cobre menos que o restante — incoerência a mostrar, não a esconder', () => {
     expect(resumoParcelamento(90000, 30000, { parcelas: 2, valorParcelaCent: 20000 }).jurosCent)
       .toBe(-20000);
+  });
+});
+
+describe('faturaForaDoFluxo', () => {
+  // cartaoK: fecha 28, vence 5. Fatura 2026-08: compras de 29/06 a 27/07, vence 05/08.
+  const criadaEm = (c: CompraCartao, iso: string): CompraCartao => ({ ...c, criadoEm: `${iso}T15:00:00.000Z` });
+  const fatura08 = (compras: CompraCartao[]) =>
+    calcularFaturas(cartaoK, compras, '2026-12-31').find((f) => f.mes === '2026-08')!;
+
+  it('vencida, sem lançamento, com todas as compras lançadas depois do vencimento', () => {
+    const compras = [criadaEm(compra('2026-07-10', 10000), '2026-08-20')];
+    expect(faturaForaDoFluxo({
+      cartao: cartaoK, fatura: fatura08(compras), compras, lancFatura: undefined, hoje: '2026-08-20',
+    })).toEqual({ tipo: 'vencida-sem-lancamento' });
+  });
+
+  it('não avisa quando alguma compra já existia antes do vencimento (a fatura foi descartada)', () => {
+    const compras = [
+      criadaEm(compra('2026-07-10', 10000), '2026-07-10'),
+      criadaEm(compra('2026-07-12', 2000), '2026-08-20'),
+    ];
+    expect(faturaForaDoFluxo({
+      cartao: cartaoK, fatura: fatura08(compras), compras, lancFatura: undefined, hoje: '2026-08-20',
+    })).toBeNull();
+  });
+
+  it('não avisa fatura futura nem cartão desativado', () => {
+    const compras = [criadaEm(compra('2026-07-10', 10000), '2026-07-30')];
+    expect(faturaForaDoFluxo({
+      cartao: cartaoK, fatura: fatura08(compras), compras, lancFatura: undefined, hoje: '2026-07-30',
+    })).toBeNull();
+    const tarde = [criadaEm(compra('2026-07-10', 10000), '2026-08-20')];
+    expect(faturaForaDoFluxo({
+      cartao: { ...cartaoK, ativo: false }, fatura: fatura08(tarde), compras: tarde, lancFatura: undefined, hoje: '2026-08-20',
+    })).toBeNull();
+  });
+
+  it('paga, e a fatura cresceu depois do pagamento: avisa a diferença e sugere o total', () => {
+    const compras = [compra('2026-07-10', 10000), compra('2026-07-20', 1500)];
+    const pago = lancFatura('2026-08', 10000, 'efetivo', '2026-08-01');
+    expect(faturaForaDoFluxo({
+      cartao: cartaoK, fatura: fatura08(compras), compras, lancFatura: pago, hoje: '2026-08-03',
+    })).toEqual({ tipo: 'paga-a-menor', diferencaCent: 1500, valorSugeridoCent: 11500 });
+  });
+
+  it('paga a mais, paga certinho ou ainda prevista: sem aviso', () => {
+    const compras = [compra('2026-07-10', 10000)];
+    for (const l of [
+      lancFatura('2026-08', 12000, 'efetivo', '2026-08-01'),
+      lancFatura('2026-08', 10000, 'efetivo', '2026-08-01'),
+      lancFatura('2026-08', 8000, 'previsto', '2026-08-05'),
+    ]) {
+      expect(faturaForaDoFluxo({ cartao: cartaoK, fatura: fatura08(compras), compras, lancFatura: l, hoje: '2026-08-03' })).toBeNull();
+    }
+  });
+
+  it('o parcelamento registrado da fatura cobre a diferença: sem aviso', () => {
+    const cartao = { ...cartaoK, categoriaParcelamentoId: 'catParc' };
+    // Parcelamento de 6000 em 3x de 2100, com data no fechamento da fatura paga (28/07).
+    const parcelamento = { ...compra('2026-07-28', 6300, 3, 'catParc'), descricao: 'Parcelamento da fatura de 08/2026' };
+    const compras = [compra('2026-07-10', 10000), parcelamento];
+    const pago = lancFatura('2026-08', 4000, 'efetivo', '2026-08-05');
+    expect(faturaForaDoFluxo({
+      cartao, fatura: fatura08(compras), compras, lancFatura: pago, hoje: '2026-08-06',
+    })).toBeNull();
+  });
+
+  it('com "usar valor do app", compara com o valor do banco', () => {
+    const compras = [compra('2026-07-10', 10000)];
+    const pago = lancFatura('2026-08', 10000, 'efetivo', '2026-08-01');
+    expect(faturaForaDoFluxo({
+      cartao: cartaoK, fatura: fatura08(compras), compras, lancFatura: pago, hoje: '2026-08-03',
+      conferencia: conf('2026-08', 10800, true),
+    })).toEqual({ tipo: 'paga-a-menor', diferencaCent: 800, valorSugeridoCent: 10800 });
   });
 });

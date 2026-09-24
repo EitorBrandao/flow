@@ -119,6 +119,55 @@ export function valorSincronizado(fatura: Fatura, conf: ConferenciaFatura | unde
   return conf?.usarValorApp ? conf.valorAppCent : fatura.totalCent;
 }
 
+export type FaturaForaDoFluxo =
+  | { tipo: 'vencida-sem-lancamento' }
+  | { tipo: 'paga-a-menor'; diferencaCent: number; valorSugeridoCent: number };
+
+/**
+ * A fatura da aba Cartão diz um valor e o Fluxo considera outro, sem nada que explique a
+ * diferença. Dois casos:
+ *
+ * - **vencida-sem-lancamento:** `diffSincronizacao` não cria fatura com vencimento no passado.
+ *   Só avisa quando nenhuma compra da fatura existia antes do vencimento — se alguma existia,
+ *   o lançamento chegou a nascer e sumiu por outro caminho (excluído à mão, cartão desativado
+ *   na época), e a frase "as compras entraram depois do vencimento" seria falsa. Compara pela data de `criadoEm` (UTC): perto da meia-noite, pode errar por um dia.
+ * - **paga-a-menor:** depois de `efetivo`, a sincronização nunca mais toca o lançamento; uma
+ *   compra lançada depois do pagamento cresce a fatura sem chegar ao Fluxo. O parcelamento
+ *   registrado da fatura (compra na categoria reservada, com a data do fechamento) já explica
+ *   a diferença e entra no desconto. Juros do parcelamento podem esconder uma diferença menor
+ *   que eles — aceito: o aviso existe para o esquecimento comum, não para auditar o banco.
+ *
+ * Pagar a mais não avisa: o saldo já está certo, e a falta de compras aparece na Conferência.
+ */
+export function faturaForaDoFluxo(p: {
+  cartao: Cartao;
+  fatura: Fatura;
+  compras: CompraCartao[];
+  lancFatura: Lancamento | undefined;
+  conferencia?: ConferenciaFatura;
+  hoje: ISODate;
+}): FaturaForaDoFluxo | null {
+  const { cartao, fatura, compras, lancFatura, hoje } = p;
+  const valor = valorSincronizado(fatura, p.conferencia);
+  if (!cartao.ativo || valor <= 0) return null;
+
+  if (!lancFatura) {
+    if (fatura.dataVencimento > hoje) return null;
+    const ids = new Set(fatura.itens.map((i) => i.compraId));
+    const existiaAntes = compras.some((c) => ids.has(c.id) && c.criadoEm.slice(0, 10) < fatura.dataVencimento);
+    return existiaAntes ? null : { tipo: 'vencida-sem-lancamento' };
+  }
+
+  if (lancFatura.status !== 'efetivo') return null;
+  const parcelado = compras
+    .filter((c) => c.categoriaCartaoId === cartao.categoriaParcelamentoId && c.data === fatura.dataFechamento)
+    .reduce((s, c) => s + c.valorTotal, 0);
+  const diferencaCent = valor - lancFatura.valor - parcelado;
+  return diferencaCent > 0
+    ? { tipo: 'paga-a-menor', diferencaCent, valorSugeridoCent: lancFatura.valor + diferencaCent }
+    : null;
+}
+
 export interface PlanoParcelamento {
   parcelas: number;        // N >= 1
   valorParcelaCent: number;

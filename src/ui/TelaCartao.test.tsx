@@ -460,3 +460,71 @@ describe('pagamento da fatura pela aba Cartão', () => {
     } finally { vi.useRealTimers(); }
   });
 });
+
+describe('aviso de fatura fora do Fluxo', () => {
+  it('fatura paga que cresceu depois avisa a diferença e abre a correção com o total', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { box, cartao, catCartao } = await montarCartao();
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-05', valorTotal: 90000, parcelas: 1,
+      }, '2027-12-31');
+      await useApp.getState().iniciar();
+      const lanc = useApp.getState().dados!.lancamentos.find((l) => l.origem === 'cartao')!;
+      await repo.confirmarPendente(lanc.id);
+      // Compra lançada depois do pagamento, no mesmo ciclo (fatura 08/2026).
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-10', valorTotal: 15000, parcelas: 1,
+      }, '2027-12-31');
+      await useApp.getState().recarregar();
+      useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+      render(<TelaCartao />);
+      const texto = `Tem ${formatarBRL(15000)} nessa fatura que não chegaram no Fluxo`.replace(/\s/g, ' ');
+      expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent!.replace(/\s/g, ' ').includes(texto))).toHaveClass('aviso');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Corrigir o valor pago' }));
+      const folha = await screen.findByRole('dialog', { name: 'Pagamento da fatura' });
+      expect(folha.querySelector('input')!.value.replace(/\s/g, ' ')).toBe(formatarBRL(105000).replace(/\s/g, ' '));
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('fatura vencida com compras lançadas depois do vencimento explica por que ficou de fora', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      // Hoje é 20/08: a fatura 08/2026 (vence 05/08) já venceu quando a compra de julho entra.
+      vi.setSystemTime(new Date('2026-08-20T12:00:00'));
+      const { box, cartao, catCartao } = await montarCartao();
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-05', valorTotal: 90000, parcelas: 1,
+      }, '2027-12-31');
+      await useApp.getState().iniciar();
+      useApp.setState({ boxSel: box.id, hoje: '2026-08-20' });
+
+      render(<TelaCartao />);
+      await userEvent.click(screen.getByRole('button', { name: 'Mês anterior' }));
+      expect(screen.getByText(/Essa fatura ficou de fora do Fluxo/)).toHaveClass('aviso');
+      expect(useApp.getState().dados!.lancamentos.some((l) => l.cartaoId === cartao.id && l.faturaMes === '2026-08')).toBe(false);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('fatura paga pelo valor certo não avisa', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { box, cartao, catCartao } = await montarCartao();
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-05', valorTotal: 90000, parcelas: 1,
+      }, '2027-12-31');
+      await useApp.getState().iniciar();
+      const lanc = useApp.getState().dados!.lancamentos.find((l) => l.origem === 'cartao')!;
+      await repo.confirmarPendente(lanc.id);
+      await useApp.getState().recarregar();
+      useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+      render(<TelaCartao />);
+      expect(screen.queryByText(/não chegaram no Fluxo|ficou de fora do Fluxo/)).not.toBeInTheDocument();
+    } finally { vi.useRealTimers(); }
+  });
+});

@@ -1,8 +1,13 @@
 import { formatarDataBR, nomeDoMes } from '../domain/dates';
-import { ajustesDoCartao, calcularFaturas, datasFaturaDoMes, type Fatura } from '../domain/fatura';
+import { useState } from 'react';
+import {
+  ajustesDoCartao, calcularFaturas, datasFaturaDoMes, faturaForaDoFluxo, type Fatura,
+} from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
+import AvisoFaturaForaDoFluxo from './AvisoFaturaForaDoFluxo';
+import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
 import Sheet from './Sheet';
 
 function LinhaFatura({ item, nomeCat }: { item: Fatura['itens'][number]; nomeCat: (id: string) => string }) {
@@ -21,7 +26,10 @@ function LinhaFatura({ item, nomeCat }: { item: Fatura['itens'][number]; nomeCat
 }
 
 export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onFechar: () => void }) {
-  const { dados, setAba } = useApp();
+  const { dados, hoje, setAba } = useApp();
+  // Valor com que abre a correção do pagamento; enquanto definido, a folha de pagamento toma
+  // o lugar desta (uma folha por vez).
+  const [corrigindoCom, setCorrigindoCom] = useState<number | null>(null);
   if (!dados) return null;
   const cartao = dados.cartoes.find((c) => c.id === lanc.cartaoId);
   if (!cartao) return null;
@@ -34,6 +42,10 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
   const itens = fatura?.itens ?? [];
   const nomeCatCartao = (id: string) => dados.categoriasCartao.find((c) => c.id === id)?.nome ?? '?';
   const total = lanc.valor;
+  const conferencia = dados.conferenciasFatura.find((c) => c.cartaoId === cartao.id && c.mes === mes);
+  const foraDoFluxo = fatura
+    ? faturaForaDoFluxo({ cartao, fatura, compras, lancFatura: lanc, conferencia, hoje })
+    : null;
 
   const aVista = itens.filter((i) => i.totalParcelas === 1).sort((a, b) => b.data.localeCompare(a.data));
   const parceladas = itens.filter((i) => i.totalParcelas > 1).sort((a, b) => b.data.localeCompare(a.data));
@@ -42,6 +54,15 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
   function abrirCartao() {
     setAba('cartao');
     onFechar();
+  }
+
+  if (corrigindoCom != null) {
+    return (
+      <PagamentoFaturaSheetModal
+        lancamento={lanc} totalFaturaCent={fatura?.totalCent ?? 0} valorInicialCent={corrigindoCom}
+        onFechar={onFechar}
+      />
+    );
   }
 
   return (
@@ -57,6 +78,7 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
         </>
       )}
     >
+      {foraDoFluxo && <AvisoFaturaForaDoFluxo situacao={foraDoFluxo} onCorrigir={setCorrigindoCom} />}
       <div className="lista" style={{ marginTop: 8 }}>
         {mostrarGrupos && <p className="rotulo-grupo">À vista</p>}
         {aVista.map((i) => <LinhaFatura key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCatCartao} />)}

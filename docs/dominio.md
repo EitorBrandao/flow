@@ -207,6 +207,12 @@ de fatura `previsto` cujo vencimento ainda não passou faz ele reaparecer na pr�
 `sincronizarCartoes`, pela mesma lógica (`!vistos.has(faturaMes) && a.data > hoje` em
 `diffSincronizacao`).
 
+Duas consequências dessas regras deixam a fatura da aba Cartão diferente do que o Fluxo
+considera: compras lançadas todas depois do vencimento (a fatura nunca vira lançamento) e
+compras lançadas depois do pagamento (o `efetivo` não cresce). `faturaForaDoFluxo`
+(`src/domain/fatura.ts`) detecta os dois casos para a aba Cartão avisar; ela não muda nenhum
+dado.
+
 ### Pagamento parcial e parcelamento da fatura
 
 Uma fatura não precisa ser paga inteira, nem no dia do vencimento.

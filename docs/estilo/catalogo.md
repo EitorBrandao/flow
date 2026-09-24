@@ -29,7 +29,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.saldo-grande` (+ `.positivo`/`.negativo`) | saldo em destaque (card herói) |
 | `.delta` (+ `.pos`/`.neg`) | badge de variação de saldo projetado, com sinal colado ao valor (`+R$ …` / `−R$ …`) e cor pelo sinal |
 | `.badge` | pílula neutra pequena (contagem, status) |
-| `.aviso` | faixa âmbar de aviso |
+| `.aviso` | faixa âmbar de aviso; um `.botao-ver-mais` dentro dela herda a cor e o tamanho do texto e fica sublinhado (ação do próprio aviso, ex.: "Corrigir o valor pago" na aba Cartão) |
 | `.aviso-urgente` | variante vermelha da `.aviso`, usada junto dela (`aviso aviso-urgente`): `--neg-bg` e `--neg`. Classe solta, não modificador composto, para o verificador de catálogo enxergá-la |
 | `.rotulo` | rótulo maiúsculo pequeno acima de um valor/seção |
 | `.rotulo-grupo` | rótulo maiúsculo pequeno de subgrupo dentro de uma lista (ex.: "À vista"/"Parceladas" na fatura do cartão) |
@@ -113,6 +113,10 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   `recharts` carregado sob demanda (`React.lazy`). Ver
   `docs/superpowers/specs/2026-07-08-grafico-fluxo-pan-zoom-design.md`.
 - **`FaturaResumo.tsx`** — resumo somente leitura de uma fatura de cartão.
+- **`AvisoFaturaForaDoFluxo.tsx`** — o `.aviso` de fatura que não bate com o Fluxo
+  (`faturaForaDoFluxo`, `domain/fatura.ts`): fatura vencida que ficou de fora, ou paga a menor
+  com o link "Corrigir o valor pago". Usado na `TelaCartao` e no `FaturaResumo`, para as duas
+  telas dizerem a mesma frase.
 - **`SeletorCategoria.tsx`** — grid de 3 colunas (`.grade-categorias`) pra escolher uma
   categoria por toque, sem abrir o picker nativo do `<select>`. Usado em `TelaLancar.tsx`,
   `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `TelaSimulador.tsx`.
