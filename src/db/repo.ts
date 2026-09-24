@@ -406,36 +406,40 @@ export async function atualizarCategoriaCartao(
   });
 }
 
+/**
+ * As quatro funções "acha ou cria" abaixo buscam e gravam **dentro da mesma transação** `rw`.
+ * O IndexedDB enfileira transações `rw` que se sobrepõem nas mesmas tabelas: a segunda chamada
+ * só lê depois que a primeira gravou, e acha a categoria em vez de criar outra. Buscar fora da
+ * transação deixava duas chamadas simultâneas criarem uma categoria cada.
+ */
 export async function categoriaAssinaturasDe(cartaoId: ID): Promise<ID> {
-  const cartao = (await db.cartoes.get(cartaoId))!;
-  if (cartao.categoriaAssinaturasId) return cartao.categoriaAssinaturasId;
-  const agora = agoraISO();
-  const categoriaId = novoId();
-  await db.transaction('rw', db.cartoes, db.categoriasCartao, db.config, async () => {
-    await db.categoriasCartao.add({
-      id: categoriaId, cartaoId, nome: 'Assinaturas', ordem: 0,
-      arquivada: false, criadoEm: agora, alteradoEm: agora,
-    });
-    await db.cartoes.update(cartaoId, { categoriaAssinaturasId: categoriaId, alteradoEm: agora });
-    await marcarMudanca();
-  });
-  return categoriaId;
+  return categoriaReservadaDoCartao(cartaoId, 'categoriaAssinaturasId', 'Assinaturas');
 }
 
 export async function categoriaParcelamentoDe(cartaoId: ID): Promise<ID> {
-  const cartao = (await db.cartoes.get(cartaoId))!;
-  if (cartao.categoriaParcelamentoId) return cartao.categoriaParcelamentoId;
-  const agora = agoraISO();
-  const categoriaId = novoId();
-  await db.transaction('rw', db.cartoes, db.categoriasCartao, db.config, async () => {
+  return categoriaReservadaDoCartao(cartaoId, 'categoriaParcelamentoId', 'Parcelamento');
+}
+
+async function categoriaReservadaDoCartao(
+  cartaoId: ID,
+  campo: 'categoriaAssinaturasId' | 'categoriaParcelamentoId',
+  nome: string,
+): Promise<ID> {
+  return db.transaction('rw', db.cartoes, db.categoriasCartao, db.config, async () => {
+    const cartao = await db.cartoes.get(cartaoId);
+    if (!cartao) throw new Error(`cartão ${cartaoId} não encontrado`);
+    const atual = cartao[campo];
+    if (atual) return atual;
+    const agora = agoraISO();
+    const categoriaId = novoId();
     await db.categoriasCartao.add({
-      id: categoriaId, cartaoId, nome: 'Parcelamento', ordem: 0,
+      id: categoriaId, cartaoId, nome, ordem: 0,
       arquivada: false, criadoEm: agora, alteradoEm: agora,
     });
-    await db.cartoes.update(cartaoId, { categoriaParcelamentoId: categoriaId, alteradoEm: agora });
+    await db.cartoes.update(cartaoId, { [campo]: categoriaId, alteradoEm: agora });
     await marcarMudanca();
+    return categoriaId;
   });
-  return categoriaId;
 }
 
 function nomeCategoriaAClassificar(tipo: TipoCategoria): string {
@@ -452,25 +456,31 @@ function nomeCategoriaAClassificar(tipo: TipoCategoria): string {
  */
 export async function categoriaAClassificarDe(boxId: ID, tipo: TipoCategoria): Promise<ID> {
   const nome = nomeCategoriaAClassificar(tipo);
-  const daBox = await db.categorias.where('boxId').equals(boxId).toArray();
-  const existente = daBox.find((c) => c.tipo === tipo && !c.arquivada && c.nome === nome);
-  if (existente) return existente.id;
+  return db.transaction('rw', db.categorias, db.config, async () => {
+    const daBox = await db.categorias.where('boxId').equals(boxId).toArray();
+    const existente = daBox.find((c) => c.tipo === tipo && !c.arquivada && c.nome === nome);
+    if (existente) return existente.id;
 
-  const irmas = daBox.filter((c) => c.tipo === tipo && !c.arquivada);
-  const categoria = await salvarCategoria({ boxId, nome, tipo, ordem: proximaOrdem(irmas) });
-  return categoria.id;
+    const irmas = daBox.filter((c) => c.tipo === tipo && !c.arquivada);
+    // Aninhada: `salvarCategoria` usa as mesmas tabelas, então o Dexie reaproveita esta
+    // transação em vez de abrir outra.
+    const categoria = await salvarCategoria({ boxId, nome, tipo, ordem: proximaOrdem(irmas) });
+    return categoria.id;
+  });
 }
 
 /** O mesmo que `categoriaAClassificarDe`, para `CategoriaCartao`. */
 export async function categoriaCartaoAClassificarDe(cartaoId: ID): Promise<ID> {
   const nome = 'A classificar';
-  const doCartao = await db.categoriasCartao.where('cartaoId').equals(cartaoId).toArray();
-  const existente = doCartao.find((c) => !c.arquivada && c.nome === nome);
-  if (existente) return existente.id;
+  return db.transaction('rw', db.categoriasCartao, db.config, async () => {
+    const doCartao = await db.categoriasCartao.where('cartaoId').equals(cartaoId).toArray();
+    const existente = doCartao.find((c) => !c.arquivada && c.nome === nome);
+    if (existente) return existente.id;
 
-  const irmas = doCartao.filter((c) => !c.arquivada);
-  const categoria = await salvarCategoriaCartao({ cartaoId, nome, ordem: proximaOrdem(irmas) });
-  return categoria.id;
+    const irmas = doCartao.filter((c) => !c.arquivada);
+    const categoria = await salvarCategoriaCartao({ cartaoId, nome, ordem: proximaOrdem(irmas) });
+    return categoria.id;
+  });
 }
 
 export interface PagamentoFatura {
