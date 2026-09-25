@@ -5,11 +5,12 @@ import { categoriasCartaoReservadasIds } from '../domain/categorias';
 import { formatarBRL, formatarPercentual as formatarPercentualDominio } from '../domain/money';
 import { distribuirItens, notaDaCompra, parsearNotaFiscal, type NotaFiscalExtraida } from '../domain/notaFiscal';
 import type { Cartao, CompraCartao, ID, ISODate } from '../domain/types';
-import { viagemAtivaEm } from '../domain/viagem';
+import { gastoDaViagem, viagemAtivaEm } from '../domain/viagem';
 import { useApp } from '../state/store';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import EscolherArquivo from './EscolherArquivo';
+import LinhaOrcamentoViagem from './LinhaOrcamentoViagem';
 import SeletorCategoria from './SeletorCategoria';
 
 /** Semente de uma compra NOVA (atalho da sheet Adicionar ou nota fiscal escaneada). Cada
@@ -292,6 +293,22 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
             {' '}Viagem: {viagemAtiva.nome}
           </label>
         )}
+        {viagemAtiva && viagemMarcada && (viagemAtiva.orcamentoCent ?? 0) > 0 && (() => {
+          const gastoBase = gastoDaViagem(viagemAtiva, dados.lancamentos, dados.comprasCartao, dados.categorias);
+          const gastoAtual = (compra && compra.viagemId === viagemAtiva.id) ? gastoBase - compra.valorTotal : gastoBase;
+          const conta = valor > 0;
+          return (
+            <div style={{ flexBasis: '100%' }}>
+              {conta
+                ? (
+                  <LinhaOrcamentoViagem
+                    orcamentoCent={viagemAtiva.orcamentoCent!} gastoCent={gastoAtual + valor} comEsteGasto
+                  />
+                )
+                : <LinhaOrcamentoViagem orcamentoCent={viagemAtiva.orcamentoCent!} gastoCent={gastoAtual} />}
+            </div>
+          );
+        })()}
         <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={salvar}>Salvar</button>
         <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={onFechar}>Cancelar</button>
         {compra && <button className="botao botao-perigo" style={{ alignSelf: 'flex-end' }} onClick={excluir}>Excluir</button>}
