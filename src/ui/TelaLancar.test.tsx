@@ -12,6 +12,18 @@ beforeEach(async () => {
   await limparDb();
 });
 
+afterEach(async () => {
+  useApp.setState({
+    carregado: false,
+    dados: null,
+    rascunhoLancar: null,
+    aba: 'hoje',
+    boxSel: 'casa',
+    ajustesSecao: null,
+    fluxoAba: null,
+  });
+});
+
 it('lança um gasto em 3 interações: valor, categoria, Lançar', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
@@ -258,4 +270,129 @@ it('atalho usado com a tela Lançar já aberta não herda data, nota nem previst
   expect(inputData.value).toBe('2026-07-02');
   expect(screen.getByLabelText('Nota (opcional)')).toHaveValue('');
   expect(screen.getByLabelText(/Marcar como previsto/)).not.toBeChecked();
+});
+
+// TAREFA 4: ORÇAMENTO DE VIAGEM NA TELA DE ADICIONAR
+
+it('linha orçamento viagem: sem valor digitado, mostra gasto atual sem "Com este gasto"', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+  const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  await db.viagens.update(viagem.id, { orcamentoCent: 300000 });
+  const catGasto = await repo.salvarCategoria({ boxId: box.id, nome: 'gasto', tipo: 'gasto', ordem: 1 });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: catGasto.id,
+    data: '2026-07-02', valor: 120000, status: 'efetivo', viagemId: viagem.id,
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  expect(screen.getByText((content) => content.includes('falta'))).toBeInTheDocument();
+  expect(screen.getByText((content) => content.includes('1.200'))).toBeInTheDocument();
+  expect(screen.getByText((content) => content.includes('3.000'))).toBeInTheDocument();
+  expect(screen.queryByText(/Com este gasto/)).not.toBeInTheDocument();
+});
+
+it('linha orçamento viagem: digitar gasto soma ao atual com prefixo "Com este gasto"', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+  const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  await db.viagens.update(viagem.id, { orcamentoCent: 300000 });
+  const catGasto = await repo.salvarCategoria({ boxId: box.id, nome: 'gasto', tipo: 'gasto', ordem: 1 });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: catGasto.id,
+    data: '2026-07-02', valor: 120000, status: 'efetivo', viagemId: viagem.id,
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  await userEvent.type(screen.getByLabelText('Valor'), '250,00');
+  expect(screen.getByText(/Com este gasto/)).toBeInTheDocument();
+  expect(screen.getByText((content) => content.includes('1.450'))).toBeInTheDocument();
+  expect(screen.getByText((content) => content.includes('3.000'))).toBeInTheDocument();
+});
+
+it('linha orçamento viagem: passar do orçamento mostra aviso com sinal de alerta', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+  const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  await db.viagens.update(viagem.id, { orcamentoCent: 300000 });
+  const catGasto = await repo.salvarCategoria({ boxId: box.id, nome: 'gasto', tipo: 'gasto', ordem: 1 });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: catGasto.id,
+    data: '2026-07-02', valor: 120000, status: 'efetivo', viagemId: viagem.id,
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  await userEvent.type(screen.getByLabelText('Valor'), '2000,00');
+  expect(screen.getByText((content) => content.includes('passou'))).toBeInTheDocument();
+  const alerta = screen.getByText('R$ 200,00').closest('strong');
+  expect(alerta).toHaveClass('valor-gasto');
+});
+
+it('linha orçamento viagem: marcar previsto remove valor digitado do cálculo', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+  const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  await db.viagens.update(viagem.id, { orcamentoCent: 300000 });
+  const catGasto = await repo.salvarCategoria({ boxId: box.id, nome: 'gasto', tipo: 'gasto', ordem: 1 });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: catGasto.id,
+    data: '2026-07-02', valor: 120000, status: 'efetivo', viagemId: viagem.id,
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  await userEvent.type(screen.getByLabelText('Valor'), '250,00');
+  expect(screen.getByText(/Com este gasto/)).toBeInTheDocument();
+  await userEvent.click(screen.getByLabelText('Marcar como previsto'));
+  expect(screen.queryByText(/Com este gasto/)).not.toBeInTheDocument();
+  expect(screen.getByText((content) => content.includes('falta'))).toBeInTheDocument();
+});
+
+it('linha orçamento viagem: desmarcar viagem esconde a linha', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+  const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  await db.viagens.update(viagem.id, { orcamentoCent: 300000 });
+  const catGasto = await repo.salvarCategoria({ boxId: box.id, nome: 'gasto', tipo: 'gasto', ordem: 1 });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: catGasto.id,
+    data: '2026-07-02', valor: 120000, status: 'efetivo', viagemId: viagem.id,
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  expect(screen.getByText((content) => content.includes('falta'))).toBeInTheDocument();
+  await userEvent.click(screen.getByLabelText(`Viagem: ${viagem.nome}`));
+  expect(screen.queryByText((content) => content.includes('falta'))).not.toBeInTheDocument();
+});
+
+it('linha orçamento viagem: viagem sem orçamento não mostra a linha', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+  await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  expect(screen.queryByText((content) => content.includes('falta'))).not.toBeInTheDocument();
 });
