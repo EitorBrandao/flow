@@ -666,6 +666,28 @@ describe('viagem', () => {
   });
 });
 
+describe('orçamento da viagem', () => {
+  it('salvarViagem com orcamentoCent grava o campo', async () => {
+    await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05', orcamentoCent: 300000 });
+    const dados = await repo.carregarTudo();
+    expect(dados.viagens[0].orcamentoCent).toBe(300000);
+  });
+
+  it('atualizarViagem com orcamentoCent: 0 deixa o campo ausente', async () => {
+    const { id } = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05', orcamentoCent: 300000 });
+    await repo.atualizarViagem(id, { orcamentoCent: 0 });
+    const dados = await repo.carregarTudo();
+    expect(dados.viagens[0].orcamentoCent).toBeUndefined();
+  });
+
+  it('atualizarViagem com orcamentoCent grava o valor', async () => {
+    const v = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05' });
+    await repo.atualizarViagem(v.id, { orcamentoCent: 250000 });
+    const dados = await repo.carregarTudo();
+    expect(dados.viagens[0].orcamentoCent).toBe(250000);
+  });
+});
+
 describe('bancos', () => {
   it('substituirTudo grava bancos do backup e remove os locais pré-existentes', async () => {
     const agora = agoraISO();

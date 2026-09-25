@@ -277,11 +277,15 @@ export async function substituirTudo(
 
 // ---------- Viagem ----------
 
-export interface NovaViagem { nome: string; dataInicio: ISODate; dataFim: ISODate }
+export interface NovaViagem { nome: string; dataInicio: ISODate; dataFim: ISODate; orcamentoCent?: number }
 
 export async function salvarViagem(n: NovaViagem): Promise<Viagem> {
   const agora = agoraISO();
-  const v: Viagem = { id: novoId(), criadoEm: agora, alteradoEm: agora, ...n };
+  const { orcamentoCent, ...resto } = n;
+  const v: Viagem = {
+    id: novoId(), criadoEm: agora, alteradoEm: agora, ...resto,
+    ...(orcamentoCent ? { orcamentoCent } : {}),
+  };
   await db.transaction('rw', db.viagens, db.config, async () => {
     await db.viagens.add(v);
     await marcarMudanca();
@@ -291,10 +295,15 @@ export async function salvarViagem(n: NovaViagem): Promise<Viagem> {
 
 export async function atualizarViagem(
   id: ID,
-  patch: Partial<Pick<Viagem, 'nome' | 'dataInicio' | 'dataFim'>>,
+  patch: Partial<Pick<Viagem, 'nome' | 'dataInicio' | 'dataFim' | 'orcamentoCent'>>,
 ): Promise<void> {
   await db.transaction('rw', db.viagens, db.config, async () => {
-    await db.viagens.update(id, { ...patch, alteradoEm: agoraISO() });
+    const updateData = { ...patch, alteradoEm: agoraISO() };
+    // Se orcamentoCent for 0 ou falsy, marca como undefined (Dexie remove a chave)
+    if ('orcamentoCent' in patch && !patch.orcamentoCent) {
+      updateData.orcamentoCent = undefined;
+    }
+    await db.viagens.update(id, updateData);
     await marcarMudanca();
   });
 }
