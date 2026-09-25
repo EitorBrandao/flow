@@ -137,6 +137,11 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   da sobra da fatura) — a box em si não tem mais seletor próprio nessas telas: todas as telas de
   Ajustes seguem a box selecionada no chip do topo (`boxIdEfetivo`, `state/store.ts`),
   reforçando a sensação de "perfil" (ver `docs/superpowers/specs/`).
+- **`LinhaOrcamentoViagem.tsx`** — linha do orçamento de viagem, "R$ X de R$ Y · falta R$ Z"
+  (verde, `strong.valor-ganho`) ou "· passou R$ Z" (vermelho, `strong.valor-gasto`, com o
+  `TriangleAlert` dentro do valor). Prop `comEsteGasto` põe o prefixo "Com este gasto: ". Usada
+  em `TelaLancar.tsx`, `FormCompra.tsx` e `ajustes/Viagens.tsx` — qualquer tela nova que mostre
+  o orçamento usa este componente.
 - **`PagamentoFaturaSheet.tsx`** — conteúdo da folha que registra o pagamento de uma fatura
   por valor diferente do total e o destino do que sobrou (mês seguinte, parcelamento ou nada). Exporta o conteúdo puro (default,
   para o teste montar sem backdrop) e `PagamentoFaturaSheetModal`, que o embrulha no `Sheet`.
