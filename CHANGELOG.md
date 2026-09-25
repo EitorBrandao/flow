@@ -3,6 +3,20 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.46.0] - 2026-09-25
+
+### Adicionado
+
+- Orçamento de viagem: informe, se quiser, quanto pretende gastar, em Ajustes → Viagens.
+  - Ao lançar um gasto ou uma compra no cartão durante a viagem, a tela mostra quanto já foi gasto, de quanto, e quanto falta, em verde; ou quanto passou, em vermelho, com um alerta.
+  - Enquanto você digita, a linha já soma o valor ("Com este gasto:").
+  - Conta só o que já aconteceu: lançamentos efetivos e compras no cartão, pelo valor cheio.
+  - A lista de Ajustes → Viagens mostra a mesma linha em cada viagem com orçamento.
+
+### Alterado
+
+- Ganho marcado numa viagem, como um reembolso, não conta mais como gasto nos totais de viagem das Análises.
+
 ## [0.45.0] - 2026-09-24
 
 ### Alterado
