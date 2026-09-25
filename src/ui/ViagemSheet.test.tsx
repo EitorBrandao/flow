@@ -1,10 +1,14 @@
 import { render, screen } from '@testing-library/react';
-import type { Cartao, CompraCartao, Lancamento, Viagem } from '../domain/types';
+import type { Cartao, Categoria, CompraCartao, Lancamento, Viagem } from '../domain/types';
 import ViagemSheet from './ViagemSheet';
 
 const ts = { criadoEm: '2026-01-01T00:00:00Z', alteradoEm: '2026-01-01T00:00:00Z' };
 
 const viagem: Viagem = { id: 'v1', nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05', ...ts };
+
+const categorias: Categoria[] = [{
+  id: 'cat1', boxId: 'b1', nome: 'Gasto', tipo: 'gasto', ordem: 1, arquivada: false, ...ts,
+}];
 
 function lanc(p: Partial<Lancamento> & Pick<Lancamento, 'id' | 'data' | 'valor'>): Lancamento {
   return { boxId: 'b1', categoriaId: 'cat1', status: 'efetivo', origem: 'manual', ...ts, ...p };
@@ -27,7 +31,7 @@ describe('ViagemSheet', () => {
     render(
       <ViagemSheet
         aberto viagem={viagem} boxIds={['b1']} lancamentos={lancamentos} comprasCartao={comprasCartao}
-        cartoes={cartoes} incluirPrevistos={true} onFechar={() => {}}
+        cartoes={cartoes} incluirPrevistos={true} categorias={categorias} onFechar={() => {}}
       />,
     );
 
@@ -41,7 +45,7 @@ describe('ViagemSheet', () => {
     render(
       <ViagemSheet
         aberto={false} viagem={null} boxIds={['b1']} lancamentos={[]} comprasCartao={[]}
-        cartoes={cartoes} incluirPrevistos={true} onFechar={() => {}}
+        cartoes={cartoes} incluirPrevistos={true} categorias={categorias} onFechar={() => {}}
       />,
     );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -51,7 +55,7 @@ describe('ViagemSheet', () => {
     render(
       <ViagemSheet
         aberto viagem={viagem} boxIds={['b1']} lancamentos={[]} comprasCartao={[]}
-        cartoes={cartoes} incluirPrevistos={true} onFechar={() => {}}
+        cartoes={cartoes} incluirPrevistos={true} categorias={categorias} onFechar={() => {}}
       />,
     );
     expect(screen.getByText(/sem gastos marcados/i)).toBeInTheDocument();
