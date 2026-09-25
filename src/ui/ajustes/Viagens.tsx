@@ -132,7 +132,7 @@ export default function Viagens() {
                 {v.nome}
                 <div className="sub">{formatarDataBR(v.dataInicio)} – {formatarDataBR(v.dataFim)}</div>
                 {(v.orcamentoCent ?? 0) > 0 && (
-                  <LinhaOrcamentoViagem orcamentoCent={v.orcamentoCent} gastoCent={gastoDaViagem(v, dados!.lancamentos, dados!.comprasCartao, dados!.categorias)} />
+                  <LinhaOrcamentoViagem orcamentoCent={v.orcamentoCent!} gastoCent={gastoDaViagem(v, dados!.lancamentos, dados!.comprasCartao, dados!.categorias)} />
                 )}
               </div>
               <button className="botao" aria-label="Editar" onClick={() => setEditandoId(v.id)}><Pencil size={16} /></button>
