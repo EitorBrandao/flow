@@ -144,3 +144,71 @@ it('a lista tem o título de grupo "Cadastradas"', async () => {
   render(<Viagens />);
   expect(screen.getByText('Cadastradas')).toHaveClass('rotulo-grupo');
 });
+
+it('criar viagem com orçamento digitado grava orcamentoCent', async () => {
+  await useApp.getState().iniciar();
+  render(<Viagens />);
+
+  await userEvent.type(screen.getByLabelText('Nome'), 'Praia');
+  await userEvent.clear(screen.getByLabelText('Data inicial'));
+  await userEvent.type(screen.getByLabelText('Data inicial'), '2026-01-31');
+  await userEvent.clear(screen.getByLabelText('Data final'));
+  await userEvent.type(screen.getByLabelText('Data final'), '2026-02-05');
+  await userEvent.click(screen.getByLabelText('Orçamento (opcional)'));
+  await userEvent.keyboard('300000');
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+  await waitFor(() => expect(screen.getByText('Praia')).toBeInTheDocument());
+  const viagens = await db.viagens.toArray();
+  expect(viagens[0].orcamentoCent).toBe(300000);
+});
+
+it('viagem com orçamento mostra linha com gasto e restante', async () => {
+  // Cria box e categoria usando a mesma forma que repo.test.ts
+  const { agoraISO, novoId } = await import('../../domain/types');
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'Carteira', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const gasto = await repo.salvarCategoria({ boxId: box.id, nome: 'Gasto', tipo: 'gasto', ordem: 0 });
+
+  const v = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05', orcamentoCent: 300000 });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: gasto.id, data: '2026-02-01', valor: 120000, status: 'efetivo', viagemId: v.id });
+
+  await useApp.getState().iniciar();
+  render(<Viagens />);
+
+  // Espera a linha de orçamento mostrar: R$ 1.200,00 de R$ 3.000,00 · falta R$ 1.800,00
+  await waitFor(() => expect(screen.getByText(/de R\$ 3/)).toBeInTheDocument());
+  expect(screen.getByText(/R\$ 1.800,00/)).toBeInTheDocument();
+});
+
+it('viagem sem orçamento não mostra "de R$"', async () => {
+  await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05' });
+  await useApp.getState().iniciar();
+  render(<Viagens />);
+
+  await waitFor(() => expect(screen.getByText('Praia')).toBeInTheDocument());
+  // Verifica que não tem nenhum "de R$" na linha do orçamento
+  const item = screen.getByText('Praia').closest('.item') as HTMLElement;
+  expect(within(item).queryByText(/de R\$/)).not.toBeInTheDocument();
+});
+
+it('editar viagem e zerar orçamento some com a linha', async () => {
+  const v = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-31', dataFim: '2026-02-05', orcamentoCent: 300000 });
+  await useApp.getState().iniciar();
+  render(<Viagens />);
+
+  let item = screen.getByText('Praia').closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+  const orcamento = within(item).getByLabelText('Orçamento (opcional)') as HTMLInputElement;
+  await userEvent.clear(orcamento);
+  await userEvent.type(orcamento, '0');
+  await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(() => {
+    item = screen.getByText('Praia').closest('.item') as HTMLElement;
+    expect(within(item).queryByText(/de R\$/)).not.toBeInTheDocument();
+  });
+  const atualizada = await db.viagens.get(v.id);
+  expect(atualizada?.orcamentoCent).toBeUndefined();
+});

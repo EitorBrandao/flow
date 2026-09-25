@@ -2,12 +2,15 @@ import { Pencil } from 'lucide-react';
 import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { formatarDataBR } from '../../domain/dates';
+import { gastoDaViagem } from '../../domain/viagem';
 import type { Viagem } from '../../domain/types';
 import { viagensSobrepoem } from '../../domain/viagem';
 import { useApp } from '../../state/store';
 import CampoData from '../CampoData';
+import CampoValor from '../CampoValor';
+import LinhaOrcamentoViagem from '../LinhaOrcamentoViagem';
 
-interface CamposViagem { nome: string; dataInicio: string; dataFim: string }
+interface CamposViagem { nome: string; dataInicio: string; dataFim: string; orcamentoCent: number }
 
 /** Campos de uma viagem, usados para criar (no topo) e para editar (dentro do item). */
 function FormViagem({ inicial, idExcluido, rotuloSalvar, onSalvo, onCancelar }: {
@@ -21,6 +24,7 @@ function FormViagem({ inicial, idExcluido, rotuloSalvar, onSalvo, onCancelar }: 
   const [nome, setNome] = useState(inicial.nome);
   const [dataInicio, setDataInicio] = useState(inicial.dataInicio);
   const [dataFim, setDataFim] = useState(inicial.dataFim);
+  const [orcamentoCent, setOrcamentoCent] = useState(inicial.orcamentoCent);
   const [aviso, setAviso] = useState('');
   const uid = useId();
 
@@ -38,7 +42,7 @@ function FormViagem({ inicial, idExcluido, rotuloSalvar, onSalvo, onCancelar }: 
       return;
     }
     setAviso('');
-    await onSalvo({ nome: nome.trim(), dataInicio, dataFim });
+    await onSalvo({ nome: nome.trim(), dataInicio, dataFim, orcamentoCent });
   }
 
   return (
@@ -57,6 +61,12 @@ function FormViagem({ inicial, idExcluido, rotuloSalvar, onSalvo, onCancelar }: 
         <div className="campo">
           <label htmlFor={`${uid}-fim`}>Data final</label>
           <CampoData id={`${uid}-fim`} value={dataFim} onChange={setDataFim} />
+        </div>
+      </div>
+      <div className="form-linha">
+        <div className="campo">
+          <label htmlFor={`${uid}-orcamento`}>Orçamento (opcional)</label>
+          <CampoValor id={`${uid}-orcamento`} valorCentavos={orcamentoCent} onChange={setOrcamentoCent} />
         </div>
       </div>
       <div className="form-botoes">
@@ -101,7 +111,7 @@ export default function Viagens() {
       {!editandoId && (
         <>
           <h2>Nova viagem</h2>
-          <FormViagem key={versaoNova} inicial={{ nome: '', dataInicio: hoje, dataFim: hoje }} rotuloSalvar="Criar" onSalvo={criar} />
+          <FormViagem key={versaoNova} inicial={{ nome: '', dataInicio: hoje, dataFim: hoje, orcamentoCent: 0 }} rotuloSalvar="Criar" onSalvo={criar} />
         </>
       )}
 
@@ -111,7 +121,7 @@ export default function Viagens() {
           editandoId === v.id ? (
             <div className="item item-coluna" key={v.id}>
               <FormViagem
-                inicial={{ nome: v.nome, dataInicio: v.dataInicio, dataFim: v.dataFim }}
+                inicial={{ nome: v.nome, dataInicio: v.dataInicio, dataFim: v.dataFim, orcamentoCent: v.orcamentoCent ?? 0 }}
                 idExcluido={v.id} rotuloSalvar="Salvar"
                 onSalvo={(campos) => atualizar(v.id, campos)} onCancelar={() => setEditandoId(null)}
               />
@@ -121,6 +131,9 @@ export default function Viagens() {
               <div className="cresce">
                 {v.nome}
                 <div className="sub">{formatarDataBR(v.dataInicio)} – {formatarDataBR(v.dataFim)}</div>
+                {v.orcamentoCent && v.orcamentoCent > 0 && (
+                  <LinhaOrcamentoViagem orcamentoCent={v.orcamentoCent} gastoCent={gastoDaViagem(v, dados!.lancamentos, dados!.comprasCartao, dados!.categorias)} />
+                )}
               </div>
               <button className="botao" aria-label="Editar" onClick={() => setEditandoId(v.id)}><Pencil size={16} /></button>
               <button className="botao botao-perigo" onClick={() => excluir(v.id)}>Excluir</button>
