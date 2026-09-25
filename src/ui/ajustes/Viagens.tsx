@@ -131,7 +131,7 @@ export default function Viagens() {
               <div className="cresce">
                 {v.nome}
                 <div className="sub">{formatarDataBR(v.dataInicio)} – {formatarDataBR(v.dataFim)}</div>
-                {v.orcamentoCent && v.orcamentoCent > 0 && (
+                {(v.orcamentoCent ?? 0) > 0 && (
                   <LinhaOrcamentoViagem orcamentoCent={v.orcamentoCent} gastoCent={gastoDaViagem(v, dados!.lancamentos, dados!.comprasCartao, dados!.categorias)} />
                 )}
               </div>

@@ -212,3 +212,16 @@ it('editar viagem e zerar orçamento some com a linha', async () => {
   const atualizada = await db.viagens.get(v.id);
   expect(atualizada?.orcamentoCent).toBeUndefined();
 });
+
+it('orçamento 0 gravado direto (ex.: backup importado) não vira um "0" solto na lista', async () => {
+  const agora = new Date().toISOString();
+  await db.viagens.add({
+    id: 'v0', nome: 'Serra', dataInicio: '2026-07-10', dataFim: '2026-07-14',
+    orcamentoCent: 0, criadoEm: agora, alteradoEm: agora,
+  });
+  await useApp.getState().iniciar();
+  render(<Viagens />);
+
+  const item = (await screen.findByText('Serra')).closest('.cresce')!;
+  expect(item.textContent).toBe('Serra10/07/2026 – 14/07/2026');
+});
