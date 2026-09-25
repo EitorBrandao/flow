@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as repo from '../db/repo';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
+import LinhaOrcamentoViagem from './LinhaOrcamentoViagem';
 import SeletorCategoria from './SeletorCategoria';
 import SeletorPills, { OPCOES_TIPO } from './SeletorPills';
 import { categoriasFaturaIds } from '../domain/fatura';
 import { categoriasTransferenciaIds } from '../domain/transferencia';
 import type { TipoCategoria } from '../domain/types';
-import { viagemAtivaEm } from '../domain/viagem';
+import { gastoDaViagem, viagemAtivaEm } from '../domain/viagem';
 import { boxIdEfetivo, useApp } from '../state/store';
 
 export default function TelaLancar() {
@@ -128,6 +129,17 @@ export default function TelaLancar() {
           {' '}Viagem: {viagemAtiva.nome}
         </label>
       )}
+      {dados && viagemAtiva && viagemMarcada && (viagemAtiva.orcamentoCent ?? 0) > 0 && (() => {
+        const gastoAtual = gastoDaViagem(viagemAtiva, dados.lancamentos, dados.comprasCartao, dados.categorias);
+        const conta = cents > 0 && tipo === 'gasto' && !previsto && data <= hoje;
+        return conta
+          ? (
+            <LinhaOrcamentoViagem
+              orcamentoCent={viagemAtiva.orcamentoCent!} gastoCent={gastoAtual + cents} comEsteGasto
+            />
+          )
+          : <LinhaOrcamentoViagem orcamentoCent={viagemAtiva.orcamentoCent!} gastoCent={gastoAtual} />;
+      })()}
       <button className="botao botao-primario" disabled={!valido} onClick={lancar} style={{ padding: 14 }}>
         Lançar
       </button>

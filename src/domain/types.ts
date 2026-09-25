@@ -159,6 +159,7 @@ export interface Viagem extends Entidade {
   nome: string;
   dataInicio: ISODate;
   dataFim: ISODate;
+  orcamentoCent?: number; // centavos; ausente ou 0 = sem orçamento
 }
 
 export interface Config {

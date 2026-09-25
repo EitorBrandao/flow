@@ -1,6 +1,6 @@
 import { formatarDataBR } from '../domain/dates';
 import { formatarBRL } from '../domain/money';
-import type { Cartao, CompraCartao, ID, Lancamento, Viagem } from '../domain/types';
+import type { Cartao, Categoria, CompraCartao, ID, Lancamento, Viagem } from '../domain/types';
 import { itensDaViagem } from '../domain/viagem';
 import Sheet from './Sheet';
 
@@ -12,14 +12,15 @@ interface Props {
   comprasCartao: CompraCartao[];
   cartoes: Cartao[];
   incluirPrevistos: boolean;
+  categorias: Categoria[];
   onFechar: () => void;
 }
 
 export default function ViagemSheet({
-  aberto, viagem, boxIds, lancamentos, comprasCartao, cartoes, incluirPrevistos, onFechar,
+  aberto, viagem, boxIds, lancamentos, comprasCartao, cartoes, incluirPrevistos, categorias, onFechar,
 }: Props) {
   const resumo = viagem
-    ? itensDaViagem(viagem, lancamentos, comprasCartao, boxIds, cartoes, incluirPrevistos)
+    ? itensDaViagem(viagem, lancamentos, comprasCartao, boxIds, cartoes, incluirPrevistos, categorias)
     : { grupos: [], total: 0 };
 
   return (

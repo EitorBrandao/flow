@@ -489,3 +489,72 @@ it('remover a nota só vale depois de salvar', async () => {
     await expect(db.notasFiscais.count()).resolves.toBe(0);
   });
 });
+
+// TAREFA 4: ORÇAMENTO DE VIAGEM NA TELA DE ADICIONAR
+
+/** Cartão com uma viagem orçada em R$ 3.000,00 (cobrindo `hoje`) e R$ 1.200,00 já gastos
+ *  nela por um lançamento efetivo — a fixture-base dos 2 casos de orçamento deste formulário. */
+async function montarCartaoComViagemOrcada() {
+  const { box, cartao, catCartao } = await montarCartao();
+  const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  await db.viagens.update(viagem.id, { orcamentoCent: 300000 });
+  const catGasto = await repo.salvarCategoria({ boxId: box.id, nome: 'gasto', tipo: 'gasto', ordem: 1 });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: catGasto.id,
+    data: '2026-07-02', valor: 120000, status: 'efetivo', viagemId: viagem.id,
+  });
+  return { box, cartao, catCartao, viagem };
+}
+
+/** Reproduz o texto exato de `LinhaOrcamentoViagem`, com `formatarBRL` — inclusive o
+ *  espaço não-quebrável entre "R$" e o valor. */
+function textoOrcamento(gastoCent: number, orcamentoCent: number, comEsteGasto = false): string {
+  const prefixo = comEsteGasto ? 'Com este gasto: ' : '';
+  const restanteCent = orcamentoCent - gastoCent;
+  return restanteCent >= 0
+    ? `${prefixo}${formatarBRL(gastoCent)} de ${formatarBRL(orcamentoCent)} · falta ${formatarBRL(restanteCent)}`
+    : `${prefixo}${formatarBRL(gastoCent)} de ${formatarBRL(orcamentoCent)} · passou ${formatarBRL(-restanteCent)}`;
+}
+
+/** Acha o <p> da linha do orçamento pelo texto completo — não por um trecho solto. */
+function linhaOrcamento(texto: string) {
+  return screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === texto);
+}
+
+it('linha orçamento viagem: nova compra soma ao gasto atual com o prefixo "Com este gasto"', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao } = await montarCartaoComViagemOrcada();
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+    render(<FormCompra cartao={cartao} onFechar={() => {}} />);
+    await userEvent.type(screen.getByLabelText('Valor'), '500,00');
+    expect(linhaOrcamento(textoOrcamento(170000, 300000, true))).toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});
+
+it('linha orçamento viagem: editar uma compra já marcada na viagem não conta o valor antigo em dobro', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao, catCartao, viagem } = await montarCartaoComViagemOrcada();
+    const compra = await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-01',
+      valorTotal: 30000, parcelas: 1, viagemId: viagem.id,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+    render(<FormCompra cartao={cartao} compra={compra} onFechar={() => {}} />);
+    // gasto atual = 120000 (lançamento) + 30000 (esta compra) = 150000; editar desconta o
+    // valor antigo (30000) antes de somar o novo — senão a compra contaria duas vezes.
+    const inputValor = screen.getByLabelText('Valor') as HTMLInputElement;
+    await userEvent.click(inputValor);
+    for (let i = 0; i < 5; i++) await userEvent.keyboard('{Backspace}');
+    await userEvent.type(inputValor, '40000');
+
+    expect(linhaOrcamento(textoOrcamento(160000, 300000, true))).toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});

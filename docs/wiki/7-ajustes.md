@@ -67,11 +67,11 @@ Excluir mantém as compras passadas geradas pela assinatura; só as futuras some
 
 ## Viagens
 
-Cadastro das [viagens](#conceitos/viagem): nome, data inicial e data final. O app recusa um período que se sobrepõe a outra viagem.
+Cadastro das [viagens](#conceitos/viagem): nome, data inicial, data final e, se quiser, um orçamento. O app recusa um período que se sobrepõe a outra viagem. Viagem com orçamento mostra, na lista, quanto já foi gasto e quanto falta.
 
 Excluir tira só a marcação de viagem; os lançamentos e as compras continuam existindo.
 
-**Obrigatórios:** nome, data inicial, data final.
+**Obrigatórios:** nome, data inicial, data final. **Opcional:** orçamento.
 
 ## Backup e restauração
 

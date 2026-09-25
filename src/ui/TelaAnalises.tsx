@@ -44,7 +44,7 @@ export default function TelaAnalises() {
       viagem: v,
       total: totalViagemNoMes(
         v, mes, ids, dados.lancamentos, dados.comprasCartao, dados.cartoes, incluirPrevistos,
-        dados.ajustesFechamento,
+        dados.categorias, dados.ajustesFechamento,
       ),
     }))
     .filter((x) => x.total !== 0);
@@ -78,7 +78,7 @@ export default function TelaAnalises() {
     .sort((a, b) => (a.dataInicio < b.dataInicio ? 1 : -1))
     .map((v) => ({
       viagem: v,
-      total: itensDaViagem(v, dados.lancamentos, dados.comprasCartao, ids, dados.cartoes, incluirPrevistos).total,
+      total: itensDaViagem(v, dados.lancamentos, dados.comprasCartao, ids, dados.cartoes, incluirPrevistos, dados.categorias).total,
     }));
 
   return (
@@ -203,6 +203,7 @@ export default function TelaAnalises() {
         comprasCartao={dados.comprasCartao}
         cartoes={dados.cartoes}
         incluirPrevistos={incluirPrevistos}
+        categorias={dados.categorias}
         onFechar={() => setViagemAberta(null)}
       />
     </div>

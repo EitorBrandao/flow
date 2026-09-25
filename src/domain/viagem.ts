@@ -1,6 +1,6 @@
 import { mesDe } from './dates';
 import { ajustesDoCartao, calcularFaturas, datasFaturaDoMes } from './fatura';
-import type { AjusteFechamento, Cartao, CompraCartao, ID, ISODate, Lancamento, Viagem } from './types';
+import type { AjusteFechamento, Cartao, Categoria, CompraCartao, ID, ISODate, Lancamento, Viagem } from './types';
 
 /** Viagem cujo período (inclusive) contém `data`. Como viagens não se sobrepõem, no
  *  máximo uma é retornada. */
@@ -22,6 +22,38 @@ export function viagensSobrepoem(
   );
 }
 
+/** Categorias de ganho: lançamento nelas nunca é gasto de viagem (ex.: reembolso marcado). */
+function idsCategoriasGanho(categorias: Categoria[]): Set<ID> {
+  return new Set(categorias.filter((c) => c.tipo === 'ganho').map((c) => c.id));
+}
+
+/**
+ * Gasto de uma viagem para o orçamento: lançamentos efetivos de gasto, de todas as boxes, e
+ * compras de cartão pelo valor cheio. Previsto fica de fora até ser confirmado. Regra única —
+ * a tela de adicionar e Ajustes → Viagens leem daqui.
+ */
+export function gastoDaViagem(
+  viagem: Viagem, lancamentos: Lancamento[], comprasCartao: CompraCartao[], categorias: Categoria[],
+): number {
+  const ganhos = idsCategoriasGanho(categorias);
+  let total = 0;
+  for (const l of lancamentos) {
+    if (l.viagemId !== viagem.id || l.status !== 'efetivo' || ganhos.has(l.categoriaId)) continue;
+    total += l.valor;
+  }
+  for (const c of comprasCartao) {
+    if (c.viagemId === viagem.id) total += c.valorTotal;
+  }
+  return total;
+}
+
+export interface SituacaoOrcamento { gastoCent: number; orcamentoCent: number; restanteCent: number }
+
+/** `restanteCent` negativo = passou do orçamento. */
+export function situacaoOrcamento(orcamentoCent: number, gastoCent: number): SituacaoOrcamento {
+  return { gastoCent, orcamentoCent, restanteCent: orcamentoCent - gastoCent };
+}
+
 export interface ItemViagem { data: ISODate; valor: number }
 
 export interface GrupoItemViagem {
@@ -36,7 +68,7 @@ export interface ResumoViagem {
   total: number;
 }
 
-/** Detalhamento de uma viagem: lançamentos de débito (agrupados por nota) e compras de
+/** Detalhamento de uma viagem: só lançamentos de gasto (agrupados por nota) e compras de
  *  cartão (agrupadas por descrição) marcados com `viagem.id`, filtrados por box. Usa o
  *  valor cheio da compra (não fatiado por parcela) — é o total histórico da viagem. */
 export function itensDaViagem(
@@ -46,9 +78,11 @@ export function itensDaViagem(
   boxIds: readonly ID[],
   cartoes: Cartao[],
   incluirPrevistos: boolean,
+  categorias: Categoria[],
 ): ResumoViagem {
   const sel = new Set(boxIds);
   const cartaoBoxId = new Map(cartoes.map((c) => [c.id, c.boxId]));
+  const ganhos = idsCategoriasGanho(categorias);
   const grupos = new Map<string, GrupoItemViagem>();
 
   function acumular(rotuloBruto: string | undefined, data: ISODate, valor: number) {
@@ -66,6 +100,7 @@ export function itensDaViagem(
     if (l.viagemId !== viagem.id) continue;
     if (!sel.has(l.boxId)) continue;
     if (l.status !== 'efetivo' && !incluirPrevistos) continue;
+    if (ganhos.has(l.categoriaId)) continue;
     acumular(l.nota, l.data, l.valor);
   }
   for (const c of comprasCartao) {
@@ -95,14 +130,17 @@ export function totalViagemNoMes(
   comprasCartao: CompraCartao[],
   cartoes: Cartao[],
   incluirPrevistos: boolean,
+  categorias: Categoria[],
   ajustesFechamento: AjusteFechamento[] = [],
 ): number {
   const sel = new Set(boxIds);
+  const ganhos = idsCategoriasGanho(categorias);
   let total = 0;
   for (const l of lancamentos) {
     if (l.viagemId !== viagem.id) continue;
     if (!sel.has(l.boxId) || mesDe(l.data) !== mes) continue;
     if (l.status !== 'efetivo' && !incluirPrevistos) continue;
+    if (ganhos.has(l.categoriaId)) continue;
     total += l.valor;
   }
   for (const cartao of cartoes) {

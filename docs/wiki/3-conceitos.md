@@ -41,6 +41,8 @@ Um período com nome — data inicial e data final, inclusive — que junta os g
 
 - **Cadastro:** em Ajustes → Viagens. Duas viagens não podem ter períodos que se sobrepõem.
 - **Marcação:** em Lançar e em Nova compra do cartão, quando a data do lançamento cai numa viagem, aparece a opção "Viagem: nome", já marcada. Desmarque se o gasto não for da viagem.
+- **Orçamento:** opcional, informado em Ajustes → Viagens. Na tela de adicionar, logo abaixo de "Viagem: nome", o app mostra quanto já foi gasto, de quanto, e quanto falta — em verde — ou quanto passou — em vermelho, com um alerta. Enquanto você digita um gasto, a linha já soma o valor ("Com este gasto:").
+- O orçamento conta só o que já aconteceu: lançamentos efetivos e compras no cartão, pelo valor cheio. Previsto entra quando for confirmado. Ganho marcado na viagem, como um reembolso, não conta como gasto — nem no orçamento, nem nos totais das Análises.
 - **Onde aparece:** nas [Análises](#telas/analises), o card Viagens lista cada viagem com o total gasto; tocar abre o detalhamento, agrupado pela descrição. Em "Por categoria", a viagem vira uma linha própria com o que ela pesou naquele mês.
 - Compra parcelada no cartão conta pelo valor cheio no total da viagem, mas, em "Por categoria", cada parcela cai no mês da fatura em que vence.
 - Excluir uma viagem não apaga nada: os lançamentos e as compras continuam existindo, só perdem a marcação.
