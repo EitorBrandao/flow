@@ -44,7 +44,7 @@ export default function TelaAnalises() {
       viagem: v,
       total: totalViagemNoMes(
         v, mes, ids, dados.lancamentos, dados.comprasCartao, dados.cartoes, incluirPrevistos,
-        dados.ajustesFechamento, dados.categorias,
+        dados.categorias, dados.ajustesFechamento,
       ),
     }))
     .filter((x) => x.total !== 0);

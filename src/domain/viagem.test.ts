@@ -194,7 +194,7 @@ describe('totalViagemNoMes', () => {
       lancamento({ data: '2026-02-01', valor: 1000, viagemId: v.id, categoriaId: catGasto.id }),
       lancamento({ data: '2026-03-01', valor: 5000, viagemId: v.id, categoriaId: catGasto.id }),
     ];
-    expect(totalViagemNoMes(v, '2026-02', ['box1'], lancamentos, [], [], true, [], [catGasto])).toBe(1000);
+    expect(totalViagemNoMes(v, '2026-02', ['box1'], lancamentos, [], [], true, [catGasto], [])).toBe(1000);
   });
 
   it('parcela de compra cai no mês de vencimento da fatura, não no mês da compra', () => {
@@ -204,10 +204,10 @@ describe('totalViagemNoMes', () => {
       compra({ data: '2026-01-31', valorTotal: 9000, parcelas: 3, viagemId: v.id, cartaoId: c.id }),
     ];
     // compra em 31/01 fecha na fatura de fev (fechamento 28/01 já passou) -> parcela 1 vence 05/03
-    expect(totalViagemNoMes(v, '2026-02', ['box1'], [], comprasCartao, [c], true, [], [catGasto])).toBe(0);
-    expect(totalViagemNoMes(v, '2026-03', ['box1'], [], comprasCartao, [c], true, [], [catGasto])).toBe(3000);
-    expect(totalViagemNoMes(v, '2026-04', ['box1'], [], comprasCartao, [c], true, [], [catGasto])).toBe(3000);
-    expect(totalViagemNoMes(v, '2026-05', ['box1'], [], comprasCartao, [c], true, [], [catGasto])).toBe(3000);
+    expect(totalViagemNoMes(v, '2026-02', ['box1'], [], comprasCartao, [c], true, [catGasto], [])).toBe(0);
+    expect(totalViagemNoMes(v, '2026-03', ['box1'], [], comprasCartao, [c], true, [catGasto], [])).toBe(3000);
+    expect(totalViagemNoMes(v, '2026-04', ['box1'], [], comprasCartao, [c], true, [catGasto], [])).toBe(3000);
+    expect(totalViagemNoMes(v, '2026-05', ['box1'], [], comprasCartao, [c], true, [catGasto], [])).toBe(3000);
   });
 
   it('continua mostrando parcela pendente em mês futuro mesmo com incluirPrevistos desligado', () => {
@@ -216,7 +216,7 @@ describe('totalViagemNoMes', () => {
     const comprasCartao = [
       compra({ data: '2026-01-31', valorTotal: 6000, parcelas: 2, viagemId: v.id, cartaoId: c.id }),
     ];
-    expect(totalViagemNoMes(v, '2026-04', ['box1'], [], comprasCartao, [c], false, [], [catGasto])).toBe(3000);
+    expect(totalViagemNoMes(v, '2026-04', ['box1'], [], comprasCartao, [c], false, [catGasto], [])).toBe(3000);
   });
 
   it('totalViagemNoMes aplica o ajuste de fechamento do cartão', () => {
@@ -233,18 +233,18 @@ describe('totalViagemNoMes', () => {
       { id: 'af1', cartaoId: 'k1', mes: '2026-07', diaFechamento: 30, criadoEm: '', alteradoEm: '' },
     ];
     // sem ajuste: dia 29 já passou do fechamento (28), cai na fatura de vencimento 2026-09
-    expect(totalViagemNoMes(v, '2026-09', ['box1'], [], [c], [cartao], true, [], [catGasto])).toBe(5000);
-    expect(totalViagemNoMes(v, '2026-08', ['box1'], [], [c], [cartao], true, [], [catGasto])).toBe(0);
+    expect(totalViagemNoMes(v, '2026-09', ['box1'], [], [c], [cartao], true, [catGasto], [])).toBe(5000);
+    expect(totalViagemNoMes(v, '2026-08', ['box1'], [], [c], [cartao], true, [catGasto], [])).toBe(0);
     // com o ajuste: fechamento adiado pro dia 30, cai na fatura de vencimento 2026-08
-    expect(totalViagemNoMes(v, '2026-08', ['box1'], [], [c], [cartao], true, ajustes, [catGasto])).toBe(5000);
-    expect(totalViagemNoMes(v, '2026-09', ['box1'], [], [c], [cartao], true, ajustes, [catGasto])).toBe(0);
+    expect(totalViagemNoMes(v, '2026-08', ['box1'], [], [c], [cartao], true, [catGasto], ajustes)).toBe(5000);
+    expect(totalViagemNoMes(v, '2026-09', ['box1'], [], [c], [cartao], true, [catGasto], ajustes)).toBe(0);
   });
 
   it('respeita incluirPrevistos para o lado débito', () => {
     const v = viagem('2026-01-31', '2026-02-05');
     const lancamentos = [lancamento({ data: '2026-02-01', valor: 1000, status: 'previsto', viagemId: v.id, categoriaId: catGasto.id })];
-    expect(totalViagemNoMes(v, '2026-02', ['box1'], lancamentos, [], [], false, [], [catGasto])).toBe(0);
-    expect(totalViagemNoMes(v, '2026-02', ['box1'], lancamentos, [], [], true, [], [catGasto])).toBe(1000);
+    expect(totalViagemNoMes(v, '2026-02', ['box1'], lancamentos, [], [], false, [catGasto], [])).toBe(0);
+    expect(totalViagemNoMes(v, '2026-02', ['box1'], lancamentos, [], [], true, [catGasto], [])).toBe(1000);
   });
 
   it('lançamento de ganho marcado na viagem não entra no total', () => {
@@ -253,6 +253,6 @@ describe('totalViagemNoMes', () => {
       lancamento({ data: '2026-02-01', valor: 10000, viagemId: v.id, categoriaId: catGasto.id }),
       lancamento({ data: '2026-02-02', valor: 3000, viagemId: v.id, categoriaId: catGanho.id }),
     ];
-    expect(totalViagemNoMes(v, '2026-02', ['box1'], lancamentos, [], [], true, [], [catGasto, catGanho])).toBe(10000);
+    expect(totalViagemNoMes(v, '2026-02', ['box1'], lancamentos, [], [], true, [catGasto, catGanho], [])).toBe(10000);
   });
 });

@@ -130,8 +130,8 @@ export function totalViagemNoMes(
   comprasCartao: CompraCartao[],
   cartoes: Cartao[],
   incluirPrevistos: boolean,
+  categorias: Categoria[],
   ajustesFechamento: AjusteFechamento[] = [],
-  categorias: Categoria[] = [],
 ): number {
   const sel = new Set(boxIds);
   const ganhos = idsCategoriasGanho(categorias);
