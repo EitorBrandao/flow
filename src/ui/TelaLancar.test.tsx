@@ -4,6 +4,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
+import { formatarBRL } from '../domain/money';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import TelaLancar from './TelaLancar';
@@ -258,4 +259,110 @@ it('atalho usado com a tela Lançar já aberta não herda data, nota nem previst
   expect(inputData.value).toBe('2026-07-02');
   expect(screen.getByLabelText('Nota (opcional)')).toHaveValue('');
   expect(screen.getByLabelText(/Marcar como previsto/)).not.toBeChecked();
+});
+
+// TAREFA 4: ORÇAMENTO DE VIAGEM NA TELA DE ADICIONAR
+
+/** Box com uma viagem orçada em R$ 3.000,00 (cobrindo `hoje`) e R$ 1.200,00 já gastos nela
+ *  por um lançamento efetivo — a fixture-base dos 6 casos de orçamento desta tela. */
+async function montarViagemComGasto() {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+  const catGasto = await repo.salvarCategoria({ boxId: box.id, nome: 'gasto', tipo: 'gasto', ordem: 1 });
+  const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  await db.viagens.update(viagem.id, { orcamentoCent: 300000 });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: catGasto.id,
+    data: '2026-07-02', valor: 120000, status: 'efetivo', viagemId: viagem.id,
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+  return { box, viagem };
+}
+
+/** Reproduz o texto exato de `LinhaOrcamentoViagem`, com `formatarBRL` — inclusive o
+ *  espaço não-quebrável entre "R$" e o valor. */
+function textoOrcamento(gastoCent: number, orcamentoCent: number, comEsteGasto = false): string {
+  const prefixo = comEsteGasto ? 'Com este gasto: ' : '';
+  const restanteCent = orcamentoCent - gastoCent;
+  return restanteCent >= 0
+    ? `${prefixo}${formatarBRL(gastoCent)} de ${formatarBRL(orcamentoCent)} · falta ${formatarBRL(restanteCent)}`
+    : `${prefixo}${formatarBRL(gastoCent)} de ${formatarBRL(orcamentoCent)} · passou ${formatarBRL(-restanteCent)}`;
+}
+
+/** Acha o <p> da linha do orçamento pelo texto completo — não por um trecho solto, que
+ *  também bateria com o parágrafo de "o que falta" ou com o valor isolado no <strong>. */
+function linhaOrcamento(texto: string) {
+  return screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === texto);
+}
+
+it('linha orçamento viagem: sem valor digitado, mostra o gasto atual sem "Com este gasto"', async () => {
+  await montarViagemComGasto();
+
+  render(<TelaLancar />);
+  expect(linhaOrcamento(textoOrcamento(120000, 300000))).toBeInTheDocument();
+  expect(screen.queryByText(/Com este gasto/)).not.toBeInTheDocument();
+});
+
+it('linha orçamento viagem: digitar um gasto soma ao atual com o prefixo "Com este gasto"', async () => {
+  await montarViagemComGasto();
+
+  render(<TelaLancar />);
+  await userEvent.type(screen.getByLabelText('Valor'), '250,00');
+  expect(linhaOrcamento(textoOrcamento(145000, 300000, true))).toBeInTheDocument();
+});
+
+it('linha orçamento viagem: passar do orçamento mostra "passou" com o valor em destaque', async () => {
+  await montarViagemComGasto();
+
+  render(<TelaLancar />);
+  await userEvent.type(screen.getByLabelText('Valor'), '2000,00');
+  expect(linhaOrcamento(textoOrcamento(320000, 300000, true))).toBeInTheDocument();
+  const alerta = screen.getByText(formatarBRL(20000).replace(/\s/g, ' ')).closest('strong');
+  expect(alerta).toHaveClass('valor-gasto');
+});
+
+it('linha orçamento viagem: marcar previsto ou trocar para Ganho tira o valor digitado do cálculo', async () => {
+  await montarViagemComGasto();
+
+  render(<TelaLancar />);
+  await userEvent.type(screen.getByLabelText('Valor'), '250,00');
+  expect(linhaOrcamento(textoOrcamento(145000, 300000, true))).toBeInTheDocument();
+
+  // previsto: o valor digitado sai da conta
+  await userEvent.click(screen.getByLabelText('Marcar como previsto'));
+  expect(linhaOrcamento(textoOrcamento(120000, 300000))).toBeInTheDocument();
+
+  // volta a efetivo, digitado conta de novo — antes de testar o outro motivo de exclusão
+  await userEvent.click(screen.getByLabelText('Marcar como previsto'));
+  expect(linhaOrcamento(textoOrcamento(145000, 300000, true))).toBeInTheDocument();
+
+  // Ganho: o mesmo valor digitado também sai da conta
+  await userEvent.click(screen.getByRole('radio', { name: 'Ganho' }));
+  expect(linhaOrcamento(textoOrcamento(120000, 300000))).toBeInTheDocument();
+});
+
+it('linha orçamento viagem: desmarcar a viagem esconde a linha', async () => {
+  const { viagem } = await montarViagemComGasto();
+
+  render(<TelaLancar />);
+  expect(linhaOrcamento(textoOrcamento(120000, 300000))).toBeInTheDocument();
+  await userEvent.click(screen.getByLabelText(`Viagem: ${viagem.nome}`));
+  expect(screen.queryByText(/· falta|· passou/)).not.toBeInTheDocument();
+});
+
+it('linha orçamento viagem: viagem sem orçamento não mostra a linha', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+  await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  // viagem sem orcamentoCent
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  expect(screen.queryByText(/· falta|· passou/)).not.toBeInTheDocument();
 });
