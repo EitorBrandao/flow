@@ -32,7 +32,7 @@ mexe no meu saldo, mês a mês?**
 10. **Cabeçalho do cenário:** o checkbox liga e desliga. O resto do cabeçalho — nome, resumo
     e a seta — abre e fecha o cenário.
 
-Mockup aprovado: `mockup-simular-tela-nova.html`, fora do git (os valores de exemplo em
+Mockup aprovado: `C:\Users\eitor\Claude\flow-mockups\2026-09-26-simulador-no-fluxo-mockup.html`, fora do git (os valores de exemplo em
 real seriam barrados pelo verificador de dados reais).
 
 ## Modelo
