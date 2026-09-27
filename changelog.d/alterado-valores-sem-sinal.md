@@ -1,3 +1,4 @@
 - Valores em dinheiro aparecem sem "+" nem "−" em todo o app: a cor diz o sentido.
   - Verde entra ou sobra, vermelho sai ou falta.
-  - Estorno aparece em verde, com o rótulo "estorno".
+  - Saldos usam o verde-escuro do Fluxo; lançamentos e diferenças, o verde-claro.
+  - Estorno aparece com o rótulo "estorno", na cor do seu efeito no saldo.
