@@ -142,9 +142,8 @@ direto.
 `cartao` + `cenarioId` não existe: `CompraCartao` não tem campo `cenarioId`
 (`src/domain/types.ts`) e nada em `sincronizarCartoes` o define.
 
-As duas linhas com `cenarioId` só são produzidas por `TelaSimulador.tsx`, que hoje não é
-alcançável na navegação (`ABAS`, `Shell.tsx`); lançamentos de cenário existentes em uma base
-real são dado legado ou vindos de um backup importado.
+As duas linhas com `cenarioId` são produzidas por `TelaSimulador.tsx` (`SimuladorFluxo` em
+Fluxo › Simular), alcançável pela navegação.
 
 Existe um **quinto** escritor de lançamentos que a matriz acima não lista:
 `substituirTudo` (`src/db/repo.ts`, import de backup em modo "substituir"). Como
@@ -152,19 +151,12 @@ Existe um **quinto** escritor de lançamentos que a matriz acima não lista:
 pode gravar combinações `status`×`origem` que o app nunca produz sozinho — inclusive as que
 este documento afirma não existir, como `cartao` + `cenarioId`.
 
-**Expectativa não garantida — cenário virando `efetivo`.** O comentário em
-`Lancamento.cenarioId` (`src/domain/types.ts`) diz "nunca `efetivo`", e a rota oficial de
-"promover" um cenário é `converterCenarioEmReal` (`src/db/repo.ts`), que remove
-`cenarioId` do lançamento (e da recorrência, se houver) antes de ele poder virar `efetivo`
-pelo fluxo normal. Mas `LancEditor.tsx` não verifica `cenarioId` antes de oferecer o botão
-"Confirmar": qualquer lançamento `previsto` aberto por ele — inclusive um de cenário —
-pode receber `status: 'efetivo'` via `aplicar(true)`. Isso é alcançável só de forma
-**latente** hoje, não na prática: exige dado de cenário pré-existente, já que
-`TelaSimulador.tsx` (a única tela que cria lançamento de cenário) não é alcançável pela
-navegação atual; `TelaFluxo.tsx` só desvia para outra tela quando `l.origem === 'cartao'`,
-então um item de cenário que já exista na base abre `LancEditor` normalmente.
-**Nenhum teste cobre esse caminho.** Tratar como regra desejada, não como algo que o código
-impede.
+**Garantia — cenário nunca vira `efetivo`.** O comentário em `Lancamento.cenarioId`
+(`src/domain/types.ts`) diz "nunca `efetivo`". A rota oficial de "promover" um cenário é
+`converterCenarioEmReal` (`src/db/repo.ts`), que remove `cenarioId` do lançamento (e da
+recorrência, se houver). `repo.salvarLancamento` e `repo.atualizarLancamento` (e, por ela,
+`confirmarPendente`) recusam `status: 'efetivo'` em lançamento com `cenarioId`. O
+`LancEditor` não mostra o botão 'Confirmar' nele.
 
 `origem: 'import'` não existe mais: `OrigemLancamento` (`src/domain/types.ts`) tem
 `'manual' | 'recorrencia' | 'cartao' | 'transferencia'`. O valor `'import'` saiu junto com o

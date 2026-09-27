@@ -22,6 +22,14 @@ function configPadrao(): Config {
   };
 }
 
+/** Cenário é hipotético: um lançamento dele nunca é `efetivo` (docs/dominio.md). Para trazer
+ *  um cenário para os dados reais, use `converterCenarioEmReal`. */
+function recusarEfetivoDeCenario(cenarioId: ID | undefined, status: StatusLancamento | undefined): void {
+  if (cenarioId && status === 'efetivo') {
+    throw new Error('Lançamento de cenário não pode ser efetivo: use "Tornar real" no cenário.');
+  }
+}
+
 async function marcarMudanca(): Promise<void> {
   const alterado = await db.config.update('config', { mudancasDesdeBackup: true });
   if (!alterado) {
@@ -72,6 +80,7 @@ export interface NovoLancamento {
 }
 
 export async function salvarLancamento(n: NovoLancamento): Promise<Lancamento> {
+  recusarEfetivoDeCenario(n.cenarioId, n.status);
   const agora = agoraISO();
   const l: Lancamento = { id: novoId(), origem: 'manual', criadoEm: agora, alteradoEm: agora, ...n };
   await db.transaction('rw', db.lancamentos, db.config, async () => {
@@ -86,6 +95,10 @@ export async function atualizarLancamento(
   patch: Partial<Pick<Lancamento, 'valor' | 'data' | 'nota' | 'categoriaId' | 'status' | 'viagemId'>>,
 ): Promise<void> {
   await db.transaction('rw', db.lancamentos, db.config, async () => {
+    if (patch.status === 'efetivo') {
+      const atual = await db.lancamentos.get(id);
+      recusarEfetivoDeCenario(atual?.cenarioId, 'efetivo');
+    }
     await db.lancamentos.update(id, { ...patch, alteradoEm: agoraISO() });
     await marcarMudanca();
   });

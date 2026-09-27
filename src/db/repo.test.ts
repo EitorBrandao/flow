@@ -1587,3 +1587,45 @@ describe('excluirTransferencia', () => {
     expect((await db.lancamentos.toArray()).filter((l) => l.origem === 'transferencia')).toHaveLength(2);
   });
 });
+
+describe('lançamento de cenário nunca é efetivo', () => {
+  async function lancDeCenario() {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'b', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'c', tipo: 'gasto', ordem: 0 });
+    const cenario = { id: novoId(), nome: 'e se', ligado: true, criadoEm: agora, alteradoEm: agora };
+    await repo.salvarCenario(cenario);
+    const lanc = await repo.salvarLancamento({
+      boxId: box.id, categoriaId: cat.id, data: '2026-10-10', valor: 5000, status: 'previsto', cenarioId: cenario.id,
+    });
+    return { box, cat, lanc };
+  }
+
+  it('confirmarPendente recusa e não grava', async () => {
+    const { lanc } = await lancDeCenario();
+    await expect(repo.confirmarPendente(lanc.id)).rejects.toThrow(/cenário/);
+    expect((await db.lancamentos.get(lanc.id))?.status).toBe('previsto');
+  });
+
+  it('atualizarLancamento recusa status efetivo, mas aceita editar o resto', async () => {
+    const { lanc } = await lancDeCenario();
+    await expect(repo.atualizarLancamento(lanc.id, { status: 'efetivo' })).rejects.toThrow(/cenário/);
+    await repo.atualizarLancamento(lanc.id, { valor: 7000 });
+    expect((await db.lancamentos.get(lanc.id))?.valor).toBe(7000);
+  });
+
+  it('salvarLancamento recusa criar lançamento de cenário já efetivo', async () => {
+    const { box, cat } = await lancDeCenario();
+    await expect(repo.salvarLancamento({
+      boxId: box.id, categoriaId: cat.id, data: '2026-10-10', valor: 1, status: 'efetivo', cenarioId: 'x',
+    })).rejects.toThrow(/cenário/);
+  });
+
+  it('lançamento comum continua confirmando', async () => {
+    const { box, cat } = await lancDeCenario();
+    const comum = await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-10-10', valor: 1, status: 'previsto' });
+    await repo.confirmarPendente(comum.id);
+    expect((await db.lancamentos.get(comum.id))?.status).toBe('efetivo');
+  });
+});

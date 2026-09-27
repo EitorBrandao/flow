@@ -76,7 +76,7 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
           </p>
         )}
         <div className="linha" style={{ marginTop: 12 }}>
-          {lanc.status === 'previsto' && (
+          {lanc.status === 'previsto' && !lanc.cenarioId && (
             <button className="botao botao-primario" onClick={() => aplicar(true)}>✓ Confirmar</button>
           )}
           {!previstoDeRecorrencia && (
