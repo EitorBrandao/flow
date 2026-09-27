@@ -2,8 +2,11 @@
 
 Data: 2026-09-26. Branch: `simulador-fluxo`.
 
-Depende do branch da **regra de sinal** ("valor mostrado sem sinal, a cor diz o sentido"),
-que tem spec própria e entra antes. Este branch já nasce seguindo essa regra.
+Status: aprovada em 2026-09-26
+
+Segue a **regra de sinal** (v0.47.0, spec `2026-09-26-regra-de-sinal-design.md`):
+movimento sem sinal, a cor diz o sentido; **saldo abaixo de zero com o "−"**; saldo em
+verde-escuro (`classeSaldo`), movimento em verde-claro (`classeEfeito`).
 
 ## Problema
 
@@ -28,7 +31,9 @@ mexe no meu saldo, mês a mês?**
 8. **Tabela sem rolagem** no celular do usuário: mês curto ("out/26"), sem "R$" nas células
    (um rótulo "Valores em R$" acima da tabela), coluna do mês com largura fixa, e as três
    colunas de valor dividem o resto da largura por igual.
-9. **Sem sinal nos valores:** negativo em vermelho, positivo em verde (regra de sinal).
+9. **Sinal pela regra de sinal:** Com e Sem são saldos — abaixo de zero mostram o "−" e usam
+   `classeSaldo`. Diferença é movimento — sem sinal, com `classeEfeito`. (Ajustado em
+   2026-09-27, com a exceção do saldo negativo.)
 10. **Cabeçalho do cenário:** o checkbox liga e desliga. O resto do cabeçalho — nome, resumo
     e a seta — abre e fecha o cenário.
 
@@ -127,16 +132,19 @@ tela mostra a mesma mensagem da tela antiga.
 
 - Colunas: **Mês · Com · Diferença · Sem**. Mês curto: nova função `mesCurto` em
   `src/domain/dates.ts` ("2026-10" → "out/26").
-- Células sem "R$" e sem sinal: `formatarSemSimbolo(Math.abs(v))` (ou o formatador que a
-  regra de sinal criar, se ela criar um). Rótulo `.sub` "Valores em R$" acima da tabela,
-  alinhado à direita.
-- Cores: Com e Sem em `strong.total-dia.pos|neg`; Diferença em `strong.valor-ganho|valor-gasto`;
-  zero vira "—".
+- Células sem "R$". `formatarSemSimbolo` já é sem sinal (`src/domain/money.ts`).
+  - Com e Sem (saldos): `(v < 0 ? '−' : '') + formatarSemSimbolo(v)` — mesmo critério de
+    `formatarSaldo`. Cor `strong` + `classeSaldo(v)`.
+  - Diferença (movimento): `formatarSemSimbolo(v)`, cor `strong` + `classeEfeito(v)`; zero vira
+    "—".
+  - Rótulo `.sub` "Valores em R$" acima da tabela, alinhado à direita.
+- O resumo do cabeçalho do cenário ("até {mês}: {efeito}") é movimento: `formatarBRL` e
+  `classeEfeito`. O aviso "o saldo fica negativo em {mês}" não mostra valor.
 - **Largura:** classe nova `table.tabela.tabela-fixa` — `table-layout: fixed`, `width: 100%`,
   padding de célula 8px, primeira coluna sem os 112px de `.tabela`. A coluna do mês recebe
   largura fixa; as três de valor, nenhuma (dividem o resto por igual). O `min-width` da
-  tabela vem do texto mais longo entre os `extremosPossiveis` de **todos** os cenários e o
-  `sem`, em `ch` (os dígitos são tabulares). Abaixo desse mínimo, `.rolavel` rola — nenhum
+  tabela vem do texto mais longo — **com o "−" quando o saldo é negativo** — entre os
+  `extremosPossiveis` de **todos** os cenários e o `sem`, em `ch` (os dígitos são tabulares). Abaixo desse mínimo, `.rolavel` rola — nenhum
   valor fica espremido, e ligar ou desligar cenários não muda nada.
 - A classe entra em `src/styles.css` e em `docs/estilo/catalogo.md` (nível 2 do guia).
 
