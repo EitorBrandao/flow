@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { formatarDataBR } from '../../domain/dates';
-import { formatarBRL } from '../../domain/money';
+import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../../domain/money';
 import type { Dados, ISODate } from '../../domain/types';
 import { CATEGORIA_A_CLASSIFICAR, totalCorrigidoValido } from '../../importar/conferencia';
 import { contraparteNubank } from '../../importar/descricao';
@@ -45,18 +45,28 @@ function descricaoDoItem(item: ItemConferencia, dados: Dados): string {
   return '';
 }
 
-/** Entrada ou saída: pelo sinal do bruto quando existe; para "sobra", uma compra de
- *  cartão é sempre saída, e um lançamento do app segue o tipo da própria categoria —
- *  o sinal gravado nele não decide isso (ver docs/dominio.md). */
-function entradaOuSaida(item: ItemConferencia, dados: Dados): 'entrada' | 'saida' {
-  if (item.bruto) return item.bruto.valorCent < 0 ? 'saida' : 'entrada';
-  if (item.compraCartaoId) return 'saida';
+/** Classe de cor do valor: pelo sinal do bruto quando existe (o item "fica como está" —
+ *  ver `docs/superpowers/specs/2026-09-26-regra-de-sinal-design.md`); para "sobra", uma
+ *  compra de cartão é sempre saída, e um lançamento do app segue o efeito no saldo
+ *  (`efeitoNoSaldo`), com o mesmo estorno das outras telas. */
+function classeValorDoItem(item: ItemConferencia, dados: Dados): 'valor-ganho' | 'valor-gasto' | undefined {
+  if (item.bruto) return item.bruto.valorCent < 0 ? 'valor-gasto' : 'valor-ganho';
+  if (item.compraCartaoId) return 'valor-gasto';
   if (item.lancamentoId) {
     const l = dados.lancamentos.find((x) => x.id === item.lancamentoId);
-    const categoria = dados.categorias.find((c) => c.id === l?.categoriaId);
-    return categoria?.tipo === 'ganho' ? 'entrada' : 'saida';
+    if (!l) return 'valor-gasto';
+    const categoria = dados.categorias.find((c) => c.id === l.categoriaId);
+    return classeEfeito(efeitoNoSaldo(l.valor, categoria?.tipo ?? 'gasto'));
   }
-  return 'saida';
+  return 'valor-gasto';
+}
+
+/** Rótulo "estorno" só para o lançamento do app (sem bruto do banco) com valor negativo —
+ *  mesmo critério das outras telas (`l.valor < 0`). */
+function mostrarEstorno(item: ItemConferencia, dados: Dados): boolean {
+  if (item.bruto || !item.lancamentoId) return false;
+  const l = dados.lancamentos.find((x) => x.id === item.lancamentoId);
+  return (l?.valor ?? 0) < 0;
 }
 
 function valorDoItem(item: ItemConferencia, dados: Dados, totalCorrigidoCent: number | undefined): number {
@@ -98,7 +108,8 @@ export default function LinhaConferencia({
   const descricao = descricaoDoItem(item, dados);
   const data = dataDoItem(item, dados);
   const valorCent = valorDoItem(item, dados, totalCorrigidoCent);
-  const classeValor = entradaOuSaida(item, dados) === 'entrada' ? 'valor-ganho' : 'valor-gasto';
+  const classeValor = classeValorDoItem(item, dados);
+  const estorno = mostrarEstorno(item, dados);
 
   // Pagamento sem fatura correspondente, ou compra de cartão sem categoria de destino: a
   // conferência já decidiu que não há ação possível, só o aviso explica por quê.
@@ -106,7 +117,7 @@ export default function LinhaConferencia({
     return (
       <div className="item">
         <div className="cresce">
-          <div>{descricao}</div>
+          <div>{descricao}{estorno && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}</div>
           <div className="sub">{item.aviso}</div>
         </div>
         <span className={classeValor}>{formatarBRL(valorCent)}</span>
@@ -127,7 +138,7 @@ export default function LinhaConferencia({
     return (
       <div className="item">
         <div className="cresce">
-          <div>{descricao}</div>
+          <div>{descricao}{estorno && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}</div>
           <div className="sub">{etiqueta}</div>
           {item.aviso && <div className="sub">{item.aviso}</div>}
         </div>
@@ -142,7 +153,7 @@ export default function LinhaConferencia({
     <div className="item item-coluna">
       <div className="linha-topo linha-topo-2-1">
         <div className="cresce">
-          <div>{descricao}</div>
+          <div>{descricao}{estorno && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}</div>
           <div className="sub">{etiqueta}{detalhe ? ` · ${detalhe}` : ''}</div>
         </div>
         <span className={classeValor}>{formatarBRL(valorCent)}</span>

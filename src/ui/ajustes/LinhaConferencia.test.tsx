@@ -200,6 +200,26 @@ describe('LinhaConferencia', () => {
     expect(onTrocarAcao).toHaveBeenCalledWith(acaoEsperada);
   });
 
+  it('sobra de um lançamento de estorno (valor negativo): cor pelo efeito no saldo, com o rótulo "estorno"', async () => {
+    const dados = dadosVazios();
+    dados.categorias.push({
+      id: 'cat-gasto', boxId: 'b1', nome: 'Mercado', tipo: 'gasto', ordem: 0, arquivada: false,
+      criadoEm: '2026-01-01T00:00:00.000Z', alteradoEm: '2026-01-01T00:00:00.000Z',
+    });
+    dados.lancamentos.push({
+      id: 'l5', boxId: 'b1', categoriaId: 'cat-gasto', data: '2026-08-16', valor: -5190,
+      status: 'efetivo', origem: 'manual', nota: 'devolução',
+      criadoEm: '2026-01-01T00:00:00.000Z', alteradoEm: '2026-01-01T00:00:00.000Z',
+    });
+    const item: ItemConferencia = { estado: 'sobra', lancamentoId: 'l5', acao: { tipo: 'ignorar' } };
+    renderLinha(item, dados);
+
+    const valor = screen.getByText('R$ 51,90');
+    expect(valor).toHaveClass('valor-ganho'); // estorno de gasto: entra dinheiro, fica verde
+    expect(valor).not.toHaveClass('valor-gasto');
+    expect(screen.getByText('estorno')).toBeInTheDocument();
+  });
+
   it('sobra: "Excluir do app" chama a troca com { tipo: "excluir" }', async () => {
     const dados = dadosVazios();
     dados.categorias.push({
