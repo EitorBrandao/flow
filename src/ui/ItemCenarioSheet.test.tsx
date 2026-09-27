@@ -80,6 +80,52 @@ it('editar o parcelado: mostra o valor total, sem seletor de repetição, e reca
   expect(r).toMatchObject({ parcelas: 5, valor: 20000 });
 });
 
+it('item "uma vez" com valor negativo (estorno legado): abre com a magnitude e reaplica o sinal ao salvar', async () => {
+  const { box, casa, cenario } = await preparar();
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: casa.id, data: '2026-10-05', valor: -30000, status: 'previsto', cenarioId: cenario.id, nota: 'Reembolso',
+  });
+  await useApp.getState().recarregar();
+  const item = itensDoCenario(useApp.getState().dados!, cenario.id).find((i) => i.repeticao === 'unica')!;
+  const onFechar = vi.fn();
+  render(<ItemCenarioSheet item={item} onFechar={onFechar} />);
+
+  // abre com a magnitude, não com o valor negativo
+  expect((screen.getByLabelText('Valor') as HTMLInputElement).value).toBe(formatarBRL(30000));
+
+  await userEvent.clear(screen.getByLabelText('Descrição'));
+  await userEvent.type(screen.getByLabelText('Descrição'), 'Reembolso ajustado');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(() => expect(onFechar).toHaveBeenCalled());
+  const l = await db.lancamentos.get(lanc.id);
+  expect(l).toMatchObject({ valor: -30000, nota: 'Reembolso ajustado' }); // sinal preservado
+});
+
+it('item parcelado com valor negativo (estorno legado): abre com a magnitude total e reaplica o sinal por parcela ao salvar', async () => {
+  const { box, casa, cenario } = await preparar();
+  const rec = await repo.salvarRecorrencia({
+    boxId: box.id, categoriaId: casa.id, valor: -25000, dataInicio: '2026-10-05', diaDoMes: 5, parcelas: 4, cenarioId: cenario.id,
+  }, '2027-12-31');
+  await useApp.getState().recarregar();
+  const item = itensDoCenario(useApp.getState().dados!, cenario.id).find((i) => i.repeticao === 'parcelado')!;
+  const onFechar = vi.fn();
+  render(<ItemCenarioSheet item={item} onFechar={onFechar} />);
+
+  // 25000 × 4 = 100000, sem sinal
+  expect((screen.getByLabelText('Valor') as HTMLInputElement).value).toBe(formatarBRL(100000));
+
+  const parcelas = screen.getByLabelText('Parcelas');
+  await userEvent.clear(parcelas);
+  await userEvent.type(parcelas, '5');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(() => expect(onFechar).toHaveBeenCalled());
+  const r = await db.recorrencias.get(rec.id);
+  // 100000 / 5 = 20000, sinal negativo de volta
+  expect(r).toMatchObject({ parcelas: 5, valor: -20000 });
+});
+
 it('editar um parcelado de cenário para começar hoje mantém as N parcelas, hoje inclusive', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {

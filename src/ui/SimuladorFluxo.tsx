@@ -82,7 +82,7 @@ export default function SimuladorFluxo() {
 
       <p className="rotulo-grupo">Cenários</p>
       <div className="lista">
-        {dados.cenarios.map((c) => (
+        {[...dados.cenarios].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm)).map((c) => (
           <CenarioCard
             key={c.id} cenario={c} linhas={porCenario.get(c.id) ?? []} larguraCh={larguraCh}
             aberto={aberto === c.id} onAlternar={() => setAberto(aberto === c.id ? null : c.id)}

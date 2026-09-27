@@ -194,8 +194,9 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   o botão que exclui as duas pernas ligadas por `transferenciaId`. Mesmo padrão do
   `FaturaResumo.tsx`. Usado pela `TelaFluxo` ao clicar num lançamento `origem: 'transferencia'`.
 - **`FormItemCenario.tsx`** — formulário de item de cenário, novo e edição: valor, descrição,
-  Gasto/Ganho, categoria (`SeletorCategoria`, sem as categorias de fatura e de transferência),
-  repetição Uma vez/Parcelado/Todo mês, data (ou "a partir de", nas recorrentes) e parcelas.
+  Gasto/Ganho, categoria (`SeletorCategoria`, sem as categorias de fatura e de transferência,
+  e sem as arquivadas), repetição Uma vez/Parcelado/Todo mês, data (ou "a partir de", nas
+  recorrentes) e parcelas.
   Prop `repeticaoFixa` esconde o seletor de repetição na edição — pra trocar, exclui-se o item
   e cria-se outro. No parcelado, o campo Valor é o total: a dica abaixo mostra o valor de cada
   parcela (total ÷ N, arredondado). No "todo mês", a dica lembra de lançar só a diferença de

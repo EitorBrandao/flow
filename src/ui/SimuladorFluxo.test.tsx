@@ -106,6 +106,42 @@ it('ligar e desligar muda o resumo sem mudar a largura da tabela', async () => {
   expect(tabelaDepois.style.minWidth).toBe(larguraAntes);
 });
 
+it('lista os cenários por criadoEm, do mais antigo pro mais novo', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-09-15T10:00:00'));
+    const { box, casa } = await preparar();
+    vi.setSystemTime(new Date('2026-09-15T10:00:05'));
+    await cenarioCom('Zebra', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });
+    vi.setSystemTime(new Date('2026-09-15T10:00:10'));
+    await cenarioCom('Abacate', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });
+    render(<SimuladorFluxo />);
+    const nomes = screen.getAllByRole('checkbox').map((el) => el.getAttribute('aria-label'));
+    expect(nomes).toEqual(['Ligar Zebra', 'Ligar Abacate']);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('cenário recém-criado pelo formulário vai ao fim da lista', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-09-15T10:00:00'));
+    const { box, casa } = await preparar();
+    vi.setSystemTime(new Date('2026-09-15T10:00:05'));
+    await cenarioCom('Existente', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });
+    vi.setSystemTime(new Date('2026-09-15T10:00:10'));
+    render(<SimuladorFluxo />);
+    await userEvent.type(screen.getByLabelText('Novo cenário'), 'Novo');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+    await screen.findByText('Novo item');
+    const nomes = screen.getAllByRole('checkbox').map((el) => el.getAttribute('aria-label'));
+    expect(nomes).toEqual(['Ligar Existente', 'Ligar Novo']);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 it('só um cenário aberto por vez; a seta abre; o checkbox não abre', async () => {
   const { box, casa } = await preparar();
   await cenarioCom('A', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });

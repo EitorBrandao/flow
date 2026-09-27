@@ -2,3 +2,4 @@
   - Cada cenário tem itens de uma vez, parcelados ou todo mês.
   - A tabela mostra o saldo com e sem os cenários, e a diferença.
   - Um aviso diz o mês em que o saldo fica negativo.
+  - Lançamento de cenário não pode ser confirmado: para trazê-lo aos dados reais, use "Tornar real".

@@ -66,7 +66,8 @@ export default function FormItemCenario({ boxId, inicial, repeticaoFixa, rotuloB
   const mudar = (patch: Partial<ValoresItem>) => setV((atual) => ({ ...atual, ...patch }));
   const categorias = categoriasDoItem(dados, boxId, v.tipo);
   const parcelas = Number(parcelasTexto) || 0;
-  const valido = v.valor > 0 && v.categoriaId != null && (v.repeticao !== 'parcelado' || parcelas >= 2);
+  const valido = v.valor > 0 && v.categoriaId != null
+    && (v.repeticao !== 'parcelado' || (parcelas >= 2 && Math.round(v.valor / parcelas) >= 1));
 
   async function salvar() {
     if (!valido || salvando) return;

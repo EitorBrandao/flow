@@ -13,13 +13,16 @@ export default function ItemCenarioSheet({ item, onFechar }: Props) {
   const horizonte = dados.config.horizonteProjecao;
   const tipoDe = (categoriaId: string) => dados.categorias.find((c) => c.id === categoriaId)?.tipo ?? 'gasto';
 
+  // Estorno legado: valor negativo, dentro da mesma categoria. O formulário só edita a
+  // magnitude — o sinal é reaplicado ao salvar, sem passar pela mão do usuário.
+  const negativo = item.repeticao === 'unica' ? item.lancamento.valor < 0 : item.recorrencia.valor < 0;
   const inicial: ValoresItem = item.repeticao === 'unica'
     ? {
-      valor: item.lancamento.valor, descricao: item.lancamento.nota ?? '', tipo: tipoDe(item.lancamento.categoriaId),
+      valor: Math.abs(item.lancamento.valor), descricao: item.lancamento.nota ?? '', tipo: tipoDe(item.lancamento.categoriaId),
       categoriaId: item.lancamento.categoriaId, repeticao: 'unica', data: item.lancamento.data, parcelas: 2,
     }
     : {
-      valor: item.recorrencia.valor * (item.recorrencia.parcelas ?? 1), descricao: item.recorrencia.nota ?? '',
+      valor: Math.abs(item.recorrencia.valor * (item.recorrencia.parcelas ?? 1)), descricao: item.recorrencia.nota ?? '',
       tipo: tipoDe(item.recorrencia.categoriaId), categoriaId: item.recorrencia.categoriaId, repeticao: item.repeticao,
       data: item.recorrencia.dataInicio, parcelas: item.recorrencia.parcelas ?? 2,
     };
@@ -27,13 +30,14 @@ export default function ItemCenarioSheet({ item, onFechar }: Props) {
 
   async function salvar(v: ValoresItem) {
     const nota = v.descricao.trim() || undefined;
+    const sinal = negativo ? -1 : 1;
     if (item.repeticao === 'unica') {
-      await repo.atualizarLancamento(item.id, { valor: v.valor, data: v.data, categoriaId: v.categoriaId!, nota });
+      await repo.atualizarLancamento(item.id, { valor: sinal * v.valor, data: v.data, categoriaId: v.categoriaId!, nota });
     } else {
       const parcelado = item.repeticao === 'parcelado';
       await repo.salvarRecorrencia({
         ...item.recorrencia, categoriaId: v.categoriaId!, dataInicio: v.data, diaDoMes: Number(v.data.slice(8, 10)),
-        valor: parcelado ? Math.round(v.valor / v.parcelas) : v.valor, parcelas: parcelado ? v.parcelas : null, nota,
+        valor: sinal * (parcelado ? Math.round(v.valor / v.parcelas) : v.valor), parcelas: parcelado ? v.parcelas : null, nota,
       }, horizonte);
     }
     await recarregar();

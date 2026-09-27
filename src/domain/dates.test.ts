@@ -1,5 +1,5 @@
 import {
-  addDias, addMeses, addMesesData, dataComDia, dataDeISODatetime, diasEntre, formatarDataBR, hojeISO, mesCurto, mesAbreviado, mesDe,
+  addDias, addMeses, addMesesData, dataComDia, dataDeISODatetime, diasEntre, formatarDataBR, hojeISO, mesAbreviado, mesCurto, mesDe,
   nomeDoMes, serialExcelParaISO, ultimoDiaDoMes,
 } from './dates';
 

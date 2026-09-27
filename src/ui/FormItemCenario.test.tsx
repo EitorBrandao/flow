@@ -54,6 +54,21 @@ it('Parcelado exige 2 parcelas ou mais e mostra o valor da parcela', async () =>
   expect(screen.getByText(/cada parcela sai por R\$\s*250,00/)).toBeInTheDocument();
 });
 
+it('Parcelado também exige que a parcela arredondada seja pelo menos 1 centavo', async () => {
+  const { box } = await preparar();
+  render(<FormItemCenario boxId={box.id} inicial={vazio()} rotuloBotao="Adicionar ao cenário" onSalvar={async () => {}} />);
+  await userEvent.type(screen.getByLabelText('Valor'), '1,00');
+  await userEvent.click(screen.getByRole('button', { name: 'Casa' }));
+  await userEvent.click(screen.getByRole('radio', { name: 'Parcelado' }));
+  const parcelas = screen.getByLabelText('Parcelas');
+  await userEvent.clear(parcelas);
+  await userEvent.type(parcelas, '300'); // 100 / 300 = 0,33 → arredonda pra 0 centavos
+  expect(screen.getByRole('button', { name: 'Adicionar ao cenário' })).toBeDisabled();
+  await userEvent.clear(parcelas);
+  await userEvent.type(parcelas, '100'); // 100 / 100 = 1 centavo por parcela
+  expect(screen.getByRole('button', { name: 'Adicionar ao cenário' })).toBeEnabled();
+});
+
 it('Todo mês mostra a dica de lançar só a diferença', async () => {
   const { box } = await preparar();
   render(<FormItemCenario boxId={box.id} inicial={vazio()} rotuloBotao="Adicionar ao cenário" onSalvar={async () => {}} />);
