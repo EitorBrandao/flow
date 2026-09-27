@@ -105,12 +105,21 @@ Versão depois.
 
 Nunca edite `package.json` (`version`) nem o topo do `CHANGELOG.md` num branch de feature.
 
-**Ponto de parada: espere o usuário.** Mostre a revisão (Adicionado/Alterado/Removido) e
-espere **confirmação literal**. Subagentes param aqui e reportam ao orquestrador.
+**Não é ponto de parada.** Mostre a revisão (Adicionado/Alterado/Removido) ao usuário e siga
+para a integração sem esperar a resposta. Decisão do usuário em 2026-09-26: um texto mal
+escrito custa uma correção pequena, e a confirmação era quase sempre só "sim". Subagentes
+param aqui e reportam ao orquestrador — quem integra é o orquestrador.
+
+Antes de mostrar, revise você mesmo: o texto é claro para quem usa o app, está no tipo certo
+(adicionado, alterado, removido) e só usa dados sintéticos.
+
+Se o usuário pedir ajuste depois do release, corrija a seção da versão no `CHANGELOG.md` num
+branch próprio, com merge na `main`. Não crie versão nova para isso: a correção sai no próximo
+deploy.
 
 ## Passo 5 — Integração na `main`
 
-Uma vez só, e só depois da confirmação:
+Uma vez só, depois de mostrar a revisão:
 
 ```
 git checkout main && git merge --no-ff <branch>
