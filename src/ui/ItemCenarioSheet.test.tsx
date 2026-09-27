@@ -80,6 +80,34 @@ it('editar o parcelado: mostra o valor total, sem seletor de repetição, e reca
   expect(r).toMatchObject({ parcelas: 5, valor: 20000 });
 });
 
+it('editar um parcelado de cenário para começar hoje mantém as N parcelas, hoje inclusive', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-09-15T12:00:00'));
+    const { itemParcelado } = await prepararComItens();
+    // itemParcelado nasceu com dataInicio '2026-10-05', hoje agora é '2026-09-15': mudar
+    // a data para hoje exercita o caminho de materializar o passado (ver recorrência de
+    // cenário em `src/domain/recurrence.ts`/`src/db/repo.ts`).
+    const onFechar = vi.fn();
+    render(<ItemCenarioSheet item={itemParcelado} onFechar={onFechar} />);
+
+    await userEvent.clear(screen.getByLabelText('A partir de'));
+    await userEvent.type(screen.getByLabelText('A partir de'), '2026-09-15');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(onFechar).toHaveBeenCalled());
+    const r = await db.recorrencias.get(itemParcelado.id);
+    expect(r).toMatchObject({ dataInicio: '2026-09-15', parcelas: 4 });
+    const materializados = await db.lancamentos.where('recorrenciaId').equals(itemParcelado.id).toArray();
+    expect(materializados).toHaveLength(4);
+    expect(materializados.map((l) => l.data).sort()).toEqual([
+      '2026-09-15', '2026-10-15', '2026-11-15', '2026-12-15',
+    ]);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 it('excluir: com confirmação, remove o item do banco e fecha a sheet', async () => {
   const { itemUnica } = await prepararComItens();
   vi.spyOn(window, 'confirm').mockReturnValue(true);

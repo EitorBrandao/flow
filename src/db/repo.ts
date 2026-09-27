@@ -150,7 +150,9 @@ export async function atualizarCategoria(
 
 async function materializarRecorrencia(rec: Recorrencia, horizonte: ISODate): Promise<void> {
   const existentes = await db.lancamentos.where('recorrenciaId').equals(rec.id).toArray();
-  const diff = materializar(rec, existentes, hojeISO(), horizonte);
+  // Recorrência de cenário materializa também o passado: cenário nunca entra na fila de
+  // Pendentes, então não há "previsto descartado" para respeitar (ver `materializar`).
+  const diff = materializar(rec, existentes, hojeISO(), horizonte, Boolean(rec.cenarioId));
   const agora = agoraISO();
   await db.lancamentos.bulkDelete(diff.excluirIds);
   await db.lancamentos.bulkAdd(diff.criarDatas.map((data): Lancamento => ({

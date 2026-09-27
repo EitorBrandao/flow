@@ -147,6 +147,36 @@ it('memoiza a projeção: digitar em "Novo cenário" não recalcula projetarBoxe
   spy.mockRestore();
 });
 
+it('parcelado 3x a partir de hoje gera 3 lançamentos', async () => {
+  // O repo materializa com o relógio real (hojeISO()) — precisa bater com `hoje` do store,
+  // que é o data padrão do formulário. Sem o relógio falso, o valor default de "A partir de"
+  // usaria a data real do sistema, não '2026-09-15'.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-09-15T12:00:00'));
+    await preparar();
+    render(<SimuladorFluxo />);
+    await userEvent.type(screen.getByLabelText('Novo cenário'), 'Móveis');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+    await screen.findByText('Novo item');
+    await userEvent.type(screen.getByLabelText('Valor'), '900,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Casa' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Parcelado' }));
+    const parcelas = screen.getByLabelText('Parcelas');
+    await userEvent.clear(parcelas);
+    await userEvent.type(parcelas, '3');
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar ao cenário' }));
+
+    const [c] = await db.cenarios.toArray();
+    const lancs = await db.lancamentos.where('cenarioId').equals(c.id).toArray();
+    expect(lancs).toHaveLength(3);
+    expect(lancs.map((l) => l.data).sort()).toEqual(['2026-09-15', '2026-10-15', '2026-11-15']);
+    expect(lancs.every((l) => l.status === 'previsto' && l.valor === 30000)).toBe(true);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 it('Tornar real e Excluir cenário pedem confirmação', async () => {
   const { box, casa } = await preparar();
   const c = await cenarioCom('X', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });

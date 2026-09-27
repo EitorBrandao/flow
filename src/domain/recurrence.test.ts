@@ -72,4 +72,29 @@ describe('materializar', () => {
     const diff = materializar(rec(), [], '2025-09-15', '2025-10-31');
     expect(diff.criarDatas).toEqual(['2025-10-03']);
   });
+
+  it('regressão: sem incluirPassado, continua como hoje (5º parâmetro omitido = false)', () => {
+    const diff = materializar(rec(), [], '2025-09-15', '2025-10-31');
+    expect(diff.criarDatas).toEqual(['2025-10-03']);
+  });
+
+  it('com incluirPassado, materializa também as datas esperadas <= hoje que faltam', () => {
+    // Mesmo cenário do teste de descarte definitivo, mas agora com incluirPassado — usado
+    // para recorrência de cenário, que nunca entra na fila de Pendentes.
+    const diff = materializar(rec(), [], '2025-09-15', '2025-10-31', true);
+    expect(diff.criarDatas).toEqual(['2025-07-03', '2025-08-03', '2025-09-03', '2025-10-03']);
+  });
+
+  it('incluirPassado não recria uma data que já existe', () => {
+    const existentes = [lanc('2025-07-03', 'previsto')];
+    const diff = materializar(rec(), existentes, '2025-09-15', '2025-10-31', true);
+    expect(diff.criarDatas).toEqual(['2025-08-03', '2025-09-03', '2025-10-03']);
+  });
+
+  it('incluirPassado ainda nunca exclui efetivos', () => {
+    const existentes = [lanc('2025-07-03', 'efetivo')];
+    // 07-03 não é mais "esperada" com dataInicio deslocada, mas é efetivo: não some.
+    const diff = materializar(rec({ dataInicio: '2025-08-03', parcelas: 1 }), existentes, '2025-09-15', '2025-10-31', true);
+    expect(diff.excluirIds).toEqual([]);
+  });
 });

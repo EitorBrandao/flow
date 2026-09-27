@@ -295,6 +295,17 @@ lançamentos já vinculados a ela e devolve um diff: datas que faltam criar, ids
   `iniciar()` do app, e a cada `salvarRecorrencia`), porque nada marca "foi descartado", só
   a ausência da data nos existentes é olhada. Só o descarte de uma data **passada** é
   permanente.
+- **Exceção: recorrência de cenário (`rec.cenarioId` presente) materializa também o
+  passado.** `materializarRecorrencia` (`src/db/repo.ts`) passa `incluirPassado: true` para
+  `materializar` nesse caso, e o filtro `d > hoje` some inteiramente para essa regra: toda
+  data esperada até o horizonte que ainda não existe é criada, `<= hoje` inclusive. O motivo
+  é que a regra de "não ressuscitar" existe para não trazer de volta um previsto que o
+  usuário descartou na fila de Pendentes (`pendentes`, `src/domain/projection.ts`) — e
+  cenário nunca entra nessa fila (`pendentes` exclui `cenarioId` de propósito). Sem
+  descarte possível, não há nada para respeitar: uma parcela de cenário com `dataInicio` no
+  passado (ou = hoje) materializa normalmente. `efetivo` continua imune a exclusão — mas,
+  na prática, lançamento de cenário nunca chega a `efetivo` por materialização, só por
+  "Tornar real" (`converterCenarioEmReal`).
 - **Todo `previsto` remanescente de uma recorrência é sobrescrito com o valor/categoria
   atuais da regra em toda materialização** (`.modify` em `materializarRecorrencia`,
   `src/db/repo.ts`) — por isso `LancEditor.tsx` não oferece "Salvar" para um `previsto` de

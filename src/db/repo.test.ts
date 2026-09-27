@@ -230,6 +230,86 @@ it('excluirCenario apaga o cenário e os lançamentos/recorrências vinculados a
   }
 });
 
+it('recorrência de cenário com dataInicio = hoje materializa as 3 parcelas, hoje inclusive', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    const agora = agoraISO();
+    await repo.salvarCenario({ id: 'cen3', nome: 'reforma', ligado: true, criadoEm: agora, alteradoEm: agora });
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 8000, dataInicio: '2026-07-01', diaDoMes: 1, parcelas: 3, cenarioId: 'cen3' },
+      '2026-12-31',
+    );
+    const dados = await repo.carregarTudo();
+    const parcelas = dados.lancamentos.filter((l) => l.cenarioId === 'cen3');
+    expect(parcelas).toHaveLength(3);
+    expect(parcelas.map((l) => l.data).sort()).toEqual(['2026-07-01', '2026-08-01', '2026-09-01']);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('recorrência de cenário com dataInicio no mês passado materializa as parcelas passadas também', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-15T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    const agora = agoraISO();
+    await repo.salvarCenario({ id: 'cen4', nome: 'viagem', ligado: true, criadoEm: agora, alteradoEm: agora });
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 5000, dataInicio: '2026-06-10', diaDoMes: 10, parcelas: 3, cenarioId: 'cen4' },
+      '2026-12-31',
+    );
+    const dados = await repo.carregarTudo();
+    const parcelas = dados.lancamentos.filter((l) => l.cenarioId === 'cen4');
+    expect(parcelas).toHaveLength(3);
+    expect(parcelas.map((l) => l.data).sort()).toEqual(['2026-06-10', '2026-07-10', '2026-08-10']);
+    expect(parcelas.every((l) => l.status === 'previsto')).toBe(true);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('regressão: recorrência SEM cenário continua sem materializar o passado', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-15T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 5000, dataInicio: '2026-06-10', diaDoMes: 10, parcelas: 3 },
+      '2026-12-31',
+    );
+    const dados = await repo.carregarTudo();
+    // esperadas: 06-10, 07-10, 08-10 — 06-10 e 07-10 já são passado (hoje = 07-15) e não existiam
+    // ainda, então não são criadas; só a futura (08-10) materializa.
+    expect(dados.lancamentos.map((l) => l.data)).toEqual(['2026-08-10']);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('editar recorrência de cenário para começar hoje materializa as N parcelas (mantém o total ao reeditar)', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    const agora = agoraISO();
+    await repo.salvarCenario({ id: 'cen5', nome: 'móveis', ligado: true, criadoEm: agora, alteradoEm: agora });
+    const rec = await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 5000, dataInicio: '2026-09-01', diaDoMes: 1, parcelas: 3, cenarioId: 'cen5' },
+      '2026-12-31',
+    );
+    await repo.salvarRecorrencia({ ...rec, dataInicio: '2026-07-01', diaDoMes: 1 }, '2026-12-31');
+    const dados = await repo.carregarTudo();
+    const parcelas = dados.lancamentos.filter((l) => l.cenarioId === 'cen5');
+    expect(parcelas).toHaveLength(3);
+    expect(parcelas.map((l) => l.data).sort()).toEqual(['2026-07-01', '2026-08-01', '2026-09-01']);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 it('salvarConfig persiste o patch mesmo antes de qualquer carregarTudo (regressão)', async () => {
   await repo.salvarConfig({ boxPadraoId: 'box1' });
   const dados = await repo.carregarTudo();
