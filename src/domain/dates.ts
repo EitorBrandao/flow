@@ -61,6 +61,14 @@ export function mesAbreviado(mes: string): string {
   return `${abrev}/${mes.slice(0, 4)}`;
 }
 
+/** "AAAA-MM" → "out/26": mês curto com o ano em dois dígitos, para colunas estreitas. */
+export function mesCurto(mes: string): string {
+  const abrev = new Date(`${mes}-15T12:00:00`)
+    .toLocaleDateString('pt-BR', { month: 'short' })
+    .replace('.', '');
+  return `${abrev}/${mes.slice(2, 4)}`;
+}
+
 export function addMeses(mes: string, n: number): string {
   const [y, m] = mes.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7);
