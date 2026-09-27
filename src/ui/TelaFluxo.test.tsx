@@ -513,7 +513,7 @@ describe('dia filtrado sem lançamento', () => {
     await abrirFiltros();
     fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-08-12' } });
 
-    const pilula = await screen.findByText(`−${formatarBRL(5000).replace(/\s/g, ' ')} em relação a hoje`);
+    const pilula = await screen.findByText(`${formatarBRL(5000).replace(/\s/g, ' ')} em relação a hoje`);
     expect(pilula).toHaveClass('delta', 'neg');
   });
 
@@ -528,7 +528,7 @@ describe('dia filtrado sem lançamento', () => {
     await abrirFiltros();
     fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-08-12' } });
 
-    const pilula = await screen.findByText(`+${formatarBRL(5000).replace(/\s/g, ' ')} em relação a hoje`);
+    const pilula = await screen.findByText(`${formatarBRL(5000).replace(/\s/g, ' ')} em relação a hoje`);
     expect(pilula).toHaveClass('delta', 'pos');
   });
 

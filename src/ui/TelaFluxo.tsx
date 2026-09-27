@@ -215,7 +215,7 @@ export default function TelaFluxo() {
                     return (
                       <div className="linha">
                         <span className={`delta ${delta > 0 ? 'pos' : 'neg'}`}>
-                          {delta > 0 ? '+' : '−'}{formatarBRL(Math.abs(delta))} em relação a hoje
+                          {formatarBRL(delta)} em relação a hoje
                         </span>
                       </div>
                     );

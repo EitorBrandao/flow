@@ -90,8 +90,9 @@ it('conferência mostra a diferença e a caixa troca o valor do previsto', async
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
     expect(await screen.findByText(/falta inserir no cartão/)).toBeInTheDocument();
     expect(screen.getByText(/R\$\s*20,00/)).toBeInTheDocument();
-    // Do ponto de vista do Flow: itens abaixo do banco = negativo, em vermelho.
-    expect(screen.getByText(/^−R\$\s*20,00$/)).toHaveClass('valor-gasto');
+    // Do ponto de vista do Flow: itens abaixo do banco = falta = vermelho, sem sinal.
+    expect(screen.getByText(/^R\$\s*20,00$/)).toHaveClass('valor-gasto');
+    expect(screen.queryByText(/[−+]R\$/)).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByLabelText(/usar este valor no Flow/));
     await waitFor(async () => {
@@ -118,7 +119,7 @@ it('conferência com itens acima do banco mostra a diferença positiva, em verde
     await userEvent.type(screen.getByLabelText('Valor no app do banco'), '50,00');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
     expect(await screen.findByText(/sobra no cartão/)).toBeInTheDocument();
-    expect(screen.getByText(/^\+R\$\s*30,00$/)).toHaveClass('valor-ganho');
+    expect(screen.getByText(/^R\$\s*30,00$/)).toHaveClass('valor-ganho');
   } finally { vi.useRealTimers(); }
 });
 

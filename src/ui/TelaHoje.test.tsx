@@ -56,8 +56,9 @@ it('declara saldo real maior que o saldo do app e mostra que falta inserir', asy
 
   expect(await screen.findByText(/falta inserir/)).toBeInTheDocument();
   expect(screen.getByText(/R\$\s*50,00/)).toBeInTheDocument();
-  // Diferença do ponto de vista do app: banco com mais = app devendo = negativo, em vermelho.
-  expect(screen.getByText(/^−R\$\s*50,00$/)).toHaveClass('valor-gasto');
+  // Diferença do ponto de vista do app: falta inserir = vermelho, sem sinal.
+  expect(screen.getByText(/^R\$\s*50,00$/)).toHaveClass('valor-gasto');
+  expect(screen.queryByText(/[−+]R\$/)).not.toBeInTheDocument();
   const salva = await db.boxes.get(box.id);
   expect(salva?.saldoDeclaradoCent).toBe(105000);
 });
@@ -78,7 +79,7 @@ it('declara saldo real negativo (cheque especial) e persiste com o sinal', async
   await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
   expect(await screen.findByText(/sobra no app/)).toBeInTheDocument();
-  expect(screen.getByText(/^\+R\$\s*1\.050,00$/)).toHaveClass('valor-ganho');
+  expect(screen.getByText(/^R\$\s*1\.050,00$/)).toHaveClass('valor-ganho');
   const salva = await db.boxes.get(box.id);
   expect(salva?.saldoDeclaradoCent).toBe(-5000);
 });
@@ -289,7 +290,7 @@ describe('conferência por banco', () => {
     expect(antes(screen.getByLabelText('Saldo real no banco'), flow)).toBe(true);
     expect(antes(flow, diferenca)).toBe(true);
     // 1.000,00 no banco contra 1.010,00 no Flow: sobram 10,00 no app
-    expect(screen.getByText(/^\+R\$\s*10,00$/)).toHaveClass('valor-ganho');
+    expect(screen.getByText(/^R\$\s*10,00$/)).toHaveClass('valor-ganho');
   });
 
   it('com bancos: total informado, depois total do Flow, depois a diferença', async () => {
@@ -834,7 +835,7 @@ it('a fatura de cartão não ganha o gesto e mantém "Paguei outro valor"', asyn
   expect(screen.getByRole('button', { name: /Paguei outro valor/ })).toBeInTheDocument();
 });
 
-it('a diferença dos próximos 28 dias usa sinal e cor, não seta', async () => {
+it('a diferença dos próximos 28 dias usa só a cor, sem sinal nem seta', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
@@ -845,9 +846,9 @@ it('a diferença dos próximos 28 dias usa sinal e cor, não seta', async () => 
 
   render(<TelaHoje />);
 
-  const pilula = screen.getByText(`+${formatarBRL(80000).replace(/\s/g, ' ')} nos próximos 28 dias`);
+  const pilula = screen.getByText(`${formatarBRL(80000).replace(/\s/g, ' ')} nos próximos 28 dias`);
   expect(pilula).toHaveClass('delta', 'pos');
-  expect(screen.queryByText(/▲|▼/)).not.toBeInTheDocument();
+  expect(pilula.textContent).not.toMatch(/^[−+]/);
 });
 
 it('conferência: um centavo de diferença não é "Bate certinho", e a data sai em DD/MM/AAAA', async () => {

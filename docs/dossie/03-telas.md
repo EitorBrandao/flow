@@ -24,7 +24,7 @@ tab: Pendentes · 0
 Saldo hoje · carteira
 R$ 4.300
 ,00
-+R$ 3.170,00 nos próximos 28 dias
+R$ 3.170,00 nos próximos 28 dias
 17/01
 mín
 R$ 4.300,00
@@ -455,7 +455,7 @@ tab: Pendentes · 0
 Saldo hoje · carteira
 R$ 4.300
 ,00
-+R$ 3.170,00 nos próximos 28 dias
+R$ 3.170,00 nos próximos 28 dias
 21/01
 mín
 R$ 4.300,00
@@ -892,7 +892,7 @@ tab: Pendentes · 3
 Saldo hoje · carteira
 R$ 4.300
 ,00
-+R$ 6.480,10 nos próximos 28 dias
+R$ 6.480,10 nos próximos 28 dias
 projetado:
 R$ 7.470,00
 03/02
@@ -1393,7 +1393,7 @@ tab: Pendentes · 12
 Saldo hoje · carteira
 R$ 7.880
 ,00
-+R$ 16.372,00 nos próximos 28 dias
+R$ 16.372,00 nos próximos 28 dias
 projetado:
 R$ 20.965,20
 13/06
@@ -1836,7 +1836,7 @@ tab: Pendentes · 15
 Saldo hoje · carteira
 R$ 7.800
 ,00
-+R$ 19.748,80 nos próximos 28 dias
+R$ 19.748,80 nos próximos 28 dias
 projetado:
 R$ 24.172,00
 11/07
@@ -2294,7 +2294,7 @@ tab: Pendentes · 20
 Saldo hoje · carteira
 R$ 7.676
 ,80
-+R$ 26.768,90 nos próximos 28 dias
+R$ 26.768,90 nos próximos 28 dias
 projetado:
 R$ 30.985,60
 05/09
@@ -2706,7 +2706,7 @@ tab: Pendentes · 23
 Saldo hoje · carteira
 R$ 7.676
 ,80
-+R$ 30.229,00 nos próximos 28 dias
+R$ 30.229,00 nos próximos 28 dias
 projetado:
 R$ 34.445,70
 08/10
@@ -3109,7 +3109,7 @@ tab: Pendentes · 26
 Saldo hoje · carteira
 R$ 7.676
 ,80
-+R$ 33.689,10 nos próximos 28 dias
+R$ 33.689,10 nos próximos 28 dias
 projetado:
 R$ 37.905,80
 23/11
