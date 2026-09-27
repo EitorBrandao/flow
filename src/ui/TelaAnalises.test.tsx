@@ -281,6 +281,21 @@ it('card Viagens: estorno maior que o gasto do mês deixa o total verde, sem sin
   expect(valor).not.toHaveClass('valor-gasto');
 });
 
+it('sobra zero (ganho igual ao gasto) não ganha classe de cor', async () => {
+  const { box, catPix } = await seedBoxComCategoria();
+  const catSalario = await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-05', valor: 100000, status: 'efetivo' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2026-07-10', valor: 100000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  render(<TelaAnalises />);
+  const cardResumo = screen.getByText('Sobra').closest('.card') as HTMLElement;
+  const sobra = within(cardResumo).getByText('R$ 0,00');
+  expect(sobra).not.toHaveClass('valor-ganho');
+  expect(sobra).not.toHaveClass('valor-gasto');
+});
+
 it('cabeçalho do comparativo mostra o mês abreviado', async () => {
   const { box, catPix } = await seedBoxComCategoria();
   await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2026-10-05', valor: 30000, status: 'efetivo' });

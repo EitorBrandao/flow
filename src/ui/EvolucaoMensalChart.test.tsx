@@ -19,6 +19,15 @@ it('sobra negativa usa a classe neg', () => {
   expect(screen.getByText('1.500')).toHaveClass('evolucao-sobra', 'neg');
 });
 
+it('sobra zero não ganha pos nem neg: movimento zero fica sem cor', () => {
+  const serieZerada: ResumoMesSimples[] = [{ mes: '2026-07', ganhos: 100000, gastos: 100000, sobra: 0 }];
+  render(<EvolucaoMensalChart serie={serieZerada} mesAtual="2026-07" />);
+  const rotulo = screen.getByText('0');
+  expect(rotulo).toHaveClass('evolucao-sobra');
+  expect(rotulo).not.toHaveClass('pos');
+  expect(rotulo).not.toHaveClass('neg');
+});
+
 it('mostra a legenda de ganhos, gastos e tendência', () => {
   render(<EvolucaoMensalChart serie={serie} mesAtual="2026-07" />);
   expect(screen.getByText('ganhos')).toBeInTheDocument();

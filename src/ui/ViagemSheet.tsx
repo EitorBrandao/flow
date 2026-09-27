@@ -34,7 +34,10 @@ export default function ViagemSheet({
         {resumo.grupos.map((g) => (
           <div key={g.chave}>
             <div className="linha recuo-1" style={{ justifyContent: 'space-between' }}>
-              <p className="rotulo-grupo">{g.rotulo}</p>
+              <p className="rotulo-grupo">
+                {g.rotulo}
+                {g.itens.length === 1 && g.itens[0].valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
+              </p>
               <span className={classeEfeito(-g.subtotal)}>{formatarBRL(g.subtotal)}</span>
             </div>
             {g.itens.length > 1 && (

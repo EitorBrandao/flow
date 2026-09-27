@@ -69,6 +69,22 @@ describe('ViagemSheet', () => {
     expect(screen.getByText('estorno')).toBeInTheDocument();
   });
 
+  it('grupo com um único item de estorno mostra o rótulo "estorno" na linha do grupo', () => {
+    const lancamentos = [
+      lanc({ id: 'l1', data: '2026-02-01', valor: -3000, nota: 'Reembolso', viagemId: 'v1' }),
+    ];
+
+    render(
+      <ViagemSheet
+        aberto viagem={viagem} boxIds={['b1']} lancamentos={lancamentos} comprasCartao={[]}
+        cartoes={cartoes} incluirPrevistos={true} categorias={categorias} onFechar={() => {}}
+      />,
+    );
+
+    expect(screen.getByText('Reembolso')).toBeInTheDocument();
+    expect(screen.getByText('estorno')).toBeInTheDocument();
+  });
+
   it('fechado não renderiza nada', () => {
     render(
       <ViagemSheet
