@@ -242,6 +242,23 @@ it('cancelar fecha o item sem gravar e traz "Nova recorrência" de volta', async
   expect(atual?.valor).toBe(5000);
 });
 
+it('recorrência com valor negativo (estorno) mostra o rótulo "estorno"', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
+  await repo.salvarRecorrencia({
+    boxId: box.id, categoriaId: cat.id, valor: -5000, dataInicio: '2026-07-01',
+    diaDoMes: 5, parcelas: 3,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-02' });
+  render(<Recorrencias />);
+
+  const item = screen.getByText('assinatura', { selector: 'div' }).closest('.item') as HTMLElement;
+  expect(within(item).getByText('estorno')).toBeInTheDocument();
+});
+
 it('criar sem valor e sem categoria avisa uma coisa por vez, embaixo dos botões', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };

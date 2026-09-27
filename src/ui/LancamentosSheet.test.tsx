@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { Lancamento } from '../domain/types';
 import LancamentosSheet from './LancamentosSheet';
@@ -106,6 +106,23 @@ describe('LancamentosSheet', () => {
     expect(total).toHaveClass('valor-gasto');
     // Rótulo "estorno" deve aparecer
     expect(screen.getByText('estorno')).toBeInTheDocument();
+  });
+
+  it('total zero (gasto cancelado por estorno) não ganha classe de cor', () => {
+    const lancs: Lancamento[] = [
+      lanc({ id: 'l1', data: '2026-07-03', valor: 5000 }),
+      lanc({ id: 'l2', data: '2026-07-04', valor: -5000 }),
+    ];
+    render(
+      <LancamentosSheet
+        aberto categoriaId="pix" nome="zerado" tipo="gasto" mes="2026-07" boxIds={['be']}
+        lancamentos={lancs} incluirPrevistos={false} onFechar={() => {}}
+      />,
+    );
+    const cabecalho = screen.getByText('zerado').closest('.linha') as HTMLElement;
+    const total = within(cabecalho).getByText('R$ 0,00');
+    expect(total).not.toHaveClass('valor-ganho');
+    expect(total).not.toHaveClass('valor-gasto');
   });
 
   it('fechado não renderiza nada', () => {

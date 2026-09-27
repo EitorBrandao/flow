@@ -220,7 +220,10 @@ export default function Recorrencias() {
             <div className="item item-coluna" key={r.id} style={{ opacity: r.ativa ? 1 : 0.5 }}>
               <div className="linha-topo linha-topo-2-1">
                 <div className="cresce">
-                  <div>{nomeCat(r.categoriaId)}{r.nota ? ` · ${r.nota}` : ''}</div>
+                  <div>
+                    {nomeCat(r.categoriaId)}{r.nota ? ` · ${r.nota}` : ''}
+                    {r.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
+                  </div>
                   <div className="sub">desde {formatarDataBR(r.dataInicio)}</div>
                   <div className="sub">todo dia {r.diaDoMes}, {r.parcelas == null ? 'sem fim' : `${r.parcelas}x`}</div>
                 </div>

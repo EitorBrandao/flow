@@ -122,6 +122,23 @@ it('troca de box reseta o campo de saldo real para o valor daquela box', async (
   expect((screen.getByLabelText('Saldo real no banco') as HTMLInputElement).value).toMatch(/0,00/);
 });
 
+it('projetado negativo usa a cor de saldo (classeSaldo), não a de movimento', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const catGasto = await repo.salvarCategoria({ boxId: box.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+  // previsto hoje bem maior que o saldo: saldoProjetado fica negativo, saldoEfetivo continua positivo
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catGasto.id, data: '2026-07-05', valor: 500000, status: 'previsto' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-05' });
+
+  render(<TelaHoje />);
+  const linhaProjetado = await screen.findByText(/^projetado:/);
+  const projetado = within(linhaProjetado.closest('p') as HTMLElement).getByText(formatarBRL(-400000).replace(/\s/g, ' '));
+  expect(projetado).toHaveClass('total-dia', 'neg');
+  expect(projetado).not.toHaveClass('valor-gasto');
+});
+
 it('com banco vazio, a Hoje mostra o cartão de primeiro uso e não mostra o saldo grande', async () => {
   await useApp.getState().iniciar();
 

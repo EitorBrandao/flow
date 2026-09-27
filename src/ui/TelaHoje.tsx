@@ -385,7 +385,7 @@ export default function TelaHoje() {
               })()}
               {deHoje && deHoje.saldoProjetado !== deHoje.saldoEfetivo && (
                 <p className="sub" style={{ margin: 0 }}>
-                  projetado: <strong className={deHoje.saldoProjetado >= 0 ? 'valor-ganho' : 'valor-gasto'}>
+                  projetado: <strong className={classeSaldo(deHoje.saldoProjetado)}>
                     {formatarBRL(deHoje.saldoProjetado)}
                   </strong>
                 </p>

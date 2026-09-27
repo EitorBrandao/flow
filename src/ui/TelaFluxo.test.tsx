@@ -600,6 +600,21 @@ it('estorno de gasto aparece verde, sem sinal, com o rótulo "estorno"', async (
   expect(item).toHaveTextContent('estorno');
 });
 
+it('estorno de ganho aparece vermelho, sem sinal, com o rótulo "estorno"', async () => {
+  const { box, catSalario } = await seedBoxComCategoria();
+  const hoje = '2026-07-05';
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: hoje, valor: -300000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje });
+
+  render(<TelaFluxo />);
+  const brl = (c: number) => formatarBRL(c).replace(/\s/g, ' ');
+  const valor = await screen.findByText(brl(300000));
+  expect(valor).toHaveClass('valor-gasto');
+  const item = valor.closest('.item') as HTMLElement;
+  expect(item).toHaveTextContent('estorno');
+});
+
 it('gasto comum não tem o rótulo "estorno"', async () => {
   const { box, catMercado } = await seedBoxComCategoria();
   const hoje = '2026-07-05';

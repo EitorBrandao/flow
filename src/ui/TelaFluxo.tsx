@@ -93,7 +93,7 @@ export default function TelaFluxo() {
     if (l.nota && l.nota.toLowerCase().includes(q)) return true;
     if (nomeCat(l.categoriaId).toLowerCase().includes(q)) return true;
     if (dataBonita(l.data).toLowerCase().includes(q)) return true;
-    if (formatarBRL(Math.abs(l.valor)).toLowerCase().includes(q)) return true;
+    if (formatarBRL(l.valor).toLowerCase().includes(q)) return true;
     return l.origem === 'cartao' && bateFaturaCartao(l);
   };
   const porDia = new Map<string, Lancamento[]>();

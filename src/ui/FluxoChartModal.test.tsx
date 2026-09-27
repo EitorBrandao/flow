@@ -127,6 +127,7 @@ describe('FluxoChartModal — cor do rodapé mín/máx', () => {
   it('mín negativo e máx positivo: mín em vermelho, máx em verde', () => {
     const serieCenario = serieComBaseNoHoje(0);
     render(<FluxoChartModal serie={serieCenario} hoje={serieCenario[HOJE_IDX].data} mostrarCenarios={false} onFechar={() => {}} />);
+    // mín vem antes de máx no JSX (FluxoChartModal.tsx), então valores[0] é o mín.
     const valores = screen.getAllByText(semNbsp(formatarBRL(30000)));
     expect(valores[0]).toHaveClass('neg');
     expect(valores[1]).toHaveClass('pos');
