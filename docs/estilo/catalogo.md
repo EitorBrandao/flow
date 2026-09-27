@@ -47,7 +47,8 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.sub` | subtítulo/texto secundário 13px em `--muted` |
 | `.grade-categorias` | grade 3 colunas de seleção de categoria; `.selecionada` marca o item ativo |
 | `.pills` | pílulas em linha pra escolher entre poucas opções (Box, Cartão, Gasto/Ganho); `button.ativo` marca a opção atual. Como seletor, o grupo é `role="radiogroup"` e cada pílula `role="radio"` com `aria-checked` — prefira o `SeletorPills`. Como abas de seção (Hoje, Fluxo, Cartão), `role="tablist"` |
-| `.tabela` (elemento `table`, + `.tabela-fixa`) | tabela numérica (Fluxo, Análises) — alinhado à direita exceto 1ª coluna, sem linhas verticais. `.tabela-fixa` (modificador) para colunas de largura fixa (Simular, no Fluxo): o conteúdo não muda as colunas; 1ª coluna recebe largura pelo `<col>`; as demais dividem o resto por igual. Largura mínima vem do componente, para ligar ou desligar cenários não mexer nas colunas. |
+| `.tabela` (elemento `table`) | tabela numérica (Fluxo, Análises) — alinhado à direita exceto 1ª coluna, sem linhas verticais |
+| `.tabela-fixa` | junto de `.tabela`: colunas de largura fixa (Simular, no Fluxo) — o conteúdo não muda as colunas; a 1ª coluna recebe largura pelo `<col>`; as demais dividem o resto por igual. A largura mínima vem do componente, para ligar ou desligar cenários não mexer nas colunas |
 | `.rolavel` | wrapper com `overflow-x: auto` para conteúdo largo (tabelas) |
 | `.recuo-1` / `.recuo-2` | recuo horizontal (ambos os lados) pra indicar nível de hierarquia numa lista aninhada — ex.: grupo/data em `LancamentosSheet` |
 | `.sheet-backdrop` / `.sheet` / `.sheet-alca` / `.sheet-cabecalho` / `.sheet-conteudo` | bottom sheet (ver componente `Sheet`) |
