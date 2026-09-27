@@ -78,6 +78,36 @@ describe('LancamentosSheet', () => {
     expect(total).toHaveClass('valor-ganho');
   });
 
+  it('estorno isolado em gasto aparece verde com rótulo "estorno" no grupo', () => {
+    const lancs: Lancamento[] = [lanc({ id: 'l1', data: '2026-07-04', valor: -5000 })];
+    render(
+      <LancamentosSheet
+        aberto categoriaId="pix" nome="estorno-test" tipo="gasto" mes="2026-07" boxIds={['be']}
+        lancamentos={lancs} incluirPrevistos={false} onFechar={() => {}}
+      />,
+    );
+    // total = -5000: efeito no saldo de gasto = +5000 → verde
+    const total = screen.getAllByText(/^R\$\s*50,00$/)[0];
+    expect(total).toHaveClass('valor-ganho');
+    // Rótulo "estorno" deve aparecer na linha do grupo
+    expect(screen.getByText('estorno')).toBeInTheDocument();
+  });
+
+  it('estorno isolado em ganho aparece vermelho com rótulo "estorno"', () => {
+    const lancs: Lancamento[] = [lanc({ id: 'l1', data: '2026-07-04', valor: -5000 })];
+    render(
+      <LancamentosSheet
+        aberto categoriaId="pix" nome="estorno-ganho" tipo="ganho" mes="2026-07" boxIds={['be']}
+        lancamentos={lancs} incluirPrevistos={false} onFechar={() => {}}
+      />,
+    );
+    // total = -5000: efeito no saldo de ganho = -5000 → vermelho
+    const total = screen.getAllByText(/^R\$\s*50,00$/)[0];
+    expect(total).toHaveClass('valor-gasto');
+    // Rótulo "estorno" deve aparecer
+    expect(screen.getByText('estorno')).toBeInTheDocument();
+  });
+
   it('fechado não renderiza nada', () => {
     render(
       <LancamentosSheet

@@ -38,7 +38,10 @@ export default function LancamentosSheet({
         {grupos.map((g) => (
           <div key={g.notaChave}>
             <div className="linha recuo-1" style={{ justifyContent: 'space-between' }}>
-              <p className="rotulo-grupo">{g.notaExibicao}</p>
+              <p className="rotulo-grupo">
+                {g.notaExibicao}
+                {g.itens.length === 1 && g.itens[0].valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
+              </p>
               <span className={classe(g.subtotal)}>{formatarBRL(g.subtotal)}</span>
             </div>
             {g.itens.length > 1 && (

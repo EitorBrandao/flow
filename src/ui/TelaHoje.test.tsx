@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -744,7 +744,12 @@ it('pendente de estorno aparece verde, com o rótulo "estorno"', async () => {
   const botao = screen.getByRole('button', { name: 'Corrigir valor de luz' });
   expect(botao).toHaveClass('valor-ganho');
   expect(botao.textContent?.replace(/\s/g, ' ')).toBe('R$ 40,00');
-  expect((botao.closest('.item') as HTMLElement)).toHaveTextContent('estorno');
+  const item = botao.closest('.item') as HTMLElement;
+  expect(item).toHaveTextContent('estorno');
+  // Rótulo deve estar ao lado do nome da categoria, não da data
+  const badge = within(item).getByText('estorno');
+  expect(badge.parentElement).toHaveTextContent('luz');
+  expect(badge.parentElement?.textContent).not.toContain('27/08'); // não contém a data
 });
 
 it('cancelar a correção fecha os campos sem gravar nada', async () => {

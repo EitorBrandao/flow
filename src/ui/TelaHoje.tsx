@@ -432,8 +432,10 @@ export default function TelaHoje() {
               >
                 <div className="linha-topo">
                   <div className="cresce">
-                    <div>{nomeCat(l.categoriaId)}</div>
-                    {l.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
+                    <div>
+                      {nomeCat(l.categoriaId)}
+                      {l.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
+                    </div>
                     <div className="sub">{l.data.split('-').reverse().join('/')}{l.nota ? ` · ${l.nota}` : ''}</div>
                   </div>
                   {ehFatura(l) ? (
