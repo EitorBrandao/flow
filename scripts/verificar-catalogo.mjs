@@ -29,7 +29,7 @@ import process from 'node:process';
 // EXCECOES: classes/componentes deliberadamente fora do catálogo.
 // A constante pode ser estendida via argumento CLI.
 //
-// Estes 8 são modificadores que no CSS só existem como seletor composto
+// Estes são modificadores que no CSS só existem como seletor composto
 // (ex.: `.saldo-grande.positivo`, `.total-dia.neg`, `.valor-gasto.editavel`) — o extrator de
 // classes CSS só reconhece seletores que começam a linha com `.nome`, então essas classes
 // nunca vão bater e sempre apareceriam como "sumiu do CSS" mesmo existindo.
@@ -37,7 +37,7 @@ import process from 'node:process';
 // No catálogo eles aparecem entre parênteses na linha da classe que modificam
 // (ex.: "`.secao` (+ `.acao`)") ou, quando têm o que explicar, em linha própria
 // (ex.: `.editavel`).
-const EXCECOES = ['acao', 'cresce', 'dia-hoje', 'editavel', 'neg', 'negativo', 'pos', 'positivo'];
+const EXCECOES = ['acao', 'cresce', 'dia-hoje', 'editavel', 'neg', 'negativo', 'pos', 'positivo', 'tabela-fixa'];
 
 // flags saem da conta antes dos posicionais: assim --strict pode vir em qualquer posição
 // sem empurrar `raiz` e `excecoes` de lugar

@@ -47,7 +47,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.sub` | subtítulo/texto secundário 13px em `--muted` |
 | `.grade-categorias` | grade 3 colunas de seleção de categoria; `.selecionada` marca o item ativo |
 | `.pills` | pílulas em linha pra escolher entre poucas opções (Box, Cartão, Gasto/Ganho); `button.ativo` marca a opção atual. Como seletor, o grupo é `role="radiogroup"` e cada pílula `role="radio"` com `aria-checked` — prefira o `SeletorPills`. Como abas de seção (Hoje, Fluxo, Cartão), `role="tablist"` |
-| `.tabela` (elemento `table`) | tabela numérica (Fluxo, Análises) — alinhado à direita exceto 1ª coluna, sem linhas verticais |
+| `.tabela` (elemento `table`, + `.tabela-fixa`) | tabela numérica (Fluxo, Análises) — alinhado à direita exceto 1ª coluna, sem linhas verticais. `.tabela-fixa` (modificador) para colunas de largura fixa (Simular, no Fluxo): o conteúdo não muda as colunas; 1ª coluna recebe largura pelo `<col>`; as demais dividem o resto por igual. Largura mínima vem do componente, para ligar ou desligar cenários não mexer nas colunas. |
 | `.rolavel` | wrapper com `overflow-x: auto` para conteúdo largo (tabelas) |
 | `.recuo-1` / `.recuo-2` | recuo horizontal (ambos os lados) pra indicar nível de hierarquia numa lista aninhada — ex.: grupo/data em `LancamentosSheet` |
 | `.sheet-backdrop` / `.sheet` / `.sheet-alca` / `.sheet-cabecalho` / `.sheet-conteudo` | bottom sheet (ver componente `Sheet`) |
@@ -160,6 +160,9 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   Análises (substitui a antiga tabela "Por categoria"); escala compartilhada com as
   barrinhas do card resumo (`base = max(totalGanhos, totalGastos)`), mesmo contrato de
   acessibilidade (`role="button"` por linha) que a tabela anterior usava.
+- **`TabelaSimulacao.tsx`** — tabela mês a mês do Simular (Mês · Com · Diferença · Sem), em
+  `.tabela.tabela-fixa`; largura mínima vinda dos extremos possíveis, para ligar ou desligar
+  cenários não mexer nas colunas.
 - **`EvolucaoMensalChart.tsx`** — evolução de ganho/gasto/sobra dos últimos 6 meses na aba
   Análises: barras agrupadas + linha de tendência tracejada, via `recharts` carregado sob
   demanda (`React.lazy`), mesmo padrão do `FluxoChartModal`.
