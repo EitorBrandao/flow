@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import * as repo from '../db/repo';
+import { formatarDataBR } from '../domain/dates';
 import { categoriasFaturaIds } from '../domain/fatura';
+import { formatarBRL } from '../domain/money';
 import { categoriasTransferenciaIds } from '../domain/transferencia';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
@@ -59,24 +61,55 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
           {lanc.status === 'previsto' ? 'Previsto' : 'Lançamento'}
           {lanc.recorrenciaId && <span className="badge" style={{ marginLeft: 8 }}>recorrência</span>}
         </h2>
-        <div className="campo">
-          <label htmlFor="ed-valor">Valor{negativo ? ' (estorno)' : ''}</label>
-          <CampoValor id="ed-valor" valorCentavos={valorCentavos} onChange={setValorCentavos} />
-        </div>
-        <div className="campo">
-          <label htmlFor="ed-data">Data</label>
-          <CampoData id="ed-data" value={data} onChange={setData} />
-        </div>
-        <div className="campo">
-          <label>Categoria</label>
-          <SeletorCategoria categorias={categorias} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
-        </div>
-        <div className="campo">
-          <label htmlFor="ed-nota">Nota</label>
-          <input id="ed-nota" value={nota} onChange={(e) => setNota(e.target.value)} />
-        </div>
-        {doCenario ? (
+        {parcelaDeRecorrenciaCenario ? (
+          // Nada aqui seria salvo (sem Salvar, sem Excluir): mostra os dados em texto, sem
+          // reaproveitar CampoValor/CampoData/SeletorCategoria como só-leitura — nenhum dos
+          // três aceita essa prop hoje, e não valia a pena mexer num componente compartilhado
+          // por um caso tão específico.
+          <>
+            <div className="campo">
+              <label>Valor{negativo ? ' (estorno)' : ''}</label>
+              <p className="sub">{formatarBRL(valorCentavos)}</p>
+            </div>
+            <div className="campo">
+              <label>Data</label>
+              <p className="sub">{formatarDataBR(data)}</p>
+            </div>
+            <div className="campo">
+              <label>Categoria</label>
+              <p className="sub">{dados.categorias.find((c) => c.id === categoriaId)?.nome ?? '?'}</p>
+            </div>
+            <div className="campo">
+              <label>Nota</label>
+              <p className="sub">{nota || '—'}</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="campo">
+              <label htmlFor="ed-valor">Valor{negativo ? ' (estorno)' : ''}</label>
+              <CampoValor id="ed-valor" valorCentavos={valorCentavos} onChange={setValorCentavos} />
+            </div>
+            <div className="campo">
+              <label htmlFor="ed-data">Data</label>
+              <CampoData id="ed-data" value={data} onChange={setData} />
+            </div>
+            <div className="campo">
+              <label>Categoria</label>
+              <SeletorCategoria categorias={categorias} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
+            </div>
+            <div className="campo">
+              <label htmlFor="ed-nota">Nota</label>
+              <input id="ed-nota" value={nota} onChange={(e) => setNota(e.target.value)} />
+            </div>
+          </>
+        )}
+        {parcelaDeRecorrenciaCenario ? (
           <p className="sub">Item de um cenário: para mudar ou excluir, use Fluxo › Simular.</p>
+        ) : doCenario ? (
+          <p className="sub">
+            Item de um cenário: não pode ser confirmado. Para trazê-lo aos dados reais, use Tornar real, em Fluxo › Simular.
+          </p>
         ) : previstoDeRecorrencia && (
           <p className="sub">
             Previsto de uma recorrência: para mudar valor ou data, edite a regra em Ajustes — ou confirme já com o valor ajustado.

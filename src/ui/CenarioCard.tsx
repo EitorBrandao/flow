@@ -39,7 +39,9 @@ export default function CenarioCard({ cenario, linhas, larguraCh, aberto, onAlte
     await recarregar();
   }
   async function tornarReal() {
-    if (!window.confirm(`Converter "${cenario.nome}" em lançamentos reais?`)) return;
+    const temPassado = dados!.lancamentos.some((l) => l.cenarioId === cenario.id && l.data <= hoje);
+    const aviso = temPassado ? ' Itens com data já passada vão para os Pendentes, em Hoje.' : '';
+    if (!window.confirm(`Converter "${cenario.nome}" em lançamentos reais?${aviso}`)) return;
     await repo.converterCenarioEmReal(cenario.id);
     await recarregar();
   }

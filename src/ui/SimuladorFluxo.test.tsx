@@ -224,3 +224,27 @@ it('Tornar real e Excluir cenário pedem confirmação', async () => {
   expect(await db.cenarios.get(c.id)).toBeDefined();
   confirmar.mockRestore();
 });
+
+it('Tornar real avisa sobre Pendentes quando há item de cenário com data já passada (hoje inclusive)', async () => {
+  const { box, casa } = await preparar(); // hoje = '2026-09-15'
+  await cenarioCom('Y', true, { boxId: box.id, categoriaId: casa.id, data: '2026-09-15', valor: 100 });
+  const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  render(<SimuladorFluxo />);
+  await userEvent.click(screen.getByRole('button', { name: /^Y/ }));
+  await userEvent.click(screen.getByRole('button', { name: 'Tornar real' }));
+  expect(confirmar).toHaveBeenCalledWith(
+    'Converter "Y" em lançamentos reais? Itens com data já passada vão para os Pendentes, em Hoje.',
+  );
+  confirmar.mockRestore();
+});
+
+it('Tornar real não avisa sobre Pendentes quando todos os itens do cenário são futuros', async () => {
+  const { box, casa } = await preparar(); // hoje = '2026-09-15'
+  await cenarioCom('Z', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });
+  const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  render(<SimuladorFluxo />);
+  await userEvent.click(screen.getByRole('button', { name: /^Z/ }));
+  await userEvent.click(screen.getByRole('button', { name: 'Tornar real' }));
+  expect(confirmar).toHaveBeenCalledWith('Converter "Z" em lançamentos reais?');
+  confirmar.mockRestore();
+});
