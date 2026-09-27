@@ -1,10 +1,10 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
-import { formatarBRL } from '../domain/money';
+import { formatarBRL, formatarSaldo } from '../domain/money';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import TelaHoje from './TelaHoje';
@@ -56,8 +56,9 @@ it('declara saldo real maior que o saldo do app e mostra que falta inserir', asy
 
   expect(await screen.findByText(/falta inserir/)).toBeInTheDocument();
   expect(screen.getByText(/R\$\s*50,00/)).toBeInTheDocument();
-  // Diferença do ponto de vista do app: banco com mais = app devendo = negativo, em vermelho.
-  expect(screen.getByText(/^−R\$\s*50,00$/)).toHaveClass('valor-gasto');
+  // Diferença do ponto de vista do app: falta inserir = vermelho, sem sinal.
+  expect(screen.getByText(/^R\$\s*50,00$/)).toHaveClass('valor-gasto');
+  expect(screen.queryByText(/[−+]R\$/)).not.toBeInTheDocument();
   const salva = await db.boxes.get(box.id);
   expect(salva?.saldoDeclaradoCent).toBe(105000);
 });
@@ -78,7 +79,7 @@ it('declara saldo real negativo (cheque especial) e persiste com o sinal', async
   await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
   expect(await screen.findByText(/sobra no app/)).toBeInTheDocument();
-  expect(screen.getByText(/^\+R\$\s*1\.050,00$/)).toHaveClass('valor-ganho');
+  expect(screen.getByText(/^R\$\s*1\.050,00$/)).toHaveClass('valor-ganho');
   const salva = await db.boxes.get(box.id);
   expect(salva?.saldoDeclaradoCent).toBe(-5000);
 });
@@ -121,6 +122,23 @@ it('troca de box reseta o campo de saldo real para o valor daquela box', async (
   expect((screen.getByLabelText('Saldo real no banco') as HTMLInputElement).value).toMatch(/0,00/);
 });
 
+it('projetado negativo usa a cor de saldo (classeSaldo) e o sinal "−", não a de movimento', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const catGasto = await repo.salvarCategoria({ boxId: box.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+  // previsto hoje bem maior que o saldo: saldoProjetado fica negativo, saldoEfetivo continua positivo
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catGasto.id, data: '2026-07-05', valor: 500000, status: 'previsto' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-05' });
+
+  render(<TelaHoje />);
+  const linhaProjetado = await screen.findByText(/^projetado:/);
+  const projetado = within(linhaProjetado.closest('p') as HTMLElement).getByText(formatarSaldo(-400000).replace(/\s/g, ' '));
+  expect(projetado).toHaveClass('total-dia', 'neg');
+  expect(projetado).not.toHaveClass('valor-gasto');
+});
+
 it('com banco vazio, a Hoje mostra o cartão de primeiro uso e não mostra o saldo grande', async () => {
   await useApp.getState().iniciar();
 
@@ -140,6 +158,20 @@ it('com box com saldo próprio e ao menos uma categoria, mostra o saldo e não o
   render(<TelaHoje />);
   expect(screen.getByText(/Saldo hoje/)).toBeInTheDocument();
   expect(screen.queryByText('Primeira vez por aqui?')).not.toBeInTheDocument();
+});
+
+it('saldo grande negativo mostra o sinal "−", além da cor', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: -40000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  const { container } = render(<TelaHoje />);
+  const saldoGrande = container.querySelector('.saldo-grande');
+  expect(saldoGrande).toHaveClass('negativo');
+  expect(saldoGrande?.textContent?.replace(/\s/g, ' ')).toBe(formatarSaldo(-40000).replace(/\s/g, ' '));
 });
 
 describe('rodapé de backup', () => {
@@ -277,6 +309,22 @@ describe('conferência por banco', () => {
     expect(screen.queryByText(/Bate certinho/)).not.toBeInTheDocument();
   });
 
+  it('total calculado no Flow negativo aparece em vermelho, com o sinal "−"', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: -30000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+    const linha = screen.getByText('Total calculado no Flow').closest('.total') as HTMLElement;
+    const valor = linha.querySelector('.total-dia');
+    expect(valor).toHaveClass('neg');
+    expect(valor?.textContent?.replace(/\s/g, ' ')).toBe(formatarSaldo(-30000).replace(/\s/g, ' '));
+  });
+
   it('box sem banco: total do Flow fica entre o campo informado e a diferença', async () => {
     await comBoxESaldo();
     render(<TelaHoje />);
@@ -289,7 +337,7 @@ describe('conferência por banco', () => {
     expect(antes(screen.getByLabelText('Saldo real no banco'), flow)).toBe(true);
     expect(antes(flow, diferenca)).toBe(true);
     // 1.000,00 no banco contra 1.010,00 no Flow: sobram 10,00 no app
-    expect(screen.getByText(/^\+R\$\s*10,00$/)).toHaveClass('valor-ganho');
+    expect(screen.getByText(/^R\$\s*10,00$/)).toHaveClass('valor-ganho');
   });
 
   it('com bancos: total informado, depois total do Flow, depois a diferença', async () => {
@@ -719,6 +767,22 @@ it('tocar no valor de um previsto comum abre os campos de correção', async () 
   expect(screen.queryByRole('button', { name: 'Descartar' })).not.toBeInTheDocument();
 });
 
+it('pendente de estorno aparece verde, com o rótulo "estorno"', async () => {
+  await cenarioPendenteComum(-4000);
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  const botao = screen.getByRole('button', { name: 'Corrigir valor de luz' });
+  expect(botao).toHaveClass('valor-ganho');
+  expect(botao.textContent?.replace(/\s/g, ' ')).toBe('R$ 40,00');
+  const item = botao.closest('.item') as HTMLElement;
+  expect(item).toHaveTextContent('estorno');
+  // Rótulo deve estar ao lado do nome da categoria, não da data
+  const badge = within(item).getByText('estorno');
+  expect(badge.parentElement).toHaveTextContent('luz');
+  expect(badge.parentElement?.textContent).not.toContain('27/08'); // não contém a data
+});
+
 it('cancelar a correção fecha os campos sem gravar nada', async () => {
   const { lanc } = await cenarioPendenteComum();
 
@@ -834,7 +898,7 @@ it('a fatura de cartão não ganha o gesto e mantém "Paguei outro valor"', asyn
   expect(screen.getByRole('button', { name: /Paguei outro valor/ })).toBeInTheDocument();
 });
 
-it('a diferença dos próximos 28 dias usa sinal e cor, não seta', async () => {
+it('a diferença dos próximos 28 dias usa só a cor, sem sinal nem seta', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
@@ -845,9 +909,9 @@ it('a diferença dos próximos 28 dias usa sinal e cor, não seta', async () => 
 
   render(<TelaHoje />);
 
-  const pilula = screen.getByText(`+${formatarBRL(80000).replace(/\s/g, ' ')} nos próximos 28 dias`);
+  const pilula = screen.getByText(`${formatarBRL(80000).replace(/\s/g, ' ')} nos próximos 28 dias`);
   expect(pilula).toHaveClass('delta', 'pos');
-  expect(screen.queryByText(/▲|▼/)).not.toBeInTheDocument();
+  expect(pilula.textContent).not.toMatch(/^[−+]/);
 });
 
 it('conferência: um centavo de diferença não é "Bate certinho", e a data sai em DD/MM/AAAA', async () => {

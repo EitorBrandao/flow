@@ -1,5 +1,5 @@
 import { lancamentosDaCategoria } from '../domain/aggregations';
-import { formatarBRL } from '../domain/money';
+import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
 import type { ID, Lancamento, TipoCategoria } from '../domain/types';
 import Sheet from './Sheet';
 
@@ -26,27 +26,33 @@ export default function LancamentosSheet({
     ? lancamentosDaCategoria(mes, categoriaId, boxIds, lancamentos, incluirPrevistos)
     : [];
   const total = grupos.reduce((soma, g) => soma + g.subtotal, 0);
-  const classeValor = tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto';
+  const classe = (v: number) => classeEfeito(efeitoNoSaldo(v, tipo));
 
   return (
     <Sheet aberto={aberto} onFechar={onFechar} rotulo={nome}>
       <div className="linha" style={{ justifyContent: 'space-between' }}>
         <h2 style={{ margin: 0 }}>{nome}</h2>
-        <strong className={classeValor}>{formatarBRL(total)}</strong>
+        <strong className={classe(total)}>{formatarBRL(total)}</strong>
       </div>
       <div className="lista" style={{ marginTop: 12 }}>
         {grupos.map((g) => (
           <div key={g.notaChave}>
             <div className="linha recuo-1" style={{ justifyContent: 'space-between' }}>
-              <p className="rotulo-grupo">{g.notaExibicao}</p>
-              <span className={classeValor}>{formatarBRL(g.subtotal)}</span>
+              <p className="rotulo-grupo">
+                {g.notaExibicao}
+                {g.itens.length === 1 && g.itens[0].valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
+              </p>
+              <span className={classe(g.subtotal)}>{formatarBRL(g.subtotal)}</span>
             </div>
             {g.itens.length > 1 && (
               <div className="lista" style={{ marginTop: 6 }}>
                 {g.itens.map((it, i) => (
                   <div className="item recuo-2" key={`${it.data}:${i}`} style={{ cursor: 'default' }}>
-                    <div className="cresce">{dataFormatada(it.data)}</div>
-                    <span className={classeValor}>{formatarBRL(it.valor)}</span>
+                    <div className="cresce">
+                      {dataFormatada(it.data)}
+                      {it.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
+                    </div>
+                    <span className={classe(it.valor)}>{formatarBRL(it.valor)}</span>
                   </div>
                 ))}
               </div>

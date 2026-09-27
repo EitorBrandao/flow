@@ -43,3 +43,14 @@ it('mensagem de vazio quando não há linhas', () => {
   render(<ComposicaoBarChart linhas={[]} base={1} onClicarLinha={() => {}} />);
   expect(screen.getByText('Sem movimentos no mês.')).toBeInTheDocument();
 });
+
+it('estorno maior que o gasto da categoria: total negativo aparece verde, sem sinal', () => {
+  const linhasComEstorno: LinhaComposicao[] = [
+    { chave: 'alu', nome: 'Aluguel', tipo: 'gasto', total: -5000, pctDaRenda: -0.05 },
+  ];
+  render(<ComposicaoBarChart linhas={linhasComEstorno} base={620000} onClicarLinha={() => {}} />);
+  const valor = screen.getByText('R$ 50,00');
+  expect(valor).toHaveClass('valor-ganho');
+  expect(valor).not.toHaveClass('valor-gasto');
+  expect(screen.getByText('5,0%')).toBeInTheDocument(); // percentual sem sinal — a cor já diz o sentido
+});

@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Maximize2, Search } from 'lucide-react';
 import { addDias, formatarDataBR } from '../domain/dates';
 import { ajustesDoCartao, calcularFaturas, type Fatura } from '../domain/fatura';
-import { formatarBRL } from '../domain/money';
+import { classeEfeito, efeitoNoSaldo, formatarBRL, formatarSaldo } from '../domain/money';
 import { projetarBoxes } from '../domain/projection';
 import type { Lancamento } from '../domain/types';
 import { boxIdsSelecionadas, cenariosLigados, useApp, type AbaFluxo } from '../state/store';
@@ -93,7 +93,7 @@ export default function TelaFluxo() {
     if (l.nota && l.nota.toLowerCase().includes(q)) return true;
     if (nomeCat(l.categoriaId).toLowerCase().includes(q)) return true;
     if (dataBonita(l.data).toLowerCase().includes(q)) return true;
-    if (formatarBRL(Math.abs(l.valor)).toLowerCase().includes(q)) return true;
+    if (formatarBRL(l.valor).toLowerCase().includes(q)) return true;
     return l.origem === 'cartao' && bateFaturaCartao(l);
   };
   const porDia = new Map<string, Lancamento[]>();
@@ -204,7 +204,7 @@ export default function TelaFluxo() {
                         <strong className="total-dia">—</strong>
                       ) : (
                         <strong className={`total-dia ${saldo >= 0 ? 'pos' : 'neg'}`}>
-                          {formatarBRL(saldo)}
+                          {formatarSaldo(saldo)}
                         </strong>
                       )}
                     </span>
@@ -215,7 +215,7 @@ export default function TelaFluxo() {
                     return (
                       <div className="linha">
                         <span className={`delta ${delta > 0 ? 'pos' : 'neg'}`}>
-                          {delta > 0 ? '+' : '−'}{formatarBRL(Math.abs(delta))} em relação a hoje
+                          {formatarBRL(delta)} em relação a hoje
                         </span>
                       </div>
                     );
@@ -242,9 +242,10 @@ export default function TelaFluxo() {
                       <div className="cresce">
                         {nomeCat(l.categoriaId)}
                         {l.status === 'previsto' && <span className="badge" style={{ marginLeft: 6 }}>{l.cenarioId ? 'cenário' : 'previsto'}</span>}
+                        {l.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
                         {l.nota && <div className="sub">{l.nota}</div>}
                       </div>
-                      <span className={tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
+                      <span className={classeEfeito(efeitoNoSaldo(l.valor, tipoCat(l.categoriaId)))}>
                         {formatarBRL(l.valor)}
                       </span>
                     </button>

@@ -4,7 +4,7 @@ import {
 } from '../domain/aggregations';
 import { addMeses, formatarDataBR, mesAbreviado, mesDe } from '../domain/dates';
 import { resumoAssinaturasDoMes } from '../domain/fatura';
-import { formatarBRL } from '../domain/money';
+import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
 import type { ID, Viagem } from '../domain/types';
 import { itensDaViagem, totalViagemNoMes } from '../domain/viagem';
 import { boxIdsSelecionadas, useApp } from '../state/store';
@@ -91,9 +91,9 @@ export default function TelaAnalises() {
 
       <div className="card">
         <div className="linha" style={{ justifyContent: 'space-between' }}>
-          <span>Ganhos <strong className="valor-ganho">{formatarBRL(resumo.totalGanhos)}</strong></span>
-          <span>Gastos <strong className="valor-gasto">{formatarBRL(resumo.totalGastos)}</strong></span>
-          <span>Sobra <strong className={resumo.sobra >= 0 ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(resumo.sobra)}</strong></span>
+          <span>Ganhos <strong className={classeEfeito(resumo.totalGanhos)}>{formatarBRL(resumo.totalGanhos)}</strong></span>
+          <span>Gastos <strong className={classeEfeito(-resumo.totalGastos)}>{formatarBRL(resumo.totalGastos)}</strong></span>
+          <span>Sobra <strong className={classeEfeito(resumo.sobra)}>{formatarBRL(resumo.sobra)}</strong></span>
         </div>
         <div className="resumo-barras">
           <div className="resumo-barra-trilho">
@@ -129,8 +129,9 @@ export default function TelaAnalises() {
                 {viagem.nome}
                 <div className="sub">{formatarDataBR(viagem.dataInicio)} – {formatarDataBR(viagem.dataFim)}</div>
               </div>
-              {/* sem gasto, sem pílula vermelha — mesma regra da fatura sem gasto */}
-              <span className={total > 0 ? 'valor-gasto' : undefined}>{formatarBRL(total)}</span>
+              {/* sem gasto, sem pílula vermelha — mesma regra da fatura sem gasto; estorno maior
+                  que o gasto do mês vira efeito positivo no saldo, e fica verde */}
+              <span className={classeEfeito(-total)}>{formatarBRL(total)}</span>
             </button>
           ))}
           {viagensComTotal.length === 0 && <p className="sub">Nenhuma viagem cadastrada — crie em Ajustes.</p>}
@@ -150,10 +151,10 @@ export default function TelaAnalises() {
                 return (
                   <tr key={c.categoriaId}>
                     <td>{c.nome}</td>
-                    <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.atual)}</td>
-                    <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.mesAnterior)}</td>
-                    <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.anoAnterior)}</td>
-                    <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{media == null ? '—' : formatarBRL(media)}</td>
+                    <td className={classeEfeito(efeitoNoSaldo(c.atual, c.tipo))}>{formatarBRL(c.atual)}</td>
+                    <td className={classeEfeito(efeitoNoSaldo(c.mesAnterior, c.tipo))}>{formatarBRL(c.mesAnterior)}</td>
+                    <td className={classeEfeito(efeitoNoSaldo(c.anoAnterior, c.tipo))}>{formatarBRL(c.anoAnterior)}</td>
+                    <td className={media == null ? undefined : classeEfeito(efeitoNoSaldo(media, c.tipo))}>{media == null ? '—' : formatarBRL(media)}</td>
                   </tr>
                 );
               })}

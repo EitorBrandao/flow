@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { formatarBRL } from '../domain/money';
+import { formatarBRL, formatarSaldo } from '../domain/money';
 import type { DiaSaldo } from '../domain/projection';
 import BalanceChart from './BalanceChart';
 
@@ -53,10 +53,10 @@ function serieComValores(min: number, max: number): DiaSaldo[] {
 }
 
 describe('BalanceChart — cor do rodapé mín/máx', () => {
-  it('mín negativo e máx positivo: mín em vermelho, máx em verde', () => {
+  it('mín negativo e máx positivo: mín em vermelho com "−", máx em verde sem sinal', () => {
     render(<BalanceChart serie={serieComValores(-34000, 218000)} hoje="2026-07-02" />);
-    expect(screen.getByText(semNbsp(formatarBRL(-34000)))).toHaveClass('neg');
-    expect(screen.getByText(semNbsp(formatarBRL(218000)))).toHaveClass('pos');
+    expect(screen.getByText(semNbsp(formatarSaldo(-34000)))).toHaveClass('neg');
+    expect(screen.getByText(semNbsp(formatarSaldo(218000)))).toHaveClass('pos');
   });
 
   // O rodapé mostra o menor e o maior saldo reais da série, como o FluxoChartModal. O zero
@@ -67,10 +67,10 @@ describe('BalanceChart — cor do rodapé mín/máx', () => {
     expect(screen.getByText(semNbsp(formatarBRL(342000)))).toHaveClass('pos');
   });
 
-  it('todos os valores negativos: mín e máx são os valores reais (vermelhos)', () => {
+  it('todos os valores negativos: mín e máx são os valores reais, com "−" (vermelhos)', () => {
     render(<BalanceChart serie={serieComValores(-189000, -12000)} hoje="2026-07-02" />);
-    expect(screen.getByText(semNbsp(formatarBRL(-189000)))).toHaveClass('neg');
-    expect(screen.getByText(semNbsp(formatarBRL(-12000)))).toHaveClass('neg');
+    expect(screen.getByText(semNbsp(formatarSaldo(-189000)))).toHaveClass('neg');
+    expect(screen.getByText(semNbsp(formatarSaldo(-12000)))).toHaveClass('neg');
   });
 });
 

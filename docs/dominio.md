@@ -43,7 +43,9 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   `compararCategorias` (`src/domain/categorias.ts`) — ganhos antes de gastos, arquivadas
   sempre por último, `ordem` desempatada por `nome`.
 - **Lançamento** — um evento de caixa (ganho ou gasto) numa data, em centavos. Ver a matriz
-  `status` × `origem` abaixo — é a parte mais densa do modelo.
+  `status` × `origem` abaixo — é a parte mais densa do modelo. `valor` pode ser negativo: é
+  um estorno, dentro da mesma categoria. `efeitoNoSaldo(valor, tipo)` (`src/domain/money.ts`)
+  dá o sinal do efeito no saldo; a UI usa esse sinal só para a cor, nunca para o texto.
 - **Recorrência** — a *regra* que gera lançamentos `previsto` de origem `'recorrencia'` mês
   a mês (`materializar`, `src/domain/recurrence.ts`). Não é ela mesma um lançamento.
 - **Cartão** — dono de um ciclo de fechamento/vencimento (`diaFechamento`,

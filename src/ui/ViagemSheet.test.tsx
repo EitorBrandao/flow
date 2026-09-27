@@ -41,6 +41,50 @@ describe('ViagemSheet', () => {
     expect(screen.getByText('Almoço')).toBeInTheDocument();
   });
 
+  it('lançamento de estorno na viagem: item fica verde com o rótulo "estorno"; total e subtotal seguem o efeito no saldo', () => {
+    const lancamentos = [
+      lanc({ id: 'l1', data: '2026-02-01', valor: 8000, nota: 'Compras', viagemId: 'v1' }),
+      lanc({ id: 'l2', data: '2026-02-02', valor: -3000, nota: 'Compras', viagemId: 'v1' }), // estorno
+    ];
+    const comprasCartao = [compra({ id: 'c1', data: '2026-01-31', valorTotal: 20000, descricao: 'Hotel', viagemId: 'v1' })];
+
+    render(
+      <ViagemSheet
+        aberto viagem={viagem} boxIds={['b1']} lancamentos={lancamentos} comprasCartao={comprasCartao}
+        cartoes={cartoes} incluirPrevistos={true} categorias={categorias} onFechar={() => {}}
+      />,
+    );
+
+    // total: 8000 - 3000 + 20000 = 25000 centavos, ainda gasto (vermelho)
+    expect(screen.getByText('R$ 250,00')).toHaveClass('valor-gasto');
+    // subtotal do grupo "Compras": 8000 - 3000 = 5000 centavos, ainda gasto
+    expect(screen.getByText('R$ 50,00')).toHaveClass('valor-gasto');
+
+    const itemPositivo = screen.getByText('R$ 80,00');
+    expect(itemPositivo).toHaveClass('valor-gasto');
+
+    const itemEstorno = screen.getByText('R$ 30,00');
+    expect(itemEstorno).toHaveClass('valor-ganho'); // estorno: entra dinheiro, fica verde
+    expect(itemEstorno).not.toHaveClass('valor-gasto');
+    expect(screen.getByText('estorno')).toBeInTheDocument();
+  });
+
+  it('grupo com um único item de estorno mostra o rótulo "estorno" na linha do grupo', () => {
+    const lancamentos = [
+      lanc({ id: 'l1', data: '2026-02-01', valor: -3000, nota: 'Reembolso', viagemId: 'v1' }),
+    ];
+
+    render(
+      <ViagemSheet
+        aberto viagem={viagem} boxIds={['b1']} lancamentos={lancamentos} comprasCartao={[]}
+        cartoes={cartoes} incluirPrevistos={true} categorias={categorias} onFechar={() => {}}
+      />,
+    );
+
+    expect(screen.getByText('Reembolso')).toBeInTheDocument();
+    expect(screen.getByText('estorno')).toBeInTheDocument();
+  });
+
   it('fechado não renderiza nada', () => {
     render(
       <ViagemSheet

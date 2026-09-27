@@ -26,7 +26,10 @@ export default function EvolucaoMensalChart({ serie, mesAtual }: Props) {
     <div>
       <div className="evolucao-rotulos-sobra">
         {serie.map((s) => (
-          <span key={s.mes} className={`evolucao-sobra ${s.sobra >= 0 ? 'pos' : 'neg'}`}>
+          <span
+            key={s.mes}
+            className={`evolucao-sobra${s.sobra > 0 ? ' pos' : s.sobra < 0 ? ' neg' : ''}`}
+          >
             {formatarSobraCompacta(s.sobra)}
           </span>
         ))}

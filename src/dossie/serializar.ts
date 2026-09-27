@@ -1,4 +1,4 @@
-import { formatarBRL } from '../domain/money';
+import { formatarSaldo } from '../domain/money';
 import type { Aba } from '../state/store';
 import type { Roteiro, Passo, Corte } from './executar';
 import type { ResultadoInvariante } from './invariantes';
@@ -147,23 +147,23 @@ function montarMotor(retratos: Retrato[]): string {
     linhas.push('| Box | Efetivo | Projetado | Com cenários |', '|---|---|---|---|');
     for (const s of [...r.saldos].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))) {
       linhas.push(
-        `| ${s.nome} | ${formatarBRL(s.efetivo)} | ${formatarBRL(s.projetado)} | ${formatarBRL(s.comCenarios)} |`,
+        `| ${s.nome} | ${formatarSaldo(s.efetivo)} | ${formatarSaldo(s.projetado)} | ${formatarSaldo(s.comCenarios)} |`,
       );
     }
     linhas.push('', '### Marcos da projeção', '');
     if (r.marcos.minimo === null || r.marcos.maximo === null) {
       linhas.push('Sem projeção neste corte.');
     } else {
-      linhas.push(`- Mínimo: ${formatarBRL(r.marcos.minimo.saldoProjetado)} em ${r.marcos.minimo.data}`);
-      linhas.push(`- Máximo: ${formatarBRL(r.marcos.maximo.saldoProjetado)} em ${r.marcos.maximo.data}`);
+      linhas.push(`- Mínimo: ${formatarSaldo(r.marcos.minimo.saldoProjetado)} em ${r.marcos.minimo.data}`);
+      linhas.push(`- Máximo: ${formatarSaldo(r.marcos.maximo.saldoProjetado)} em ${r.marcos.maximo.data}`);
       for (const dia of r.marcos.fimDeMes) {
-        linhas.push(`- Fim de mês ${dia.data.slice(0, 7)}: ${formatarBRL(dia.saldoProjetado)}`);
+        linhas.push(`- Fim de mês ${dia.data.slice(0, 7)}: ${formatarSaldo(dia.saldoProjetado)}`);
       }
     }
 
     linhas.push('', '### Faturas', '');
     const linhasFatura = r.faturas.map(({ cartao, fatura }) => (
-      `| ${cartao.nome} | ${fatura.mes} | ${fatura.itens.length} | ${formatarBRL(fatura.totalCent)} |`
+      `| ${cartao.nome} | ${fatura.mes} | ${fatura.itens.length} | ${formatarSaldo(fatura.totalCent)} |`
     ));
     if (linhasFatura.length === 0) {
       linhas.push('Nenhuma fatura neste corte.');

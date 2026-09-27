@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import type { DiaSaldo } from '../domain/projection';
 import type { ISODate } from '../domain/types';
-import { formatarBRL } from '../domain/money';
+import { formatarSaldo } from '../domain/money';
 
 interface Props {
   serie: DiaSaldo[];
@@ -42,9 +42,9 @@ export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenario
     `${d.slice(8, 10)}/${d.slice(5, 7)}${cruzaAno ? `/${d.slice(0, 4)}` : ''}`;
   const minMax = (
     <>
-      mín <b className={min >= 0 ? 'pos' : 'neg'}>{formatarBRL(min)}</b>
+      mín <b className={min >= 0 ? 'pos' : 'neg'}>{formatarSaldo(min)}</b>
       {' · máx '}
-      <b className={max >= 0 ? 'pos' : 'neg'}>{formatarBRL(max)}</b>
+      <b className={max >= 0 ? 'pos' : 'neg'}>{formatarSaldo(max)}</b>
     </>
   );
   const ultimoPassado = passado.at(-1)?.i ?? -1;

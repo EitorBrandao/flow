@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.47.0] - 2026-09-27
+
+### Alterado
+
+- Lançamentos, diferenças e sobras aparecem sem "+" nem "−": a cor diz o sentido.
+  - Verde entra ou sobra, vermelho sai ou falta.
+  - Saldo abaixo de zero continua com o "−", porque é um saldo, não um gasto.
+  - Saldos usam o verde-escuro do Fluxo; lançamentos e diferenças, o verde-claro.
+  - Estorno aparece com o rótulo "estorno", na cor do seu efeito no saldo.
+
 ## [0.46.0] - 2026-09-25
 
 ### Adicionado
