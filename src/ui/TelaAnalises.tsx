@@ -91,8 +91,8 @@ export default function TelaAnalises() {
 
       <div className="card">
         <div className="linha" style={{ justifyContent: 'space-between' }}>
-          <span>Ganhos <strong className="valor-ganho">{formatarBRL(resumo.totalGanhos)}</strong></span>
-          <span>Gastos <strong className="valor-gasto">{formatarBRL(resumo.totalGastos)}</strong></span>
+          <span>Ganhos <strong className={classeEfeito(resumo.totalGanhos)}>{formatarBRL(resumo.totalGanhos)}</strong></span>
+          <span>Gastos <strong className={classeEfeito(-resumo.totalGastos)}>{formatarBRL(resumo.totalGastos)}</strong></span>
           <span>Sobra <strong className={resumo.sobra >= 0 ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(resumo.sobra)}</strong></span>
         </div>
         <div className="resumo-barras">

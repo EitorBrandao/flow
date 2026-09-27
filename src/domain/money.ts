@@ -52,9 +52,10 @@ export function classeSaldo(saldo: number): 'total-dia pos' | 'total-dia neg' {
   return saldo >= 0 ? 'total-dia pos' : 'total-dia neg';
 }
 
-/** Valor com centavos, sem "R$" — para caber em pílula estreita (ex.: "8,50", "1.234,56"). */
+/** Valor com centavos, sem "R$" — para caber em pílula estreita (ex.: "8,50", "1.234,56").
+ *  Sem sinal, como `formatarBRL`: a cor, na tela, diz o sentido. */
 export function formatarSemSimbolo(centavos: number): string {
-  return (centavos / 100).toLocaleString('pt-BR', {
+  return (Math.abs(centavos) / 100).toLocaleString('pt-BR', {
     minimumFractionDigits: 2, maximumFractionDigits: 2,
   });
 }

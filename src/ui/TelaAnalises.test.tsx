@@ -248,6 +248,22 @@ it('viagem sem gasto não ganha pílula vermelha, e a linha responde ao teclado'
   expect(within(linha).getByText('R$ 0,00')).not.toHaveClass('valor-gasto');
 });
 
+it('estorno maior que os ganhos do mês: total de Ganhos aparece vermelho, sem sinal', async () => {
+  const { box, catPix } = await seedBoxComCategoria();
+  const catSalario = await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-05', valor: 1000, status: 'efetivo' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-06', valor: -3000, status: 'efetivo' }); // estorno de ganho
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2026-07-10', valor: 500, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  render(<TelaAnalises />);
+  const cardResumo = screen.getByText('Ganhos').closest('.card') as HTMLElement;
+  const ganhos = within(cardResumo).getByText('R$ 20,00'); // |1000-3000| = 2000 centavos, líquido negativo
+  expect(ganhos).toHaveClass('valor-gasto');
+  expect(ganhos).not.toHaveClass('valor-ganho');
+});
+
 it('cabeçalho do comparativo mostra o mês abreviado', async () => {
   const { box, catPix } = await seedBoxComCategoria();
   await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2026-10-05', valor: 30000, status: 'efetivo' });

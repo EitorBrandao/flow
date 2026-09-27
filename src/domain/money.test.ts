@@ -86,6 +86,11 @@ it('formatarSemSimbolo mostra centavos e milhar, sem R$', () => {
   expect(formatarSemSimbolo(100)).toBe('1,00'); // não '1'
 });
 
+it('formatarSemSimbolo nunca mostra sinal: a cor, na tela, diz o sentido', () => {
+  expect(formatarSemSimbolo(-850)).toBe('8,50');
+  expect(formatarSemSimbolo(-850)).not.toMatch(/[−-]/);
+});
+
 describe('parsearCentavosDecimal', () => {
   it('converte decimal com duas casas', () => {
     expect(parsearCentavosDecimal('123.45')).toBe(12345);
