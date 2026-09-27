@@ -129,8 +129,9 @@ export default function TelaAnalises() {
                 {viagem.nome}
                 <div className="sub">{formatarDataBR(viagem.dataInicio)} – {formatarDataBR(viagem.dataFim)}</div>
               </div>
-              {/* sem gasto, sem pílula vermelha — mesma regra da fatura sem gasto */}
-              <span className={total > 0 ? 'valor-gasto' : undefined}>{formatarBRL(total)}</span>
+              {/* sem gasto, sem pílula vermelha — mesma regra da fatura sem gasto; estorno maior
+                  que o gasto do mês vira efeito positivo no saldo, e fica verde */}
+              <span className={classeEfeito(-total)}>{formatarBRL(total)}</span>
             </button>
           ))}
           {viagensComTotal.length === 0 && <p className="sub">Nenhuma viagem cadastrada — crie em Ajustes.</p>}

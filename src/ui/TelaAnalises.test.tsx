@@ -264,6 +264,23 @@ it('estorno maior que os ganhos do mês: total de Ganhos aparece vermelho, sem s
   expect(ganhos).not.toHaveClass('valor-ganho');
 });
 
+it('card Viagens: estorno maior que o gasto do mês deixa o total verde, sem sinal', async () => {
+  const { box, catPix } = await seedBoxComCategoria();
+  const viagem = await repo.salvarViagem({ nome: 'Serra', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: catPix.id, data: '2026-07-02', valor: -3000, status: 'efetivo', viagemId: viagem.id,
+  }); // estorno maior que qualquer gasto do mês nessa viagem
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  render(<TelaAnalises />);
+  const cardViagens = screen.getByText('Viagens').closest('.card') as HTMLElement;
+  const linha = within(cardViagens).getByRole('button', { name: /Serra/ });
+  const valor = within(linha).getByText('R$ 30,00');
+  expect(valor).toHaveClass('valor-ganho');
+  expect(valor).not.toHaveClass('valor-gasto');
+});
+
 it('cabeçalho do comparativo mostra o mês abreviado', async () => {
   const { box, catPix } = await seedBoxComCategoria();
   await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2026-10-05', valor: 30000, status: 'efetivo' });
