@@ -4,7 +4,7 @@ import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
-import { formatarBRL } from '../domain/money';
+import { formatarBRL, formatarSaldo } from '../domain/money';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import TelaHoje from './TelaHoje';
@@ -122,7 +122,7 @@ it('troca de box reseta o campo de saldo real para o valor daquela box', async (
   expect((screen.getByLabelText('Saldo real no banco') as HTMLInputElement).value).toMatch(/0,00/);
 });
 
-it('projetado negativo usa a cor de saldo (classeSaldo), não a de movimento', async () => {
+it('projetado negativo usa a cor de saldo (classeSaldo) e o sinal "−", não a de movimento', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
@@ -134,7 +134,7 @@ it('projetado negativo usa a cor de saldo (classeSaldo), não a de movimento', a
 
   render(<TelaHoje />);
   const linhaProjetado = await screen.findByText(/^projetado:/);
-  const projetado = within(linhaProjetado.closest('p') as HTMLElement).getByText(formatarBRL(-400000).replace(/\s/g, ' '));
+  const projetado = within(linhaProjetado.closest('p') as HTMLElement).getByText(formatarSaldo(-400000).replace(/\s/g, ' '));
   expect(projetado).toHaveClass('total-dia', 'neg');
   expect(projetado).not.toHaveClass('valor-gasto');
 });
@@ -158,6 +158,20 @@ it('com box com saldo próprio e ao menos uma categoria, mostra o saldo e não o
   render(<TelaHoje />);
   expect(screen.getByText(/Saldo hoje/)).toBeInTheDocument();
   expect(screen.queryByText('Primeira vez por aqui?')).not.toBeInTheDocument();
+});
+
+it('saldo grande negativo mostra o sinal "−", além da cor', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: -40000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  const { container } = render(<TelaHoje />);
+  const saldoGrande = container.querySelector('.saldo-grande');
+  expect(saldoGrande).toHaveClass('negativo');
+  expect(saldoGrande?.textContent?.replace(/\s/g, ' ')).toBe(formatarSaldo(-40000).replace(/\s/g, ' '));
 });
 
 describe('rodapé de backup', () => {
@@ -295,7 +309,7 @@ describe('conferência por banco', () => {
     expect(screen.queryByText(/Bate certinho/)).not.toBeInTheDocument();
   });
 
-  it('total calculado no Flow negativo aparece em vermelho e sem sinal', async () => {
+  it('total calculado no Flow negativo aparece em vermelho, com o sinal "−"', async () => {
     const agora = agoraISO();
     const box = { id: novoId(), nome: 'eitor', saldoInicial: -30000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
     await repo.salvarBox(box);
@@ -308,7 +322,7 @@ describe('conferência por banco', () => {
     const linha = screen.getByText('Total calculado no Flow').closest('.total') as HTMLElement;
     const valor = linha.querySelector('.total-dia');
     expect(valor).toHaveClass('neg');
-    expect(valor?.textContent?.replace(/\s/g, ' ')).toBe('R$ 300,00');
+    expect(valor?.textContent?.replace(/\s/g, ' ')).toBe(formatarSaldo(-30000).replace(/\s/g, ' '));
   });
 
   it('box sem banco: total do Flow fica entre o campo informado e a diferença', async () => {

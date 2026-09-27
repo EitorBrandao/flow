@@ -2,7 +2,7 @@ import { Pencil } from 'lucide-react';
 import { useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { formatarDataBR } from '../../domain/dates';
-import { classeSaldo, formatarBRL } from '../../domain/money';
+import { classeSaldo, formatarSaldo } from '../../domain/money';
 import { agoraISO, novoId, type Box } from '../../domain/types';
 import { useApp } from '../../state/store';
 import CampoData from '../CampoData';
@@ -155,7 +155,7 @@ export default function Boxes() {
                 <div className="sub">
                   {b.saldoInicial != null ? (
                     <>
-                      <span className={classeSaldo(b.saldoInicial)}>{formatarBRL(b.saldoInicial)}</span>
+                      <span className={classeSaldo(b.saldoInicial)}>{formatarSaldo(b.saldoInicial)}</span>
                       {b.dataSaldoInicial ? ` em ${formatarDataBR(b.dataSaldoInicial)}` : ''}
                     </>
                   ) : 'sem saldo próprio (compartilhada)'}

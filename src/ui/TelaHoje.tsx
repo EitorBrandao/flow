@@ -4,7 +4,7 @@ import * as repo from '../db/repo';
 import { bancosDaBox, totalDeclaradoCent } from '../domain/bancos';
 import { addDias, formatarDataBR } from '../domain/dates';
 import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../domain/estadoBackup';
-import { classeEfeito, classeSaldo, efeitoNoSaldo, formatarBRL } from '../domain/money';
+import { classeEfeito, classeSaldo, efeitoNoSaldo, formatarBRL, formatarSaldo } from '../domain/money';
 import type { Banco, Box, ISODate, Lancamento } from '../domain/types';
 import { pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, estadoPrimeiroUso, useApp } from '../state/store';
@@ -80,7 +80,7 @@ function TotalFlow({ saldoApp }: { saldoApp: number }) {
   return (
     <div className="total">
       <span>Total calculado no Flow</span>
-      <span className={classeSaldo(saldoApp)}>{formatarBRL(saldoApp)}</span>
+      <span className={classeSaldo(saldoApp)}>{formatarSaldo(saldoApp)}</span>
     </div>
   );
 }
@@ -243,7 +243,7 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
       ))}
       <div className="total">
         <span>Total informado</span>
-        <span className={totalCent != null ? classeSaldo(totalCent) : undefined}>{totalCent != null ? formatarBRL(totalCent) : '—'}</span>
+        <span className={totalCent != null ? classeSaldo(totalCent) : undefined}>{totalCent != null ? formatarSaldo(totalCent) : '—'}</span>
       </div>
       <TotalFlow saldoApp={saldoApp} />
       {diff == null ? (
@@ -366,7 +366,7 @@ export default function TelaHoje() {
               </p>
               {(() => {
                 const saldoHoje = deHoje?.saldoEfetivo ?? 0;
-                const [reais, centavos] = formatarBRL(saldoHoje).split(',');
+                const [reais, centavos] = formatarSaldo(saldoHoje).split(',');
                 return (
                   <p className={`saldo-grande${saldoHoje < 0 ? ' negativo' : ''}`} style={{ margin: '4px 0' }}>
                     {reais}<b>,{centavos}</b>
@@ -386,7 +386,7 @@ export default function TelaHoje() {
               {deHoje && deHoje.saldoProjetado !== deHoje.saldoEfetivo && (
                 <p className="sub" style={{ margin: 0 }}>
                   projetado: <strong className={classeSaldo(deHoje.saldoProjetado)}>
-                    {formatarBRL(deHoje.saldoProjetado)}
+                    {formatarSaldo(deHoje.saldoProjetado)}
                   </strong>
                 </p>
               )}

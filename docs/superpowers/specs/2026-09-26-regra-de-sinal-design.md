@@ -28,6 +28,17 @@ tabela teria os dois jeitos lado a lado.
    `.delta`, Sobra de Análises. Saldo zero conta como positivo; movimento zero fica sem
    cor. `.saldo-grande` (saldo grande do Hoje) e o mín/máx dos gráficos (`b.pos`/`.neg`)
    mantêm o estilo próprio, fora desta decisão.
+6. **Exceção ao item 1: saldo abaixo de zero volta a mostrar o "−"** (U+2212), além da
+   cor — decisão 2026-09-27, a pedido do usuário. Critério: o **sentido** do número, não
+   a tela onde aparece. Saldo é um estado (quanto há numa data); "não é um gasto, é um
+   saldo abaixo de 0". Movimento continua sem sinal, mesmo negativo — a cor basta, porque
+   um movimento negativo já é, por natureza, "sair"/"faltar". Nova função
+   `formatarSaldo(centavos)` em `src/domain/money.ts`: `(c < 0 ? '−' : '') + formatarBRL(c)`.
+   Todo lugar que já usa `classeSaldo` passa a formatar o valor com `formatarSaldo`, não
+   `formatarBRL` — inclusive as exceções do item 5 (`.saldo-grande`, mín/máx dos gráficos,
+   leitura do `FluxoChartModal`), que também são saldo. O total da fatura em
+   `TelaCartao.tsx` **não** entra: é movimento (quanto se deve), não saldo, mesmo
+   compartilhando a classe `.saldo-grande`.
 
 É uma mudança de **linguagem** (nível 6 do guia de estilo): a regra entra em
 `docs/estilo/fundamentos.md`.
@@ -104,24 +115,35 @@ de cartão, sempre ≥ 0 hoje. Ficam como estão.
 - `CampoValor`: mostra a magnitude digitada.
 - Valores já positivos por natureza: fatura, pagamento, parcelas, juros, orçamento de viagem
   (`PagamentoFaturaSheet`, `LinhaOrcamentoViagem`, `AvisoFaturaForaDoFluxo`, `FormCompra`).
-- Já coloridos pelo sinal, só perdem o "−": saldo do dia no Fluxo (`.total-dia`), mín/máx
-  dos gráficos (`b.pos/.neg`), leitura do gráfico expandido (`.saldo-grande`), sobra em
-  Análises. "Projetado" no Hoje também já era colorido pelo sinal, mas com
+- Já coloridos pelo sinal: sobra em Análises continua sem "−", é movimento (decisão 6).
+  Saldo do dia no Fluxo (`.total-dia`), mín/máx dos gráficos (`b.pos/.neg`) e leitura do
+  gráfico expandido (`.saldo-grande` do `FluxoChartModal`) **voltam a ter o "−"** quando
+  negativos — são saldo, não movimento (decisão 6, 2026-09-27; revoga o que este item
+  dizia antes dessa data). "Projetado" no Hoje também já era colorido pelo sinal, mas com
   `valor-ganho`/`valor-gasto` (movimento) — a decisão 5 troca isso por `classeSaldo`
   (saldo), acrescentado em 2026-09-27.
 - **Saldo grande do Hoje:** positivo segue branco com os centavos em verde; negativo segue
-  vermelho. O desenho atual já distingue os dois sem sinal.
+  vermelho, e agora (decisão 6, 2026-09-27) também com o "−" antes do "R$". O total da
+  fatura em `TelaCartao.tsx` usa a mesma classe `.saldo-grande`, mas é movimento — continua
+  sem sinal.
 - Busca do Fluxo e do Cartão por valor: continua casando o texto formatado (agora sem "−").
 
 ## Testes
 
-- `money.test.ts`: `formatarBRL` de negativo sai sem sinal; `formatarSobraCompacta`;
+- `money.test.ts`: `formatarBRL` de negativo sai sem sinal; `formatarSaldo` de negativo sai
+  com "−", de zero e positivo sai igual a `formatarBRL`; `formatarSobraCompacta`;
   `efeitoNoSaldo` (ganho, gasto, estorno de gasto, estorno de ganho); `classeEfeito` (zero).
 - Testes de tela que conferem "−R$" ou "+R$" são atualizados para o texto sem sinal **e** para
   a classe de cor.
 - Novo: estorno na lista do Fluxo aparece verde, com o rótulo "estorno".
 - Novo: diferença da conferência (Hoje e Cartão) sem sinal, com a mesma frase.
-- Dossiê regenerado (`npm run dossie`).
+- Acrescentado em 2026-09-27 (decisão 6): testes de saldo negativo (Boxes, Bancos, "Total
+  calculado no Flow", "projetado" do Hoje, mín/máx dos gráficos) passam a conferir o "−",
+  não a ausência dele. Novo teste do saldo grande do Hoje negativo com "−", e do saldo do
+  dia negativo no Fluxo com "−". O total da fatura em `TelaCartao.tsx` continua sem sinal
+  (é movimento).
+- Dossiê regenerado (`npm run dossie`) — o refactor de `brlComSinal` → `formatarSaldo` no
+  dossiê não muda a saída (mesma fórmula).
 - Varredura com Playwright no Galaxy S25+: Hoje (saldo negativo, conferência), Fluxo (saldo
   negativo, estorno), Análises, Ajustes → Boxes.
 
@@ -134,12 +156,15 @@ de cartão, sempre ≥ 0 hoje. Ficam como estão.
 
 ## Documentação
 
-- `docs/estilo/fundamentos.md`: a regra, com o estorno.
+- `docs/estilo/fundamentos.md`: a regra, com o estorno e, desde 2026-09-27, a exceção do
+  saldo negativo (decisão 6).
 - `docs/estilo/catalogo.md`: `.valor-ganho`/`.valor-gasto` passam a significar efeito no
-  saldo, não tipo de categoria.
+  saldo, não tipo de categoria. Desde 2026-09-27, `.total-dia` e `.grafico-rodape` citam
+  `formatarSaldo`.
 - `docs/dominio.md`: `efeitoNoSaldo`.
 - Wiki: onde citar sinal de valor mostrado (`7-ajustes.md` fala do "−" **digitado**, que não
-  muda). Glossário: "estorno".
+  muda). Glossário: "estorno". Verificado em 2026-09-27 (decisão 6): a wiki não afirma em
+  nenhum lugar que saldo aparece sem sinal, então não precisou de ajuste.
 
 ## Entrega
 

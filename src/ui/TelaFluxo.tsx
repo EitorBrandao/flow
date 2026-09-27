@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Maximize2, Search } from 'lucide-react';
 import { addDias, formatarDataBR } from '../domain/dates';
 import { ajustesDoCartao, calcularFaturas, type Fatura } from '../domain/fatura';
-import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
+import { classeEfeito, efeitoNoSaldo, formatarBRL, formatarSaldo } from '../domain/money';
 import { projetarBoxes } from '../domain/projection';
 import type { Lancamento } from '../domain/types';
 import { boxIdsSelecionadas, cenariosLigados, useApp, type AbaFluxo } from '../state/store';
@@ -204,7 +204,7 @@ export default function TelaFluxo() {
                         <strong className="total-dia">—</strong>
                       ) : (
                         <strong className={`total-dia ${saldo >= 0 ? 'pos' : 'neg'}`}>
-                          {formatarBRL(saldo)}
+                          {formatarSaldo(saldo)}
                         </strong>
                       )}
                     </span>

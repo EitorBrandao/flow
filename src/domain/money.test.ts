@@ -1,4 +1,4 @@
-import { formatarBRL, formatarPercentual, formatarSobraCompacta, empurrarDigito, apagarUltimoDigito, digitosParaCentavos, formatarSemSimbolo, parsearCentavosDecimal, efeitoNoSaldo, classeEfeito, classeSaldo } from './money';
+import { formatarBRL, formatarSaldo, formatarPercentual, formatarSobraCompacta, empurrarDigito, apagarUltimoDigito, digitosParaCentavos, formatarSemSimbolo, parsearCentavosDecimal, efeitoNoSaldo, classeEfeito, classeSaldo } from './money';
 
 describe('formatarBRL', () => {
   it('formata centavos como moeda pt-BR', () => {
@@ -9,6 +9,16 @@ describe('formatarBRL', () => {
   it('nunca mostra sinal: a cor, na tela, diz o sentido', () => {
     expect(formatarBRL(-4500)).toBe('R$ 45,00');
     expect(formatarBRL(-4500)).not.toMatch(/[−-]/);
+  });
+});
+
+describe('formatarSaldo', () => {
+  it('negativo mostra o sinal "−" (U+2212), além do valor absoluto', () => {
+    expect(formatarSaldo(-4500)).toBe(`−${formatarBRL(-4500)}`);
+  });
+  it('zero e positivo saem sem sinal, iguais a formatarBRL', () => {
+    expect(formatarSaldo(0)).toBe(formatarBRL(0));
+    expect(formatarSaldo(123456)).toBe(formatarBRL(123456));
   });
 });
 

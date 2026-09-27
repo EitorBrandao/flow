@@ -4,6 +4,7 @@ import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
+import { formatarSaldo } from '../../domain/money';
 import { agoraISO, novoId } from '../../domain/types';
 import { boxIdsSelecionadas, useApp } from '../../state/store';
 import Bancos from './Bancos';
@@ -145,16 +146,15 @@ it('edita nome, saldo e data de um banco existente', async () => {
   expect(sub?.textContent?.replace(/\s/g, ' ').startsWith('R$ 1.500,00 informado em 01/08')).toBe(true);
 });
 
-it('saldo informado negativo aparece em vermelho e sem sinal', async () => {
+it('saldo informado negativo aparece em vermelho, com o sinal "−"', async () => {
   const box = await comBox();
   const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Negativo', ordem: 0 });
   await repo.atualizarBanco(banco.id, { saldoDeclaradoCent: -250000, dataSaldoDeclarado: '2026-08-01' });
   await recarregarDados();
   render(<Bancos />);
 
-  const valor = screen.getByText(/^R\$\s*2\.500,00$/);
+  const valor = screen.getByText(formatarSaldo(-250000).replace(/\s/g, ' '));
   expect(valor).toHaveClass('total-dia', 'neg');
-  expect(screen.queryByText(/−R\$/)).not.toBeInTheDocument();
 });
 
 it('cancelar a edição não persiste nenhuma mudança', async () => {

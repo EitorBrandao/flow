@@ -6,7 +6,7 @@ import * as repo from '../db/repo';
 import { addDias, formatarDataBR, nomeDoMes } from '../domain/dates';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
-import { formatarBRL } from '../domain/money';
+import { formatarBRL, formatarSaldo } from '../domain/money';
 import TelaFluxo from './TelaFluxo';
 
 beforeEach(async () => {
@@ -444,6 +444,22 @@ it('filtro de data ativo não força hoje a aparecer se não tiver lançamento n
 
   expect(await screen.findByText('Nenhum lançamento neste dia.')).toBeInTheDocument();
   expect(screen.queryByText(/· hoje/)).not.toBeInTheDocument();
+});
+
+it('saldo do dia negativo no cabeçalho mostra o sinal "−", além da cor', async () => {
+  const { box, catMercado } = await seedBoxComCategoria();
+  const hoje = '2026-07-05';
+  // previsto bem maior que o saldo inicial: o saldo projetado do dia fica negativo
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: '2026-07-10', valor: 150000, status: 'previsto' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje });
+
+  render(<TelaFluxo />);
+  await abrirFiltros();
+  fireEvent.change(screen.getByLabelText('Buscar por data'), { target: { value: '2026-07-10' } });
+
+  const saldoEsperado = await screen.findByText(formatarSaldo(-50000).replace(/\s/g, ' '));
+  expect(saldoEsperado).toHaveClass('total-dia', 'neg');
 });
 
 describe('dia filtrado sem lançamento', () => {

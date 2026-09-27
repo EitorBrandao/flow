@@ -1,4 +1,4 @@
-import { formatarBRL } from '../domain/money';
+import { formatarSaldo } from '../domain/money';
 import type { Aba } from '../state/store';
 import type { Roteiro, Passo, Corte } from './executar';
 import type { ResultadoInvariante } from './invariantes';
@@ -19,11 +19,6 @@ const TITULO_ABA: Partial<Record<Aba, string>> = {
 function tituloAba(aba: Aba): string {
   return TITULO_ABA[aba] ?? aba;
 }
-
-/** O dossiê é texto puro, sem cor: ao contrário da UI, precisa do sinal (U+2212) para dizer
- *  quando um saldo ou total é negativo. `formatarBRL` sozinho mostraria sempre o valor
- *  absoluto — aqui devolvemos o sinal por cima. */
-const brlComSinal = (c: number) => (c < 0 ? '−' : '') + formatarBRL(c);
 
 /** Compara datas ISO `AAAA-MM-DD` na ordem cronológica. Sem `localeCompare`: um formato
  *  já ordenável por texto não precisa de colação de idioma, e evita qualquer surpresa. */
@@ -152,23 +147,23 @@ function montarMotor(retratos: Retrato[]): string {
     linhas.push('| Box | Efetivo | Projetado | Com cenários |', '|---|---|---|---|');
     for (const s of [...r.saldos].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))) {
       linhas.push(
-        `| ${s.nome} | ${brlComSinal(s.efetivo)} | ${brlComSinal(s.projetado)} | ${brlComSinal(s.comCenarios)} |`,
+        `| ${s.nome} | ${formatarSaldo(s.efetivo)} | ${formatarSaldo(s.projetado)} | ${formatarSaldo(s.comCenarios)} |`,
       );
     }
     linhas.push('', '### Marcos da projeção', '');
     if (r.marcos.minimo === null || r.marcos.maximo === null) {
       linhas.push('Sem projeção neste corte.');
     } else {
-      linhas.push(`- Mínimo: ${brlComSinal(r.marcos.minimo.saldoProjetado)} em ${r.marcos.minimo.data}`);
-      linhas.push(`- Máximo: ${brlComSinal(r.marcos.maximo.saldoProjetado)} em ${r.marcos.maximo.data}`);
+      linhas.push(`- Mínimo: ${formatarSaldo(r.marcos.minimo.saldoProjetado)} em ${r.marcos.minimo.data}`);
+      linhas.push(`- Máximo: ${formatarSaldo(r.marcos.maximo.saldoProjetado)} em ${r.marcos.maximo.data}`);
       for (const dia of r.marcos.fimDeMes) {
-        linhas.push(`- Fim de mês ${dia.data.slice(0, 7)}: ${brlComSinal(dia.saldoProjetado)}`);
+        linhas.push(`- Fim de mês ${dia.data.slice(0, 7)}: ${formatarSaldo(dia.saldoProjetado)}`);
       }
     }
 
     linhas.push('', '### Faturas', '');
     const linhasFatura = r.faturas.map(({ cartao, fatura }) => (
-      `| ${cartao.nome} | ${fatura.mes} | ${fatura.itens.length} | ${brlComSinal(fatura.totalCent)} |`
+      `| ${cartao.nome} | ${fatura.mes} | ${fatura.itens.length} | ${formatarSaldo(fatura.totalCent)} |`
     ));
     if (linhasFatura.length === 0) {
       linhas.push('Nenhuma fatura neste corte.');

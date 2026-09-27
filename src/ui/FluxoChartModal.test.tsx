@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { addDias } from '../domain/dates';
-import { formatarBRL } from '../domain/money';
+import { formatarBRL, formatarSaldo } from '../domain/money';
 import type { DiaSaldo } from '../domain/projection';
 import FluxoChartModal from './FluxoChartModal';
 
@@ -124,13 +124,13 @@ function serieComBaseNoHoje(baseNoHoje: number): DiaSaldo[] {
 }
 
 describe('FluxoChartModal — cor do rodapé mín/máx', () => {
-  it('mín negativo e máx positivo: mín em vermelho, máx em verde', () => {
+  it('mín negativo e máx positivo: mín em vermelho com "−", máx em verde sem sinal', () => {
     const serieCenario = serieComBaseNoHoje(0);
     render(<FluxoChartModal serie={serieCenario} hoje={serieCenario[HOJE_IDX].data} mostrarCenarios={false} onFechar={() => {}} />);
-    // mín vem antes de máx no JSX (FluxoChartModal.tsx), então valores[0] é o mín.
-    const valores = screen.getAllByText(semNbsp(formatarBRL(30000)));
-    expect(valores[0]).toHaveClass('neg');
-    expect(valores[1]).toHaveClass('pos');
+    const min = screen.getByText(semNbsp(formatarSaldo(-30000)));
+    const max = screen.getByText(semNbsp(formatarSaldo(30000)));
+    expect(min).toHaveClass('neg');
+    expect(max).toHaveClass('pos');
   });
 
   it('mín e máx positivos: os dois em verde', () => {
@@ -140,11 +140,11 @@ describe('FluxoChartModal — cor do rodapé mín/máx', () => {
     expect(screen.getByText(semNbsp(formatarBRL(130000)))).toHaveClass('pos');
   });
 
-  it('mín e máx negativos: os dois em vermelho', () => {
+  it('mín e máx negativos: os dois em vermelho, com "−"', () => {
     const serieCenario = serieComBaseNoHoje(-100000);
     render(<FluxoChartModal serie={serieCenario} hoje={serieCenario[HOJE_IDX].data} mostrarCenarios={false} onFechar={() => {}} />);
-    expect(screen.getByText(semNbsp(formatarBRL(-130000)))).toHaveClass('neg');
-    expect(screen.getByText(semNbsp(formatarBRL(-70000)))).toHaveClass('neg');
+    expect(screen.getByText(semNbsp(formatarSaldo(-130000)))).toHaveClass('neg');
+    expect(screen.getByText(semNbsp(formatarSaldo(-70000)))).toHaveClass('neg');
   });
 });
 

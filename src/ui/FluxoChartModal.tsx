@@ -5,7 +5,7 @@ import {
   Area, AreaChart, ReferenceDot, ReferenceLine, ResponsiveContainer, XAxis, YAxis,
 } from 'recharts';
 import { X } from 'lucide-react';
-import { formatarBRL } from '../domain/money';
+import { formatarSaldo } from '../domain/money';
 import type { DiaSaldo } from '../domain/projection';
 import type { ISODate } from '../domain/types';
 import { janelaInicial, panJanela, zoomJanela, type Janela } from './chartGestures';
@@ -186,7 +186,7 @@ export default function FluxoChartModal({ serie, hoje, mostrarCenarios, onFechar
 
       <div className="grafico-expandido-leitura">
         <span className={`saldo-grande ${valorSelecionado < 0 ? 'negativo' : 'positivo'}`}>
-          {formatarBRL(valorSelecionado)}
+          {formatarSaldo(valorSelecionado)}
         </span>
         <span className="sub" data-testid="grafico-expandido-leitura-data">
           {semana(selecionado)}, {ddmm(selecionado)}{selecionado === hojeData ? ' · hoje' : ''}
@@ -246,9 +246,9 @@ export default function FluxoChartModal({ serie, hoje, mostrarCenarios, onFechar
       )}
 
       <div className="grafico-expandido-rodape">
-        mín <b className={min >= 0 ? 'pos' : 'neg'}>{formatarBRL(min)}</b>
+        mín <b className={min >= 0 ? 'pos' : 'neg'}>{formatarSaldo(min)}</b>
         {' · máx '}
-        <b className={max >= 0 ? 'pos' : 'neg'}>{formatarBRL(max)}</b>
+        <b className={max >= 0 ? 'pos' : 'neg'}>{formatarSaldo(max)}</b>
       </div>
     </div>
   );

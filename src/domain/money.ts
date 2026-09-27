@@ -6,6 +6,12 @@ export function formatarBRL(centavos: number): string {
   return (Math.abs(centavos) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+/** Saldo (um estado, não um movimento): abaixo de zero mostra o "−" (U+2212), além da cor.
+ *  Movimento usa `formatarBRL`, sem sinal. Regra em `docs/estilo/fundamentos.md`. */
+export function formatarSaldo(centavos: number): string {
+  return (centavos < 0 ? '−' : '') + formatarBRL(centavos);
+}
+
 /** Percentual com uma casa e vírgula decimal (ex.: "32,4%", "−12,3%"). Recebe pontos
  *  percentuais (32.4), não fração (0.324). */
 export function formatarPercentual(p: number): string {

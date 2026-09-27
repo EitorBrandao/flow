@@ -47,21 +47,28 @@ Token novo → `nivel-3-novo-token.md`. Mudar valor de token existente → níve
 
 ### Sinal de valor
 
-Valor em dinheiro mostrado nunca tem "+" nem "−". A cor diz o efeito no saldo: verde entra
-ou sobra, vermelho sai ou falta.
+O sentido do número decide o sinal. **Movimento** (algo que soma ou subtrai) nunca tem "+"
+nem "−": a cor diz o efeito no saldo, verde entra ou sobra, vermelho sai ou falta. **Saldo**
+(um estado — quanto há numa data) abaixo de zero volta a mostrar o "−" (U+2212, `formatarSaldo`
+em `src/domain/money.ts`), além da cor — decisão 2026-09-27: "não é um gasto, é um saldo
+abaixo de 0".
 
 - Lançamento (movimento): `classeEfeito(efeitoNoSaldo(valor, tipo))` (`.valor-ganho`/
-  `.valor-gasto`, verde-claro/vermelho). Estorno (valor negativo) inverte o sentido e ganha
-  o rótulo `.badge` "estorno". Movimento zero fica sem cor.
-- Saldo: `classeSaldo(saldo)` (`.total-dia.pos/.neg`, verde-escuro/vermelho), igual ao
-  saldo do dia no Fluxo. **Saldo é sempre verde-escuro, nunca verde-claro** — decisão
-  2026-09-27: saldo do dia no Fluxo, "Total calculado no Flow", "Total informado", saldo
-  da box, saldo do banco e "projetado" do Hoje usam `classeSaldo`, não `classeEfeito`.
-  Saldo zero conta como **positivo** (verde-escuro) — ao contrário do movimento, que fica
-  sem cor em zero.
-- Exceções que mantêm estilo próprio, fora das duas regras acima: o saldo grande do Hoje
-  (`.saldo-grande` — positivo em branco com centavos em verde, negativo em vermelho) e o
-  mín/máx dos gráficos (`b.pos`/`.neg`, `.grafico-rodape`).
+  `.valor-gasto`, verde-claro/vermelho), com `formatarBRL` (sem sinal). Estorno (valor
+  negativo) inverte o sentido e ganha o rótulo `.badge` "estorno". Movimento zero fica
+  sem cor. Diferença de conferência, pílulas `.delta`, sobra e totais de categoria/fatura/
+  viagem também são movimento: sem sinal, mesmo quando negativos.
+- Saldo: `classeSaldo(saldo)` (`.total-dia.pos/.neg`, verde-escuro/vermelho) com
+  `formatarSaldo` (que mostra o "−" abaixo de zero). **Saldo é sempre verde-escuro, nunca
+  verde-claro** — decisão 2026-09-27: saldo do dia no Fluxo, "Total calculado no Flow",
+  "Total informado", saldo da box, saldo do banco e "projetado" do Hoje usam `classeSaldo`
+  e `formatarSaldo`, não `classeEfeito`/`formatarBRL`. Saldo zero conta como **positivo**
+  (verde-escuro) — ao contrário do movimento, que fica sem cor em zero.
+- Exceções que mantêm estilo próprio, mas seguem a mesma regra de sinal do saldo (usam
+  `formatarSaldo`, mostram o "−" abaixo de zero): o saldo grande do Hoje (`.saldo-grande` —
+  positivo em branco com centavos em verde, negativo em vermelho) e o mín/máx dos gráficos,
+  inclusive a leitura do gráfico expandido (`b.pos`/`.neg`, `.grafico-rodape`,
+  `.saldo-grande` do `FluxoChartModal`).
 - Campo de digitar valor é exceção: o botão ± é o próprio controle do sinal.
 
 ## Escalas
