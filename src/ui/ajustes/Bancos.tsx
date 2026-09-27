@@ -4,7 +4,7 @@ import * as repo from '../../db/repo';
 import { bancosDaBox } from '../../domain/bancos';
 import { proximaOrdem } from '../../domain/categorias';
 import { formatarDataBR } from '../../domain/dates';
-import { formatarBRL } from '../../domain/money';
+import { classeSaldo, formatarBRL } from '../../domain/money';
 import type { ISODate } from '../../domain/types';
 import { boxIdEfetivo, boxIdsSelecionadas, useApp } from '../../state/store';
 import CampoData from '../CampoData';
@@ -200,9 +200,12 @@ export default function Bancos() {
                   <div className="cresce">
                     {b.nome}
                     <div className="sub">
-                      {b.saldoDeclaradoCent != null
-                        ? `${formatarBRL(b.saldoDeclaradoCent)} informado em ${formatarDataBR(b.dataSaldoDeclarado!)}`
-                        : 'saldo ainda não informado'}
+                      {b.saldoDeclaradoCent != null ? (
+                        <>
+                          <span className={classeSaldo(b.saldoDeclaradoCent)}>{formatarBRL(b.saldoDeclaradoCent)}</span>
+                          {` informado em ${formatarDataBR(b.dataSaldoDeclarado!)}`}
+                        </>
+                      ) : 'saldo ainda não informado'}
                       {' · '}{textoContagemCartoes(cartoesDoBanco(b.id))}
                     </div>
                   </div>

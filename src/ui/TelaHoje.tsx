@@ -4,7 +4,7 @@ import * as repo from '../db/repo';
 import { bancosDaBox, totalDeclaradoCent } from '../domain/bancos';
 import { addDias, formatarDataBR } from '../domain/dates';
 import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../domain/estadoBackup';
-import { formatarBRL } from '../domain/money';
+import { classeSaldo, formatarBRL } from '../domain/money';
 import type { Banco, Box, ISODate, Lancamento } from '../domain/types';
 import { pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, estadoPrimeiroUso, useApp } from '../state/store';
@@ -80,7 +80,7 @@ function TotalFlow({ saldoApp }: { saldoApp: number }) {
   return (
     <div className="total">
       <span>Total calculado no Flow</span>
-      <span>{formatarBRL(saldoApp)}</span>
+      <span className={classeSaldo(saldoApp)}>{formatarBRL(saldoApp)}</span>
     </div>
   );
 }
@@ -243,7 +243,7 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
       ))}
       <div className="total">
         <span>Total informado</span>
-        <span>{totalCent != null ? formatarBRL(totalCent) : '—'}</span>
+        <span className={totalCent != null ? classeSaldo(totalCent) : undefined}>{totalCent != null ? formatarBRL(totalCent) : '—'}</span>
       </div>
       <TotalFlow saldoApp={saldoApp} />
       {diff == null ? (

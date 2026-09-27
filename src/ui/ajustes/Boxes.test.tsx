@@ -196,3 +196,23 @@ it('saldo e data ficam em linhas de formulário separadas', async () => {
   const linhaData = within(item).getByLabelText('Data do saldo').closest('.form-linha');
   expect(linhaSaldo).not.toBe(linhaData);
 });
+
+it('saldo inicial negativo aparece em vermelho e sem sinal', async () => {
+  const agora = agoraISO();
+  await repo.salvarBox({ id: novoId(), nome: 'eitor', saldoInicial: -25000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora });
+  await useApp.getState().iniciar();
+
+  render(<Boxes />);
+  const valor = screen.getByText(/^R\$\s*250,00$/);
+  expect(valor).toHaveClass('total-dia', 'neg');
+  expect(screen.queryByText(/−R\$/)).not.toBeInTheDocument();
+});
+
+it('saldo inicial positivo aparece em verde', async () => {
+  const agora = agoraISO();
+  await repo.salvarBox({ id: novoId(), nome: 'eitor', saldoInicial: 25000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora });
+  await useApp.getState().iniciar();
+
+  render(<Boxes />);
+  expect(screen.getByText(/^R\$\s*250,00$/)).toHaveClass('total-dia', 'pos');
+});

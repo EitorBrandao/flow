@@ -278,6 +278,22 @@ describe('conferência por banco', () => {
     expect(screen.queryByText(/Bate certinho/)).not.toBeInTheDocument();
   });
 
+  it('total calculado no Flow negativo aparece em vermelho e sem sinal', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: -30000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+    const linha = screen.getByText('Total calculado no Flow').closest('.total') as HTMLElement;
+    const valor = linha.querySelector('.total-dia');
+    expect(valor).toHaveClass('neg');
+    expect(valor?.textContent?.replace(/\s/g, ' ')).toBe('R$ 300,00');
+  });
+
   it('box sem banco: total do Flow fica entre o campo informado e a diferença', async () => {
     await comBoxESaldo();
     render(<TelaHoje />);

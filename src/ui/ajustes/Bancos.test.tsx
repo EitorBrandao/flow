@@ -140,7 +140,19 @@ it('edita nome, saldo e data de um banco existente', async () => {
   expect(atualizado?.nome).toBe('Banco Novo');
   expect(atualizado?.saldoDeclaradoCent).toBe(150000);
   expect(atualizado?.dataSaldoDeclarado).toBe('2026-08-01');
-  expect(screen.getByText(/R\$ 1\.500,00 informado em 01\/08/)).toBeInTheDocument();
+  // O valor agora está num <span> próprio; verificar que aparece junto com "informado em"
+  expect(screen.getByText(/informado em 01\/08/)).toBeInTheDocument();
+});
+
+it('saldo informado negativo aparece em vermelho e sem sinal', async () => {
+  const box = await comBox();
+  const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Negativo', ordem: 0 });
+  await repo.atualizarBanco(banco.id, { saldoDeclaradoCent: -250000, dataSaldoDeclarado: '2026-08-01' });
+  await recarregarDados();
+  render(<Bancos />);
+
+  const valor = screen.getByText(/R\$ 2\.500,00/);
+  expect(valor).toHaveClass('total-dia', 'neg');
 });
 
 it('cancelar a edição não persiste nenhuma mudança', async () => {
