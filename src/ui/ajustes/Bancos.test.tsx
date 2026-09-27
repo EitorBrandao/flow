@@ -140,8 +140,9 @@ it('edita nome, saldo e data de um banco existente', async () => {
   expect(atualizado?.nome).toBe('Banco Novo');
   expect(atualizado?.saldoDeclaradoCent).toBe(150000);
   expect(atualizado?.dataSaldoDeclarado).toBe('2026-08-01');
-  // O valor agora está num <span> próprio; verificar que aparece junto com "informado em"
-  expect(screen.getByText(/informado em 01\/08/)).toBeInTheDocument();
+  const item = screen.getByText('Banco Novo').closest('.item') as HTMLElement;
+  const sub = item?.querySelector('.sub') as HTMLElement;
+  expect(sub?.textContent?.replace(/\s/g, ' ').startsWith('R$ 1.500,00 informado em 01/08')).toBe(true);
 });
 
 it('saldo informado negativo aparece em vermelho e sem sinal', async () => {
@@ -151,8 +152,9 @@ it('saldo informado negativo aparece em vermelho e sem sinal', async () => {
   await recarregarDados();
   render(<Bancos />);
 
-  const valor = screen.getByText(/R\$ 2\.500,00/);
+  const valor = screen.getByText(/^R\$\s*2\.500,00$/);
   expect(valor).toHaveClass('total-dia', 'neg');
+  expect(screen.queryByText(/−R\$/)).not.toBeInTheDocument();
 });
 
 it('cancelar a edição não persiste nenhuma mudança', async () => {
