@@ -184,8 +184,8 @@ describe('extremosPossiveis', () => {
 
 describe('larguraColunaValor', () => {
   it('conta o texto mais longo entre saldos (com "−") e diferenças (sem sinal)', () => {
-    // textos: sem "1.000,00" (8); min "−2.500,00" (9); max "1.500,00" (8);
-    //         dif min "3.500,00" (8); dif max "500,00" (6) → 9
+    // tamanhos: sem 100000 → 8; min −250000 → 9 (com o "−"); max 150000 → 8;
+    //           dif min −350000 → 8 (sem sinal); dif max 50000 → 6 → maior = 9
     expect(larguraColunaValor([100000], { min: [-250000], max: [150000] })).toBe(9);
   });
   it('nunca fica abaixo de 4 (cabe o "—")', () => {
@@ -1094,7 +1094,7 @@ it('cenário desligado não entra no resumo, mas o impacto dele aparece ao abrir
   await userEvent.click(screen.getByRole('button', { name: /Freela/ }));
   const impacto = screen.getByRole('region', { name: 'Impacto só deste cenário' });
   const out = within(linhaDoMes(within(impacto).getByRole('table'), 'out/26')).getAllByRole('cell');
-  expect(out[1]).toHaveTextContent('1.200,00');
+  expect(out[1]).toHaveTextContent(formatarSaldoSemSimbolo(120000));
   expect(out[2].querySelector('strong')).toHaveClass('valor-ganho');
   // o item de ganho aparece verde
   expect(screen.getByText('Pagamento').closest('.item')?.querySelector('.valor-ganho')).not.toBeNull();
