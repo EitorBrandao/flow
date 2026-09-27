@@ -658,6 +658,17 @@ it('abre na aba Gráfico quando pedida por abrirFluxo, e só na chegada', async 
   expect(screen.getByRole('tab', { name: 'Lista' })).toHaveAttribute('aria-selected', 'true');
 });
 
+it('a aba Simular mostra o formulário de novo cenário', async () => {
+  const { box } = await seedBoxComCategoria();
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-05' });
+
+  render(<TelaFluxo />);
+  await userEvent.click(screen.getByRole('tab', { name: 'Simular' }));
+
+  expect(screen.getByLabelText('Novo cenário')).toBeInTheDocument();
+});
+
 it('dia antes do início da projeção mostra traço e quando a projeção começa', async () => {
   const { box } = await seedBoxComCategoria(); // dataSaldoInicial 2025-01-01
   await useApp.getState().iniciar();

@@ -106,6 +106,33 @@ it('editar recorrência atualiza valor dos previstos e preserva efetivos', async
   }
 });
 
+it('editar a nota de uma recorrência atualiza os previstos, não os efetivos', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    const rec = await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 10000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 3, nota: 'antiga' },
+      '2026-12-31',
+    );
+    const primeiro = (await repo.carregarTudo()).lancamentos.find((l) => l.data === '2026-08-05')!;
+    await repo.confirmarPendente(primeiro.id);
+
+    await repo.salvarRecorrencia({ ...rec, nota: 'nova' }, '2026-12-31');
+    const dados = await repo.carregarTudo();
+    const confirmado = dados.lancamentos.find((l) => l.id === primeiro.id)!;
+    expect(confirmado.nota).toBe('antiga'); // efetivo intocado
+    const previstos = dados.lancamentos.filter((l) => l.status === 'previsto');
+    expect(previstos.every((l) => l.nota === 'nova')).toBe(true);
+
+    await repo.salvarRecorrencia({ ...rec, nota: undefined }, '2026-12-31');
+    const semNota = await repo.carregarTudo();
+    expect(semNota.lancamentos.filter((l) => l.status === 'previsto').every((l) => l.nota === undefined)).toBe(true);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 it('excluirRecorrencia remove previstos e mantém efetivos', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
@@ -225,6 +252,86 @@ it('excluirCenario apaga o cenário e os lançamentos/recorrências vinculados a
     expect(dados.cenarios).toHaveLength(0);
     expect(dados.recorrencias).toHaveLength(0);
     expect(dados.lancamentos).toHaveLength(0);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('recorrência de cenário com dataInicio = hoje materializa as 3 parcelas, hoje inclusive', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    const agora = agoraISO();
+    await repo.salvarCenario({ id: 'cen3', nome: 'reforma', ligado: true, criadoEm: agora, alteradoEm: agora });
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 8000, dataInicio: '2026-07-01', diaDoMes: 1, parcelas: 3, cenarioId: 'cen3' },
+      '2026-12-31',
+    );
+    const dados = await repo.carregarTudo();
+    const parcelas = dados.lancamentos.filter((l) => l.cenarioId === 'cen3');
+    expect(parcelas).toHaveLength(3);
+    expect(parcelas.map((l) => l.data).sort()).toEqual(['2026-07-01', '2026-08-01', '2026-09-01']);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('recorrência de cenário com dataInicio no mês passado materializa as parcelas passadas também', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-15T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    const agora = agoraISO();
+    await repo.salvarCenario({ id: 'cen4', nome: 'viagem', ligado: true, criadoEm: agora, alteradoEm: agora });
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 5000, dataInicio: '2026-06-10', diaDoMes: 10, parcelas: 3, cenarioId: 'cen4' },
+      '2026-12-31',
+    );
+    const dados = await repo.carregarTudo();
+    const parcelas = dados.lancamentos.filter((l) => l.cenarioId === 'cen4');
+    expect(parcelas).toHaveLength(3);
+    expect(parcelas.map((l) => l.data).sort()).toEqual(['2026-06-10', '2026-07-10', '2026-08-10']);
+    expect(parcelas.every((l) => l.status === 'previsto')).toBe(true);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('regressão: recorrência SEM cenário continua sem materializar o passado', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-15T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 5000, dataInicio: '2026-06-10', diaDoMes: 10, parcelas: 3 },
+      '2026-12-31',
+    );
+    const dados = await repo.carregarTudo();
+    // esperadas: 06-10, 07-10, 08-10 — 06-10 e 07-10 já são passado (hoje = 07-15) e não existiam
+    // ainda, então não são criadas; só a futura (08-10) materializa.
+    expect(dados.lancamentos.map((l) => l.data)).toEqual(['2026-08-10']);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('editar recorrência de cenário para começar hoje materializa as N parcelas (mantém o total ao reeditar)', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    const agora = agoraISO();
+    await repo.salvarCenario({ id: 'cen5', nome: 'móveis', ligado: true, criadoEm: agora, alteradoEm: agora });
+    const rec = await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 5000, dataInicio: '2026-09-01', diaDoMes: 1, parcelas: 3, cenarioId: 'cen5' },
+      '2026-12-31',
+    );
+    await repo.salvarRecorrencia({ ...rec, dataInicio: '2026-07-01', diaDoMes: 1 }, '2026-12-31');
+    const dados = await repo.carregarTudo();
+    const parcelas = dados.lancamentos.filter((l) => l.cenarioId === 'cen5');
+    expect(parcelas).toHaveLength(3);
+    expect(parcelas.map((l) => l.data).sort()).toEqual(['2026-07-01', '2026-08-01', '2026-09-01']);
   } finally {
     vi.useRealTimers();
   }
@@ -1585,5 +1692,47 @@ describe('excluirTransferencia', () => {
     await repo.excluirTransferencia(primeira.transferenciaId!);
 
     expect((await db.lancamentos.toArray()).filter((l) => l.origem === 'transferencia')).toHaveLength(2);
+  });
+});
+
+describe('lançamento de cenário nunca é efetivo', () => {
+  async function lancDeCenario() {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'b', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'c', tipo: 'gasto', ordem: 0 });
+    const cenario = { id: novoId(), nome: 'e se', ligado: true, criadoEm: agora, alteradoEm: agora };
+    await repo.salvarCenario(cenario);
+    const lanc = await repo.salvarLancamento({
+      boxId: box.id, categoriaId: cat.id, data: '2026-10-10', valor: 5000, status: 'previsto', cenarioId: cenario.id,
+    });
+    return { box, cat, lanc };
+  }
+
+  it('confirmarPendente recusa e não grava', async () => {
+    const { lanc } = await lancDeCenario();
+    await expect(repo.confirmarPendente(lanc.id)).rejects.toThrow(/cenário/);
+    expect((await db.lancamentos.get(lanc.id))?.status).toBe('previsto');
+  });
+
+  it('atualizarLancamento recusa status efetivo, mas aceita editar o resto', async () => {
+    const { lanc } = await lancDeCenario();
+    await expect(repo.atualizarLancamento(lanc.id, { status: 'efetivo' })).rejects.toThrow(/cenário/);
+    await repo.atualizarLancamento(lanc.id, { valor: 7000 });
+    expect((await db.lancamentos.get(lanc.id))?.valor).toBe(7000);
+  });
+
+  it('salvarLancamento recusa criar lançamento de cenário já efetivo', async () => {
+    const { box, cat } = await lancDeCenario();
+    await expect(repo.salvarLancamento({
+      boxId: box.id, categoriaId: cat.id, data: '2026-10-10', valor: 1, status: 'efetivo', cenarioId: 'x',
+    })).rejects.toThrow(/cenário/);
+  });
+
+  it('lançamento comum continua confirmando', async () => {
+    const { box, cat } = await lancDeCenario();
+    const comum = await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-10-10', valor: 1, status: 'previsto' });
+    await repo.confirmarPendente(comum.id);
+    expect((await db.lancamentos.get(comum.id))?.status).toBe('efetivo');
   });
 });

@@ -48,6 +48,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.grade-categorias` | grade 3 colunas de seleção de categoria; `.selecionada` marca o item ativo |
 | `.pills` | pílulas em linha pra escolher entre poucas opções (Box, Cartão, Gasto/Ganho); `button.ativo` marca a opção atual. Como seletor, o grupo é `role="radiogroup"` e cada pílula `role="radio"` com `aria-checked` — prefira o `SeletorPills`. Como abas de seção (Hoje, Fluxo, Cartão), `role="tablist"` |
 | `.tabela` (elemento `table`) | tabela numérica (Fluxo, Análises) — alinhado à direita exceto 1ª coluna, sem linhas verticais |
+| `.tabela-fixa` | junto de `.tabela`: colunas de largura fixa (Simular, no Fluxo) — o conteúdo não muda as colunas; a 1ª coluna recebe largura pelo `<col>`; as demais dividem o resto por igual. A largura mínima vem do componente, para ligar ou desligar cenários não mexer nas colunas |
 | `.rolavel` | wrapper com `overflow-x: auto` para conteúdo largo (tabelas) |
 | `.recuo-1` / `.recuo-2` | recuo horizontal (ambos os lados) pra indicar nível de hierarquia numa lista aninhada — ex.: grupo/data em `LancamentosSheet` |
 | `.sheet-backdrop` / `.sheet` / `.sheet-alca` / `.sheet-cabecalho` / `.sheet-conteudo` | bottom sheet (ver componente `Sheet`) |
@@ -127,7 +128,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   telas dizerem a mesma frase.
 - **`SeletorCategoria.tsx`** — grid de 3 colunas (`.grade-categorias`) pra escolher uma
   categoria por toque, sem abrir o picker nativo do `<select>`. Usado em `TelaLancar.tsx`,
-  `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `TelaSimulador.tsx`.
+  `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `FormItemCenario.tsx`.
 - **`SeletorMes.tsx`** — navegação de mês: `‹` e `›` em `.botao` (rótulos "Mês anterior" e "Mês seguinte") com o mês por nome no meio (`nomeDoMes`, "outubro de 2026"). Props `mes` (`AAAA-MM`) e `onMudar`. Usado nas Análises e no Cartão — qualquer tela nova que navegue por mês usa este componente.
 - **`SeletorPills.tsx`** — pílulas em linha (`.pills`) pra escolher entre poucas opções sem
   abrir o picker nativo do `<select>`; cada pílula é `role="radio"` com `aria-checked`, e a
@@ -160,6 +161,9 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   Análises (substitui a antiga tabela "Por categoria"); escala compartilhada com as
   barrinhas do card resumo (`base = max(totalGanhos, totalGastos)`), mesmo contrato de
   acessibilidade (`role="button"` por linha) que a tabela anterior usava.
+- **`TabelaSimulacao.tsx`** — tabela mês a mês do Simular (Mês · Com · Diferença · Sem), em
+  `.tabela.tabela-fixa`; largura mínima vinda dos extremos possíveis, para ligar ou desligar
+  cenários não mexer nas colunas.
 - **`EvolucaoMensalChart.tsx`** — evolução de ganho/gasto/sobra dos últimos 6 meses na aba
   Análises: barras agrupadas + linha de tendência tracejada, via `recharts` carregado sob
   demanda (`React.lazy`), mesmo padrão do `FluxoChartModal`.
@@ -189,6 +193,29 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   entre bancos (a nota do lançamento, "banco origem → banco destino", mais valor e data), com
   o botão que exclui as duas pernas ligadas por `transferenciaId`. Mesmo padrão do
   `FaturaResumo.tsx`. Usado pela `TelaFluxo` ao clicar num lançamento `origem: 'transferencia'`.
+- **`FormItemCenario.tsx`** — formulário de item de cenário, novo e edição: valor, descrição,
+  Gasto/Ganho, categoria (`SeletorCategoria`, sem as categorias de fatura e de transferência,
+  e sem as arquivadas), repetição Uma vez/Parcelado/Todo mês, data (ou "a partir de", nas
+  recorrentes) e parcelas.
+  Prop `repeticaoFixa` esconde o seletor de repetição na edição — pra trocar, exclui-se o item
+  e cria-se outro. No parcelado, o campo Valor é o total: a dica abaixo mostra o valor de cada
+  parcela (total ÷ N, arredondado). No "todo mês", a dica lembra de lançar só a diferença de
+  algo que já existe. Exporta `categoriasDoItem` e `gravarItemNovo` (item novo: "uma vez" vira
+  lançamento previsto do cenário; parcelado/mensal viram recorrência).
+- **`ItemCenarioSheet.tsx`** — sheet de editar ou excluir um item de cenário existente; monta
+  os valores iniciais a partir do `ItemCenario` (`domain/simulacao.ts`) e usa `FormItemCenario`
+  com `repeticaoFixa`. "Excluir item" pede confirmação (`window.confirm`) antes de remover o
+  lançamento ou a recorrência.
+- **`CenarioCard.tsx`** — card de um cenário no Simular (`SimuladorFluxo.tsx`): o checkbox liga
+  e desliga o cenário na projeção; o resto do cabeçalho (nome, resumo e a seta) abre e fecha o
+  card. Aberto, mostra a lista de itens (cada um abre o `ItemCenarioSheet` para editar/excluir),
+  o impacto isolado desse cenário (`TabelaSimulacao`), o `FormItemCenario` para um item novo e
+  as ações Tornar real / Excluir cenário (ambas com `window.confirm`).
+- **`SimuladorFluxo.tsx`** — conteúdo da pílula "Simular" do Fluxo (`TelaFluxo.tsx`): formulário
+  de novo cenário no topo, resumo mensal dos cenários ligados (`TabelaSimulacao`, aviso se o
+  saldo fica negativo) e a lista de `CenarioCard`, um aberto por vez. A largura das colunas de
+  valor (`larguraColunaValor`) é calculada sobre os extremos possíveis de todos os cenários, para
+  ligar/desligar um não mudar a tabela.
 
 `Importar.tsx` (subtela "Importar e conferir" de Ajustes) e seus dois auxiliares só dela,
 `ListaConferencia.tsx` e `LinhaConferencia.tsx`, não entram nesta lista: os três vivem em

@@ -127,9 +127,9 @@ Combinações que o código realmente produz, hoje:
 | `origem` | `cenarioId`? | `status` ao nascer | quem cria | transição para `efetivo` |
 |---|---|---|---|---|
 | `manual` | não | `previsto` se marcou "Marcar como previsto" ou `data` é futura, senão `efetivo` | `TelaLancar.tsx` → `repo.salvarLancamento` | via `LancEditor` (`repo.atualizarLancamento`): só "Confirmar" (`aplicar(true)`) grava `efetivo` — "Salvar" (`aplicar(false)`) não mexe em `status` |
-| `manual` | sim | sempre `previsto` | `TelaSimulador.tsx` (`FormHipotetico`, parcela única) → `repo.salvarLancamento` | ver ressalva abaixo |
+| `manual` | sim | sempre `previsto` | `CenarioCard.tsx` (`FormItemCenario`, repetição "uma vez") → `gravarItemNovo` → `repo.salvarLancamento` | ver ressalva abaixo |
 | `recorrencia` | não | sempre `previsto` | `materializarRecorrencia` (`src/db/repo.ts`) | "Confirmar" em `LancEditor.tsx` (ajusta valor e status juntos); depois de `efetivo`, `materializar` (`src/domain/recurrence.ts`) nunca mais toca o registro |
-| `recorrencia` | sim | sempre `previsto` | `TelaSimulador.tsx` (`FormHipotetico`, ≥2 parcelas) → `repo.salvarRecorrencia` com `cenarioId`, materializado do mesmo jeito | ver ressalva abaixo |
+| `recorrencia` | sim | sempre `previsto` | `CenarioCard.tsx` (`FormItemCenario`, repetição "parcelado" ou "todo mês") → `gravarItemNovo` → `repo.salvarRecorrencia` com `cenarioId`, materializado do mesmo jeito | ver ressalva abaixo |
 | `cartao` | não | sempre `previsto` | `sincronizarCartoes` (`src/db/repo.ts`) | fila de pendentes da `TelaHoje` (`pendentes`, `src/domain/projection.ts`) não filtra por `origem`, então uma fatura vencida cai na mesma fila manual/recorrência e é confirmada por `repo.confirmarPendente`; depois de `efetivo`, `diffSincronizacao` (`src/domain/fatura.ts`) nunca mais toca o registro |
 | `transferencia` | não | sempre `efetivo` | `transferirEntreBancos` (`src/db/repo.ts`) | não existe: as duas pernas nascem `efetivo` e nunca são revisitadas — não há "transferência prevista" nem confirmação; `excluirTransferencia` (`src/db/repo.ts`) só apaga as duas, nunca muda `status` |
 
@@ -142,9 +142,8 @@ direto.
 `cartao` + `cenarioId` não existe: `CompraCartao` não tem campo `cenarioId`
 (`src/domain/types.ts`) e nada em `sincronizarCartoes` o define.
 
-As duas linhas com `cenarioId` só são produzidas por `TelaSimulador.tsx`, que hoje não é
-alcançável na navegação (`ABAS`, `Shell.tsx`); lançamentos de cenário existentes em uma base
-real são dado legado ou vindos de um backup importado.
+As duas linhas com `cenarioId` são produzidas por `CenarioCard.tsx`, dentro de
+`SimuladorFluxo.tsx` (Fluxo › Simular), alcançável pela navegação (`ABAS`, `Shell.tsx`).
 
 Existe um **quinto** escritor de lançamentos que a matriz acima não lista:
 `substituirTudo` (`src/db/repo.ts`, import de backup em modo "substituir"). Como
@@ -152,19 +151,12 @@ Existe um **quinto** escritor de lançamentos que a matriz acima não lista:
 pode gravar combinações `status`×`origem` que o app nunca produz sozinho — inclusive as que
 este documento afirma não existir, como `cartao` + `cenarioId`.
 
-**Expectativa não garantida — cenário virando `efetivo`.** O comentário em
-`Lancamento.cenarioId` (`src/domain/types.ts`) diz "nunca `efetivo`", e a rota oficial de
-"promover" um cenário é `converterCenarioEmReal` (`src/db/repo.ts`), que remove
-`cenarioId` do lançamento (e da recorrência, se houver) antes de ele poder virar `efetivo`
-pelo fluxo normal. Mas `LancEditor.tsx` não verifica `cenarioId` antes de oferecer o botão
-"Confirmar": qualquer lançamento `previsto` aberto por ele — inclusive um de cenário —
-pode receber `status: 'efetivo'` via `aplicar(true)`. Isso é alcançável só de forma
-**latente** hoje, não na prática: exige dado de cenário pré-existente, já que
-`TelaSimulador.tsx` (a única tela que cria lançamento de cenário) não é alcançável pela
-navegação atual; `TelaFluxo.tsx` só desvia para outra tela quando `l.origem === 'cartao'`,
-então um item de cenário que já exista na base abre `LancEditor` normalmente.
-**Nenhum teste cobre esse caminho.** Tratar como regra desejada, não como algo que o código
-impede.
+**Garantia — cenário nunca vira `efetivo`.** O comentário em `Lancamento.cenarioId`
+(`src/domain/types.ts`) diz "nunca `efetivo`". A rota oficial de "promover" um cenário é
+`converterCenarioEmReal` (`src/db/repo.ts`), que remove `cenarioId` do lançamento (e da
+recorrência, se houver). `repo.salvarLancamento` e `repo.atualizarLancamento` (e, por ela,
+`confirmarPendente`) recusam `status: 'efetivo'` em lançamento com `cenarioId`. O
+`LancEditor` não mostra o botão 'Confirmar' nele.
 
 `origem: 'import'` não existe mais: `OrigemLancamento` (`src/domain/types.ts`) tem
 `'manual' | 'recorrencia' | 'cartao' | 'transferencia'`. O valor `'import'` saiu junto com o
@@ -303,6 +295,17 @@ lançamentos já vinculados a ela e devolve um diff: datas que faltam criar, ids
   `iniciar()` do app, e a cada `salvarRecorrencia`), porque nada marca "foi descartado", só
   a ausência da data nos existentes é olhada. Só o descarte de uma data **passada** é
   permanente.
+- **Exceção: recorrência de cenário (`rec.cenarioId` presente) materializa também o
+  passado.** `materializarRecorrencia` (`src/db/repo.ts`) passa `incluirPassado: true` para
+  `materializar` nesse caso, e o filtro `d > hoje` some inteiramente para essa regra: toda
+  data esperada até o horizonte que ainda não existe é criada, `<= hoje` inclusive. O motivo
+  é que a regra de "não ressuscitar" existe para não trazer de volta um previsto que o
+  usuário descartou na fila de Pendentes (`pendentes`, `src/domain/projection.ts`) — e
+  cenário nunca entra nessa fila (`pendentes` exclui `cenarioId` de propósito). Sem
+  descarte possível, não há nada para respeitar: uma parcela de cenário com `dataInicio` no
+  passado (ou = hoje) materializa normalmente. `efetivo` continua imune a exclusão — mas,
+  na prática, lançamento de cenário nunca chega a `efetivo` por materialização, só por
+  "Tornar real" (`converterCenarioEmReal`).
 - **Todo `previsto` remanescente de uma recorrência é sobrescrito com o valor/categoria
   atuais da regra em toda materialização** (`.modify` em `materializarRecorrencia`,
   `src/db/repo.ts`) — por isso `LancEditor.tsx` não oferece "Salvar" para um `previsto` de
@@ -422,8 +425,10 @@ Confirmadas no código:
   `LancamentosSheet.tsx`, `ajustes/Versao.tsx`, entre outros), além dos quatro que chamam
   `toLocaleDateString('pt-BR', ...)` para nomes de mês/dia da semana (`TelaFluxo.tsx`,
   `TelaAnalises.tsx`, `FluxoChartModal.tsx`, `EvolucaoMensalChart.tsx`).
-- **Cenário nunca é `efetivo`** — expectativa documentada em `types.ts`, não garantida pelo
-  código: ver ressalva na matriz `status` × `origem` acima (`LancEditor.tsx` permite).
+- **Cenário nunca é `efetivo`** — garantido: `salvarLancamento` e `atualizarLancamento` (e,
+  por ela, `confirmarPendente`) recusam `status: 'efetivo'` com `cenarioId`; o `LancEditor`
+  não mostra "Confirmar" nele. `substituirTudo` (import de backup) continua fora da trava,
+  como os outros caminhos do quinto escritor.
 - **`efetivo` é imutável por materialização/sincronização automática** — garantido: nem
   `materializar` (`src/domain/recurrence.ts`) nem `diffSincronizacao`
   (`src/domain/fatura.ts`) tocam um lançamento com `status: 'efetivo'`. A única forma de um

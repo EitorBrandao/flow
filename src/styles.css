@@ -262,6 +262,14 @@ table.tabela th:first-child, table.tabela td:first-child {
   white-space: normal; width: 112px; max-width: 112px;
   box-shadow: 4px 0 6px -4px rgba(0, 0, 0, .45);
 }
+/* Tabela de colunas com largura fixa (Simular, no Fluxo): o conteúdo não muda as colunas.
+   A 1ª coluna recebe largura pelo <col>; as demais dividem o resto por igual. O min-width,
+   posto pelo componente, impede valor espremido — abaixo dele o .rolavel rola. */
+/* Os seletores começam por .tabela-fixa (e não por table.tabela) para o verificador de
+   catálogo reconhecer a classe; .tabela-fixa.tabela ainda vence table.tabela em especificidade. */
+.tabela-fixa.tabela { table-layout: fixed; width: 100%; }
+.tabela-fixa.tabela th, .tabela-fixa.tabela td { padding: 8px; }
+.tabela-fixa.tabela th:first-child, .tabela-fixa.tabela td:first-child { width: auto; max-width: none; }
 /* min-width:0 evita que a tabela force o card (flex item) a crescer além do container;
    overflow-anchor:none evita que o navegador ajuste sozinho a rolagem quando a altura de
    uma célula muda (nome de categoria quebrando em linhas) depois do layout inicial. */

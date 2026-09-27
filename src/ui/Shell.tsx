@@ -9,7 +9,6 @@ import TelaCartao from './TelaCartao';
 import TelaFluxo from './TelaFluxo';
 import TelaHoje from './TelaHoje';
 import TelaLancar from './TelaLancar';
-import TelaSimulador from './TelaSimulador';
 
 const ABAS: { id: Aba; rotulo: string; central?: boolean }[] = [
   { id: 'hoje', rotulo: 'Hoje' },
@@ -17,13 +16,11 @@ const ABAS: { id: Aba; rotulo: string; central?: boolean }[] = [
   { id: 'lancar', rotulo: '+', central: true },
   { id: 'cartao', rotulo: 'Cartão' },
   { id: 'analises', rotulo: 'Análises' },
-  // aba 'simulador' ocultada da barra a pedido do usuário em 2026-07-17; TelaSimulador e a
-  // lógica de cenários seguem inteiras, só o botão de navegação saiu daqui
 ];
 
 const NOMES_ABA: Record<Aba, string> = {
   hoje: 'Hoje', fluxo: 'Fluxo', lancar: 'Lançar', cartao: 'Cartão',
-  analises: 'Análises', simulador: 'Simulador', ajustes: 'Ajustes',
+  analises: 'Análises', ajustes: 'Ajustes',
 };
 
 export default function Shell() {
@@ -74,7 +71,6 @@ export default function Shell() {
             {aba === 'lancar' && <TelaLancar />}
             {aba === 'cartao' && <TelaCartao />}
             {aba === 'analises' && <TelaAnalises />}
-            {aba === 'simulador' && <TelaSimulador />}
             {aba === 'ajustes' && <TelaAjustes key={ajustesKey} />}
           </motion.div>
         </main>

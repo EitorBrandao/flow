@@ -136,3 +136,69 @@ it('excluir pede confirmação: confirmar apaga o lançamento', async () => {
   expect(await db.lancamentos.get(previsto.id)).toBeUndefined();
   confirmSpy.mockRestore();
 });
+
+it('lançamento de cenário "uma vez": sem botão Confirmar, com Salvar e Excluir, e dica diz que não pode ser confirmado', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const categoria = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  const cenarioId = novoId();
+  await repo.salvarCenario({ id: cenarioId, nome: 'e se', ligado: true, criadoEm: agora, alteradoEm: agora });
+  const previstoDeCenario = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-07-05', valor: 5000, status: 'previsto', cenarioId,
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<LancEditor lanc={previstoDeCenario} onFechar={() => {}} />);
+
+  expect(screen.queryByRole('button', { name: /Confirmar/ })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Salvar' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Excluir' })).toBeInTheDocument();
+  // campos continuam editáveis: Salvar funciona neste caso
+  expect(screen.getByLabelText('Valor')).toBeInTheDocument();
+  expect(screen.getByText(/não pode ser confirmado/)).toBeInTheDocument();
+  expect(screen.getByText(/use Tornar real, em Fluxo › Simular/)).toBeInTheDocument();
+});
+
+it('parcela de recorrência de cenário: sem Confirmar, sem Salvar, sem Excluir — só a dica, os dados em texto e Fechar', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const categoria = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+    const cenarioId = novoId();
+    await repo.salvarCenario({ id: cenarioId, nome: 'e se', ligado: true, criadoEm: agora, alteradoEm: agora });
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: categoria.id, valor: 5000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 2, cenarioId, nota: 'Aluguel novo' },
+      '2026-12-31',
+    );
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    // duas parcelas materializam (08-05 e 09-05): pega a primeira pela data, não por
+    // ordem arbitrária de array — `.find(recorrenciaId != null)` sozinho não garante qual.
+    const previstoDeCenario = useApp.getState().dados!.lancamentos.find((l) => l.data === '2026-08-05')!;
+
+    render(<LancEditor lanc={previstoDeCenario} onFechar={() => {}} />);
+
+    expect(screen.queryByRole('button', { name: /Confirmar/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Salvar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Excluir' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Fechar' })).toBeInTheDocument();
+    expect(screen.getByText(/para mudar ou excluir, use Fluxo › Simular/)).toBeInTheDocument();
+
+    // sem campos editáveis: nada aqui seria salvo
+    expect(screen.queryByLabelText('Valor')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Data')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Nota')).not.toBeInTheDocument();
+    // dados aparecem em texto
+    expect(screen.getByText('R$ 50,00')).toBeInTheDocument();
+    expect(screen.getByText('05/08/2026')).toBeInTheDocument();
+    expect(screen.getByText('mercado')).toBeInTheDocument();
+    expect(screen.getByText('Aluguel novo')).toBeInTheDocument();
+  } finally {
+    vi.useRealTimers();
+  }
+});

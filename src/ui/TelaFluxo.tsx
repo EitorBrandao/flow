@@ -10,6 +10,7 @@ import BalanceChart from './BalanceChart';
 import CampoData from './CampoData';
 import FaturaResumo from './FaturaResumo';
 import LancEditor from './LancEditor';
+import SimuladorFluxo from './SimuladorFluxo';
 import TransferenciaSheet from './TransferenciaSheet';
 
 const FluxoChartModal = lazy(() => import('./FluxoChartModal'));
@@ -131,6 +132,7 @@ export default function TelaFluxo() {
       <div className="pills" role="tablist" aria-label="Seções do Fluxo">
         <button role="tab" aria-selected={abaFluxo === 'lista'} className={abaFluxo === 'lista' ? 'ativo' : ''} onClick={() => setAbaFluxo('lista')}>Lista</button>
         <button role="tab" aria-selected={abaFluxo === 'grafico'} className={abaFluxo === 'grafico' ? 'ativo' : ''} onClick={() => setAbaFluxo('grafico')}>Gráfico</button>
+        <button role="tab" aria-selected={abaFluxo === 'simular'} className={abaFluxo === 'simular' ? 'ativo' : ''} onClick={() => setAbaFluxo('simular')}>Simular</button>
       </div>
 
       {abaFluxo === 'grafico' && (
@@ -259,6 +261,8 @@ export default function TelaFluxo() {
           </div>
         </>
       )}
+
+      {abaFluxo === 'simular' && <SimuladorFluxo />}
 
       {graficoExpandido && (
         <Suspense fallback={null}>

@@ -66,6 +66,12 @@ export function formatarSemSimbolo(centavos: number): string {
   });
 }
 
+/** Saldo sem "R$" — abaixo de zero leva o "−", como `formatarSaldo`. Para colunas estreitas
+ *  de saldo (tabela do Simular). */
+export function formatarSaldoSemSimbolo(centavos: number): string {
+  return (centavos < 0 ? '−' : '') + formatarSemSimbolo(centavos);
+}
+
 /** Converte uma string decimal simples (formato do XML da NFe, ex. "123.45") em centavos
  *  inteiros. `undefined` se o texto não casar com esse formato — não lança exceção. A
  *  regex não limita a quantidade de dígitos, então um `vProd` absurdo (nenhuma NFC-e real

@@ -49,6 +49,7 @@ option: casa
 Fluxo
 tab: Lista
 tab: Gráfico
+tab: Simular
 Mostrando desde sáb. 10/01/2026
 sáb. 24/01/2026 · hoje
 R$ 4.300,00
@@ -480,6 +481,7 @@ option: casa
 Fluxo
 tab: Lista
 tab: Gráfico
+tab: Simular
 Mostrando desde qua. 14/01/2026
 seg. 26/01/2026
 R$ 4.300,00
@@ -919,6 +921,7 @@ option: casa
 Fluxo
 tab: Lista
 tab: Gráfico
+tab: Simular
 Mostrando desde ter. 27/01/2026
 qui. 05/02/2026
 R$ 8.970,00
@@ -1420,6 +1423,7 @@ option: casa
 Fluxo
 tab: Lista
 tab: Gráfico
+tab: Simular
 Mostrando desde sáb. 06/06/2026
 qua. 10/06/2026
 R$ 20.965,20
@@ -1863,6 +1867,7 @@ option: casa
 Fluxo
 tab: Lista
 tab: Gráfico
+tab: Simular
 Mostrando desde sáb. 04/07/2026
 dom. 05/07/2026
 R$ 25.752,00
@@ -2321,6 +2326,7 @@ option: casa
 Fluxo
 tab: Lista
 tab: Gráfico
+tab: Simular
 Mostrando desde sáb. 29/08/2026
 sáb. 05/09/2026
 R$ 32.485,60
@@ -2733,6 +2739,7 @@ option: casa
 Fluxo
 tab: Lista
 tab: Gráfico
+tab: Simular
 Mostrando desde qui. 01/10/2026
 seg. 05/10/2026
 R$ 35.945,70
@@ -3136,6 +3143,7 @@ option: casa
 Fluxo
 tab: Lista
 tab: Gráfico
+tab: Simular
 Mostrando desde seg. 16/11/2026
 seg. 30/11/2026 · hoje
 R$ 37.905,80

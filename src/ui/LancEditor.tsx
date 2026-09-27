@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import * as repo from '../db/repo';
+import { formatarDataBR } from '../domain/dates';
 import { categoriasFaturaIds } from '../domain/fatura';
+import { formatarBRL } from '../domain/money';
 import { categoriasTransferenciaIds } from '../domain/transferencia';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
@@ -47,6 +49,11 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
   }
 
   const previstoDeRecorrencia = lanc.recorrenciaId != null && lanc.status === 'previsto';
+  const doCenario = lanc.cenarioId != null;
+  // Parcela de recorrência de cenário: excluir não vale — a próxima materialização traz a
+  // parcela de volta, porque recorrência de cenário materializa também o passado (não há
+  // "descartado" a respeitar, já que cenário nunca entra na fila de Pendentes).
+  const parcelaDeRecorrenciaCenario = doCenario && lanc.recorrenciaId != null;
 
   return (
     <Sheet aberto onFechar={onFechar} rotulo={lanc.status === 'previsto' ? 'Previsto' : 'Lançamento'}>
@@ -54,35 +61,70 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
           {lanc.status === 'previsto' ? 'Previsto' : 'Lançamento'}
           {lanc.recorrenciaId && <span className="badge" style={{ marginLeft: 8 }}>recorrência</span>}
         </h2>
-        <div className="campo">
-          <label htmlFor="ed-valor">Valor{negativo ? ' (estorno)' : ''}</label>
-          <CampoValor id="ed-valor" valorCentavos={valorCentavos} onChange={setValorCentavos} />
-        </div>
-        <div className="campo">
-          <label htmlFor="ed-data">Data</label>
-          <CampoData id="ed-data" value={data} onChange={setData} />
-        </div>
-        <div className="campo">
-          <label>Categoria</label>
-          <SeletorCategoria categorias={categorias} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
-        </div>
-        <div className="campo">
-          <label htmlFor="ed-nota">Nota</label>
-          <input id="ed-nota" value={nota} onChange={(e) => setNota(e.target.value)} />
-        </div>
-        {previstoDeRecorrencia && (
+        {parcelaDeRecorrenciaCenario ? (
+          // Nada aqui seria salvo (sem Salvar, sem Excluir): mostra os dados em texto, sem
+          // reaproveitar CampoValor/CampoData/SeletorCategoria como só-leitura — nenhum dos
+          // três aceita essa prop hoje, e não valia a pena mexer num componente compartilhado
+          // por um caso tão específico.
+          <>
+            <div className="campo">
+              <label>Valor{negativo ? ' (estorno)' : ''}</label>
+              <p className="sub">{formatarBRL(valorCentavos)}</p>
+            </div>
+            <div className="campo">
+              <label>Data</label>
+              <p className="sub">{formatarDataBR(data)}</p>
+            </div>
+            <div className="campo">
+              <label>Categoria</label>
+              <p className="sub">{dados.categorias.find((c) => c.id === categoriaId)?.nome ?? '?'}</p>
+            </div>
+            <div className="campo">
+              <label>Nota</label>
+              <p className="sub">{nota || '—'}</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="campo">
+              <label htmlFor="ed-valor">Valor{negativo ? ' (estorno)' : ''}</label>
+              <CampoValor id="ed-valor" valorCentavos={valorCentavos} onChange={setValorCentavos} />
+            </div>
+            <div className="campo">
+              <label htmlFor="ed-data">Data</label>
+              <CampoData id="ed-data" value={data} onChange={setData} />
+            </div>
+            <div className="campo">
+              <label>Categoria</label>
+              <SeletorCategoria categorias={categorias} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
+            </div>
+            <div className="campo">
+              <label htmlFor="ed-nota">Nota</label>
+              <input id="ed-nota" value={nota} onChange={(e) => setNota(e.target.value)} />
+            </div>
+          </>
+        )}
+        {parcelaDeRecorrenciaCenario ? (
+          <p className="sub">Item de um cenário: para mudar ou excluir, use Fluxo › Simular.</p>
+        ) : doCenario ? (
+          <p className="sub">
+            Item de um cenário: não pode ser confirmado. Para trazê-lo aos dados reais, use Tornar real, em Fluxo › Simular.
+          </p>
+        ) : previstoDeRecorrencia && (
           <p className="sub">
             Previsto de uma recorrência: para mudar valor ou data, edite a regra em Ajustes — ou confirme já com o valor ajustado.
           </p>
         )}
         <div className="linha" style={{ marginTop: 12 }}>
-          {lanc.status === 'previsto' && (
+          {lanc.status === 'previsto' && !doCenario && (
             <button className="botao botao-primario" onClick={() => aplicar(true)}>✓ Confirmar</button>
           )}
           {!previstoDeRecorrencia && (
             <button className="botao" onClick={() => aplicar(false)}>Salvar</button>
           )}
-          <button className="botao botao-perigo" onClick={excluir}>Excluir</button>
+          {!parcelaDeRecorrenciaCenario && (
+            <button className="botao botao-perigo" onClick={excluir}>Excluir</button>
+          )}
           <button className="botao" style={{ marginLeft: 'auto' }} onClick={onFechar}>Fechar</button>
         </div>
         {erro && <p className="aviso">{erro}</p>}
