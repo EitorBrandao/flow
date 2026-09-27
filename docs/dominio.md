@@ -142,8 +142,8 @@ direto.
 `cartao` + `cenarioId` não existe: `CompraCartao` não tem campo `cenarioId`
 (`src/domain/types.ts`) e nada em `sincronizarCartoes` o define.
 
-As duas linhas com `cenarioId` são produzidas por `TelaSimulador.tsx` (`SimuladorFluxo` em
-Fluxo › Simular), alcançável pela navegação.
+As duas linhas com `cenarioId` são produzidas por `TelaSimulador.tsx`, que hoje não é
+alcançável na navegação (`ABAS`, `Shell.tsx`).
 
 Existe um **quinto** escritor de lançamentos que a matriz acima não lista:
 `substituirTudo` (`src/db/repo.ts`, import de backup em modo "substituir"). Como
@@ -414,8 +414,10 @@ Confirmadas no código:
   `LancamentosSheet.tsx`, `ajustes/Versao.tsx`, entre outros), além dos quatro que chamam
   `toLocaleDateString('pt-BR', ...)` para nomes de mês/dia da semana (`TelaFluxo.tsx`,
   `TelaAnalises.tsx`, `FluxoChartModal.tsx`, `EvolucaoMensalChart.tsx`).
-- **Cenário nunca é `efetivo`** — expectativa documentada em `types.ts`, não garantida pelo
-  código: ver ressalva na matriz `status` × `origem` acima (`LancEditor.tsx` permite).
+- **Cenário nunca é `efetivo`** — garantido: `salvarLancamento` e `atualizarLancamento` (e,
+  por ela, `confirmarPendente`) recusam `status: 'efetivo'` com `cenarioId`; o `LancEditor`
+  não mostra "Confirmar" nele. `substituirTudo` (import de backup) continua fora da trava,
+  como os outros caminhos do quinto escritor.
 - **`efetivo` é imutável por materialização/sincronização automática** — garantido: nem
   `materializar` (`src/domain/recurrence.ts`) nem `diffSincronizacao`
   (`src/domain/fatura.ts`) tocam um lançamento com `status: 'efetivo'`. A única forma de um
