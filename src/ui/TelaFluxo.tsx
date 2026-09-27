@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Maximize2, Search } from 'lucide-react';
 import { addDias, formatarDataBR } from '../domain/dates';
 import { ajustesDoCartao, calcularFaturas, type Fatura } from '../domain/fatura';
-import { formatarBRL } from '../domain/money';
+import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
 import { projetarBoxes } from '../domain/projection';
 import type { Lancamento } from '../domain/types';
 import { boxIdsSelecionadas, cenariosLigados, useApp, type AbaFluxo } from '../state/store';
@@ -242,9 +242,10 @@ export default function TelaFluxo() {
                       <div className="cresce">
                         {nomeCat(l.categoriaId)}
                         {l.status === 'previsto' && <span className="badge" style={{ marginLeft: 6 }}>{l.cenarioId ? 'cenário' : 'previsto'}</span>}
+                        {l.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
                         {l.nota && <div className="sub">{l.nota}</div>}
                       </div>
-                      <span className={tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
+                      <span className={classeEfeito(efeitoNoSaldo(l.valor, tipoCat(l.categoriaId)))}>
                         {formatarBRL(l.valor)}
                       </span>
                     </button>

@@ -736,6 +736,17 @@ it('tocar no valor de um previsto comum abre os campos de correção', async () 
   expect(screen.queryByRole('button', { name: 'Descartar' })).not.toBeInTheDocument();
 });
 
+it('pendente de estorno aparece verde, com o rótulo "estorno"', async () => {
+  await cenarioPendenteComum(-4000);
+
+  render(<TelaHoje />);
+  await abrirAba(/Pendentes/);
+  const botao = screen.getByRole('button', { name: 'Corrigir valor de luz' });
+  expect(botao).toHaveClass('valor-ganho');
+  expect(botao.textContent?.replace(/\s/g, ' ')).toBe('R$ 40,00');
+  expect((botao.closest('.item') as HTMLElement)).toHaveTextContent('estorno');
+});
+
 it('cancelar a correção fecha os campos sem gravar nada', async () => {
   const { lanc } = await cenarioPendenteComum();
 

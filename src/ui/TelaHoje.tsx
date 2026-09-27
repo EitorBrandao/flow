@@ -4,7 +4,7 @@ import * as repo from '../db/repo';
 import { bancosDaBox, totalDeclaradoCent } from '../domain/bancos';
 import { addDias, formatarDataBR } from '../domain/dates';
 import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../domain/estadoBackup';
-import { classeSaldo, formatarBRL } from '../domain/money';
+import { classeEfeito, classeSaldo, efeitoNoSaldo, formatarBRL } from '../domain/money';
 import type { Banco, Box, ISODate, Lancamento } from '../domain/types';
 import { pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, estadoPrimeiroUso, useApp } from '../state/store';
@@ -433,16 +433,17 @@ export default function TelaHoje() {
                 <div className="linha-topo">
                   <div className="cresce">
                     <div>{nomeCat(l.categoriaId)}</div>
+                    {l.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
                     <div className="sub">{l.data.split('-').reverse().join('/')}{l.nota ? ` · ${l.nota}` : ''}</div>
                   </div>
                   {ehFatura(l) ? (
-                    <span className={tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
+                    <span className={classeEfeito(efeitoNoSaldo(l.valor, tipoCat(l.categoriaId)))}>
                       {formatarBRL(l.valor)}
                     </span>
                   ) : (
                     <button
                       type="button"
-                      className={`${tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'} editavel`}
+                      className={`${classeEfeito(efeitoNoSaldo(l.valor, tipoCat(l.categoriaId))) ?? ''} editavel`}
                       aria-label={`Corrigir valor de ${nomeCat(l.categoriaId)}`}
                       onClick={() => abrirCorrecao(l)}
                     >

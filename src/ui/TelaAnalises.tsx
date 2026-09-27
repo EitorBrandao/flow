@@ -4,7 +4,7 @@ import {
 } from '../domain/aggregations';
 import { addMeses, formatarDataBR, mesAbreviado, mesDe } from '../domain/dates';
 import { resumoAssinaturasDoMes } from '../domain/fatura';
-import { formatarBRL } from '../domain/money';
+import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
 import type { ID, Viagem } from '../domain/types';
 import { itensDaViagem, totalViagemNoMes } from '../domain/viagem';
 import { boxIdsSelecionadas, useApp } from '../state/store';
@@ -150,10 +150,10 @@ export default function TelaAnalises() {
                 return (
                   <tr key={c.categoriaId}>
                     <td>{c.nome}</td>
-                    <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.atual)}</td>
-                    <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.mesAnterior)}</td>
-                    <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{formatarBRL(c.anoAnterior)}</td>
-                    <td className={c.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>{media == null ? '—' : formatarBRL(media)}</td>
+                    <td className={classeEfeito(efeitoNoSaldo(c.atual, c.tipo))}>{formatarBRL(c.atual)}</td>
+                    <td className={classeEfeito(efeitoNoSaldo(c.mesAnterior, c.tipo))}>{formatarBRL(c.mesAnterior)}</td>
+                    <td className={classeEfeito(efeitoNoSaldo(c.anoAnterior, c.tipo))}>{formatarBRL(c.anoAnterior)}</td>
+                    <td className={media == null ? undefined : classeEfeito(efeitoNoSaldo(media, c.tipo))}>{media == null ? '—' : formatarBRL(media)}</td>
                   </tr>
                 );
               })}

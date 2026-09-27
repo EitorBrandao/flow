@@ -4,7 +4,7 @@ import * as repo from '../../db/repo';
 import { categoriasFaturaIds } from '../../domain/fatura';
 import { categoriasTransferenciaIds } from '../../domain/transferencia';
 import { formatarDataBR } from '../../domain/dates';
-import { formatarBRL } from '../../domain/money';
+import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../../domain/money';
 import type { TipoCategoria } from '../../domain/types';
 import { boxIdEfetivo, useApp } from '../../state/store';
 import CampoData from '../CampoData';
@@ -224,7 +224,7 @@ export default function Recorrencias() {
                   <div className="sub">desde {formatarDataBR(r.dataInicio)}</div>
                   <div className="sub">todo dia {r.diaDoMes}, {r.parcelas == null ? 'sem fim' : `${r.parcelas}x`}</div>
                 </div>
-                <span className={tipoCat(r.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
+                <span className={classeEfeito(efeitoNoSaldo(r.valor, tipoCat(r.categoriaId) ?? 'gasto'))}>
                   {formatarBRL(r.valor)}
                 </span>
               </div>

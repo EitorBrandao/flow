@@ -585,6 +585,33 @@ it('o valor de cada lançamento sai sem sinal, igual às outras telas — a cor 
   expect(screen.getByText(brl(300000))).toHaveClass('valor-ganho');
 });
 
+it('estorno de gasto aparece verde, sem sinal, com o rótulo "estorno"', async () => {
+  const { box, catMercado } = await seedBoxComCategoria();
+  const hoje = '2026-07-05';
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: hoje, valor: -5000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje });
+
+  render(<TelaFluxo />);
+  const brl = (c: number) => formatarBRL(c).replace(/\s/g, ' ');
+  const valor = await screen.findByText(brl(5000));
+  expect(valor).toHaveClass('valor-ganho');
+  const item = valor.closest('.item') as HTMLElement;
+  expect(item).toHaveTextContent('estorno');
+});
+
+it('gasto comum não tem o rótulo "estorno"', async () => {
+  const { box, catMercado } = await seedBoxComCategoria();
+  const hoje = '2026-07-05';
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: hoje, valor: 5000, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje });
+
+  render(<TelaFluxo />);
+  await screen.findByText(formatarBRL(5000).replace(/\s/g, ' '));
+  expect(screen.queryByText('estorno')).not.toBeInTheDocument();
+});
+
 it('abre na aba Gráfico quando pedida por abrirFluxo, e só na chegada', async () => {
   const { box } = await seedBoxComCategoria();
   await useApp.getState().iniciar();
