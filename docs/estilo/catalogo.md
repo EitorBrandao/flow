@@ -128,7 +128,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   telas dizerem a mesma frase.
 - **`SeletorCategoria.tsx`** — grid de 3 colunas (`.grade-categorias`) pra escolher uma
   categoria por toque, sem abrir o picker nativo do `<select>`. Usado em `TelaLancar.tsx`,
-  `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `TelaSimulador.tsx`.
+  `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `FormItemCenario.tsx`.
 - **`SeletorMes.tsx`** — navegação de mês: `‹` e `›` em `.botao` (rótulos "Mês anterior" e "Mês seguinte") com o mês por nome no meio (`nomeDoMes`, "outubro de 2026"). Props `mes` (`AAAA-MM`) e `onMudar`. Usado nas Análises e no Cartão — qualquer tela nova que navegue por mês usa este componente.
 - **`SeletorPills.tsx`** — pílulas em linha (`.pills`) pra escolher entre poucas opções sem
   abrir o picker nativo do `<select>`; cada pílula é `role="radio"` com `aria-checked`, e a
@@ -193,6 +193,18 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   entre bancos (a nota do lançamento, "banco origem → banco destino", mais valor e data), com
   o botão que exclui as duas pernas ligadas por `transferenciaId`. Mesmo padrão do
   `FaturaResumo.tsx`. Usado pela `TelaFluxo` ao clicar num lançamento `origem: 'transferencia'`.
+- **`FormItemCenario.tsx`** — formulário de item de cenário, novo e edição: valor, descrição,
+  Gasto/Ganho, categoria (`SeletorCategoria`, sem as categorias de fatura e de transferência),
+  repetição Uma vez/Parcelado/Todo mês, data (ou "a partir de", nas recorrentes) e parcelas.
+  Prop `repeticaoFixa` esconde o seletor de repetição na edição — pra trocar, exclui-se o item
+  e cria-se outro. No parcelado, o campo Valor é o total: a dica abaixo mostra o valor de cada
+  parcela (total ÷ N, arredondado). No "todo mês", a dica lembra de lançar só a diferença de
+  algo que já existe. Exporta `categoriasDoItem` e `gravarItemNovo` (item novo: "uma vez" vira
+  lançamento previsto do cenário; parcelado/mensal viram recorrência).
+- **`ItemCenarioSheet.tsx`** — sheet de editar ou excluir um item de cenário existente; monta
+  os valores iniciais a partir do `ItemCenario` (`domain/simulacao.ts`) e usa `FormItemCenario`
+  com `repeticaoFixa`. "Excluir item" pede confirmação (`window.confirm`) antes de remover o
+  lançamento ou a recorrência.
 
 `Importar.tsx` (subtela "Importar e conferir" de Ajustes) e seus dois auxiliares só dela,
 `ListaConferencia.tsx` e `LinhaConferencia.tsx`, não entram nesta lista: os três vivem em
