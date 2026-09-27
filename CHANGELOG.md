@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.48.0] - 2026-09-27
+
+### Adicionado
+
+- Simular volta como terceira opção do Fluxo: crie cenários de gastos e ganhos futuros e veja o saldo mês a mês.
+  - Cada cenário tem itens de uma vez, parcelados ou todo mês.
+  - A tabela mostra o saldo com e sem os cenários, e a diferença.
+  - Um aviso diz o mês em que o saldo fica negativo.
+  - Lançamento de cenário não pode ser confirmado: para trazê-lo aos dados reais, use "Tornar real".
+
 ## [0.47.0] - 2026-09-27
 
 ### Alterado
