@@ -541,7 +541,7 @@ it('pendente de estorno aparece verde, com o rótulo "estorno"', async () => {
   await abrirAba(/Pendentes/);
   const botao = screen.getByRole('button', { name: 'Corrigir valor de luz' });
   expect(botao).toHaveClass('valor-ganho');
-  expect(botao.textContent?.replace(/\s/g, ' ')).toBe('R$ 40,00');
+  expect(botao.textContent).toBe(formatarBRL(4000));
   expect((botao.closest('.item') as HTMLElement)).toHaveTextContent('estorno');
 });
 ```
