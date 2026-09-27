@@ -25,11 +25,11 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.campo-data` / `.campo-data-input` | ver componente `CampoData.tsx` — botão com ícone de calendário sobre um `input[type=date]` nativo (oculto, mas funcional e acessível) |
 | `.chip` | pílula `--surface` no topo (seletor de box, botão de ajustes) e filtros |
 | `.chip-elevado` | modificador de `.chip` para quando o chip fica sobre uma superfície já `--surface` (ex.: dentro de uma sheet) — troca o fundo para `--surface2`, senão o chip some por falta de contraste. Usado no botão de câmera do passo `menu` em `AdicionarSheet.tsx` |
-| `.valor-ganho`, `.valor-gasto` | valor monetário em pílula (listas/cards); sem pílula automaticamente dentro de `.tabela` ou em `<strong>` |
+| `.valor-ganho`, `.valor-gasto` | efeito no saldo (verde entra, vermelho sai), via `classeEfeito`; valor monetário em pílula (listas/cards); sem pílula automaticamente dentro de `.tabela` ou em `<strong>` |
 | `.editavel` | modificador de `.valor-ganho`/`.valor-gasto` quando o valor é um `<button>` que abre a correção do lançamento (fila de Pendentes, `TelaHoje`); sublinhado pontilhado como pista, e altura mínima de alvo de toque |
 | `.saldo-grande` (+ `.positivo`/`.negativo`) | saldo em destaque (card herói) |
-| `.delta` (+ `.pos`/`.neg`) | badge de variação de saldo projetado, com sinal colado ao valor (`+R$ …` / `−R$ …`) e cor pelo sinal |
-| `.badge` | pílula neutra pequena (contagem, status) |
+| `.delta` (+ `.pos`/`.neg`) | badge de variação de saldo projetado, sem sinal — só a cor diz o sentido |
+| `.badge` | pílula neutra pequena (contagem, status, rótulo "estorno" ao lado de um lançamento com valor negativo) |
 | `.aviso` | faixa âmbar de aviso; um `.botao-ver-mais` dentro dela herda a cor e o tamanho do texto e fica sublinhado (ação do próprio aviso, ex.: "Corrigir o valor pago" na aba Cartão) |
 | `.aviso-urgente` | variante vermelha da `.aviso`, usada junto dela (`aviso aviso-urgente`): `--neg-bg` e `--neg`. Classe solta, não modificador composto, para o verificador de catálogo enxergá-la |
 | `.rotulo` | rótulo maiúsculo pequeno acima de um valor/seção |

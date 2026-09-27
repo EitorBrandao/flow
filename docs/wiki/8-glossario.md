@@ -18,3 +18,4 @@
 : conferência por extrato | Importar o extrato do banco ou a fatura do cartão em Ajustes e comparar cada linha com o que já está lançado, item a item, antes de decidir o que gravar. Diferente da conferência manual: aqui é o Flow que classifica, e você só ajusta o que discorda.
 : sobra | Num extrato importado, um lançamento que está no Flow mas não aparece no arquivo do banco, dentro do período que o arquivo cobre. Chama atenção para um lançamento duplicado ou inventado; a ação padrão é manter, nunca excluir.
 : a classificar | Categoria criada sob demanda, na box ou no cartão, para o lançamento novo de uma conferência por extrato — "a classificar (entrada)" quando é entrada na box. Reclassifique quando quiser, em Categorias ou em Categorias do cartão.
+: estorno | Lançamento com valor negativo numa categoria, como a devolução de uma compra. Aparece em verde, com o rótulo "estorno", porque devolve dinheiro ao saldo.

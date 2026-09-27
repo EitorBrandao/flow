@@ -45,6 +45,16 @@ Token novo → `nivel-3-novo-token.md`. Mudar valor de token existente → níve
 | `--estado-novo` | `#a78bfa` | estado "novo" da conferência de importação (`Importar.tsx`) — item sem nada parecido no app ainda |
 | `--alca` | `#ffffff` | alcinha de arrastar dos sheets (`.sheet-alca`) — exceção ao padrão de superfície azulada, por legibilidade; ver `docs/superpowers/specs/2026-07-23-alcinha-branca-design.md` |
 
+### Sinal de valor
+
+Valor em dinheiro mostrado nunca tem "+" nem "−". A cor diz o efeito no saldo: verde entra
+ou sobra, vermelho sai ou falta. Zero fica sem cor.
+
+- Lançamento: `classeEfeito(efeitoNoSaldo(valor, tipo))`. Estorno (valor negativo) inverte
+  o sentido e ganha o rótulo `.badge` "estorno".
+- Saldo: `classeSaldo(saldo)` (`.total-dia.pos/.neg`), igual ao saldo do dia no Fluxo.
+- Campo de digitar valor é exceção: o botão ± é o próprio controle do sinal.
+
 ## Escalas
 
 **Raios:** cards 20px · itens de lista 18px · botões/inputs 12px · chips/pílulas/badges 999px

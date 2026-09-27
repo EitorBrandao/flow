@@ -1,0 +1,3 @@
+- Valores em dinheiro aparecem sem "+" nem "−" em todo o app: a cor diz o sentido.
+  - Verde entra ou sobra, vermelho sai ou falta.
+  - Estorno aparece em verde, com o rótulo "estorno".
