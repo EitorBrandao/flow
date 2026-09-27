@@ -1,12 +1,24 @@
-import { formatarBRL, formatarPercentual, formatarSobraCompacta, empurrarDigito, apagarUltimoDigito, digitosParaCentavos, formatarSemSimbolo, parsearCentavosDecimal } from './money';
+import { formatarBRL, formatarSaldo, formatarPercentual, formatarSobraCompacta, empurrarDigito, apagarUltimoDigito, digitosParaCentavos, formatarSemSimbolo, parsearCentavosDecimal, efeitoNoSaldo, classeEfeito, classeSaldo } from './money';
 
 describe('formatarBRL', () => {
   it('formata centavos como moeda pt-BR', () => {
     // toLocaleString pt-BR usa espaço não separável (U+00A0) após R$
     expect(formatarBRL(123456)).toBe('R$ 1.234,56');
     expect(formatarBRL(0)).toBe('R$ 0,00');
-    // Negativo usa o sinal de menos (U+2212), como as pílulas e diferenças do app.
-    expect(formatarBRL(-4500)).toBe('−R$ 45,00');
+  });
+  it('nunca mostra sinal: a cor, na tela, diz o sentido', () => {
+    expect(formatarBRL(-4500)).toBe('R$ 45,00');
+    expect(formatarBRL(-4500)).not.toMatch(/[−-]/);
+  });
+});
+
+describe('formatarSaldo', () => {
+  it('negativo mostra o sinal "−" (U+2212), além do valor absoluto', () => {
+    expect(formatarSaldo(-4500)).toBe(`−${formatarBRL(-4500)}`);
+  });
+  it('zero e positivo saem sem sinal, iguais a formatarBRL', () => {
+    expect(formatarSaldo(0)).toBe(formatarBRL(0));
+    expect(formatarSaldo(123456)).toBe(formatarBRL(123456));
   });
 });
 
@@ -69,17 +81,11 @@ describe('digitosParaCentavos', () => {
 });
 
 describe('formatarSobraCompacta', () => {
-  it('formata positivo com sinal + e sem casas decimais', () => {
-    expect(formatarSobraCompacta(187000)).toBe('+1.870');
-  });
-  it('formata negativo com sinal − (menos Unicode) e valor absoluto', () => {
-    expect(formatarSobraCompacta(-41000)).toBe('−410');
-  });
-  it('arredonda centavos ao real mais próximo', () => {
-    expect(formatarSobraCompacta(93050)).toBe('+931'); // 930,50 arredonda pra 931
-  });
-  it('zero é positivo (sinal +)', () => {
-    expect(formatarSobraCompacta(0)).toBe('+0');
+  it('formata sem sinal, só valor absoluto com casas decimais', () => {
+    expect(formatarSobraCompacta(187000)).toBe('1.870');
+    expect(formatarSobraCompacta(-41000)).toBe('410');
+    expect(formatarSobraCompacta(93050)).toBe('931'); // 930,50 arredonda pra 931
+    expect(formatarSobraCompacta(0)).toBe('0');
   });
 });
 
@@ -88,6 +94,11 @@ it('formatarSemSimbolo mostra centavos e milhar, sem R$', () => {
   expect(formatarSemSimbolo(123456)).toBe('1.234,56');
   expect(formatarSemSimbolo(0)).toBe('0,00');
   expect(formatarSemSimbolo(100)).toBe('1,00'); // não '1'
+});
+
+it('formatarSemSimbolo nunca mostra sinal: a cor, na tela, diz o sentido', () => {
+  expect(formatarSemSimbolo(-850)).toBe('8,50');
+  expect(formatarSemSimbolo(-850)).not.toMatch(/[−-]/);
 });
 
 describe('parsearCentavosDecimal', () => {
@@ -117,5 +128,32 @@ describe('parsearCentavosDecimal', () => {
     // backup traria valorCent: null, quebrando distribuirItens em NaN.
     expect(parsearCentavosDecimal('99999999999999999999.99')).toBeUndefined();
     expect(Number.isSafeInteger(parsearCentavosDecimal('90071992547409.91') ?? 0)).toBe(true);
+  });
+});
+
+describe('efeitoNoSaldo', () => {
+  it('ganho soma, gasto subtrai', () => {
+    expect(efeitoNoSaldo(5000, 'ganho')).toBe(5000);
+    expect(efeitoNoSaldo(5000, 'gasto')).toBe(-5000);
+  });
+  it('estorno inverte o sentido', () => {
+    expect(efeitoNoSaldo(-5000, 'gasto')).toBe(5000);  // devolução de compra: entra dinheiro
+    expect(efeitoNoSaldo(-5000, 'ganho')).toBe(-5000); // ganho estornado: sai dinheiro
+  });
+});
+
+describe('classeEfeito', () => {
+  it('positivo verde, negativo vermelho, zero sem cor', () => {
+    expect(classeEfeito(1)).toBe('valor-ganho');
+    expect(classeEfeito(-1)).toBe('valor-gasto');
+    expect(classeEfeito(0)).toBeUndefined();
+  });
+});
+
+describe('classeSaldo', () => {
+  it('segue o saldo do dia no Fluxo: zero conta como positivo', () => {
+    expect(classeSaldo(100)).toBe('total-dia pos');
+    expect(classeSaldo(0)).toBe('total-dia pos');
+    expect(classeSaldo(-100)).toBe('total-dia neg');
   });
 });

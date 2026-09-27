@@ -119,7 +119,7 @@ Cada item da lista chega classificado num destes seis estados:
 
 O que esta versão não faz:
 
-- Não grava estorno de cartão — ele aparece como Interno, com a explicação na lista.
+- Não grava [[estorno]] de cartão — ele aparece como Interno, com a explicação na lista.
 - Não deixa escolher o banco de um lançamento de conta.
 - Não lê a fatura do cartão Nubank, nem arquivo OFX ou zip.
 

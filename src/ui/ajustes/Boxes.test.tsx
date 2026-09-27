@@ -4,6 +4,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
+import { formatarSaldo } from '../../domain/money';
 import { agoraISO, novoId } from '../../domain/types';
 import { useApp } from '../../state/store';
 import Boxes from './Boxes';
@@ -195,4 +196,23 @@ it('saldo e data ficam em linhas de formulário separadas', async () => {
   const linhaSaldo = within(item).getByLabelText('Saldo inicial').closest('.form-linha');
   const linhaData = within(item).getByLabelText('Data do saldo').closest('.form-linha');
   expect(linhaSaldo).not.toBe(linhaData);
+});
+
+it('saldo inicial negativo aparece em vermelho, com o sinal "−"', async () => {
+  const agora = agoraISO();
+  await repo.salvarBox({ id: novoId(), nome: 'eitor', saldoInicial: -25000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora });
+  await useApp.getState().iniciar();
+
+  render(<Boxes />);
+  const valor = screen.getByText(formatarSaldo(-25000).replace(/\s/g, ' '));
+  expect(valor).toHaveClass('total-dia', 'neg');
+});
+
+it('saldo inicial positivo aparece em verde', async () => {
+  const agora = agoraISO();
+  await repo.salvarBox({ id: novoId(), nome: 'eitor', saldoInicial: 25000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora });
+  await useApp.getState().iniciar();
+
+  render(<Boxes />);
+  expect(screen.getByText(/^R\$\s*250,00$/)).toHaveClass('total-dia', 'pos');
 });

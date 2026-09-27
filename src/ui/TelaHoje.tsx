@@ -4,7 +4,7 @@ import * as repo from '../db/repo';
 import { bancosDaBox, totalDeclaradoCent } from '../domain/bancos';
 import { addDias, formatarDataBR } from '../domain/dates';
 import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../domain/estadoBackup';
-import { formatarBRL } from '../domain/money';
+import { classeEfeito, classeSaldo, efeitoNoSaldo, formatarBRL, formatarSaldo } from '../domain/money';
 import type { Banco, Box, ISODate, Lancamento } from '../domain/types';
 import { pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, estadoPrimeiroUso, useApp } from '../state/store';
@@ -80,21 +80,21 @@ function TotalFlow({ saldoApp }: { saldoApp: number }) {
   return (
     <div className="total">
       <span>Total calculado no Flow</span>
-      <span>{formatarBRL(saldoApp)}</span>
+      <span className={classeSaldo(saldoApp)}>{formatarSaldo(saldoApp)}</span>
     </div>
   );
 }
 
 /** Resultado da conferência, compartilhado pelas duas variantes (saldo único e por banco).
- *  `diff` é banco − app; o valor exibido é do ponto de vista do app (app − banco): negativo
- *  quando falta lançar, positivo quando sobra. */
+ *  `diff` é banco − app; o valor exibido é do ponto de vista do app (app − banco), sem sinal:
+ *  vermelho quando falta lançar, verde quando sobra. */
 function Diferenca({ diff }: { diff: number }) {
   if (diff === 0) return <>Bate certinho.</>;
   const doApp = -diff;
   return doApp < 0 ? (
-    <>Diferença: <strong className="valor-gasto">−{formatarBRL(-doApp)}</strong> — falta inserir no app</>
+    <>Diferença: <strong className="valor-gasto">{formatarBRL(doApp)}</strong> — falta inserir no app</>
   ) : (
-    <>Diferença: <strong className="valor-ganho">+{formatarBRL(doApp)}</strong> — sobra no app (confira duplicado ou algo não confirmado no banco)</>
+    <>Diferença: <strong className="valor-ganho">{formatarBRL(doApp)}</strong> — sobra no app (confira duplicado ou algo não confirmado no banco)</>
   );
 }
 
@@ -243,7 +243,7 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
       ))}
       <div className="total">
         <span>Total informado</span>
-        <span>{totalCent != null ? formatarBRL(totalCent) : '—'}</span>
+        <span className={totalCent != null ? classeSaldo(totalCent) : undefined}>{totalCent != null ? formatarSaldo(totalCent) : '—'}</span>
       </div>
       <TotalFlow saldoApp={saldoApp} />
       {diff == null ? (
@@ -366,7 +366,7 @@ export default function TelaHoje() {
               </p>
               {(() => {
                 const saldoHoje = deHoje?.saldoEfetivo ?? 0;
-                const [reais, centavos] = formatarBRL(saldoHoje).split(',');
+                const [reais, centavos] = formatarSaldo(saldoHoje).split(',');
                 return (
                   <p className={`saldo-grande${saldoHoje < 0 ? ' negativo' : ''}`} style={{ margin: '4px 0' }}>
                     {reais}<b>,{centavos}</b>
@@ -379,14 +379,14 @@ export default function TelaHoje() {
                 if (delta == null || delta === 0) return null;
                 return (
                   <span className={`delta ${delta > 0 ? 'pos' : 'neg'}`}>
-                    {delta > 0 ? '+' : '−'}{formatarBRL(Math.abs(delta))} nos próximos 28 dias
+                    {formatarBRL(delta)} nos próximos 28 dias
                   </span>
                 );
               })()}
               {deHoje && deHoje.saldoProjetado !== deHoje.saldoEfetivo && (
                 <p className="sub" style={{ margin: 0 }}>
-                  projetado: <strong className={deHoje.saldoProjetado >= 0 ? 'valor-ganho' : 'valor-gasto'}>
-                    {formatarBRL(deHoje.saldoProjetado)}
+                  projetado: <strong className={classeSaldo(deHoje.saldoProjetado)}>
+                    {formatarSaldo(deHoje.saldoProjetado)}
                   </strong>
                 </p>
               )}
@@ -432,17 +432,20 @@ export default function TelaHoje() {
               >
                 <div className="linha-topo">
                   <div className="cresce">
-                    <div>{nomeCat(l.categoriaId)}</div>
+                    <div>
+                      {nomeCat(l.categoriaId)}
+                      {l.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
+                    </div>
                     <div className="sub">{l.data.split('-').reverse().join('/')}{l.nota ? ` · ${l.nota}` : ''}</div>
                   </div>
                   {ehFatura(l) ? (
-                    <span className={tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
+                    <span className={classeEfeito(efeitoNoSaldo(l.valor, tipoCat(l.categoriaId)))}>
                       {formatarBRL(l.valor)}
                     </span>
                   ) : (
                     <button
                       type="button"
-                      className={`${tipoCat(l.categoriaId) === 'ganho' ? 'valor-ganho' : 'valor-gasto'} editavel`}
+                      className={`${classeEfeito(efeitoNoSaldo(l.valor, tipoCat(l.categoriaId))) ?? ''} editavel`}
                       aria-label={`Corrigir valor de ${nomeCat(l.categoriaId)}`}
                       onClick={() => abrirCorrecao(l)}
                     >

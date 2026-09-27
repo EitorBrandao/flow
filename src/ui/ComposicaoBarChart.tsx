@@ -1,4 +1,4 @@
-import { formatarBRL, formatarPercentual } from '../domain/money';
+import { classeEfeito, efeitoNoSaldo, formatarBRL, formatarPercentual } from '../domain/money';
 import type { TipoCategoria } from '../domain/types';
 
 export interface LinhaComposicao {
@@ -39,8 +39,8 @@ export default function ComposicaoBarChart({ linhas, base, onClicarLinha }: Prop
                 {l.badge && <> <span className="badge">{l.badge}</span></>}
               </span>
               <span className="composicao-valores">
-                {l.pctDaRenda != null && <span className="composicao-pct">{formatarPercentual(l.pctDaRenda * 100)}</span>}
-                <strong className={l.tipo === 'ganho' ? 'valor-ganho' : 'valor-gasto'}>
+                {l.pctDaRenda != null && <span className="composicao-pct">{formatarPercentual(Math.abs(l.pctDaRenda) * 100)}</span>}
+                <strong className={classeEfeito(efeitoNoSaldo(l.total, l.tipo))}>
                   {formatarBRL(l.total)}
                 </strong>
               </span>
