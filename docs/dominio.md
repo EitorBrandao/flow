@@ -127,9 +127,9 @@ Combinações que o código realmente produz, hoje:
 | `origem` | `cenarioId`? | `status` ao nascer | quem cria | transição para `efetivo` |
 |---|---|---|---|---|
 | `manual` | não | `previsto` se marcou "Marcar como previsto" ou `data` é futura, senão `efetivo` | `TelaLancar.tsx` → `repo.salvarLancamento` | via `LancEditor` (`repo.atualizarLancamento`): só "Confirmar" (`aplicar(true)`) grava `efetivo` — "Salvar" (`aplicar(false)`) não mexe em `status` |
-| `manual` | sim | sempre `previsto` | `TelaSimulador.tsx` (`FormHipotetico`, parcela única) → `repo.salvarLancamento` | ver ressalva abaixo |
+| `manual` | sim | sempre `previsto` | `CenarioCard.tsx` (`FormItemCenario`, repetição "uma vez") → `gravarItemNovo` → `repo.salvarLancamento` | ver ressalva abaixo |
 | `recorrencia` | não | sempre `previsto` | `materializarRecorrencia` (`src/db/repo.ts`) | "Confirmar" em `LancEditor.tsx` (ajusta valor e status juntos); depois de `efetivo`, `materializar` (`src/domain/recurrence.ts`) nunca mais toca o registro |
-| `recorrencia` | sim | sempre `previsto` | `TelaSimulador.tsx` (`FormHipotetico`, ≥2 parcelas) → `repo.salvarRecorrencia` com `cenarioId`, materializado do mesmo jeito | ver ressalva abaixo |
+| `recorrencia` | sim | sempre `previsto` | `CenarioCard.tsx` (`FormItemCenario`, repetição "parcelado" ou "todo mês") → `gravarItemNovo` → `repo.salvarRecorrencia` com `cenarioId`, materializado do mesmo jeito | ver ressalva abaixo |
 | `cartao` | não | sempre `previsto` | `sincronizarCartoes` (`src/db/repo.ts`) | fila de pendentes da `TelaHoje` (`pendentes`, `src/domain/projection.ts`) não filtra por `origem`, então uma fatura vencida cai na mesma fila manual/recorrência e é confirmada por `repo.confirmarPendente`; depois de `efetivo`, `diffSincronizacao` (`src/domain/fatura.ts`) nunca mais toca o registro |
 | `transferencia` | não | sempre `efetivo` | `transferirEntreBancos` (`src/db/repo.ts`) | não existe: as duas pernas nascem `efetivo` e nunca são revisitadas — não há "transferência prevista" nem confirmação; `excluirTransferencia` (`src/db/repo.ts`) só apaga as duas, nunca muda `status` |
 
@@ -142,8 +142,8 @@ direto.
 `cartao` + `cenarioId` não existe: `CompraCartao` não tem campo `cenarioId`
 (`src/domain/types.ts`) e nada em `sincronizarCartoes` o define.
 
-As duas linhas com `cenarioId` são produzidas por `TelaSimulador.tsx`, que hoje não é
-alcançável na navegação (`ABAS`, `Shell.tsx`).
+As duas linhas com `cenarioId` são produzidas por `CenarioCard.tsx`, dentro de
+`SimuladorFluxo.tsx` (Fluxo › Simular), alcançável pela navegação (`ABAS`, `Shell.tsx`).
 
 Existe um **quinto** escritor de lançamentos que a matriz acima não lista:
 `substituirTudo` (`src/db/repo.ts`, import de backup em modo "substituir"). Como

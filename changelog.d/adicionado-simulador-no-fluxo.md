@@ -1,0 +1,4 @@
+- Simular volta como terceira opção do Fluxo: crie cenários de gastos e ganhos futuros e veja o saldo mês a mês.
+  - Cada cenário tem itens de uma vez, parcelados ou todo mês.
+  - A tabela mostra o saldo com e sem os cenários, e a diferença.
+  - Um aviso diz o mês em que o saldo fica negativo.

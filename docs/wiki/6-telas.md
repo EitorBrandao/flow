@@ -50,13 +50,27 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 
 ## Fluxo
 
-A linha do tempo do dinheiro. Duas abas: Lista (padrão) e Gráfico.
+A linha do tempo do dinheiro. Três abas: Lista (padrão), Gráfico e Simular.
 
 - **Lista** mostra por padrão de 14 dias atrás até o horizonte de projeção; a lupa abre busca e filtros (texto, data única ou período; "+30 dias atrás" estende o início da janela para o passado). A busca por texto também alcança as compras dentro da fatura de um cartão: bater numa delas (descrição, categoria do cartão ou valor) mostra o lançamento da fatura na lista. Cada dia mostra seu saldo projetado no cabeçalho. Com filtro de data, o dia escolhido aparece mesmo sem lançamento — é como saber quanto você vai ter num dia sem nada. Num período, aparecem o primeiro e o último dia, mais os dias com lançamento. Cada dia futuro filtrado mostra também a diferença em relação a hoje, verde se o saldo sobe e vermelho se desce. Um dia fora da projeção mostra um traço no lugar do saldo: depois do fim, diz até quando a projeção vai; antes do começo, diz quando ela começa.
 - **Gráfico** mostra o histórico e a projeção completa até o horizonte configurado, numa área maior que o mini-gráfico de Hoje; linha extra tracejada quando há cenário ligado; toque no card abre em tela cheia. Embaixo, o menor e o maior saldo do período; quando o período passa de um ano para outro, as datas das pontas mostram o ano, e o mínimo e o máximo descem para a linha de baixo.
 - Tocar num lançamento, na Lista, abre o editor (valor, data, categoria, nota); previstos podem ser confirmados ali mesmo; previstos de recorrência avisam para editar a regra em Ajustes, se for para mudar valor ou data de vez. Uma transferência entre bancos (feita em Hoje → Conferir) abre, em vez disso, um resumo só de leitura, com os dois bancos, a data e o valor, e um botão para excluir as duas pernas — não dá para editar valor, data ou categoria de uma transferência, só apagar e refazer.
 
 **Editor de lançamento — obrigatórios:** valor, data, categoria. **Opcional:** nota.
+
+## Simular
+
+Terceira opção do Fluxo, ao lado de Lista e Gráfico. [Cenários](#glossario/cenario) "e se?": ligar/desligar, criar, detalhar e converter em real. Não entra em [[efetivo]] nem em Análises até você tornar o cenário real.
+
+- "Novo cenário" fica no topo; o cenário nasce ligado e já aberto.
+- "Cenários ligados": tabela mês a mês, Mês · Com · Diferença · Sem, valores em reais sem o "R$". Com e Sem são o saldo projetado, com e sem os cenários ligados. Diferença é o efeito deles naquele mês. Sem cenário nenhum ligado, um aviso diz que a tabela mostra só o saldo real. Com algum ligado, um aviso vermelho mostra o primeiro mês em que o saldo com os cenários fica negativo, ou diz até quando ele segue positivo.
+- Cada cenário aparece num card, com o quadradinho de ligar/desligar à esquerda. Tocar no nome ou na seta abre e fecha o card; o resumo mostra o número de itens e o efeito do cenário até o último mês da projeção. Aberto: a lista de itens, "Impacto só deste cenário" (a mesma tabela, mas com só este cenário ligado), o formulário "Novo item", e os botões "Tornar real" e "Excluir cenário" — os dois com confirmação.
+- Item do cenário: gasto ou ganho, valor, categoria e uma entre três repetições — uma vez (data única), parcelado (o valor digitado é o total, dividido pelo número de parcelas) ou todo mês (repete até o fim da projeção). Para simular a troca de algo que já existe de verdade, como o aluguel ou o salário, lance só a diferença para o valor novo.
+- Tocar num item abre para editar ou excluir; a repetição escolhida na criação não muda depois — para trocar, exclua o item e crie outro.
+- Um lançamento de cenário nunca é confirmado, mesmo com a data já passada: para levá-lo aos dados reais, use "Tornar real" no cenário todo.
+
+**Novo cenário — obrigatório:** nome.
+**Item do cenário — obrigatórios:** valor, categoria. **Têm padrão:** data (hoje), parcelas (2, só quando parcelado).
 
 ## Cartão
 
