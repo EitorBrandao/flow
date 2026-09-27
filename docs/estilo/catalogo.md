@@ -205,6 +205,16 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   os valores iniciais a partir do `ItemCenario` (`domain/simulacao.ts`) e usa `FormItemCenario`
   com `repeticaoFixa`. "Excluir item" pede confirmação (`window.confirm`) antes de remover o
   lançamento ou a recorrência.
+- **`CenarioCard.tsx`** — card de um cenário no Simular (`SimuladorFluxo.tsx`): o checkbox liga
+  e desliga o cenário na projeção; o resto do cabeçalho (nome, resumo e a seta) abre e fecha o
+  card. Aberto, mostra a lista de itens (cada um abre o `ItemCenarioSheet` para editar/excluir),
+  o impacto isolado desse cenário (`TabelaSimulacao`), o `FormItemCenario` para um item novo e
+  as ações Tornar real / Excluir cenário (ambas com `window.confirm`).
+- **`SimuladorFluxo.tsx`** — conteúdo da pílula "Simular" do Fluxo (`TelaFluxo.tsx`): formulário
+  de novo cenário no topo, resumo mensal dos cenários ligados (`TabelaSimulacao`, aviso se o
+  saldo fica negativo) e a lista de `CenarioCard`, um aberto por vez. A largura das colunas de
+  valor (`larguraColunaValor`) é calculada sobre os extremos possíveis de todos os cenários, para
+  ligar/desligar um não mudar a tabela.
 
 `Importar.tsx` (subtela "Importar e conferir" de Ajustes) e seus dois auxiliares só dela,
 `ListaConferencia.tsx` e `LinhaConferencia.tsx`, não entram nesta lista: os três vivem em

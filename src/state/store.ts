@@ -5,13 +5,13 @@ import { categoriasFaturaIds } from '../domain/fatura';
 import { categoriasTransferenciaIds } from '../domain/transferencia';
 import { agoraISO, novoId, type Dados, type ID, type ISODate } from '../domain/types';
 
-export type Aba = 'hoje' | 'fluxo' | 'lancar' | 'cartao' | 'analises' | 'simulador' | 'ajustes';
+export type Aba = 'hoje' | 'fluxo' | 'lancar' | 'cartao' | 'analises' | 'ajustes';
 export type BoxSelecionada = ID | 'casa';
 export type SecaoAjustes = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'bancos' | 'cartoes'
   | 'categoriasCartao' | 'assinaturas' | 'viagens' | 'backup' | 'importar' | 'wiki' | 'versao';
 
 /** Aba interna do Fluxo; `abrirFluxo` escolhe qual abre na chegada. */
-export type AbaFluxo = 'lista' | 'grafico';
+export type AbaFluxo = 'lista' | 'grafico' | 'simular';
 
 /** Semente de um lançamento vinda dos atalhos da sheet Adicionar; de uso único. */
 export interface RascunhoLancar { categoriaId: ID; valorCent: number }
