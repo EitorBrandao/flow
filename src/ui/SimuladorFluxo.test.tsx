@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
+import * as projection from '../domain/projection';
 import { useApp } from '../state/store';
 import SimuladorFluxo from './SimuladorFluxo';
 
@@ -133,6 +134,17 @@ it('adicionar item pelo cenário grava no cenário certo', async () => {
   const lancs = await db.lancamentos.where('cenarioId').equals(c.id).toArray();
   expect(lancs).toHaveLength(1);
   expect(lancs[0]).toMatchObject({ valor: 30000, status: 'previsto' });
+});
+
+it('memoiza a projeção: digitar em "Novo cenário" não recalcula projetarBoxes', async () => {
+  await preparar();
+  const spy = vi.spyOn(projection, 'projetarBoxes');
+  render(<SimuladorFluxo />);
+  const chamadasIniciais = spy.mock.calls.length;
+  expect(chamadasIniciais).toBeGreaterThan(0);
+  await userEvent.type(screen.getByLabelText('Novo cenário'), 'abc');
+  expect(spy.mock.calls.length).toBe(chamadasIniciais);
+  spy.mockRestore();
 });
 
 it('Tornar real e Excluir cenário pedem confirmação', async () => {

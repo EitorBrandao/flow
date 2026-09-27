@@ -1,8 +1,8 @@
-import { useId, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import * as repo from '../db/repo';
 import { mesAbreviado } from '../domain/dates';
 import { projetarBoxes } from '../domain/projection';
-import { extremosPossiveis, larguraColunaValor, primeiroMesNegativo, resumoMensal } from '../domain/simulacao';
+import { extremosPossiveis, larguraColunaValor, primeiroMesNegativo, resumoMensal, type LinhaMes } from '../domain/simulacao';
 import { agoraISO, novoId, type ID } from '../domain/types';
 import { boxIdEfetivo, boxIdsSelecionadas, cenariosLigados, useApp } from '../state/store';
 import CenarioCard from './CenarioCard';
@@ -14,21 +14,30 @@ export default function SimuladorFluxo() {
   const [nomeNovo, setNomeNovo] = useState('');
   const [aberto, setAberto] = useState<ID | null>(null);
   const uid = useId();
-  if (!dados) return null;
 
-  const ids = boxIdsSelecionadas(dados, boxSel);
-  const resumo = (ligados: ReadonlySet<ID>) => resumoMensal(projetarBoxes(ids, {
-    boxes: dados.boxes, categorias: dados.categorias, lancamentos: dados.lancamentos,
-    cenariosLigados: ligados, horizonte: dados.config.horizonteProjecao,
-  }), hoje);
-  const ligados = cenariosLigados(dados);
-  const combinado = resumo(ligados);
-  const porCenario = new Map(dados.cenarios.map((c) => [c.id, resumo(new Set([c.id]))]));
-  const sem = combinado.map((l) => l.sem);
-  const ext = extremosPossiveis(sem, [...porCenario.values()].map((ls) => ls.map((l) => l.dif)));
-  const larguraCh = larguraColunaValor(sem, ext);
-  const negativoEm = primeiroMesNegativo(combinado);
-  const ultimoMes = combinado.at(-1)?.mes;
+  // Memoizado: `projetarBoxes` roda uma vez por cenário (+ uma vez combinado) — sem isto,
+  // cada tecla em "Novo cenário" (estado local, não ligado a `dados`/`boxSel`/`hoje`)
+  // refaria a projeção inteira a cada render.
+  const calc = useMemo(() => {
+    if (!dados) return null;
+    const ids = boxIdsSelecionadas(dados, boxSel);
+    const resumo = (ligados: ReadonlySet<ID>) => resumoMensal(projetarBoxes(ids, {
+      boxes: dados.boxes, categorias: dados.categorias, lancamentos: dados.lancamentos,
+      cenariosLigados: ligados, horizonte: dados.config.horizonteProjecao,
+    }), hoje);
+    const ligados = cenariosLigados(dados);
+    const combinado = resumo(ligados);
+    const porCenario = new Map<ID, LinhaMes[]>(dados.cenarios.map((c) => [c.id, resumo(new Set([c.id]))]));
+    const sem = combinado.map((l) => l.sem);
+    const ext = extremosPossiveis(sem, [...porCenario.values()].map((ls) => ls.map((l) => l.dif)));
+    const larguraCh = larguraColunaValor(sem, ext);
+    const negativoEm = primeiroMesNegativo(combinado);
+    const ultimoMes = combinado.at(-1)?.mes;
+    return { ligados, combinado, porCenario, larguraCh, negativoEm, ultimoMes };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dados, boxSel, hoje]);
+  if (!dados || !calc) return null;
+  const { ligados, combinado, porCenario, larguraCh, negativoEm, ultimoMes } = calc;
 
   async function criar() {
     const nome = nomeNovo.trim();
