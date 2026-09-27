@@ -47,6 +47,11 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
   }
 
   const previstoDeRecorrencia = lanc.recorrenciaId != null && lanc.status === 'previsto';
+  const doCenario = lanc.cenarioId != null;
+  // Parcela de recorrência de cenário: excluir não vale — a próxima materialização traz a
+  // parcela de volta, porque recorrência de cenário materializa também o passado (não há
+  // "descartado" a respeitar, já que cenário nunca entra na fila de Pendentes).
+  const parcelaDeRecorrenciaCenario = doCenario && lanc.recorrenciaId != null;
 
   return (
     <Sheet aberto onFechar={onFechar} rotulo={lanc.status === 'previsto' ? 'Previsto' : 'Lançamento'}>
@@ -70,19 +75,23 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
           <label htmlFor="ed-nota">Nota</label>
           <input id="ed-nota" value={nota} onChange={(e) => setNota(e.target.value)} />
         </div>
-        {previstoDeRecorrencia && (
+        {doCenario ? (
+          <p className="sub">Item de um cenário: para mudar ou excluir, use Fluxo › Simular.</p>
+        ) : previstoDeRecorrencia && (
           <p className="sub">
             Previsto de uma recorrência: para mudar valor ou data, edite a regra em Ajustes — ou confirme já com o valor ajustado.
           </p>
         )}
         <div className="linha" style={{ marginTop: 12 }}>
-          {lanc.status === 'previsto' && !lanc.cenarioId && (
+          {lanc.status === 'previsto' && !doCenario && (
             <button className="botao botao-primario" onClick={() => aplicar(true)}>✓ Confirmar</button>
           )}
           {!previstoDeRecorrencia && (
             <button className="botao" onClick={() => aplicar(false)}>Salvar</button>
           )}
-          <button className="botao botao-perigo" onClick={excluir}>Excluir</button>
+          {!parcelaDeRecorrenciaCenario && (
+            <button className="botao botao-perigo" onClick={excluir}>Excluir</button>
+          )}
           <button className="botao" style={{ marginLeft: 'auto' }} onClick={onFechar}>Fechar</button>
         </div>
         {erro && <p className="aviso">{erro}</p>}

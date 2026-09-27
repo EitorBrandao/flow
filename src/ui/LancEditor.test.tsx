@@ -137,7 +137,7 @@ it('excluir pede confirmação: confirmar apaga o lançamento', async () => {
   confirmSpy.mockRestore();
 });
 
-it('lançamento de cenário: sem botão Confirmar, com Salvar e Excluir', async () => {
+it('lançamento de cenário "uma vez": sem botão Confirmar, com Salvar e Excluir, e dica aponta para Simular', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
@@ -155,4 +155,35 @@ it('lançamento de cenário: sem botão Confirmar, com Salvar e Excluir', async 
   expect(screen.queryByRole('button', { name: /Confirmar/ })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Salvar' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Excluir' })).toBeInTheDocument();
+  expect(screen.getByText(/use Fluxo › Simular/)).toBeInTheDocument();
+});
+
+it('parcela de recorrência de cenário: sem Confirmar, sem Salvar, sem Excluir — só a dica e Fechar', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const categoria = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+    const cenarioId = novoId();
+    await repo.salvarCenario({ id: cenarioId, nome: 'e se', ligado: true, criadoEm: agora, alteradoEm: agora });
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: categoria.id, valor: 5000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 2, cenarioId },
+      '2026-12-31',
+    );
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    const previstoDeCenario = useApp.getState().dados!.lancamentos.find((l) => l.recorrenciaId != null)!;
+
+    render(<LancEditor lanc={previstoDeCenario} onFechar={() => {}} />);
+
+    expect(screen.queryByRole('button', { name: /Confirmar/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Salvar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Excluir' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Fechar' })).toBeInTheDocument();
+    expect(screen.getByText(/use Fluxo › Simular/)).toBeInTheDocument();
+  } finally {
+    vi.useRealTimers();
+  }
 });

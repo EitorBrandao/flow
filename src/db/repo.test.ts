@@ -106,6 +106,33 @@ it('editar recorrência atualiza valor dos previstos e preserva efetivos', async
   }
 });
 
+it('editar a nota de uma recorrência atualiza os previstos, não os efetivos', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, gasto } = await boxECategoria();
+    const rec = await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: gasto.id, valor: 10000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 3, nota: 'antiga' },
+      '2026-12-31',
+    );
+    const primeiro = (await repo.carregarTudo()).lancamentos.find((l) => l.data === '2026-08-05')!;
+    await repo.confirmarPendente(primeiro.id);
+
+    await repo.salvarRecorrencia({ ...rec, nota: 'nova' }, '2026-12-31');
+    const dados = await repo.carregarTudo();
+    const confirmado = dados.lancamentos.find((l) => l.id === primeiro.id)!;
+    expect(confirmado.nota).toBe('antiga'); // efetivo intocado
+    const previstos = dados.lancamentos.filter((l) => l.status === 'previsto');
+    expect(previstos.every((l) => l.nota === 'nova')).toBe(true);
+
+    await repo.salvarRecorrencia({ ...rec, nota: undefined }, '2026-12-31');
+    const semNota = await repo.carregarTudo();
+    expect(semNota.lancamentos.filter((l) => l.status === 'previsto').every((l) => l.nota === undefined)).toBe(true);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 it('excluirRecorrencia remove previstos e mantém efetivos', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {

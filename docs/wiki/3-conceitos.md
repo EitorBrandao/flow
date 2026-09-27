@@ -29,7 +29,7 @@ Editar a regra ajusta na hora os previstos ainda não confirmados que não batem
 
 ## Cenário
 
-Um "e se?" — lançamentos hipotéticos (pontuais ou parcelados) agrupados sob um nome, com um interruptor ligado/desligado.
+Um "e se?" — lançamentos hipotéticos (pontuais, parcelados ou todo mês) agrupados sob um nome, com um interruptor ligado/desligado. Veja [Simular](#telas/simular), no capítulo Telas.
 
 - Só entra na projeção de saldo quando está ligado — aparece como linha tracejada extra no gráfico do Fluxo e do Hoje.
 - Lançamentos de cenário nunca contam como confirmados; não entram nas Análises nem nos totais mensais.

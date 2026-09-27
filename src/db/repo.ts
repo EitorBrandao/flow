@@ -162,12 +162,14 @@ async function materializarRecorrencia(rec: Recorrencia, horizonte: ISODate): Pr
     ...(rec.cenarioId ? { cenarioId: rec.cenarioId } : {}),
     criadoEm: agora, alteradoEm: agora,
   })));
-  // previstos remanescentes acompanham a regra atual (valor/categoria); efetivos são história
+  // previstos remanescentes acompanham a regra atual (valor/categoria/nota); efetivos são história
   await db.lancamentos.where('recorrenciaId').equals(rec.id)
     .filter((l) => l.status === 'previsto')
     .modify((l) => {
       l.valor = rec.valor;
       l.categoriaId = rec.categoriaId;
+      if (rec.nota) l.nota = rec.nota;
+      else delete l.nota;
       l.alteradoEm = agora;
     });
 }
