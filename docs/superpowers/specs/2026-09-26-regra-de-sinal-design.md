@@ -21,6 +21,13 @@ tabela teria os dois jeitos lado a lado.
 3. **Estorno** (valor negativo numa categoria de gasto, ou o inverso) segue o efeito no
    saldo: estorno de gasto fica **verde**, com o rótulo **"estorno"** ao lado.
 4. A mudança vai num branch próprio, antes do simulador.
+5. **Saldo usa o verde-escuro (`classeSaldo`, `.total-dia`); movimento usa o verde-claro
+   (`classeEfeito`, `.valor-ganho`/`.valor-gasto`)** (2026-09-27). Saldo: saldo do dia no
+   Fluxo, "Total calculado no Flow", "Total informado", saldo da box, saldo do banco,
+   "projetado" do Hoje. Movimento: lançamento, diferença das conferências, pílulas
+   `.delta`, Sobra de Análises. Saldo zero conta como positivo; movimento zero fica sem
+   cor. `.saldo-grande` (saldo grande do Hoje) e o mín/máx dos gráficos (`b.pos`/`.neg`)
+   mantêm o estilo próprio, fora desta decisão.
 
 É uma mudança de **linguagem** (nível 6 do guia de estilo): a regra entra em
 `docs/estilo/fundamentos.md`.
@@ -63,7 +70,8 @@ ganha `pos`/`neg` do próprio gráfico.
 | `ajustes/Boxes.tsx` | saldo inicial da box |
 | `ajustes/Bancos.tsx` | saldo informado do banco |
 
-Cor por `classeEfeito(valor)` (saldo positivo verde, negativo vermelho).
+Cor por `classeSaldo(valor)` (saldo positivo verde-escuro, negativo vermelho) — é saldo,
+não movimento (decisão 5, acima).
 
 ### 3. Cor pelo efeito, e não pela categoria; rótulo "estorno"
 
@@ -78,10 +86,17 @@ aparece ao lado da descrição.
 | `LancamentosSheet.tsx` | total, subtotais e itens |
 | `ajustes/Recorrencias.tsx` | valor da recorrência |
 | `TelaAnalises.tsx` | tabela Comparativo (total de categoria pode ficar negativo) |
+| `ComposicaoBarChart.tsx` (+ `TelaAnalises.tsx`, card Ganhos/Gastos do resumo) | linhas da aba Por categoria; percentual da renda sem sinal |
+| `ajustes/LinhaConferencia.tsx` | conferência por extrato, item com `lancamentoId` e sem `bruto` (estado "sobra") |
+| `ViagemSheet.tsx` (+ `TelaAnalises.tsx`, card Viagens) | total, subtotal de grupo e item de viagem — gasto por natureza, `classeEfeito(-valor)` |
 
-`ViagemSheet.tsx`, `TransferenciaSheet.tsx`, `AssinaturasResumoSheet.tsx`, `FaturaResumo.tsx`,
+Acrescentado em 2026-09-27 (correções da revisão final): as quatro linhas acima, mais
+`AdicionarSheet.tsx` (Frequentes) — `formatarSemSimbolo` perde o sinal, igual a
+`formatarBRL`; não tem cor, é só o texto do chip.
+
+`TransferenciaSheet.tsx`, `AssinaturasResumoSheet.tsx`, `FaturaResumo.tsx`,
 `FaturaCategoriaSheet.tsx` e `TelaCartao.tsx` fixam `valor-gasto`: seus valores são gastos
-de cartão ou de viagem, sempre ≥ 0 hoje. Ficam como estão.
+de cartão, sempre ≥ 0 hoje. Ficam como estão.
 
 ### 4. Não muda
 
@@ -90,8 +105,10 @@ de cartão ou de viagem, sempre ≥ 0 hoje. Ficam como estão.
 - Valores já positivos por natureza: fatura, pagamento, parcelas, juros, orçamento de viagem
   (`PagamentoFaturaSheet`, `LinhaOrcamentoViagem`, `AvisoFaturaForaDoFluxo`, `FormCompra`).
 - Já coloridos pelo sinal, só perdem o "−": saldo do dia no Fluxo (`.total-dia`), mín/máx
-  dos gráficos (`b.pos/.neg`), leitura do gráfico expandido (`.saldo-grande`), "projetado"
-  no Hoje, sobra em Análises.
+  dos gráficos (`b.pos/.neg`), leitura do gráfico expandido (`.saldo-grande`), sobra em
+  Análises. "Projetado" no Hoje também já era colorido pelo sinal, mas com
+  `valor-ganho`/`valor-gasto` (movimento) — a decisão 5 troca isso por `classeSaldo`
+  (saldo), acrescentado em 2026-09-27.
 - **Saldo grande do Hoje:** positivo segue branco com os centavos em verde; negativo segue
   vermelho. O desenho atual já distingue os dois sem sinal.
 - Busca do Fluxo e do Cartão por valor: continua casando o texto formatado (agora sem "−").
@@ -107,6 +124,13 @@ de cartão ou de viagem, sempre ≥ 0 hoje. Ficam como estão.
 - Dossiê regenerado (`npm run dossie`).
 - Varredura com Playwright no Galaxy S25+: Hoje (saldo negativo, conferência), Fluxo (saldo
   negativo, estorno), Análises, Ajustes → Boxes.
+
+## Riscos conhecidos
+
+- O sentido de saldo e de diferença é dado só pela cor — sem texto equivalente para quem
+  usa leitor de tela (critério 1.4.1 de acessibilidade, "uso da cor"). É uma decisão de
+  produto do usuário, não um esquecimento: o app não tem, hoje, um plano de acessibilidade
+  para leitor de tela. Registrado em 2026-09-27, na revisão final deste branch.
 
 ## Documentação
 

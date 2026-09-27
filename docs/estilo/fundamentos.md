@@ -39,7 +39,7 @@ Token novo → `nivel-3-novo-token.md`. Mudar valor de token existente → níve
 | `--ac` / `--ac-dim` | `#3b9df8` / `rgba(59,157,248,.14)` | ação (única cor de ação do app) |
 | `--pos` / `--pos-bg` | `#2ee6a8` / `rgba(46,230,168,.14)` | ganho / saldo positivo |
 | `--neg` / `--neg-bg` | `#ff6b7a` / `rgba(255,107,122,.13)` | gasto / saldo negativo |
-| `--total-pos` / `--total-neg` | `#008000` / `#ff4d4d` | totalizador do dia no Fluxo (cabeçalho, fora da pílula de transação) |
+| `--total-pos` / `--total-neg` | `#008000` / `#ff4d4d` | saldo (verde-escuro) — totalizador do dia no Fluxo (cabeçalho, fora da pílula de transação), e todo saldo pintado por `classeSaldo` |
 | `--aviso-bg` / `--aviso-fg` | `#423306` / `#fcd34d` | aviso âmbar (ex.: backup atrasado) |
 | `--hoje-bg` | `#0d4a32` | fundo de destaque da linha "hoje" na lista do Fluxo |
 | `--estado-novo` | `#a78bfa` | estado "novo" da conferência de importação (`Importar.tsx`) — item sem nada parecido no app ainda |
@@ -48,11 +48,20 @@ Token novo → `nivel-3-novo-token.md`. Mudar valor de token existente → níve
 ### Sinal de valor
 
 Valor em dinheiro mostrado nunca tem "+" nem "−". A cor diz o efeito no saldo: verde entra
-ou sobra, vermelho sai ou falta. Zero fica sem cor.
+ou sobra, vermelho sai ou falta.
 
-- Lançamento: `classeEfeito(efeitoNoSaldo(valor, tipo))`. Estorno (valor negativo) inverte
-  o sentido e ganha o rótulo `.badge` "estorno".
-- Saldo: `classeSaldo(saldo)` (`.total-dia.pos/.neg`), igual ao saldo do dia no Fluxo.
+- Lançamento (movimento): `classeEfeito(efeitoNoSaldo(valor, tipo))` (`.valor-ganho`/
+  `.valor-gasto`, verde-claro/vermelho). Estorno (valor negativo) inverte o sentido e ganha
+  o rótulo `.badge` "estorno". Movimento zero fica sem cor.
+- Saldo: `classeSaldo(saldo)` (`.total-dia.pos/.neg`, verde-escuro/vermelho), igual ao
+  saldo do dia no Fluxo. **Saldo é sempre verde-escuro, nunca verde-claro** — decisão
+  2026-09-27: saldo do dia no Fluxo, "Total calculado no Flow", "Total informado", saldo
+  da box, saldo do banco e "projetado" do Hoje usam `classeSaldo`, não `classeEfeito`.
+  Saldo zero conta como **positivo** (verde-escuro) — ao contrário do movimento, que fica
+  sem cor em zero.
+- Exceções que mantêm estilo próprio, fora das duas regras acima: o saldo grande do Hoje
+  (`.saldo-grande` — positivo em branco com centavos em verde, negativo em vermelho) e o
+  mín/máx dos gráficos (`b.pos`/`.neg`, `.grafico-rodape`).
 - Campo de digitar valor é exceção: o botão ± é o próprio controle do sinal.
 
 ## Escalas
