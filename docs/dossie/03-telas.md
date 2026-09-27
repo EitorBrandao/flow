@@ -360,12 +360,12 @@ barras na mesma escala do card acima (100% = maior entre ganhos e gastos do mês
 extra
 R$ 300,00
 heading: Evolução mensal
-+0
-+0
-+0
-+0
-+0
-+300
+0
+0
+0
+0
+0
+300
 ganhos
 gastos
 ‐ ‐ linha tracejada = tendência
@@ -797,12 +797,12 @@ barras na mesma escala do card acima (100% = maior entre ganhos e gastos do mês
 extra
 R$ 300,00
 heading: Evolução mensal
-+0
-+0
-+0
-+0
-+0
-+300
+0
+0
+0
+0
+0
+300
 ganhos
 gastos
 ‐ ‐ linha tracejada = tendência
@@ -1283,12 +1283,12 @@ sigma
 6,6%
 R$ 330,00
 heading: Evolução mensal
-+0
-+0
-+0
-+0
-+300
-+3.170
+0
+0
+0
+0
+300
+3.170
 ganhos
 gastos
 ‐ ‐ linha tracejada = tendência
@@ -1731,12 +1731,12 @@ Assinaturas
 todos os cartões
 R$ 39,90
 heading: Evolução mensal
-+300
-+3.370
-+3.310
-+3.310
-+3.295
-+3.380
+300
+3.370
+3.310
+3.310
+3.295
+3.380
 ganhos
 gastos
 ‐ ‐ linha tracejada = tendência
@@ -2181,12 +2181,12 @@ R$ 39,90
 viagem - 15/07/2026 ~ 22/07/2026
 R$ 80,00
 heading: Evolução mensal
-+3.370
-+3.310
-+3.310
-+3.295
-+3.380
-+3.207
+3.370
+3.310
+3.310
+3.295
+3.380
+3.207
 ganhos
 gastos
 ‐ ‐ linha tracejada = tendência
@@ -2599,12 +2599,12 @@ Assinaturas
 todos os cartões
 R$ 39,90
 heading: Evolução mensal
-+3.310
-+3.295
-+3.380
-+3.207
-+3.377
-+3.437
+3.310
+3.295
+3.380
+3.207
+3.377
+3.437
 ganhos
 gastos
 ‐ ‐ linha tracejada = tendência
@@ -3002,12 +3002,12 @@ Assinaturas
 todos os cartões
 R$ 39,90
 heading: Evolução mensal
-+3.295
-+3.380
-+3.207
-+3.377
-+3.437
-+3.460
+3.295
+3.380
+3.207
+3.377
+3.437
+3.460
 ganhos
 gastos
 ‐ ‐ linha tracejada = tendência
@@ -3375,12 +3375,12 @@ Assinaturas
 todos os cartões
 R$ 39,90
 heading: Evolução mensal
-+3.380
-+3.207
-+3.377
-+3.437
-+3.460
-+3.460
+3.380
+3.207
+3.377
+3.437
+3.460
+3.460
 ganhos
 gastos
 ‐ ‐ linha tracejada = tendência

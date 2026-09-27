@@ -1,7 +1,9 @@
-/** Negativo sai com o sinal de menos (U+2212), não com o hífen do `toLocaleString`: é o
- *  mesmo sinal das pílulas e diferenças que montam "−" + valor absoluto à mão. */
+import type { TipoCategoria } from './types';
+
+/** Valor sempre sem sinal: a cor, na tela, diz o sentido (`classeEfeito`, `classeSaldo`).
+ *  Regra de linguagem em `docs/estilo/fundamentos.md`. */
 export function formatarBRL(centavos: number): string {
-  return (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }).replace('-', '−');
+  return (Math.abs(centavos) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 /** Percentual com uma casa e vírgula decimal (ex.: "32,4%", "−12,3%"). Recebe pontos
@@ -26,12 +28,28 @@ export function digitosParaCentavos(texto: string): number {
   return digitos === '' ? 0 : Number(digitos);
 }
 
-/** Sobra do mês em formato compacto (sem "R$", arredondado ao real) — rótulo curto para
- *  caber acima de barras de gráfico (ex.: "+1.870", "−410"). */
+/** Sobra do mês em formato compacto (sem "R$", sem sinal, arredondado ao real) — rótulo curto
+ *  para caber acima de barras de gráfico (ex.: "1.870"). A cor do rótulo diz o sentido. */
 export function formatarSobraCompacta(centavos: number): string {
-  const sinal = centavos < 0 ? '−' : '+';
-  const reais = Math.round(Math.abs(centavos) / 100);
-  return `${sinal}${reais.toLocaleString('pt-BR')}`;
+  return Math.round(Math.abs(centavos) / 100).toLocaleString('pt-BR');
+}
+
+/** Valor de um lançamento com o sinal do seu efeito no saldo: ganho soma, gasto subtrai.
+ *  Um estorno (valor negativo) sai com o sentido invertido. */
+export function efeitoNoSaldo(valor: number, tipo: TipoCategoria): number {
+  return tipo === 'ganho' ? valor : -valor;
+}
+
+/** Classe de cor de um efeito no saldo: verde entra, vermelho sai, zero sem cor. */
+export function classeEfeito(efeito: number): 'valor-ganho' | 'valor-gasto' | undefined {
+  if (efeito > 0) return 'valor-ganho';
+  if (efeito < 0) return 'valor-gasto';
+  return undefined;
+}
+
+/** Classe de cor de um saldo — a mesma do saldo do dia no Fluxo (`.total-dia`). */
+export function classeSaldo(saldo: number): 'total-dia pos' | 'total-dia neg' {
+  return saldo >= 0 ? 'total-dia pos' : 'total-dia neg';
 }
 
 /** Valor com centavos, sem "R$" — para caber em pílula estreita (ex.: "8,50", "1.234,56"). */

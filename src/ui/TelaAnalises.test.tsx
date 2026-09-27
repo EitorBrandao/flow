@@ -221,7 +221,7 @@ it('mostra o card Evolução mensal com a sobra do mês selecionado', async () =
 
   render(<TelaAnalises />);
   expect(await screen.findByText('Evolução mensal')).toBeInTheDocument();
-  expect(await screen.findByText('+4.000')).toBeInTheDocument(); // sobra de julho: 500000-100000 centavos = R$4.000,00
+  expect(await screen.findByText('4.000')).toHaveClass('evolucao-sobra', 'pos'); // sobra de julho: 500000-100000 centavos
 });
 
 it('título Comparativo fica fora do container que rola horizontalmente', async () => {

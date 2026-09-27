@@ -127,8 +127,9 @@ describe('FluxoChartModal — cor do rodapé mín/máx', () => {
   it('mín negativo e máx positivo: mín em vermelho, máx em verde', () => {
     const serieCenario = serieComBaseNoHoje(0);
     render(<FluxoChartModal serie={serieCenario} hoje={serieCenario[HOJE_IDX].data} mostrarCenarios={false} onFechar={() => {}} />);
-    expect(screen.getByText(semNbsp(formatarBRL(-30000)))).toHaveClass('neg');
-    expect(screen.getByText(semNbsp(formatarBRL(30000)))).toHaveClass('pos');
+    const valores = screen.getAllByText(semNbsp(formatarBRL(30000)));
+    expect(valores[0]).toHaveClass('neg');
+    expect(valores[1]).toHaveClass('pos');
   });
 
   it('mín e máx positivos: os dois em verde', () => {
