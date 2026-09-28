@@ -86,7 +86,7 @@ ganham `toHaveClass('valor-neutro')`.
   comparar.".
 - **Cartões do card:** todos os cartões cuja `boxId` está nas boxes selecionadas
   (`boxIdsSelecionadas`), inclusive os inativos — um cartão desativado ainda tem histórico.
-  Ordem dos blocos: a ordem de `dados.cartoes`. Ordem das linhas: `compararCategoriasCartao`.
+  Ordem dos blocos: a ordem de `dados.cartoes`. Ordem das linhas: decrescente pelo valor no mês escolhido; empate pelo mês anterior e depois por `compararCategoriasCartao` (pedido do usuário, 2026-09-28, depois da v0.49.0).
 - **Média 3m:** `mediaMovel3` sobre os meses `[mês − 2, mês − 1, mês]`, último valor. Mesma
   função da coluna do Comparativo.
 - **"incluir previstos" não afeta o card.** Compra no cartão não tem `status`; o resumo de
