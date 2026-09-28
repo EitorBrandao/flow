@@ -158,6 +158,12 @@ button { cursor: pointer; }
 strong.valor-ganho, strong.valor-gasto, strong.valor-neutro {
   background: none; padding: 0; border-radius: 0;
 }
+/* quando a classe está na própria célula (Comparativo, Categorias do cartão), a regra acima
+   zerava o recuo da <td>: o valor encostava na borda, 13px à direita do título da coluna.
+   Devolve o recuo das outras células — valor e título terminam na mesma linha vertical. */
+table.tabela td.valor-ganho, table.tabela td.valor-gasto, table.tabela td.valor-neutro {
+  padding: 8px 13px;
+}
 
 /* rodapé "mín · máx" sob o gráfico de saldo (BalanceChart, aba Hoje/Fluxo); os
    modificadores .pos/.neg também valem para .grafico-expandido-rodape (modal) */

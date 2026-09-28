@@ -48,7 +48,7 @@ export default function FaturaCategoriaSheet({
         {resumo.map(([catId, cent]) => (
           <div className="item" key={catId} style={{ cursor: 'default' }}>
             <div className="cresce">{nomeCat(catId)}</div>
-            <span className="valor-gasto">{formatarBRL(cent)}</span>
+            <span className={classeEfeito(-cent)}>{formatarBRL(cent)}</span>
           </div>
         ))}
         {resumo.length === 0 && <p className="sub">Nenhum gasto nesta fatura.</p>}

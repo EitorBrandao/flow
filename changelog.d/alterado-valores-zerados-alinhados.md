@@ -1,2 +1,4 @@
 - Valores zerados agora têm o mesmo tamanho e o mesmo peso dos outros valores da coluna ou da lista, em todas as telas.
+  - Nas tabelas, cada valor termina na mesma linha vertical do título da sua coluna.
   - Nas tabelas com a primeira coluna fixa, o valor que rola por baixo dela não aparece mais como um fiapo colorido na borda.
+- No resumo por categoria da fatura (aba Cartão e folha da fatura em Análises), a cor do subtotal segue o efeito no saldo: vermelho para gasto, verde quando os estornos superam os gastos, sem cor quando zera.

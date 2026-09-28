@@ -5,7 +5,7 @@ import {
   ajustesDoCartao, calcularFaturas, datasFaturaDoMes, faturaForaDoFluxo, mesFaturaDaCompra, resumoPorCategoria,
   type Fatura,
 } from '../domain/fatura';
-import { formatarBRL } from '../domain/money';
+import { classeEfeito, formatarBRL } from '../domain/money';
 import type { Cartao, CompraCartao } from '../domain/types';
 import { boxIdsSelecionadas, useApp } from '../state/store';
 import CampoValor from './CampoValor';
@@ -249,7 +249,7 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
                     }}
                   >
                     <div className="cresce">{nomeCat(catId)}</div>
-                    <span className="valor-gasto">{formatarBRL(cent)}</span>
+                    <span className={classeEfeito(-cent)}>{formatarBRL(cent)}</span>
                   </button>
                 ))}
               </div>

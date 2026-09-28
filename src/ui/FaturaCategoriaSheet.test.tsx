@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { nomeDoMes } from '../domain/dates';
@@ -63,6 +63,25 @@ describe('FaturaCategoriaSheet', () => {
     // Mesmo sem compras no mês, as datas do ciclo (fechamento/vencimento) vêm certas.
     expect(screen.getByText((_, el) => el?.tagName === 'P'
       && (el.textContent ?? '').includes('fecha 28/07/2026 · vence 05/08/2026'))).toBeInTheDocument();
+  });
+
+  it('subtotal da categoria segue o efeito no saldo: estorno líquido verde, zerado sem cor', () => {
+    const comprasCartao: CompraCartao[] = [
+      compra({ id: 'c1', data: '2026-07-10', valorTotal: 10000, categoriaCartaoId: 'mercado' }),
+      compra({ id: 'c2', data: '2026-07-11', valorTotal: -10000, categoriaCartaoId: 'mercado' }),
+      compra({ id: 'c3', data: '2026-07-12', valorTotal: -3000, categoriaCartaoId: 'streaming' }),
+    ];
+    render(
+      <FaturaCategoriaSheet
+        aberto cartao={cartao} mes="2026-08" comprasCartao={comprasCartao} categoriasCartao={categoriasCartao}
+        horizonteProjecao="2027-12-31" onFechar={() => {}} onAbrirCartao={() => {}}
+      />,
+    );
+
+    const mercado = screen.getByText('Mercado').closest('.item') as HTMLElement;
+    expect(within(mercado).getByText('R$ 0,00')).toHaveClass('valor-neutro');
+    const streaming = screen.getByText('Streaming').closest('.item') as HTMLElement;
+    expect(within(streaming).getByText('R$ 30,00')).toHaveClass('valor-ganho');
   });
 
   it('botão "Ver fatura completa" chama onAbrirCartao', async () => {
