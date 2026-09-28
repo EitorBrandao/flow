@@ -365,7 +365,7 @@ describe('CategoriaCartaoHistoricoSheet', () => {
 
   it('estorno líquido no mês: valor verde e barra de ganho', () => {
     const dialog = abrir([compra('e', '2026-08-10', -12000)]);
-    expect(within(dialog).getAllByText('R$ 120,00')[0]).toHaveClass('valor-ganho');
+    expect(within(dialog).getAllByText(/^R\$\s120,00$/)[0]).toHaveClass('valor-ganho');
     const barras = dialog.querySelectorAll('.composicao-preenchimento');
     expect(barras[5]).toHaveClass('ganho');
   });
@@ -387,7 +387,7 @@ describe('CategoriaCartaoHistoricoSheet', () => {
 });
 ```
 
-Conferência à mão: fecha 28, vence 5 do mês seguinte. 10/05 → vence 06; 10/07 → vence 08; 10/08 → vence 09. Meses abr..set = [0, 0, 30000, 0, 60000, 90000]. No segundo teste: [0,0,0,0,60000,90000]; 60000/90000 = 66,67%. No terceiro: média = −12000/6 = −2000 → "R$ 20,00" verde; o mês set = "R$ 120,00".
+Conferência à mão: fecha 28, vence 5 do mês seguinte. 10/05 → vence 06; 10/07 → vence 08; 10/08 → vence 09. Meses abr..set = [0, 0, 30000, 0, 60000, 90000]. No segundo teste: [0,0,0,0,60000,90000]; 60000/90000 = 66,67%. No terceiro: média = −12000/6 = −2000 → 2000 centavos, verde; o mês set = 12000 centavos.
 
 - [ ] **Passo 2:** `npx vitest run src/ui/CategoriaCartaoHistoricoSheet.test.tsx` → FAIL (arquivo não existe).
 
