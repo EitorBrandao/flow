@@ -179,6 +179,9 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   mês, agrupados por nota (`lancamentosDaCategoria`); usado no drill-down de Análises.
 - **`FaturaCategoriaSheet.tsx`** — sheet somente leitura com o resumo por categoria de uma
   fatura de cartão (drill-down a partir de `FaturaResumo`/`TelaCartao`).
+- **`CategoriaCartaoHistoricoSheet.tsx`** — sheet somente leitura com uma categoria do cartão
+  nos 6 meses de fatura até o mês escolhido, em barras `.composicao-*` (100% = maior mês) e a
+  média; aberto pelo card "Categorias do cartão" de Análises (`totaisCategoriaCartaoPorMes`).
 - **`ViagemSheet.tsx`** — sheet somente leitura com os lançamentos/compras de uma viagem,
   agrupados (`itensDaViagem`); mesmo padrão visual do `LancamentosSheet`.
 - **`PrimeiroUso.tsx`** — cartão de onboarding renderizado em `TelaHoje` quando o app está sem
