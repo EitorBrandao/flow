@@ -114,6 +114,36 @@ export function resumoPorCategoria(fatura: Fatura): [ID, number][] {
   return [...porCategoria.entries()].sort((a, b) => b[1] - a[1]);
 }
 
+/**
+ * Total de cada categoria do cartão em cada mês de fatura pedido ('AAAA-MM' do vencimento, a
+ * chave de `Fatura.mes`). É a conta de `calcularFaturas` — cada parcela conta na fatura em que
+ * cai —, então o valor de um mês bate com `resumoPorCategoria` da mesma fatura. `compras` são
+ * só as deste cartão. Um mês sem item da categoria vale 0; categoria sem item em nenhum dos
+ * meses fica fora do mapa.
+ */
+export function totaisCategoriaCartaoPorMes(
+  cartao: CicloCartao, compras: CompraCartao[], meses: readonly string[], ajustes?: ReadonlyMap<string, number>,
+): Map<ID, number[]> {
+  const totais = new Map<ID, number[]>();
+  if (meses.length === 0) return totais;
+  const ultimo = meses.reduce((a, b) => (b > a ? b : a));
+  const ate = datasFaturaDoMes(cartao, ultimo, ajustes).dataVencimento;
+  const faturas = new Map(calcularFaturas(cartao, compras, ate, ajustes).map((f) => [f.mes, f] as const));
+  meses.forEach((mes, i) => {
+    const fatura = faturas.get(mes);
+    if (!fatura) return;
+    for (const [categoriaId, cent] of resumoPorCategoria(fatura)) {
+      let serie = totais.get(categoriaId);
+      if (!serie) {
+        serie = meses.map(() => 0);
+        totais.set(categoriaId, serie);
+      }
+      serie[i] += cent;
+    }
+  });
+  return totais;
+}
+
 /** Valor que a fatura leva ao Flow: soma dos itens, ou o valor do app se o usuário marcou. */
 export function valorSincronizado(fatura: Fatura, conf: ConferenciaFatura | undefined): number {
   return conf?.usarValorApp ? conf.valorAppCent : fatura.totalCent;

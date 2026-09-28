@@ -3,7 +3,7 @@ import { useState } from 'react';
 import {
   ajustesDoCartao, calcularFaturas, datasFaturaDoMes, faturaForaDoFluxo, type Fatura,
 } from '../domain/fatura';
-import { formatarBRL } from '../domain/money';
+import { classeEfeito, formatarBRL } from '../domain/money';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
 import AvisoFaturaForaDoFluxo from './AvisoFaturaForaDoFluxo';
@@ -72,7 +72,7 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
         <>
           <h2 style={{ marginTop: 0 }}>{cartao.nome} · fatura de {nomeDoMes(mes)}</h2>
           <p className="sub" style={{ margin: 0 }}>
-            {total > 0 ? <strong className="valor-gasto">{formatarBRL(total)}</strong> : <strong>{formatarBRL(total)}</strong>}
+            <strong className={classeEfeito(-total)}>{formatarBRL(total)}</strong>
             {' · '}fecha {formatarDataBR(dataFechamento)} · vence {formatarDataBR(dataVencimento)}
           </p>
         </>

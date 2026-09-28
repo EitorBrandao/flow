@@ -49,7 +49,7 @@ function descricaoDoItem(item: ItemConferencia, dados: Dados): string {
  *  ver `docs/superpowers/specs/2026-09-26-regra-de-sinal-design.md`); para "sobra", uma
  *  compra de cartão é sempre saída, e um lançamento do app segue o efeito no saldo
  *  (`efeitoNoSaldo`), com o mesmo estorno das outras telas. */
-function classeValorDoItem(item: ItemConferencia, dados: Dados): 'valor-ganho' | 'valor-gasto' | undefined {
+function classeValorDoItem(item: ItemConferencia, dados: Dados): 'valor-ganho' | 'valor-gasto' | 'valor-neutro' {
   if (item.bruto) return item.bruto.valorCent < 0 ? 'valor-gasto' : 'valor-ganho';
   if (item.compraCartaoId) return 'valor-gasto';
   if (item.lancamentoId) {

@@ -406,6 +406,26 @@ describe('card da fatura no padrão da Hoje (Consistência entre telas, parte 2)
       expect(screen.getByRole('tab', { name: 'Lançamentos' })).toHaveAttribute('aria-selected', 'true');
     } finally { vi.useRealTimers(); }
   });
+
+  it('subtotal no resumo com estorno líquido fica verde, a mesma regra de Análises', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { box, cartao, catCartao } = await montarCartao();
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-04',
+        valorTotal: -4500, parcelas: 1, descricao: 'Devolução',
+      }, '2027-12-31');
+      await useApp.getState().iniciar();
+      useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+      render(<TelaCartao />);
+
+      const item = screen.getByRole('button', { name: /^mercado/ });
+      const valor = item.querySelector('.cresce + span');
+      expect(valor).toHaveClass('valor-ganho');
+      expect(valor).not.toHaveClass('valor-gasto');
+    } finally { vi.useRealTimers(); }
+  });
 });
 
 describe('pagamento da fatura pela aba Cartão', () => {

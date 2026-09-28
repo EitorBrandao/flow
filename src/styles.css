@@ -133,27 +133,36 @@ button { cursor: pointer; }
 .pills button { flex: 1; background: none; padding: 9px 4px; border-radius: 999px; color: var(--muted); font-weight: 600; font-size: 13.5px; min-height: 0; white-space: nowrap; border: none; }
 .pills button.ativo { background: var(--ac); color: #fff; }
 
-.valor-ganho, .valor-gasto {
+.valor-ganho, .valor-gasto, .valor-neutro {
   font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14.5px;
   padding: 6px 12px; border-radius: 12px; white-space: nowrap;
 }
 .valor-ganho { color: var(--pos); background: var(--pos-bg); }
 .valor-gasto { color: var(--neg); background: var(--neg-bg); }
+/* zero: sem cor e sem pílula, mas com a tipografia e o recuo das pílulas vizinhas — o
+   texto do zero fica alinhado ao texto dos outros valores da coluna ou da lista */
+.valor-neutro { background: none; }
 /* valor de um previsto que dá pra corrigir num toque (fila de Pendentes, TelaHoje): o
    sublinhado pontilhado é a única pista de que o valor é tocável, e o min-height sobe a
    pílula ao alvo mínimo de toque (38px, fundamentos.md). */
-.valor-ganho.editavel, .valor-gasto.editavel {
+.valor-ganho.editavel, .valor-gasto.editavel, .valor-neutro.editavel {
   border: none; font-family: inherit; cursor: pointer;
   min-height: 38px; display: inline-flex; align-items: center;
   text-decoration: underline dotted; text-underline-offset: 3px;
 }
 /* lista do Fluxo: totalizador do dia (cabeçalho, fora de .item) fica em negrito por já ser
    <strong>; o valor de cada transação (dentro de .item) fica sem negrito pra diferenciar. */
-.lista-fluxo .item .valor-ganho, .lista-fluxo .item .valor-gasto { font-weight: 400; }
+.lista-fluxo .item .valor-ganho, .lista-fluxo .item .valor-gasto, .lista-fluxo .item .valor-neutro { font-weight: 400; }
 /* em tabelas e em texto corrido (ex.: rótulo do dia no Fluxo), só a cor — sem pílula */
-.tabela .valor-ganho, .tabela .valor-gasto,
-strong.valor-ganho, strong.valor-gasto {
+.tabela .valor-ganho, .tabela .valor-gasto, .tabela .valor-neutro,
+strong.valor-ganho, strong.valor-gasto, strong.valor-neutro {
   background: none; padding: 0; border-radius: 0;
+}
+/* quando a classe está na própria célula (Comparativo, Categorias do cartão), a regra acima
+   zerava o recuo da <td>: o valor encostava na borda, 13px à direita do título da coluna.
+   Devolve o recuo das outras células — valor e título terminam na mesma linha vertical. */
+table.tabela td.valor-ganho, table.tabela td.valor-gasto, table.tabela td.valor-neutro {
+  padding: 8px 13px;
 }
 
 /* rodapé "mín · máx" sob o gráfico de saldo (BalanceChart, aba Hoje/Fluxo); os
@@ -256,11 +265,13 @@ table.tabela th:first-child, table.tabela td:first-child { text-align: left; }
 table.tabela tr:last-child td { border-bottom: none; }
 /* coluna fixa: largura própria fixa (não automática) — mantém o cálculo de largura das
    outras colunas previsível. Sombra sutil na borda direita sinaliza que ela "flutua na
-   frente" do conteúdo que rola por baixo. */
+   frente" do conteúdo que rola por baixo. A faixa de 2px na cor do card, à esquerda, cobre
+   a fresta de 1px por onde o valor que rola vazava como um fiapo colorido em telas de
+   densidade fracionária (2,63 no Galaxy S25+). */
 table.tabela th:first-child, table.tabela td:first-child {
   position: sticky; left: 0; z-index: 2; background: var(--surface);
   white-space: normal; width: 112px; max-width: 112px;
-  box-shadow: 4px 0 6px -4px rgba(0, 0, 0, .45);
+  box-shadow: -2px 0 0 var(--surface), 4px 0 6px -4px rgba(0, 0, 0, .45);
 }
 /* Tabela de colunas com largura fixa (Simular, no Fluxo): o conteúdo não muda as colunas.
    A 1ª coluna recebe largura pelo <col>; as demais dividem o resto por igual. O min-width,
@@ -270,6 +281,15 @@ table.tabela th:first-child, table.tabela td:first-child {
 .tabela-fixa.tabela { table-layout: fixed; width: 100%; }
 .tabela-fixa.tabela th, .tabela-fixa.tabela td { padding: 8px; }
 .tabela-fixa.tabela th:first-child, .tabela-fixa.tabela td:first-child { width: auto; max-width: none; }
+/* nome tocável dentro de uma célula de .tabela (card "Categorias do cartão", Análises): parece
+   texto da tabela — mesmo tamanho e peso das células vizinhas —, só a cor de ação diz que abre
+   algo. Não usar .botao-ver-mais aqui: 13px ao lado de nomes 16px faz o texto "dançar".
+   padding + margin negativos iguais aumentam a área de toque (~40px, fundamentos.md) sem
+   mudar a altura da linha. */
+.tabela-nome-tocavel {
+  background: none; border: none; padding: 10px 0; margin: -10px 0; min-height: 0;
+  color: var(--ac); font-size: inherit; font-weight: inherit; text-align: left;
+}
 /* min-width:0 evita que a tabela force o card (flex item) a crescer além do container;
    overflow-anchor:none evita que o navegador ajuste sozinho a rolagem quando a altura de
    uma célula muda (nome de categoria quebrando em linhas) depois do layout inicial. */

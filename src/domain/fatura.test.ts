@@ -2,7 +2,7 @@ import type { AjusteFechamento, Cartao, CompraCartao, ConferenciaFatura, Lancame
 import {
   ajustesDoCartao, calcularFaturas, categoriasFaturaIds, datasFaturaDoMes, dedupAjustesFechamento,
   diffSincronizacao, faturaForaDoFluxo, jaLancadoDaFatura, mesFaturaDaCompra, mesFechamentoDaCompra, resumoAssinaturasDoMes, resumoParcelamento,
-  resumoPorCategoria, valorParcela,
+  resumoPorCategoria, totaisCategoriaCartaoPorMes, valorParcela,
 } from './fatura';
 
 const nubank = { diaFechamento: 28, diaVencimento: 5 }; // vence no mês seguinte ao fechamento
@@ -436,5 +436,56 @@ describe('jaLancadoDaFatura', () => {
 
   it('nada lançado: zero', () => {
     expect(jaLancadoDaFatura(cartao, '2026-07-28', [])).toBe(0);
+  });
+});
+
+describe('totaisCategoriaCartaoPorMes', () => {
+  // nubank: fecha 28, vence 5 do mês seguinte
+  it('compra parcelada conta uma parcela em cada fatura', () => {
+    const compras = [compra('2026-07-10', 30000, 3, 'mercado')];
+    const r = totaisCategoriaCartaoPorMes(nubank, compras, ['2026-08', '2026-09', '2026-10', '2026-11']);
+    expect(r.get('mercado')).toEqual([10000, 10000, 10000, 0]);
+  });
+  it('resto do centavo vai para a primeira parcela, como em valorParcela', () => {
+    const compras = [compra('2026-07-10', 10000, 3, 'mercado')];
+    const r = totaisCategoriaCartaoPorMes(nubank, compras, ['2026-08', '2026-09', '2026-10']);
+    expect(r.get('mercado')).toEqual([3334, 3333, 3333]);
+  });
+  it('compra no dia do fechamento cai na fatura seguinte; com ajuste de fechamento, na certa', () => {
+    const compras = [compra('2026-07-28', 5000, 1, 'farmacia')];
+    const meses = ['2026-08', '2026-09'];
+    expect(totaisCategoriaCartaoPorMes(nubank, compras, meses).get('farmacia')).toEqual([0, 5000]);
+    const ajustes = new Map([['2026-07', 30]]); // em julho, fechou no dia 30
+    expect(totaisCategoriaCartaoPorMes(nubank, compras, meses, ajustes).get('farmacia')).toEqual([5000, 0]);
+  });
+  it('estorno reduz o total do mês', () => {
+    const compras = [compra('2026-07-10', 20000, 1, 'mercado'), compra('2026-07-12', -5000, 1, 'mercado')];
+    expect(totaisCategoriaCartaoPorMes(nubank, compras, ['2026-08']).get('mercado')).toEqual([15000]);
+  });
+  it('categoria sem item nos meses pedidos não aparece', () => {
+    const compras = [compra('2026-07-10', 20000, 1, 'mercado')];
+    expect(totaisCategoriaCartaoPorMes(nubank, compras, ['2026-01', '2026-02']).size).toBe(0);
+  });
+  it('meses fora de ordem: valores seguem a ordem pedida', () => {
+    const compras = [compra('2026-07-10', 30000, 3, 'mercado'), compra('2026-09-10', 7000, 1, 'mercado')];
+    // parcelas em 08, 09, 10; a compra de 10/09 vence em 10
+    expect(totaisCategoriaCartaoPorMes(nubank, compras, ['2026-10', '2026-08']).get('mercado')).toEqual([17000, 10000]);
+  });
+  it('lista de meses vazia devolve mapa vazio', () => {
+    expect(totaisCategoriaCartaoPorMes(nubank, [compra('2026-07-10', 100)], []).size).toBe(0);
+  });
+  it('o mês bate com resumoPorCategoria da mesma fatura', () => {
+    const compras = [
+      compra('2026-07-10', 30000, 3, 'mercado'),
+      compra('2026-08-02', 4590, 1, 'farmacia'),
+      compra('2026-08-15', -1200, 1, 'mercado'),
+      compra('2026-08-20', 9999, 2, 'viagem'),
+    ];
+    const fatura = calcularFaturas(nubank, compras, '2026-12-31').find((f) => f.mes === '2026-09')!;
+    const r = totaisCategoriaCartaoPorMes(nubank, compras, ['2026-09']);
+    const doResumo = resumoPorCategoria(fatura);
+    expect(doResumo.length).toBeGreaterThan(0);
+    for (const [cat, cent] of doResumo) expect(r.get(cat)).toEqual([cent]);
+    expect(r.size).toBe(doResumo.length);
   });
 });

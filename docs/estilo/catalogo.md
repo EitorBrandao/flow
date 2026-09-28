@@ -25,8 +25,8 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.campo-data` / `.campo-data-input` | ver componente `CampoData.tsx` — botão com ícone de calendário sobre um `input[type=date]` nativo (oculto, mas funcional e acessível) |
 | `.chip` | pílula `--surface` no topo (seletor de box, botão de ajustes) e filtros |
 | `.chip-elevado` | modificador de `.chip` para quando o chip fica sobre uma superfície já `--surface` (ex.: dentro de uma sheet) — troca o fundo para `--surface2`, senão o chip some por falta de contraste. Usado no botão de câmera do passo `menu` em `AdicionarSheet.tsx` |
-| `.valor-ganho`, `.valor-gasto` | efeito no saldo (verde entra, vermelho sai), via `classeEfeito`; valor monetário em pílula (listas/cards); sem pílula automaticamente dentro de `.tabela` ou em `<strong>` |
-| `.editavel` | modificador de `.valor-ganho`/`.valor-gasto` quando o valor é um `<button>` que abre a correção do lançamento (fila de Pendentes, `TelaHoje`); sublinhado pontilhado como pista, e altura mínima de alvo de toque |
+| `.valor-ganho`, `.valor-gasto`, `.valor-neutro` | efeito no saldo (verde entra, vermelho sai; neutro = zero, sem cor e sem fundo, mesma tipografia e recuo), via `classeEfeito`; valor monetário em pílula (listas/cards); sem pílula automaticamente dentro de `.tabela` ou em `<strong>`; numa `<td>` de `.tabela`, a célula mantém o recuo das outras (valor alinhado ao título da coluna) |
+| `.editavel` | modificador de `.valor-ganho`/`.valor-gasto`/`.valor-neutro` quando o valor é um `<button>` que abre a correção do lançamento (fila de Pendentes, `TelaHoje`); sublinhado pontilhado como pista, e altura mínima de alvo de toque |
 | `.saldo-grande` (+ `.positivo`/`.negativo`) | saldo em destaque (card herói) |
 | `.delta` (+ `.pos`/`.neg`) | badge de variação de saldo projetado, sem sinal — só a cor diz o sentido |
 | `.badge` | pílula neutra pequena (contagem, status, rótulo "estorno" ao lado de um lançamento com valor negativo) |
@@ -35,7 +35,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.rotulo` | rótulo maiúsculo pequeno acima de um valor/seção |
 | `.rotulo-grupo` | rótulo maiúsculo pequeno de subgrupo dentro de uma lista (ex.: "À vista"/"Parceladas" na fatura do cartão) |
 | `.cabecalho-dia` (+ `.dia-hoje`) | cabeçalho de dia na lista do Fluxo; `.dia-hoje` destaca o dia atual (fundo `--hoje-bg`) |
-| `.lista-fluxo` | modificador de `.lista` só na aba Fluxo — deixa o valor de cada transação (`.item .valor-ganho`/`.valor-gasto`) sem negrito, pra diferenciar do totalizador do dia (`.cabecalho-dia`, em `<strong>`, continua em negrito) |
+| `.lista-fluxo` | modificador de `.lista` só na aba Fluxo — deixa o valor de cada transação (`.item .valor-ganho`/`.valor-gasto`/`.valor-neutro`) sem negrito, pra diferenciar do totalizador do dia (`.cabecalho-dia`, em `<strong>`, continua em negrito) |
 | `.total-dia` (+ `.pos`/`.neg`) | saldo (via `classeSaldo`, valor via `formatarSaldo` — mostra o "−" abaixo de zero) — totalizador do dia no cabeçalho do Fluxo, e todo outro saldo (Hoje, Boxes, Bancos); cor própria (`--total-pos`/`--total-neg`), separada da pílula de transação (`--pos`/`--neg`) |
 | `.grafico-rodape` (+ `.pos`/`.neg` no valor) | rodapé "mín · máx" sob o gráfico de saldo (`BalanceChart.tsx`, abas Hoje/Fluxo) — 12px, sem pílula, valor via `formatarSaldo`, `--pos`/`--neg` pelo sinal do próprio valor; os mesmos modificadores `.pos`/`.neg` valem também dentro de `.grafico-expandido-rodape` (modal expandido do Fluxo) |
 | `.grafico-rodape.duas-linhas` (+ `.grafico-rodape-datas`, `.grafico-rodape-minmax`) | variante do rodapé do `BalanceChart` quando o período cruza anos: as datas completas (DD/MM/AAAA) ficam nas pontas de uma linha e o "mín · máx" centralizado na linha seguinte — numa linha só, não cabe em 360px |
@@ -49,6 +49,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.pills` | pílulas em linha pra escolher entre poucas opções (Box, Cartão, Gasto/Ganho); `button.ativo` marca a opção atual. Como seletor, o grupo é `role="radiogroup"` e cada pílula `role="radio"` com `aria-checked` — prefira o `SeletorPills`. Como abas de seção (Hoje, Fluxo, Cartão), `role="tablist"` |
 | `.tabela` (elemento `table`) | tabela numérica (Fluxo, Análises) — alinhado à direita exceto 1ª coluna, sem linhas verticais |
 | `.tabela-fixa` | junto de `.tabela`: colunas de largura fixa (Simular, no Fluxo) — o conteúdo não muda as colunas; a 1ª coluna recebe largura pelo `<col>`; as demais dividem o resto por igual. A largura mínima vem do componente, para ligar ou desligar cenários não mexer nas colunas |
+| `.tabela-nome-tocavel` | `<button>` dentro de uma célula de `.tabela` que abre um detalhe (card "Categorias do cartão", Análises): mesmo tamanho e peso das células, só a cor de ação `--ac`; nunca `.botao-ver-mais` numa tabela |
 | `.rolavel` | wrapper com `overflow-x: auto` para conteúdo largo (tabelas) |
 | `.recuo-1` / `.recuo-2` | recuo horizontal (ambos os lados) pra indicar nível de hierarquia numa lista aninhada — ex.: grupo/data em `LancamentosSheet` |
 | `.sheet-backdrop` / `.sheet` / `.sheet-alca` / `.sheet-cabecalho` / `.sheet-conteudo` | bottom sheet (ver componente `Sheet`) |
@@ -179,6 +180,13 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   mês, agrupados por nota (`lancamentosDaCategoria`); usado no drill-down de Análises.
 - **`FaturaCategoriaSheet.tsx`** — sheet somente leitura com o resumo por categoria de uma
   fatura de cartão (drill-down a partir de `FaturaResumo`/`TelaCartao`).
+- **`CategoriaCartaoHistoricoSheet.tsx`** — sheet somente leitura com uma categoria do cartão
+  nos 6 meses de fatura até o mês escolhido, em barras `.composicao-*` (100% = maior mês) e a
+  média; aberto pelo card "Categorias do cartão" de Análises (`totaisCategoriaCartaoPorMes`).
+- **`CategoriasCartaoCard.tsx`** — card "Categorias do cartão" de Análises: tabela no formato
+  do Comparativo (mês · mês anterior · ano passado · média 3m) por categoria do cartão, um
+  bloco por cartão (subtítulo `.rotulo-grupo` na coluna fixa, só com 2+ cartões); o nome
+  (`.tabela-nome-tocavel`) abre o `CategoriaCartaoHistoricoSheet`.
 - **`ViagemSheet.tsx`** — sheet somente leitura com os lançamentos/compras de uma viagem,
   agrupados (`itensDaViagem`); mesmo padrão visual do `LancamentosSheet`.
 - **`PrimeiroUso.tsx`** — cartão de onboarding renderizado em `TelaHoje` quando o app está sem
