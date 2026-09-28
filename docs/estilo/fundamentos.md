@@ -56,7 +56,7 @@ abaixo de 0".
 - Lançamento (movimento): `classeEfeito(efeitoNoSaldo(valor, tipo))` (`.valor-ganho`/
   `.valor-gasto`, verde-claro/vermelho), com `formatarBRL` (sem sinal). Estorno (valor
   negativo) inverte o sentido e ganha o rótulo `.badge` "estorno". Movimento zero fica
-  sem cor. Diferença de conferência, pílulas `.delta`, sobra e totais de categoria/fatura/
+  sem cor, com a mesma tipografia (`.valor-neutro`): na mesma coluna ou lista, nenhum valor muda de tamanho ou de peso. Diferença de conferência, pílulas `.delta`, sobra e totais de categoria/fatura/
   viagem também são movimento: sem sinal, mesmo quando negativos.
 - Saldo: `classeSaldo(saldo)` (`.total-dia.pos/.neg`, verde-escuro/vermelho) com
   `formatarSaldo` (que mostra o "−" abaixo de zero). **Saldo é sempre verde-escuro, nunca

@@ -133,26 +133,29 @@ button { cursor: pointer; }
 .pills button { flex: 1; background: none; padding: 9px 4px; border-radius: 999px; color: var(--muted); font-weight: 600; font-size: 13.5px; min-height: 0; white-space: nowrap; border: none; }
 .pills button.ativo { background: var(--ac); color: #fff; }
 
-.valor-ganho, .valor-gasto {
+.valor-ganho, .valor-gasto, .valor-neutro {
   font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14.5px;
   padding: 6px 12px; border-radius: 12px; white-space: nowrap;
 }
 .valor-ganho { color: var(--pos); background: var(--pos-bg); }
 .valor-gasto { color: var(--neg); background: var(--neg-bg); }
+/* zero: sem cor e sem pílula, mas com a tipografia e o recuo das pílulas vizinhas — o
+   texto do zero fica alinhado ao texto dos outros valores da coluna ou da lista */
+.valor-neutro { background: none; }
 /* valor de um previsto que dá pra corrigir num toque (fila de Pendentes, TelaHoje): o
    sublinhado pontilhado é a única pista de que o valor é tocável, e o min-height sobe a
    pílula ao alvo mínimo de toque (38px, fundamentos.md). */
-.valor-ganho.editavel, .valor-gasto.editavel {
+.valor-ganho.editavel, .valor-gasto.editavel, .valor-neutro.editavel {
   border: none; font-family: inherit; cursor: pointer;
   min-height: 38px; display: inline-flex; align-items: center;
   text-decoration: underline dotted; text-underline-offset: 3px;
 }
 /* lista do Fluxo: totalizador do dia (cabeçalho, fora de .item) fica em negrito por já ser
    <strong>; o valor de cada transação (dentro de .item) fica sem negrito pra diferenciar. */
-.lista-fluxo .item .valor-ganho, .lista-fluxo .item .valor-gasto { font-weight: 400; }
+.lista-fluxo .item .valor-ganho, .lista-fluxo .item .valor-gasto, .lista-fluxo .item .valor-neutro { font-weight: 400; }
 /* em tabelas e em texto corrido (ex.: rótulo do dia no Fluxo), só a cor — sem pílula */
-.tabela .valor-ganho, .tabela .valor-gasto,
-strong.valor-ganho, strong.valor-gasto {
+.tabela .valor-ganho, .tabela .valor-gasto, .tabela .valor-neutro,
+strong.valor-ganho, strong.valor-gasto, strong.valor-neutro {
   background: none; padding: 0; border-radius: 0;
 }
 

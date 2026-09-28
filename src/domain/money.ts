@@ -46,11 +46,12 @@ export function efeitoNoSaldo(valor: number, tipo: TipoCategoria): number {
   return tipo === 'ganho' ? valor : -valor;
 }
 
-/** Classe de cor de um efeito no saldo: verde entra, vermelho sai, zero sem cor. */
-export function classeEfeito(efeito: number): 'valor-ganho' | 'valor-gasto' | undefined {
+/** Classe de cor de um efeito no saldo: verde entra, vermelho sai. Zero fica sem cor, mas com
+ *  a mesma tipografia (`.valor-neutro`): na mesma coluna ou lista, o zero não pode "dançar". */
+export function classeEfeito(efeito: number): 'valor-ganho' | 'valor-gasto' | 'valor-neutro' {
   if (efeito > 0) return 'valor-ganho';
   if (efeito < 0) return 'valor-gasto';
-  return undefined;
+  return 'valor-neutro';
 }
 
 /** Classe de cor de um saldo — a mesma do saldo do dia no Fluxo (`.total-dia`). */

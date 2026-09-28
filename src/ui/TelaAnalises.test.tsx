@@ -245,6 +245,7 @@ it('viagem sem gasto não ganha pílula vermelha, e a linha responde ao teclado'
   render(<TelaAnalises />);
   const cardViagens = screen.getByText('Viagens').closest('.card') as HTMLElement;
   const linha = within(cardViagens).getByRole('button', { name: /Serra/ });
+  expect(within(linha).getByText('R$ 0,00')).toHaveClass('valor-neutro');
   expect(within(linha).getByText('R$ 0,00')).not.toHaveClass('valor-gasto');
 });
 
@@ -281,7 +282,7 @@ it('card Viagens: estorno maior que o gasto do mês deixa o total verde, sem sin
   expect(valor).not.toHaveClass('valor-gasto');
 });
 
-it('sobra zero (ganho igual ao gasto) não ganha classe de cor', async () => {
+it('sobra zero (ganho igual ao gasto) fica sem cor, com a tipografia dos outros valores', async () => {
   const { box, catPix } = await seedBoxComCategoria();
   const catSalario = await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
   await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-05', valor: 100000, status: 'efetivo' });
@@ -292,6 +293,7 @@ it('sobra zero (ganho igual ao gasto) não ganha classe de cor', async () => {
   render(<TelaAnalises />);
   const cardResumo = screen.getByText('Sobra').closest('.card') as HTMLElement;
   const sobra = within(cardResumo).getByText('R$ 0,00');
+  expect(sobra).toHaveClass('valor-neutro');
   expect(sobra).not.toHaveClass('valor-ganho');
   expect(sobra).not.toHaveClass('valor-gasto');
 });

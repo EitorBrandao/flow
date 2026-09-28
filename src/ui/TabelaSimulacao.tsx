@@ -35,7 +35,7 @@ export default function TabelaSimulacao({ linhas, larguraCh }: Props) {
                 <td>{mesCurto(l.mes)}</td>
                 <td><strong className={classeSaldo(l.com)}>{formatarSaldoSemSimbolo(l.com)}</strong></td>
                 <td>
-                  {l.dif === 0 ? '—' : <strong className={classeEfeito(l.dif)}>{formatarSemSimbolo(l.dif)}</strong>}
+                  {l.dif === 0 ? <strong className="valor-neutro">—</strong> : <strong className={classeEfeito(l.dif)}>{formatarSemSimbolo(l.dif)}</strong>}
                 </td>
                 <td><strong className={classeSaldo(l.sem)}>{formatarSaldoSemSimbolo(l.sem)}</strong></td>
               </tr>

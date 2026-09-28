@@ -445,7 +445,7 @@ export default function TelaHoje() {
                   ) : (
                     <button
                       type="button"
-                      className={`${classeEfeito(efeitoNoSaldo(l.valor, tipoCat(l.categoriaId))) ?? ''} editavel`}
+                      className={`${classeEfeito(efeitoNoSaldo(l.valor, tipoCat(l.categoriaId)))} editavel`}
                       aria-label={`Corrigir valor de ${nomeCat(l.categoriaId)}`}
                       onClick={() => abrirCorrecao(l)}
                     >

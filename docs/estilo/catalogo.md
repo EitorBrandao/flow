@@ -25,8 +25,8 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.campo-data` / `.campo-data-input` | ver componente `CampoData.tsx` — botão com ícone de calendário sobre um `input[type=date]` nativo (oculto, mas funcional e acessível) |
 | `.chip` | pílula `--surface` no topo (seletor de box, botão de ajustes) e filtros |
 | `.chip-elevado` | modificador de `.chip` para quando o chip fica sobre uma superfície já `--surface` (ex.: dentro de uma sheet) — troca o fundo para `--surface2`, senão o chip some por falta de contraste. Usado no botão de câmera do passo `menu` em `AdicionarSheet.tsx` |
-| `.valor-ganho`, `.valor-gasto` | efeito no saldo (verde entra, vermelho sai), via `classeEfeito`; valor monetário em pílula (listas/cards); sem pílula automaticamente dentro de `.tabela` ou em `<strong>` |
-| `.editavel` | modificador de `.valor-ganho`/`.valor-gasto` quando o valor é um `<button>` que abre a correção do lançamento (fila de Pendentes, `TelaHoje`); sublinhado pontilhado como pista, e altura mínima de alvo de toque |
+| `.valor-ganho`, `.valor-gasto`, `.valor-neutro` | efeito no saldo (verde entra, vermelho sai; neutro = zero, sem cor e sem fundo, mesma tipografia e recuo), via `classeEfeito`; valor monetário em pílula (listas/cards); sem pílula automaticamente dentro de `.tabela` ou em `<strong>` |
+| `.editavel` | modificador de `.valor-ganho`/`.valor-gasto`/`.valor-neutro` quando o valor é um `<button>` que abre a correção do lançamento (fila de Pendentes, `TelaHoje`); sublinhado pontilhado como pista, e altura mínima de alvo de toque |
 | `.saldo-grande` (+ `.positivo`/`.negativo`) | saldo em destaque (card herói) |
 | `.delta` (+ `.pos`/`.neg`) | badge de variação de saldo projetado, sem sinal — só a cor diz o sentido |
 | `.badge` | pílula neutra pequena (contagem, status, rótulo "estorno" ao lado de um lançamento com valor negativo) |
@@ -35,7 +35,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.rotulo` | rótulo maiúsculo pequeno acima de um valor/seção |
 | `.rotulo-grupo` | rótulo maiúsculo pequeno de subgrupo dentro de uma lista (ex.: "À vista"/"Parceladas" na fatura do cartão) |
 | `.cabecalho-dia` (+ `.dia-hoje`) | cabeçalho de dia na lista do Fluxo; `.dia-hoje` destaca o dia atual (fundo `--hoje-bg`) |
-| `.lista-fluxo` | modificador de `.lista` só na aba Fluxo — deixa o valor de cada transação (`.item .valor-ganho`/`.valor-gasto`) sem negrito, pra diferenciar do totalizador do dia (`.cabecalho-dia`, em `<strong>`, continua em negrito) |
+| `.lista-fluxo` | modificador de `.lista` só na aba Fluxo — deixa o valor de cada transação (`.item .valor-ganho`/`.valor-gasto`/`.valor-neutro`) sem negrito, pra diferenciar do totalizador do dia (`.cabecalho-dia`, em `<strong>`, continua em negrito) |
 | `.total-dia` (+ `.pos`/`.neg`) | saldo (via `classeSaldo`, valor via `formatarSaldo` — mostra o "−" abaixo de zero) — totalizador do dia no cabeçalho do Fluxo, e todo outro saldo (Hoje, Boxes, Bancos); cor própria (`--total-pos`/`--total-neg`), separada da pílula de transação (`--pos`/`--neg`) |
 | `.grafico-rodape` (+ `.pos`/`.neg` no valor) | rodapé "mín · máx" sob o gráfico de saldo (`BalanceChart.tsx`, abas Hoje/Fluxo) — 12px, sem pílula, valor via `formatarSaldo`, `--pos`/`--neg` pelo sinal do próprio valor; os mesmos modificadores `.pos`/`.neg` valem também dentro de `.grafico-expandido-rodape` (modal expandido do Fluxo) |
 | `.grafico-rodape.duas-linhas` (+ `.grafico-rodape-datas`, `.grafico-rodape-minmax`) | variante do rodapé do `BalanceChart` quando o período cruza anos: as datas completas (DD/MM/AAAA) ficam nas pontas de uma linha e o "mín · máx" centralizado na linha seguinte — numa linha só, não cabe em 360px |

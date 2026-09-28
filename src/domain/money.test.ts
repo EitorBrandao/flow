@@ -146,7 +146,7 @@ describe('classeEfeito', () => {
   it('positivo verde, negativo vermelho, zero sem cor', () => {
     expect(classeEfeito(1)).toBe('valor-ganho');
     expect(classeEfeito(-1)).toBe('valor-gasto');
-    expect(classeEfeito(0)).toBeUndefined();
+    expect(classeEfeito(0)).toBe('valor-neutro');
   });
 });
 

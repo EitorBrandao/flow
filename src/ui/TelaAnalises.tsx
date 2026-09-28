@@ -154,7 +154,7 @@ export default function TelaAnalises() {
                     <td className={classeEfeito(efeitoNoSaldo(c.atual, c.tipo))}>{formatarBRL(c.atual)}</td>
                     <td className={classeEfeito(efeitoNoSaldo(c.mesAnterior, c.tipo))}>{formatarBRL(c.mesAnterior)}</td>
                     <td className={classeEfeito(efeitoNoSaldo(c.anoAnterior, c.tipo))}>{formatarBRL(c.anoAnterior)}</td>
-                    <td className={media == null ? undefined : classeEfeito(efeitoNoSaldo(media, c.tipo))}>{media == null ? '—' : formatarBRL(media)}</td>
+                    <td className={media == null ? 'valor-neutro' : classeEfeito(efeitoNoSaldo(media, c.tipo))}>{media == null ? '—' : formatarBRL(media)}</td>
                   </tr>
                 );
               })}
