@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.49.1] - 2026-09-28
+
+### Alterado
+
+- No card Categorias do cartão, em Análises, as categorias agora vêm do maior para o menor valor no mês, como no resumo da fatura na aba Cartão.
+
 ## [0.49.0] - 2026-09-28
 
 ### Adicionado

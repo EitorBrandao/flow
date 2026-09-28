@@ -1,1 +1,0 @@
-- No card Categorias do cartão, em Análises, as categorias agora vêm do maior para o menor valor no mês, como no resumo da fatura na aba Cartão.
