@@ -275,6 +275,13 @@ table.tabela th:first-child, table.tabela td:first-child {
 .tabela-fixa.tabela { table-layout: fixed; width: 100%; }
 .tabela-fixa.tabela th, .tabela-fixa.tabela td { padding: 8px; }
 .tabela-fixa.tabela th:first-child, .tabela-fixa.tabela td:first-child { width: auto; max-width: none; }
+/* nome tocável dentro de uma célula de .tabela (card "Categorias do cartão", Análises): parece
+   texto da tabela — mesmo tamanho e peso das células vizinhas —, só a cor de ação diz que abre
+   algo. Não usar .botao-ver-mais aqui: 13px ao lado de nomes 16px faz o texto "dançar". */
+.tabela-nome-tocavel {
+  background: none; border: none; padding: 0; min-height: 0;
+  color: var(--ac); font-size: inherit; font-weight: inherit; text-align: left;
+}
 /* min-width:0 evita que a tabela force o card (flex item) a crescer além do container;
    overflow-anchor:none evita que o navegador ajuste sozinho a rolagem quando a altura de
    uma célula muda (nome de categoria quebrando em linhas) depois do layout inicial. */

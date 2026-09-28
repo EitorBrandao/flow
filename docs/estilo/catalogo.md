@@ -49,6 +49,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.pills` | pílulas em linha pra escolher entre poucas opções (Box, Cartão, Gasto/Ganho); `button.ativo` marca a opção atual. Como seletor, o grupo é `role="radiogroup"` e cada pílula `role="radio"` com `aria-checked` — prefira o `SeletorPills`. Como abas de seção (Hoje, Fluxo, Cartão), `role="tablist"` |
 | `.tabela` (elemento `table`) | tabela numérica (Fluxo, Análises) — alinhado à direita exceto 1ª coluna, sem linhas verticais |
 | `.tabela-fixa` | junto de `.tabela`: colunas de largura fixa (Simular, no Fluxo) — o conteúdo não muda as colunas; a 1ª coluna recebe largura pelo `<col>`; as demais dividem o resto por igual. A largura mínima vem do componente, para ligar ou desligar cenários não mexer nas colunas |
+| `.tabela-nome-tocavel` | `<button>` dentro de uma célula de `.tabela` que abre um detalhe (card "Categorias do cartão", Análises): mesmo tamanho e peso das células, só a cor de ação `--ac`; nunca `.botao-ver-mais` numa tabela |
 | `.rolavel` | wrapper com `overflow-x: auto` para conteúdo largo (tabelas) |
 | `.recuo-1` / `.recuo-2` | recuo horizontal (ambos os lados) pra indicar nível de hierarquia numa lista aninhada — ex.: grupo/data em `LancamentosSheet` |
 | `.sheet-backdrop` / `.sheet` / `.sheet-alca` / `.sheet-cabecalho` / `.sheet-conteudo` | bottom sheet (ver componente `Sheet`) |
@@ -182,6 +183,10 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 - **`CategoriaCartaoHistoricoSheet.tsx`** — sheet somente leitura com uma categoria do cartão
   nos 6 meses de fatura até o mês escolhido, em barras `.composicao-*` (100% = maior mês) e a
   média; aberto pelo card "Categorias do cartão" de Análises (`totaisCategoriaCartaoPorMes`).
+- **`CategoriasCartaoCard.tsx`** — card "Categorias do cartão" de Análises: tabela no formato
+  do Comparativo (mês · mês anterior · ano passado · média 3m) por categoria do cartão, um
+  bloco por cartão (subtítulo `.rotulo-grupo` na coluna fixa, só com 2+ cartões); o nome
+  (`.tabela-nome-tocavel`) abre o `CategoriaCartaoHistoricoSheet`.
 - **`ViagemSheet.tsx`** — sheet somente leitura com os lançamentos/compras de uma viagem,
   agrupados (`itensDaViagem`); mesmo padrão visual do `LancamentosSheet`.
 - **`PrimeiroUso.tsx`** — cartão de onboarding renderizado em `TelaHoje` quando o app está sem
