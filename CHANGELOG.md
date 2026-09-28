@@ -3,6 +3,21 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.49.0] - 2026-09-28
+
+### Adicionado
+
+- Card Categorias do cartão em Análises: cada categoria do cartão no mês da fatura, no mês anterior, no mesmo mês do ano passado e na média de 3 meses.
+  - Com mais de um cartão, cada um vem num bloco com o nome dele.
+  - Tocar no nome da categoria mostra os últimos 6 meses dela em barras, com a média.
+
+### Alterado
+
+- Valores zerados agora têm o mesmo tamanho e o mesmo peso dos outros valores da coluna ou da lista, em todas as telas.
+  - Nas tabelas, cada valor termina na mesma linha vertical do título da sua coluna.
+  - Nas tabelas com a primeira coluna fixa, o valor que rola por baixo dela não aparece mais como um fiapo colorido na borda.
+- No resumo por categoria da fatura (aba Cartão e folha da fatura em Análises), a cor do subtotal segue o efeito no saldo: vermelho para gasto, verde quando os estornos superam os gastos, sem cor quando zera.
+
 ## [0.48.0] - 2026-09-27
 
 ### Adicionado

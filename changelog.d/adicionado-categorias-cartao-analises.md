@@ -1,3 +1,0 @@
-- Card Categorias do cartão em Análises: cada categoria do cartão no mês da fatura, no mês anterior, no mesmo mês do ano passado e na média de 3 meses.
-  - Com mais de um cartão, cada um vem num bloco com o nome dele.
-  - Tocar no nome da categoria mostra os últimos 6 meses dela em barras, com a média.
