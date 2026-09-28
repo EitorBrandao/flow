@@ -117,7 +117,8 @@ it('linha Assinaturas soma as compras de assinatura de todos os cartões e abre 
     useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
 
     render(<TelaAnalises />);
-    await userEvent.click(screen.getByRole('button', { name: /Assinaturas/ }));
+    const cardComposicao = screen.getByText('Por categoria').closest('.card') as HTMLElement;
+    await userEvent.click(within(cardComposicao).getByRole('button', { name: /Assinaturas/ }));
 
     const dialog = await screen.findByRole('dialog', { name: 'Assinaturas' });
     expect(within(dialog).getByText('R$ 51,90')).toBeInTheDocument();
@@ -306,4 +307,37 @@ it('cabeçalho do comparativo mostra o mês abreviado', async () => {
 
   render(<TelaAnalises />);
   expect(within(screen.getByRole('table')).getByRole('columnheader', { name: 'out/2026' })).toBeInTheDocument();
+});
+
+it('card Categorias do cartão: mostra a categoria no mês da fatura e abre o histórico de 6 meses', async () => {
+  // mesmo motivo do teste da fatura acima: `sincronizarCartoes` usa a data real do sistema
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box } = await seedBoxComCategoria();
+    const cartao = await repo.salvarCartao({
+      boxId: box.id, nome: 'Cartão Azul', diaFechamento: 28, diaVencimento: 5,
+    }, '2027-12-31');
+    const catMercado = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'Mercado', ordem: 0 });
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catMercado.id, data: '2026-06-10', valorTotal: 30000, parcelas: 1,
+    }, '2027-12-31'); // fatura de jul/2026
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catMercado.id, data: '2026-07-10', valorTotal: 62000, parcelas: 1,
+    }, '2027-12-31'); // fatura de ago/2026
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-08-01' });
+
+    render(<TelaAnalises />);
+    const card = screen.getByText('Categorias do cartão').closest('.card') as HTMLElement;
+    expect(card.querySelector('.rotulo-grupo')).toBeNull(); // um cartão só: sem subtítulo
+    const linha = within(card).getByRole('button', { name: 'Mercado' }).closest('tr') as HTMLElement;
+    expect(within(linha).getAllByRole('cell')[1]).toHaveTextContent('620,00');
+    expect(within(linha).getAllByRole('cell')[2]).toHaveTextContent('300,00');
+
+    await userEvent.click(within(card).getByRole('button', { name: 'Mercado' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Mercado · Cartão Azul' });
+    // mar..ago = [0, 0, 0, 0, 30000, 62000]; média = 92000 / 6 = 15333,33 → 15333
+    expect(within(dialog).getByText('média 6m').querySelector('strong')).toHaveTextContent('153,33');
+  } finally { vi.useRealTimers(); }
 });

@@ -9,6 +9,8 @@ import type { ID, Viagem } from '../domain/types';
 import { itensDaViagem, totalViagemNoMes } from '../domain/viagem';
 import { boxIdsSelecionadas, useApp } from '../state/store';
 import AssinaturasResumoSheet from './AssinaturasResumoSheet';
+import CategoriaCartaoHistoricoSheet from './CategoriaCartaoHistoricoSheet';
+import CategoriasCartaoCard, { type LinhaCategoriaCartao } from './CategoriasCartaoCard';
 import ComposicaoBarChart, { type LinhaComposicao } from './ComposicaoBarChart';
 import FaturaCategoriaSheet from './FaturaCategoriaSheet';
 import LancamentosSheet from './LancamentosSheet';
@@ -24,9 +26,12 @@ export default function TelaAnalises() {
   const [categoriaAberta, setCategoriaAberta] = useState<ID | null>(null);
   const [assinaturasAberto, setAssinaturasAberto] = useState(false);
   const [viagemAberta, setViagemAberta] = useState<Viagem | null>(null);
+  const [categoriaCartaoAberta, setCategoriaCartaoAberta] = useState<LinhaCategoriaCartao | null>(null);
   if (!dados) return null;
   const categoriaObj = dados.categorias.find((c) => c.id === categoriaAberta);
   const cartaoDaCategoria = dados.cartoes.find((c) => c.categoriaFaturaId === categoriaAberta) ?? null;
+  const cartaoDoHistorico = dados.cartoes.find((c) => c.id === categoriaCartaoAberta?.cartaoId) ?? null;
+  const categoriaDoHistorico = dados.categoriasCartao.find((c) => c.id === categoriaCartaoAberta?.categoriaCartaoId) ?? null;
   const ids = boxIdsSelecionadas(dados, boxSel);
   const resumo = resumoMensal(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
   const base = Math.max(resumo.totalGanhos, resumo.totalGastos, 1);
@@ -164,6 +169,16 @@ export default function TelaAnalises() {
         </div>
       </div>
 
+      <CategoriasCartaoCard
+        mes={mes}
+        boxIds={ids}
+        cartoes={dados.cartoes}
+        categoriasCartao={dados.categoriasCartao}
+        comprasCartao={dados.comprasCartao}
+        ajustesFechamento={dados.ajustesFechamento}
+        onAbrir={setCategoriaCartaoAberta}
+      />
+
       {cartaoDaCategoria ? (
         <FaturaCategoriaSheet
           aberto={categoriaAberta !== null}
@@ -206,6 +221,16 @@ export default function TelaAnalises() {
         incluirPrevistos={incluirPrevistos}
         categorias={dados.categorias}
         onFechar={() => setViagemAberta(null)}
+      />
+
+      <CategoriaCartaoHistoricoSheet
+        aberto={categoriaCartaoAberta !== null}
+        cartao={cartaoDoHistorico}
+        categoria={categoriaDoHistorico}
+        mes={mes}
+        comprasCartao={dados.comprasCartao}
+        ajustesFechamento={dados.ajustesFechamento}
+        onFechar={() => setCategoriaCartaoAberta(null)}
       />
     </div>
   );

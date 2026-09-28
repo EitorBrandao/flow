@@ -1,0 +1,2 @@
+- Valores zerados agora têm o mesmo tamanho e o mesmo peso dos outros valores da coluna ou da lista, em todas as telas.
+  - Nas tabelas com a primeira coluna fixa, o valor que rola por baixo dela não aparece mais como um fiapo colorido na borda.

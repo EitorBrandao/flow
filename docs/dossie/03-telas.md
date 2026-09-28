@@ -383,6 +383,9 @@ cell: R$ 300,00
 cell: R$ 0,00
 cell: R$ 0,00
 cell: R$ 100,00
+heading: Categorias do cartão
+pelo mês da fatura
+Sem gastos no cartão para comparar.
 ```
 
 ### Aba Lançar
@@ -821,6 +824,9 @@ cell: R$ 300,00
 cell: R$ 0,00
 cell: R$ 0,00
 cell: R$ 100,00
+heading: Categorias do cartão
+pelo mês da fatura
+Sem gastos no cartão para comparar.
 ```
 
 ### Aba Lançar
@@ -1323,6 +1329,23 @@ cell: R$ 330,00
 cell: R$ 0,00
 cell: R$ 0,00
 cell: R$ 110,00
+heading: Categorias do cartão
+pelo mês da fatura
+columnheader: Categoria
+columnheader: fev/2026
+columnheader: mês anterior
+columnheader: ano passado
+columnheader: média 3m
+button: compras
+cell: R$ 180,00
+cell: R$ 0,00
+cell: R$ 0,00
+cell: R$ 60,00
+button: serviços
+cell: R$ 150,00
+cell: R$ 0,00
+cell: R$ 0,00
+cell: R$ 50,00
 ```
 
 ### Aba Lançar
@@ -1767,6 +1790,18 @@ cell: R$ 120,00
 cell: R$ 205,00
 cell: R$ 0,00
 cell: R$ 171,63
+heading: Categorias do cartão
+pelo mês da fatura
+columnheader: Categoria
+columnheader: jun/2026
+columnheader: mês anterior
+columnheader: ano passado
+columnheader: média 3m
+button: serviços
+cell: R$ 189,90
+cell: R$ 189,90
+cell: R$ 0,00
+cell: R$ 189,90
 ```
 
 ### Aba Lançar
@@ -2225,6 +2260,23 @@ cell: R$ 80,00
 cell: R$ 0,00
 cell: R$ 0,00
 cell: R$ 26,67
+heading: Categorias do cartão
+pelo mês da fatura
+columnheader: Categoria
+columnheader: jul/2026
+columnheader: mês anterior
+columnheader: ano passado
+columnheader: média 3m
+button: Parcelamento
+cell: R$ 23,30
+cell: R$ 0,00
+cell: R$ 0,00
+cell: R$ 7,77
+button: serviços
+cell: R$ 189,90
+cell: R$ 189,90
+cell: R$ 0,00
+cell: R$ 189,90
 ```
 
 ### Aba Lançar
@@ -2639,6 +2691,28 @@ cell: R$ 63,20
 cell: R$ 123,20
 cell: R$ 0,00
 cell: R$ 133,20
+heading: Categorias do cartão
+pelo mês da fatura
+columnheader: Categoria
+columnheader: set/2026
+columnheader: mês anterior
+columnheader: ano passado
+columnheader: média 3m
+button: compras
+cell: R$ 0,00
+cell: R$ 60,00
+cell: R$ 0,00
+cell: R$ 20,00
+button: Parcelamento
+cell: R$ 23,30
+cell: R$ 23,30
+cell: R$ 0,00
+cell: R$ 23,30
+button: serviços
+cell: R$ 39,90
+cell: R$ 39,90
+cell: R$ 0,00
+cell: R$ 89,90
 ```
 
 ### Aba Lançar
@@ -3043,6 +3117,23 @@ cell: R$ 39,90
 cell: R$ 63,20
 cell: R$ 0,00
 cell: R$ 75,43
+heading: Categorias do cartão
+pelo mês da fatura
+columnheader: Categoria
+columnheader: out/2026
+columnheader: mês anterior
+columnheader: ano passado
+columnheader: média 3m
+button: Parcelamento
+cell: R$ 0,00
+cell: R$ 23,30
+cell: R$ 0,00
+cell: R$ 15,53
+button: serviços
+cell: R$ 39,90
+cell: R$ 39,90
+cell: R$ 0,00
+cell: R$ 39,90
 ```
 
 ### Aba Lançar
@@ -3417,6 +3508,18 @@ cell: R$ 39,90
 cell: R$ 39,90
 cell: R$ 0,00
 cell: R$ 47,67
+heading: Categorias do cartão
+pelo mês da fatura
+columnheader: Categoria
+columnheader: nov/2026
+columnheader: mês anterior
+columnheader: ano passado
+columnheader: média 3m
+button: serviços
+cell: R$ 39,90
+cell: R$ 39,90
+cell: R$ 0,00
+cell: R$ 39,90
 ```
 
 ### Aba Lançar
