@@ -259,11 +259,13 @@ table.tabela th:first-child, table.tabela td:first-child { text-align: left; }
 table.tabela tr:last-child td { border-bottom: none; }
 /* coluna fixa: largura própria fixa (não automática) — mantém o cálculo de largura das
    outras colunas previsível. Sombra sutil na borda direita sinaliza que ela "flutua na
-   frente" do conteúdo que rola por baixo. */
+   frente" do conteúdo que rola por baixo. A faixa de 2px na cor do card, à esquerda, cobre
+   a fresta de 1px por onde o valor que rola vazava como um fiapo colorido em telas de
+   densidade fracionária (2,63 no Galaxy S25+). */
 table.tabela th:first-child, table.tabela td:first-child {
   position: sticky; left: 0; z-index: 2; background: var(--surface);
   white-space: normal; width: 112px; max-width: 112px;
-  box-shadow: 4px 0 6px -4px rgba(0, 0, 0, .45);
+  box-shadow: -2px 0 0 var(--surface), 4px 0 6px -4px rgba(0, 0, 0, .45);
 }
 /* Tabela de colunas com largura fixa (Simular, no Fluxo): o conteúdo não muda as colunas.
    A 1ª coluna recebe largura pelo <col>; as demais dividem o resto por igual. O min-width,
