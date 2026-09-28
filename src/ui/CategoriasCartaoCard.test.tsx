@@ -110,11 +110,34 @@ describe('CategoriasCartaoCard', () => {
     expect(within(farmacia).getAllByRole('cell')[1]).toHaveClass('valor-ganho');
   });
 
-  it('ordem das linhas segue a ordem das categorias do cartão', () => {
+  it('linhas em ordem decrescente do valor no mês; empate no mês desempata pelo mês anterior', () => {
     const card = renderizar({
       compras: [
-        compra('a', 'k1', 'farmacia', '2026-08-10', 90000),
-        compra('b', 'k1', 'mercado', '2026-08-10', 1000),
+        compra('a', 'k1', 'mercado', '2026-08-10', 1000), // set: 10
+        compra('b', 'k1', 'farmacia', '2026-08-10', 90000), // set: 900
+        compra('c', 'k1', 'antiga', '2026-07-10', 5000), // set: 0, ago: 50
+      ],
+    });
+    const nomes = within(card).getAllByRole('button').map((b) => b.textContent);
+    expect(nomes).toEqual(['Farmácia', 'Mercado', 'Antiga']);
+  });
+
+  it('estorno líquido no mês fica abaixo das categorias zeradas', () => {
+    const card = renderizar({
+      compras: [
+        compra('a', 'k1', 'mercado', '2026-08-10', -2000), // set: estorno
+        compra('b', 'k1', 'farmacia', '2026-07-10', 3000), // set: 0, ago: 30
+      ],
+    });
+    const nomes = within(card).getAllByRole('button').map((b) => b.textContent);
+    expect(nomes).toEqual(['Farmácia', 'Mercado']);
+  });
+
+  it('mesmo valor no mês e no mês anterior: vale a ordem das categorias do cartão', () => {
+    const card = renderizar({
+      compras: [
+        compra('a', 'k1', 'farmacia', '2026-08-10', 5000),
+        compra('b', 'k1', 'mercado', '2026-08-10', 5000),
       ],
     });
     const nomes = within(card).getAllByRole('button').map((b) => b.textContent);

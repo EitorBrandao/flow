@@ -25,7 +25,8 @@ interface Props {
  * Card "Categorias do cartão" de Análises: para cada cartão das boxes selecionadas (ativo ou
  * não — desativado ainda tem histórico), cada categoria do cartão no mês da fatura × mês
  * anterior × mesmo mês do ano passado × média 3m. Mesmas colunas e mesma regra de linha do
- * Comparativo: a linha aparece se algum dos três meses tem valor.
+ * Comparativo: a linha aparece se algum dos três meses tem valor. Linhas em ordem decrescente
+ * do valor no mês escolhido.
  */
 export default function CategoriasCartaoCard({
   mes, boxIds, cartoes, categoriasCartao, comprasCartao, ajustesFechamento, onAbrir,
@@ -49,7 +50,10 @@ export default function CategoriasCartaoCard({
           const media = mediaMovel3([doisAntes, anterior, atual]).at(-1) ?? 0;
           return { categoria: cat, atual, anterior, anoPassado, media };
         })
-        .filter((l) => l.atual !== 0 || l.anterior !== 0 || l.anoPassado !== 0);
+        .filter((l) => l.atual !== 0 || l.anterior !== 0 || l.anoPassado !== 0)
+        // maior gasto no mês primeiro, como o Cartão → Resumo; empate pelo mês anterior e, por
+        // fim, pela ordem das categorias do cartão (o sort é estável)
+        .sort((a, b) => b.atual - a.atual || b.anterior - a.anterior);
       return { cartao, linhas };
     })
     .filter((b) => b.linhas.length > 0);

@@ -2267,16 +2267,16 @@ columnheader: jul/2026
 columnheader: mês anterior
 columnheader: ano passado
 columnheader: média 3m
-button: Parcelamento
-cell: R$ 23,30
-cell: R$ 0,00
-cell: R$ 0,00
-cell: R$ 7,77
 button: serviços
 cell: R$ 189,90
 cell: R$ 189,90
 cell: R$ 0,00
 cell: R$ 189,90
+button: Parcelamento
+cell: R$ 23,30
+cell: R$ 0,00
+cell: R$ 0,00
+cell: R$ 7,77
 ```
 
 ### Aba Lançar
@@ -2698,21 +2698,21 @@ columnheader: set/2026
 columnheader: mês anterior
 columnheader: ano passado
 columnheader: média 3m
-button: compras
-cell: R$ 0,00
-cell: R$ 60,00
-cell: R$ 0,00
-cell: R$ 20,00
-button: Parcelamento
-cell: R$ 23,30
-cell: R$ 23,30
-cell: R$ 0,00
-cell: R$ 23,30
 button: serviços
 cell: R$ 39,90
 cell: R$ 39,90
 cell: R$ 0,00
 cell: R$ 89,90
+button: Parcelamento
+cell: R$ 23,30
+cell: R$ 23,30
+cell: R$ 0,00
+cell: R$ 23,30
+button: compras
+cell: R$ 0,00
+cell: R$ 60,00
+cell: R$ 0,00
+cell: R$ 20,00
 ```
 
 ### Aba Lançar
@@ -3124,16 +3124,16 @@ columnheader: out/2026
 columnheader: mês anterior
 columnheader: ano passado
 columnheader: média 3m
-button: Parcelamento
-cell: R$ 0,00
-cell: R$ 23,30
-cell: R$ 0,00
-cell: R$ 15,53
 button: serviços
 cell: R$ 39,90
 cell: R$ 39,90
 cell: R$ 0,00
 cell: R$ 39,90
+button: Parcelamento
+cell: R$ 0,00
+cell: R$ 23,30
+cell: R$ 0,00
+cell: R$ 15,53
 ```
 
 ### Aba Lançar
