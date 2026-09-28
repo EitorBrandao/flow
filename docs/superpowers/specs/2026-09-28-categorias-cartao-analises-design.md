@@ -36,7 +36,7 @@ box. Nelas, o cartão inteiro é uma linha só: a categoria da fatura.
   comparar.".
 - **Cartões do card:** todos os cartões cuja `boxId` está nas boxes selecionadas
   (`boxIdsSelecionadas`), inclusive os inativos — um cartão desativado ainda tem histórico.
-  Ordem dos blocos: a ordem de `dados.cartoes`. Ordem das linhas: `compararCategorias`.
+  Ordem dos blocos: a ordem de `dados.cartoes`. Ordem das linhas: `compararCategoriasCartao`.
 - **Média 3m:** `mediaMovel3` sobre os meses `[mês − 2, mês − 1, mês]`, último valor. Mesma
   função da coluna do Comparativo.
 - **"incluir previstos" não afeta o card.** Compra no cartão não tem `status`; o resumo de
@@ -87,8 +87,8 @@ UI:
 
 ## Entrega
 
-Mockup com as classes reais, pelo chat, antes do código. Depois: wiki (`docs/wiki/`, capítulo
-de Análises), fragmento `adicionado-categorias-cartao-analises.md`, varredura com Playwright
+Mockup com as classes reais, pelo chat, antes do código. Depois: wiki (`docs/wiki/6-telas.md`,
+seção de Análises), fragmento `adicionado-categorias-cartao-analises.md`, varredura com Playwright
 no Galaxy S25+, e o ciclo de entrega.
 
 ## Fora do escopo
