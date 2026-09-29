@@ -1,7 +1,8 @@
-# Análises por período e seletor fixo — design
+# Análises por período e barra fixa sob o topo — design
 
 Data: 2026-09-28. Branch: `analises-periodo`.
 Mockup aprovado: `analises-periodo-mockup.html` (v2, enviado pelo chat em 2026-09-28).
+A classe da barra fixa chamava `.seletor-fixo` no mockup; aqui ela é `.barra-fixa`, genérica, e a Wiki passa a usá-la.
 
 ## Objetivo
 
@@ -52,14 +53,22 @@ Com um mês só, todos os cards ficam **idênticos aos de hoje**. As regras abai
 - **Viagem:** abre a `ViagemSheet` de hoje (ela já mostra a viagem inteira).
 - **Categoria do cartão** (nome tocável no card do cartão): a `CategoriaCartaoHistoricoSheet` passa a receber a lista de meses. No modo Mês, continua com os 6 meses até o mês escolhido e `média 6m`. Nos outros modos, mostra os meses do período, o subtítulo `out/2025 – set/2026, pelo mês da fatura` e `média por mês`.
 
-## Parte 4 — Seletor fixo
+## Parte 4 — Barra fixa sob o topo (Análises, Cartão e Wiki)
 
-- Classe nova `.seletor-fixo` (nível 2, catalogada em `docs/estilo/catalogo.md`):
+Um mecanismo só, para toda barra que gruda logo abaixo do `.topo`.
+
+- Classe nova e genérica `.barra-fixa` (nível 2, catalogada em `docs/estilo/catalogo.md`), definida **antes** do bloco da Wiki em `src/styles.css`:
   `position: sticky; top: var(--topo-altura, 0px); z-index: 9; margin: 0 -16px; padding: 6px 16px; background: var(--bg);`
-  - O `margin` negativo anula o padding lateral de `.conteudo`, como `.wiki-barra`. O `z-index` 9 fica abaixo do `.topo` (10).
-- `Shell.tsx` mede a altura do `.topo` e grava `--topo-altura` no `.shell` (na montagem e no `resize`). A Wiki continua com a sua medição própria — fora do escopo.
-- **Análises:** a linha `‹ rótulo ›` de todos os modos fica dentro de `.seletor-fixo`. As pílulas e, no modo Período, as linhas `de`/`até` ficam fora dela e rolam com a tela.
-- **Cartão:** o nome do cartão (`h2`) e o `SeletorMes` ficam juntos dentro de `.seletor-fixo`. Cada cartão ganha um `div` próprio em volta do bloco inteiro, para o sticky valer só dentro do bloco: na visão casa, o bloco do cartão seguinte empurra o anterior.
+  - O `margin` negativo anula o padding lateral de `.conteudo`. O `z-index` 9 fica abaixo do `.topo` (10).
+- `Shell.tsx` mede a altura do `.topo` e grava `--topo-altura` no `.shell`, na montagem e no `resize`. É a **única** medição do topo no app.
+- **Análises:** a linha `‹ rótulo ›` de todos os modos fica dentro de `.barra-fixa`. As pílulas e, no modo Período, as linhas `de`/`até` ficam fora dela e rolam com a tela.
+- **Cartão:** o nome do cartão (`h2`) e o `SeletorMes` ficam juntos dentro de `.barra-fixa`. Cada cartão ganha um `div` próprio em volta do bloco inteiro, para o sticky valer só dentro do bloco: na visão casa, o bloco do cartão seguinte empurra o anterior.
+- **Wiki** (refatoração, sem mudança visível):
+  - O botão da barra do índice passa a usar `className="barra-fixa wiki-barra"`.
+  - `.wiki-barra` perde `position`, `top`, `z-index`, `margin` e `background` (vêm de `.barra-fixa`) e fica só com a aparência própria: `display: flex`, `gap`, `min-height: 44px`, `padding: 8px 16px` (sobrepõe o 6px da `.barra-fixa`, por vir depois no CSS), `border`, `text-align`, `color`, `font-weight`.
+  - `--wiki-topo` deixa de existir. O `Wiki.tsx` para de medir o `.topo` e mede só a própria barra: grava `--wiki-barra-altura`.
+  - `scroll-margin-top` passa a `calc(var(--topo-altura, 0px) + var(--wiki-barra-altura, 0px) + 8px)`. `--wiki-rolagem` deixa de existir. O `FOLGA = 8` do `Wiki.tsx` continua para a detecção da seção atual, que já usa `getBoundingClientRect()` da barra.
+  - Os testes da Wiki que existirem para a barra e o salto até a seção continuam passando sem mudança de expectativa.
 - No desktop (≥ 900px), `.topo` também é sticky; a mesma regra vale.
 
 ## Domínio
@@ -110,16 +119,17 @@ Nenhuma função de `src/db/` ou `src/backup/` muda: a feature só lê o snapsho
 - `EvolucaoMensalChart.tsx`: prop `mesAtual` passa a aceitar `null`; esconde a fileira de sobra acima de 6 meses; `interval` do eixo acima de 12 meses.
 - `LancamentosSheet.tsx` e `FaturaCategoriaSheet.tsx`: prop opcional `onVoltar`, que mostra `‹ voltar ao período` (`.botao-ver-mais`).
 - `TelaAnalises.tsx`: estado do período e composição dos cards. Se passar de ~300 linhas, o cálculo dos cards sai para um hook `usePeriodoAnalises` no mesmo arquivo ou num arquivo ao lado.
-- `TelaCartao.tsx`: `div` por cartão e `.seletor-fixo` em volta do nome e do `SeletorMes`.
+- `TelaCartao.tsx`: `div` por cartão e `.barra-fixa` em volta do nome e do `SeletorMes`.
 - `Shell.tsx`: medição de `--topo-altura`.
-- Catálogo: `.seletor-fixo`, `SeletorPeriodo`, `CategoriaPeriodoSheet`.
+- `ajustes/Wiki.tsx` e o bloco da Wiki em `styles.css`: passam a usar `.barra-fixa` (Parte 4).
+- Catálogo: `.barra-fixa` (e o texto de `.wiki-barra` atualizado), `SeletorPeriodo`, `CategoriaPeriodoSheet`.
 
 ## Testes
 
 - `periodo.test.ts`: `mesesEntre` na virada de ano (nov/2025–fev/2026 = 4 meses); `periodoAnterior` de out/2025–set/2026 = out/2024–set/2025; `periodoAnoAnterior` de mar–set/2026 = mar–set/2025; teto de 24 nos dois sentidos; arraste de `de` além de `até`; período de 1 mês.
 - `aggregations.test.ts`: `resumoPeriodo([m])` igual a `resumoMensal(m)`; soma de 2 meses = soma dos dois `resumoMensal`; transferência e cenário continuam fora.
 - `fatura.test.ts`: `resumoAssinaturasDoPeriodo` junta a mesma assinatura de dois meses num item só; cartão fora das boxes fica fora.
-- UI: troca de modo e rótulos; linha fixa com `.seletor-fixo`; `de`/`até` com teto; coluna "ano anterior" some com 12 meses; folha do período abre a folha do mês e volta; Categorias do cartão com vários meses; Cartão com o nome dentro de `.seletor-fixo`.
+- UI: troca de modo e rótulos; linha fixa com `.barra-fixa`; Wiki com `barra-fixa wiki-barra`; `de`/`até` com teto; coluna "ano anterior" some com 12 meses; folha do período abre a folha do mês e volta; Categorias do cartão com vários meses; Cartão com o nome dentro de `.barra-fixa`.
 - Varredura com Playwright no S25+: rolar e trocar o mês/período nas duas abas; os quatro modos; folhas.
 
 ## Fora do escopo
