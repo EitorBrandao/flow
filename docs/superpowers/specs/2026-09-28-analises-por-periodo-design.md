@@ -86,7 +86,7 @@ Arquivo novo `src/domain/periodo.ts` (puro, sem React):
 `src/domain/aggregations.ts`:
 
 - `filtrar` passa a aceitar um conjunto de meses. `resumoPeriodo(meses, …)` devolve o mesmo formato de `resumoMensal`; `resumoMensal(mes, …)` vira `resumoPeriodo([mes], …)` e mantém o contrato.
-- `totaisPorCategoriaNoPeriodo(meses, …): Map<ID, number>` — base do Comparativo com vários meses. `compararMeses` continua no modo Mês.
+- `compararPeriodos(meses, …): ComparativoPeriodo[]` — período, anterior, ano anterior (`null` com 12 meses) e média por mês de cada categoria; base do Comparativo com vários meses. `compararMeses` continua no modo Mês.
 - `serieMensalResumo` e `serieMensal` não mudam (já recebem a lista de meses).
 
 `src/domain/fatura.ts`: `resumoAssinaturasDoPeriodo(meses, …)` soma `resumoAssinaturasDoMes` mês a mês e junta os itens pela chave `cartaoId + recorrenciaCartaoId`. `totaisCategoriaCartaoPorMes` não muda.
