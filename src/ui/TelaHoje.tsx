@@ -102,9 +102,10 @@ function Diferenca({ diff }: { diff: number }) {
  *  quando é 'casa' (agrupado, mesmo padrão do `LancamentosSheet`: `.rotulo-grupo` + `.recuo-1`). */
 interface GrupoBancos { box: Box | null; itens: Banco[] }
 
-/** Formulário embutido por banco, na aba Conferir: move saldo declarado para outro banco da
- *  mesma box e cria os dois lançamentos ligados (`repo.transferirEntreBancos`). Só aparece
- *  quando a box tem 2+ bancos — com um banco só não há para onde transferir. */
+/** Formulário embutido por banco, na aba Conferir: move dinheiro entre bancos da mesma box,
+ *  criando os dois lançamentos ligados; o saldo calculado dos bancos muda por eles
+ *  (`repo.transferirEntreBancos`). Só aparece quando a box tem 2+ bancos — com um banco só não
+ *  há para onde transferir. */
 function FormTransferencia({ bancoOrigem, destinos, hoje, onFeito, onCancelar }: {
   bancoOrigem: Banco;
   destinos: Banco[];

@@ -1463,6 +1463,30 @@ describe('banco da fatura do cartão', () => {
       expect(prevista).toMatchObject({ status: 'previsto', bancoId: dois.id });
     } finally { vi.useRealTimers(); }
   });
+
+  it('sincronizarCartoes é idempotente: não regrava alteradoEm nem bancoId se nada mudou', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { um, fatura } = await cartaoComFatura(null);
+      expect(fatura.bancoId).toBe(um.id);
+
+      // Lê o alteradoEm da fatura antes de re-sincronizar
+      const faturaPrimeira = (await db.lancamentos.get(fatura.id))!;
+      const alteradoEmPrimeiro = faturaPrimeira.alteradoEm;
+
+      // Avança o relógio para que uma regravação indevida mude o alteradoEm
+      vi.setSystemTime(new Date('2026-07-02T12:00:00'));
+
+      // Re-sincroniza sem mudar nada
+      await repo.sincronizarCartoes('2027-12-31');
+
+      // Verifica que alteradoEm e bancoId não mudaram
+      const faturaSegunda = (await db.lancamentos.get(fatura.id))!;
+      expect(faturaSegunda.alteradoEm).toBe(alteradoEmPrimeiro);
+      expect(faturaSegunda.bancoId).toBe(um.id);
+    } finally { vi.useRealTimers(); }
+  });
 });
 
 it('confirma um pendente com valor e data corrigidos', async () => {
