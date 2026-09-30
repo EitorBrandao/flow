@@ -1311,6 +1311,97 @@ describe('bancos', () => {
   });
 });
 
+describe('banco no lançamento', () => {
+  async function boxComDoisBancos() {
+    const { box, ganho, gasto } = await boxECategoria();
+    const um = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    const dois = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+    return { box, ganho, gasto, um, dois };
+  }
+
+  it('salvarLancamento grava o banco e atualizarLancamento troca', async () => {
+    const { box, gasto, um, dois } = await boxComDoisBancos();
+    const l = await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2026-08-02', valor: 4290, status: 'efetivo', bancoId: um.id,
+    });
+    expect((await db.lancamentos.get(l.id))?.bancoId).toBe(um.id);
+
+    await repo.atualizarLancamento(l.id, { bancoId: dois.id });
+
+    expect((await db.lancamentos.get(l.id))?.bancoId).toBe(dois.id);
+  });
+
+  it('recorrência: os previstos herdam o banco da regra e o seguem', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { box, gasto, um, dois } = await boxComDoisBancos();
+      const rec = await repo.salvarRecorrencia({
+        boxId: box.id, categoriaId: gasto.id, valor: 5000, dataInicio: '2026-08-05',
+        diaDoMes: 5, parcelas: 3, bancoId: um.id,
+      }, '2026-12-31');
+      const previstos = () => db.lancamentos.where('recorrenciaId').equals(rec.id).toArray();
+
+      expect((await previstos()).map((l) => l.bancoId)).toEqual([um.id, um.id, um.id]);
+
+      await repo.salvarRecorrencia({ ...rec, bancoId: dois.id }, '2026-12-31');
+      expect((await previstos()).map((l) => l.bancoId)).toEqual([dois.id, dois.id, dois.id]);
+
+      const semBanco = { ...rec };
+      delete semBanco.bancoId;
+      await repo.salvarRecorrencia(semBanco, '2026-12-31');
+      expect((await previstos()).map((l) => l.bancoId)).toEqual([undefined, undefined, undefined]);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('definirBancoPadrao marca um banco e desmarca os outros da mesma box', async () => {
+    const { um, dois } = await boxComDoisBancos();
+    const agora = agoraISO();
+    const outraBox: Box = {
+      id: novoId(), nome: 'ju', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora,
+    };
+    await repo.salvarBox(outraBox);
+    const alheio = await repo.salvarBanco({ boxId: outraBox.id, nome: 'Banco Alheio', ordem: 0 });
+    await db.bancos.update(alheio.id, { padrao: true });
+
+    await repo.definirBancoPadrao(dois.id);
+    expect((await db.bancos.get(dois.id))?.padrao).toBe(true);
+    expect((await db.bancos.get(um.id))?.padrao).toBeFalsy();
+    expect((await db.bancos.get(alheio.id))?.padrao).toBe(true);
+
+    await repo.definirBancoPadrao(um.id);
+    expect((await db.bancos.get(um.id))?.padrao).toBe(true);
+    expect((await db.bancos.get(dois.id))?.padrao).toBe(false);
+    expect((await db.bancos.get(alheio.id))?.padrao).toBe(true);
+  });
+
+  it('definirBancoPadrao recusa banco que não existe', async () => {
+    await expect(repo.definirBancoPadrao('fantasma')).rejects.toThrow('Banco não encontrado.');
+  });
+
+  it('excluirBanco apaga o bancoId de lançamentos e recorrências, e só os dele', async () => {
+    const { box, gasto, um, dois } = await boxComDoisBancos();
+    const noUm = await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2026-08-02', valor: 1000, status: 'efetivo', bancoId: um.id,
+    });
+    const noDois = await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2026-08-02', valor: 1000, status: 'efetivo', bancoId: dois.id,
+    });
+    const rec = await repo.salvarRecorrencia({
+      boxId: box.id, categoriaId: gasto.id, valor: 1000, dataInicio: '2099-01-01',
+      diaDoMes: 1, parcelas: 1, bancoId: um.id,
+    }, '2099-12-31');
+
+    await repo.excluirBanco(um.id);
+
+    expect((await db.lancamentos.get(noUm.id))?.bancoId).toBeUndefined();
+    expect((await db.lancamentos.get(noDois.id))?.bancoId).toBe(dois.id);
+    expect((await db.recorrencias.get(rec.id))?.bancoId).toBeUndefined();
+    const previsto = (await db.lancamentos.where('recorrenciaId').equals(rec.id).toArray())[0];
+    expect(previsto.bancoId).toBeUndefined();
+  });
+});
+
 it('confirma um pendente com valor e data corrigidos', async () => {
   const { box, gasto } = await boxECategoria();
   const lanc = await repo.salvarLancamento({

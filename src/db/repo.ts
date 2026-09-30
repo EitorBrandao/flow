@@ -76,7 +76,7 @@ export async function carregarTudo(): Promise<Dados> {
 
 export interface NovoLancamento {
   boxId: ID; categoriaId: ID; data: ISODate; valor: number;
-  nota?: string; status: StatusLancamento; cenarioId?: ID; viagemId?: ID;
+  nota?: string; status: StatusLancamento; cenarioId?: ID; viagemId?: ID; bancoId?: ID;
 }
 
 export async function salvarLancamento(n: NovoLancamento): Promise<Lancamento> {
@@ -92,7 +92,7 @@ export async function salvarLancamento(n: NovoLancamento): Promise<Lancamento> {
 
 export async function atualizarLancamento(
   id: ID,
-  patch: Partial<Pick<Lancamento, 'valor' | 'data' | 'nota' | 'categoriaId' | 'status' | 'viagemId'>>,
+  patch: Partial<Pick<Lancamento, 'valor' | 'data' | 'nota' | 'categoriaId' | 'status' | 'viagemId' | 'bancoId'>>,
 ): Promise<void> {
   await db.transaction('rw', db.lancamentos, db.config, async () => {
     if (patch.status === 'efetivo') {
@@ -160,9 +160,10 @@ async function materializarRecorrencia(rec: Recorrencia, horizonte: ISODate): Pr
     ...(rec.nota ? { nota: rec.nota } : {}),
     status: 'previsto', origem: 'recorrencia', recorrenciaId: rec.id,
     ...(rec.cenarioId ? { cenarioId: rec.cenarioId } : {}),
+    ...(rec.bancoId ? { bancoId: rec.bancoId } : {}),
     criadoEm: agora, alteradoEm: agora,
   })));
-  // previstos remanescentes acompanham a regra atual (valor/categoria/nota); efetivos são história
+  // previstos remanescentes acompanham a regra atual (valor/categoria/nota/banco); efetivos são história
   await db.lancamentos.where('recorrenciaId').equals(rec.id)
     .filter((l) => l.status === 'previsto')
     .modify((l) => {
@@ -170,13 +171,15 @@ async function materializarRecorrencia(rec: Recorrencia, horizonte: ISODate): Pr
       l.categoriaId = rec.categoriaId;
       if (rec.nota) l.nota = rec.nota;
       else delete l.nota;
+      if (rec.bancoId) l.bancoId = rec.bancoId;
+      else delete l.bancoId;
       l.alteradoEm = agora;
     });
 }
 
 export interface NovaRecorrencia {
   boxId: ID; categoriaId: ID; valor: number; dataInicio: ISODate;
-  diaDoMes: number; parcelas: number | null; nota?: string; cenarioId?: ID;
+  diaDoMes: number; parcelas: number | null; nota?: string; cenarioId?: ID; bancoId?: ID;
 }
 
 export async function salvarRecorrencia(
@@ -361,17 +364,44 @@ export async function atualizarBanco(
   });
 }
 
-/** Excluir um banco desliga os cartões que apontavam para ele. Cartão apontando para
- *  banco inexistente é inconsistência silenciosa — o mesmo cuidado que
- *  `converterCenarioEmReal` toma com as recorrências. */
-export async function excluirBanco(id: ID): Promise<void> {
-  await db.transaction('rw', db.bancos, db.cartoes, db.config, async () => {
+/** Marca o banco como padrão da box dele e desmarca os outros da mesma box, numa transação só.
+ *  Sem nenhuma marca, o padrão é o primeiro por `ordem` (`bancoPadrao`, `domain/bancos.ts`). */
+export async function definirBancoPadrao(id: ID): Promise<void> {
+  await db.transaction('rw', db.bancos, db.config, async () => {
+    const alvo = await db.bancos.get(id);
+    if (!alvo) throw new Error('Banco não encontrado.');
     const agora = agoraISO();
-    // `bancoId` não é índice (a Tarefa 1 o declarou só como campo), então é `.filter()`
-    // e não `.where()` — mesmo idioma de `converterCenarioEmReal` (`repo.ts:212`).
+    // `boxId` não é índice de `bancos`: `.filter()`, não `.where()`.
+    const daBox = await db.bancos.filter((b) => b.boxId === alvo.boxId).toArray();
+    for (const b of daBox) {
+      const deveSerPadrao = b.id === id;
+      if ((b.padrao === true) !== deveSerPadrao) {
+        await db.bancos.update(b.id, { padrao: deveSerPadrao, alteradoEm: agora });
+      }
+    }
+    await marcarMudanca();
+  });
+}
+
+/** Excluir um banco desliga tudo que apontava para ele: cartões, lançamentos e recorrências
+ *  perdem o `bancoId` e passam a "sem banco". Referência a banco inexistente é inconsistência
+ *  silenciosa — o mesmo cuidado que `converterCenarioEmReal` toma com as recorrências. */
+export async function excluirBanco(id: ID): Promise<void> {
+  await db.transaction('rw', db.bancos, db.cartoes, db.lancamentos, db.recorrencias, db.config, async () => {
+    const agora = agoraISO();
+    // `bancoId` não é índice em nenhuma dessas tabelas: `.filter()` e não `.where()` — mesmo
+    // idioma de `converterCenarioEmReal`.
     await db.cartoes.filter((c) => c.bancoId === id).modify((c) => {
       delete c.bancoId;
       c.alteradoEm = agora;
+    });
+    await db.lancamentos.filter((l) => l.bancoId === id).modify((l) => {
+      delete l.bancoId;
+      l.alteradoEm = agora;
+    });
+    await db.recorrencias.filter((r) => r.bancoId === id).modify((r) => {
+      delete r.bancoId;
+      r.alteradoEm = agora;
     });
     await db.bancos.delete(id);
     await marcarMudanca();
