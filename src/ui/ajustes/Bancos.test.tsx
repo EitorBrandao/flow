@@ -325,3 +325,68 @@ it('erro ao salvar um banco aberto mostra o aviso dentro do item, não no topo',
 
   expect(await within(item).findByText('Dê um nome ao banco para salvar.')).toBeInTheDocument();
 });
+
+it('com dois bancos, o primeiro leva o selo padrão e só o outro oferece "Tornar padrão"', async () => {
+  const box = await comBox();
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+  await recarregarDados();
+
+  render(<Bancos />);
+
+  expect(await screen.findAllByText('padrão')).toHaveLength(1);
+  expect(screen.getAllByRole('button', { name: 'Tornar padrão' })).toHaveLength(1);
+});
+
+it('"Tornar padrão" passa o selo para o outro banco', async () => {
+  const box = await comBox();
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+  const dois = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+  await recarregarDados();
+
+  render(<Bancos />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Tornar padrão' }));
+
+  await waitFor(async () => {
+    expect((await db.bancos.get(dois.id))?.padrao).toBe(true);
+  });
+  const itemDois = screen.getByText('Banco Dois').closest('.item') as HTMLElement;
+  await waitFor(() => {
+    expect(within(itemDois).getByText('padrão')).toBeInTheDocument();
+  });
+  expect(screen.getAllByText('padrão')).toHaveLength(1);
+});
+
+it('com um banco só, não mostra o selo nem o botão', async () => {
+  const box = await comBox();
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Único', ordem: 0 });
+  await recarregarDados();
+
+  render(<Bancos />);
+
+  expect(await screen.findByText('Banco Único')).toBeInTheDocument();
+  expect(screen.queryByText('padrão')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Tornar padrão' })).not.toBeInTheDocument();
+});
+
+it('mostra o saldo calculado: o informado mais o movimento depois da data informada', async () => {
+  const box = await comBox();
+  const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+  await repo.atualizarBanco(banco.id, { saldoDeclaradoCent: 100000, dataSaldoDeclarado: '2026-08-01' });
+  const gasto = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: gasto.id, data: '2026-08-03', valor: 2000, status: 'efetivo', bancoId: banco.id,
+  });
+  await recarregarDados();
+
+  render(<Bancos />);
+
+  // 100000 - 2000 = 98000
+  // O formatarSaldo pode conter espaço não-quebrável, então normalizamos na comparação.
+  const saldoCalculado = formatarSaldo(98000).replace(/\s/g, ' ');
+  const saldoDeclVelho = formatarSaldo(100000).replace(/\s/g, ' ');
+  const item = await screen.findByText(/Banco Um/);
+  const sub = item.closest('.item')?.querySelector('.sub');
+  expect(sub?.textContent?.replace(/\s/g, ' ')).toContain(saldoCalculado);
+  expect(screen.queryByText((content) => content.replace(/\s/g, ' ') === saldoDeclVelho)).not.toBeInTheDocument();
+});
