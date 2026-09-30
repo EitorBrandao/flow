@@ -1,0 +1,3 @@
+- Resumo da conferência mostra o valor somado de cada estado, abaixo da contagem
+  - As pílulas ficam em duas colunas: confere e interno, sobra e novos
+  - Previsto e divergente só aparecem quando há itens nesses estados

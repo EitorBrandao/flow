@@ -69,7 +69,7 @@ function mostrarEstorno(item: ItemConferencia, dados: Dados): boolean {
   return (l?.valor ?? 0) < 0;
 }
 
-function valorDoItem(item: ItemConferencia, dados: Dados, totalCorrigidoCent: number | undefined): number {
+export function valorDoItem(item: ItemConferencia, dados: Dados, totalCorrigidoCent: number | undefined): number {
   if (totalCorrigidoCent != null) return totalCorrigidoCent;
   if (item.bruto) return Math.abs(item.bruto.valorCent);
   if (item.lancamentoId) return dados.lancamentos.find((l) => l.id === item.lancamentoId)?.valor ?? 0;
