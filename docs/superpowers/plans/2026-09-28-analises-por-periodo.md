@@ -1058,7 +1058,7 @@ it('acima de 6 meses: a fileira de sobra dá lugar à sobra do período', () => 
   const { container } = render(<EvolucaoMensalChart serie={serieDe(7)} mesAtual={null} />);
   expect(container.querySelectorAll('.evolucao-sobra')).toHaveLength(0);
   const linha = screen.getByText('sobra do período');
-  expect(linha.querySelector('strong')?.textContent).toBe('R$ 700,00'); // 7 × 10000
+  expect(linha.querySelector('strong')?.textContent).toBe(formatarBRL(70000)); // 7 × 10000
   expect(linha.querySelector('strong')).toHaveClass('valor-ganho');
 });
 ```
@@ -1153,7 +1153,7 @@ e acrescentar, dentro do `describe`:
     expect(rotulos).toEqual(['jul/2026', 'ago/2026', 'set/2026']);
     expect(within(dialog).getByText('jul/2026 – set/2026, pelo mês da fatura')).toBeInTheDocument();
     // (0 + 60000 + 90000) / 3 = 50000
-    expect(within(dialog).getByText('média por mês').querySelector('strong')?.textContent).toBe('R$ 500,00');
+    expect(within(dialog).getByText('média por mês').querySelector('strong')?.textContent).toBe(formatarBRL(50000));
   });
 ```
 
@@ -1239,13 +1239,13 @@ function abrir(onAbrirMes = vi.fn()) {
 describe('CategoriaPeriodoSheet', () => {
   it('cabeçalho com total e intervalo; uma barra por mês; média por mês', () => {
     const dialog = abrir();
-    expect(within(dialog).getByText('R$ 1.200,00')).toHaveClass('valor-gasto'); // 30000 + 90000
+    expect(within(dialog).getByText(formatarBRL(120000))).toHaveClass('valor-gasto'); // 30000 + 90000
     expect(within(dialog).getByText('jul/2026 – set/2026 · toque num mês para ver os lançamentos')).toBeInTheDocument();
-    expect(within(dialog).getByText('R$ 0,00')).toHaveClass('valor-neutro');
+    expect(within(dialog).getByText(formatarBRL(0))).toHaveClass('valor-neutro');
     const barras = dialog.querySelectorAll<HTMLElement>('.composicao-preenchimento');
     expect([...barras].map((b) => b.style.width)).toEqual(['33.33%', '0%', '100%']);
     // 120000 / 3 = 40000
-    expect(within(dialog).getByText('média por mês').querySelector('strong')?.textContent).toBe('R$ 400,00');
+    expect(within(dialog).getByText('média por mês').querySelector('strong')?.textContent).toBe(formatarBRL(40000));
   });
 
   it('tocar num mês chama onAbrirMes com o mês; Enter também', async () => {
@@ -1692,7 +1692,7 @@ it('12 meses: soma o período e mostra a média por mês', async () => {
   expect(screen.getByText('out/2025 – set/2026')).toBeInTheDocument();
   // pix: 10000 + 25000 = 35000
   const linha = screen.getByRole('button', { name: /pix/ });
-  expect(within(linha).getByText('R$ 350,00')).toBeInTheDocument();
+  expect(within(linha).getByText(formatarBRL(35000))).toBeInTheDocument();
   expect(screen.getByText(/^média por mês:/)).toBeInTheDocument();
 });
 
@@ -1707,7 +1707,7 @@ it('Comparativo com 12 meses: sem a coluna ano anterior, com a nota do intervalo
   const linha = within(card).getByText('pix').closest('tr') as HTMLElement;
   // média = round(35000 / 12) = 2917
   expect(within(linha).getAllByRole('cell').map((td) => td.textContent))
-    .toEqual(['pix', 'R$ 350,00', 'R$ 0,00', 'R$ 29,17']);
+    .toEqual(['pix', formatarBRL(35000), formatarBRL(0), formatarBRL(2917)]);
 });
 
 it('Período: 7 meses por padrão, com a coluna ano anterior', async () => {
@@ -1726,7 +1726,7 @@ it('Ano: abre no último ano fechado', async () => {
   await userEvent.click(screen.getByRole('radio', { name: 'Ano' }));
   expect(document.querySelector('.barra-fixa')).toHaveTextContent('2025');
   // só out/2025 cai em 2025
-  expect(within(screen.getByRole('button', { name: /pix/ })).getByText('R$ 100,00')).toBeInTheDocument();
+  expect(within(screen.getByRole('button', { name: /pix/ })).getByText(formatarBRL(10000))).toBeInTheDocument();
 });
 
 it('categoria com vários meses: folha do período → folha do mês → volta ao período', async () => {
@@ -1754,7 +1754,7 @@ it('modo Mês: o seletor de mês fica na barra fixa', async () => {
 });
 ```
 
-Observação para o implementador: o botão da linha "pix" do card Por categoria é a `.composicao-linha` (`role="button"`), cujo nome acessível inclui o valor; por isso `within(linha).getByText('R$ 350,00')` funciona. Se o nome `/pix/` casar com mais de um botão (a tabela do Comparativo não tem botão; confira), refine com `getAllByRole(...)[0]` e explique no commit.
+Observação para o implementador: o botão da linha "pix" do card Por categoria é a `.composicao-linha` (`role="button"`), cujo nome acessível inclui o valor; por isso `within(linha).getByText(formatarBRL(35000))` funciona. Se o nome `/pix/` casar com mais de um botão (a tabela do Comparativo não tem botão; confira), refine com `getAllByRole(...)[0]` e explique no commit.
 
 - [ ] **Passo 2: rodar e ver falhar**
 
