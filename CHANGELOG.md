@@ -3,6 +3,17 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.51.0] - 2026-09-30
+
+### Adicionado
+
+- Cada lançamento agora pode ficar num banco.
+  - Em Lançar e em Editar lançamento, o campo Banco vem marcado no banco padrão da box, e você troca em cada lançamento.
+  - As recorrências também escolhem o banco, e a fatura de cada cartão sai do banco do cartão.
+  - Em Ajustes, Bancos, você escolhe o banco padrão, e o saldo de cada banco passa a somar os lançamentos feitos depois do saldo informado.
+  - No Fluxo e nas Análises, um filtro mostra só os lançamentos de um banco, ou os que não têm banco.
+- A transferência entre bancos deixa de mexer no saldo informado: o saldo de cada banco muda pelos dois lançamentos da transferência.
+
 ## [0.50.3] - 2026-09-30
 
 ### Alterado
