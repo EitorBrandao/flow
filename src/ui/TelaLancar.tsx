@@ -4,9 +4,11 @@ import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import LinhaOrcamentoViagem from './LinhaOrcamentoViagem';
 import SeletorCategoria from './SeletorCategoria';
+import SeletorBanco from './SeletorBanco';
 import SeletorPills, { OPCOES_TIPO } from './SeletorPills';
 import { categoriasFaturaIds } from '../domain/fatura';
 import { categoriasTransferenciaIds } from '../domain/transferencia';
+import { bancoPadrao, bancosDaBox } from '../domain/bancos';
 import type { TipoCategoria } from '../domain/types';
 import { avisoDataNoSaldo } from '../domain/projection';
 import { gastoDaViagem, viagemAtivaEm } from '../domain/viagem';
@@ -22,6 +24,8 @@ export default function TelaLancar() {
   const [previsto, setPrevisto] = useState(false);
   const [viagemMarcada, setViagemMarcada] = useState(true);
   const [salvo, setSalvo] = useState(false);
+  // `null` = "o banco padrão da box"; só vira ID quando a pessoa escolhe outro.
+  const [bancoEscolhido, setBancoEscolhido] = useState<string | null>(null);
   const salvoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const viagemAtiva = viagemAtivaEm(dados?.viagens ?? [], data);
 
@@ -43,6 +47,7 @@ export default function TelaLancar() {
       setData(hoje);
       setNota('');
       setPrevisto(false);
+      setBancoEscolhido(null);
     }
     setRascunhoLancar(null);
   }, [rascunhoLancar, dados, hoje, setRascunhoLancar]);
@@ -52,6 +57,12 @@ export default function TelaLancar() {
   }, []);
 
   const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+
+  useEffect(() => {
+    setBancoEscolhido(null);
+  }, [boxId]);
+  const bancos = dados && boxId ? bancosDaBox(dados.bancos, [boxId]) : [];
+  const bancoId = bancoEscolhido ?? (dados && boxId ? bancoPadrao(dados.bancos, boxId)?.id : undefined);
 
   const ocultas = useMemo(
     () => new Set([
@@ -88,10 +99,11 @@ export default function TelaLancar() {
       ...(nota ? { nota } : {}),
       status: previsto ? 'previsto' : (data > hoje ? 'previsto' : 'efetivo'),
       ...(viagemAtiva && viagemMarcada ? { viagemId: viagemAtiva.id } : {}),
+      ...(bancoId ? { bancoId } : {}),
     });
     await recarregar();
     setCents(0); setCategoriaId(null); setNota(''); setData(hoje);
-    setPrevisto(false); setViagemMarcada(true); setSalvo(true);
+    setPrevisto(false); setViagemMarcada(true); setBancoEscolhido(null); setSalvo(true);
     if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
     salvoTimeoutRef.current = setTimeout(() => setSalvo(false), 2500);
   }
@@ -108,6 +120,7 @@ export default function TelaLancar() {
         onSelecionar={(id) => { setTipo(id as TipoCategoria); setCategoriaId(null); }}
       />
       <SeletorCategoria categorias={categorias} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
+      <SeletorBanco bancos={bancos} selecionadaId={bancoId ?? null} onSelecionar={setBancoEscolhido} />
       <div className="linha">
         <div className="campo">
           <label htmlFor="data">Data</label>

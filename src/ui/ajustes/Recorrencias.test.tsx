@@ -276,3 +276,47 @@ it('criar sem valor e sem categoria avisa uma coisa por vez, embaixo dos botões
   expect(screen.queryByText('Digite um valor para criar.')).not.toBeInTheDocument();
   expect(await db.recorrencias.count()).toBe(0);
 });
+
+// TAREFA 5: CAMPO BANCO EM RECORRÊNCIAS
+
+async function boxComDoisBancosECategoria() {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
+  const um = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+  const dois = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+  return { box, um, dois };
+}
+
+it('nova recorrência vem com o banco padrão marcado e grava nele', async () => {
+  const { um } = await boxComDoisBancosECategoria();
+
+  render(<Recorrencias />);
+  expect(screen.getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'true');
+  await userEvent.type(screen.getByLabelText('Valor'), '50,00');
+  await userEvent.click(screen.getByRole('button', { name: 'assinatura' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+  await waitFor(async () => {
+    expect(await db.recorrencias.count()).toBe(1);
+  });
+  expect((await db.recorrencias.toArray())[0].bancoId).toBe(um.id);
+});
+
+it('nova recorrência grava o banco escolhido', async () => {
+  const { dois } = await boxComDoisBancosECategoria();
+
+  render(<Recorrencias />);
+  await userEvent.click(screen.getByRole('radio', { name: 'Banco Dois' }));
+  await userEvent.type(screen.getByLabelText('Valor'), '50,00');
+  await userEvent.click(screen.getByRole('button', { name: 'assinatura' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+  await waitFor(async () => {
+    expect(await db.recorrencias.count()).toBe(1);
+  });
+  expect((await db.recorrencias.toArray())[0].bancoId).toBe(dois.id);
+});

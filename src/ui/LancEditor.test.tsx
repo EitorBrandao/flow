@@ -202,3 +202,72 @@ it('parcela de recorrência de cenário: sem Confirmar, sem Salvar, sem Excluir 
     vi.useRealTimers();
   }
 });
+
+// TAREFA 5: CAMPO BANCO EM EDITAR LANÇAMENTO
+
+async function editorComDoisBancos(bancoDoLancamento: 'um' | null) {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const categoria = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  const um = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+  const dois = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-07-01', valor: 4290, status: 'efetivo',
+    ...(bancoDoLancamento ? { bancoId: um.id } : {}),
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+  return { lanc, um, dois };
+}
+
+it('troca o banco de um lançamento e salva', async () => {
+  const { lanc, dois } = await editorComDoisBancos('um');
+
+  render(<LancEditor lanc={lanc} onFechar={() => {}} />);
+  expect(screen.getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'true');
+  await userEvent.click(screen.getByRole('radio', { name: 'Banco Dois' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(async () => {
+    expect((await db.lancamentos.get(lanc.id))?.bancoId).toBe(dois.id);
+  });
+});
+
+it('lançamento antigo, sem banco, abre sem pílula marcada e salvar mantém sem banco', async () => {
+  const { lanc } = await editorComDoisBancos(null);
+
+  render(<LancEditor lanc={lanc} onFechar={() => {}} />);
+  expect(screen.getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'false');
+  expect(screen.getByRole('radio', { name: 'Banco Dois' })).toHaveAttribute('aria-checked', 'false');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(async () => {
+    expect((await db.lancamentos.get(lanc.id))?.alteradoEm).not.toBe(lanc.alteradoEm);
+  });
+  expect((await db.lancamentos.get(lanc.id))?.bancoId).toBeUndefined();
+});
+
+it('previsto de recorrência não mostra o campo Banco: quem manda é a regra', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const categoria = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+    const um = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+    await repo.salvarRecorrencia(
+      { boxId: box.id, categoriaId: categoria.id, valor: 5000, dataInicio: '2026-08-05', diaDoMes: 5, parcelas: 1, bancoId: um.id },
+      '2026-12-31',
+    );
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    const previsto = useApp.getState().dados!.lancamentos.find((l) => l.recorrenciaId != null)!;
+
+    render(<LancEditor lanc={previsto} onFechar={() => {}} />);
+
+    expect(screen.queryByRole('radio', { name: 'Banco Um' })).not.toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});
