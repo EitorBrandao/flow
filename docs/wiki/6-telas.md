@@ -21,7 +21,7 @@ Tela inicial. Foco em "onde estou agora" e no que precisa de atenção. Três ab
 
 Cada linha de banco tem um botão de sinal: informe negativa para contar no cheque especial. Salvar grava só os bancos cujo valor você realmente mudou — encostar num campo e desistir não mexe no que já estava lá.
 
-Com dois ou mais bancos na box, cada linha ganha também o botão ↔: abre um formulário curto para transferir saldo a outro banco da mesma box (destino, valor, data). Confirmar ajusta o saldo dos dois na hora e aparece como um lançamento de saída e outro de entrada na aba Fluxo — sem contar como ganho ou gasto real em Análises, já que é só redistribuição do seu próprio dinheiro. Excluir a transferência (pelo Fluxo) apaga os dois lançamentos, mas não desfaz o ajuste de saldo nos bancos.
+Com dois ou mais bancos na box, cada linha ganha também o botão ↔: abre um formulário curto para transferir saldo a outro banco da mesma box (destino, valor, data). Confirmar cria um lançamento de saída no banco de origem e um de entrada no destino, visíveis na aba Fluxo — sem contar como ganho ou gasto real em Análises, já que é só redistribuição do seu próprio dinheiro. O saldo calculado dos dois bancos, em Ajustes → Bancos, muda por eles. Excluir a transferência (pelo Fluxo) apaga os dois lançamentos. Numa transferência feita antes desta versão, o saldo informado dos bancos já tinha sido ajustado e não volta sozinho: corrija em Ajustes → Bancos.
 
 **Transferência entre bancos — obrigatórios:** banco de destino, valor. **Tem padrão:** data (hoje).
 
@@ -34,6 +34,7 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 - Teclado numérico decimal já abre pronto, sem precisar tocar em nada.
 - Alterna **Gasto**/**Ganho** — troca a lista de categorias mostrada (da box selecionada, não arquivadas, na ordem definida em Ajustes → Categorias).
 - Data padrão hoje; nota opcional; caixa "marcar como previsto".
+- Com dois ou mais bancos na box, aparece o campo **Banco**, já marcado no banco padrão. Toque em outro para trocar; depois de lançar, ele volta ao padrão.
 - Data futura vira previsto automaticamente mesmo sem marcar a caixa.
 - Ao salvar, mostra "Lançado ✓" por alguns segundos e limpa o formulário (mantendo a box e o tipo selecionados).
 - Tocar no (+) mostra antes uma faixa de atalhos para o que você mais lança; cada um já traz a categoria, o destino (box ou cartão) e o valor da última vez — você confere e confirma.
@@ -46,17 +47,18 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 - A nota também traz seus [itens](#glossario/item-da-nota): no formulário da compra, "Ver itens" mostra a lista de produtos com valor e percentual do total.
 - Sem câmera disponível, ou se o QR não for lido, dá para digitar a chave de 44 dígitos à mão.
 
-**Obrigatórios:** valor, categoria. **Têm padrão:** data (hoje). **Opcionais:** nota, marcar como previsto.
+**Obrigatórios:** valor, categoria. **Têm padrão:** data (hoje) e banco (o padrão da box, quando ela tem dois ou mais bancos). **Opcionais:** nota, marcar como previsto.
 
 ## Fluxo
 
 A linha do tempo do dinheiro. Três abas: Lista (padrão), Gráfico e Simular.
 
 - **Lista** mostra por padrão de 14 dias atrás até o horizonte de projeção; a lupa abre busca e filtros (texto, data única ou período; "+30 dias atrás" estende o início da janela para o passado). A busca por texto também alcança as compras dentro da fatura de um cartão: bater numa delas (descrição, categoria do cartão ou valor) mostra o lançamento da fatura na lista. Cada dia mostra seu saldo projetado no cabeçalho. Com filtro de data, o dia escolhido aparece mesmo sem lançamento — é como saber quanto você vai ter num dia sem nada. Num período, aparecem o primeiro e o último dia, mais os dias com lançamento. Cada dia futuro filtrado mostra também a diferença em relação a hoje, verde se o saldo sobe e vermelho se desce. Um dia fora da projeção mostra um traço no lugar do saldo: depois do fim, diz até quando a projeção vai; antes do começo, diz quando ela começa.
+- Com dois ou mais bancos na box, a Lista mostra o banco sob cada lançamento e um filtro por banco (Todos, cada banco ou Sem banco). O filtro vale só para a lista: o saldo de cada dia continua sendo o da box inteira.
 - **Gráfico** mostra o histórico e a projeção completa até o horizonte configurado, numa área maior que o mini-gráfico de Hoje; linha extra tracejada quando há cenário ligado; toque no card abre em tela cheia, onde dá para arrastar e ver o saldo de cada dia, e aproximar com dois dedos. Uma frase embaixo do card lembra isso e diz que a linha pontilhada vertical é hoje. Embaixo, o menor e o maior saldo do período; quando o período passa de um ano para outro, as datas das pontas mostram o ano, e o mínimo e o máximo descem para a linha de baixo.
 - Tocar num lançamento, na Lista, abre o editor (valor, data, categoria, nota); previstos podem ser confirmados ali mesmo; previstos de recorrência avisam para editar a regra em Ajustes, se for para mudar valor ou data de vez. Exceção: um item de [cenário](#glossario/cenario) nunca tem Confirmar. O item "uma vez" continua com Salvar e Excluir, e a dica avisa que ele não pode ser confirmado e aponta para "Tornar real", em Fluxo › Simular. Já uma parcela de uma recorrência de cenário só mostra Fechar: os campos aparecem como texto, sem edição — a próxima materialização traria a parcela de volta mesmo excluída, então mudar ou excluir esse item é só pelo Simular. Uma transferência entre bancos (feita em Hoje → Conferir) abre, em vez disso, um resumo só de leitura, com os dois bancos, a data e o valor, e um botão para excluir as duas pernas — não dá para editar valor, data ou categoria de uma transferência, só apagar e refazer.
 
-**Editor de lançamento — obrigatórios:** valor, data, categoria. **Opcional:** nota.
+**Editor de lançamento — obrigatórios:** valor, data, categoria. **Opcionais:** nota e banco (com dois ou mais bancos na box).
 
 ## Simular
 
@@ -98,6 +100,8 @@ Resumo e comparativos de um período. No topo, quatro opções:
 - **12 meses:** os 12 meses que terminam no mês atual; as setas deslizam a janela um mês por vez.
 - **Ano:** de janeiro a dezembro. Abre no último ano fechado; o ano atual aparece marcado "até agora".
 - **Período:** um intervalo livre, de um mês a outro (no máximo 24 meses), escolhido nas linhas "de" e "até". As setas da linha de baixo deslizam o intervalo inteiro.
+
+Com dois ou mais bancos na box, um filtro por banco (Todos, cada banco ou Sem banco) restringe o resumo e os comparativos aos lançamentos, e às compras de cartão, desse banco.
 
 A linha com as setas fica presa logo abaixo da barra do topo: dá para trocar o mês ou o período sem voltar ao começo da tela.
 

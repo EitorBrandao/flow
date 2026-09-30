@@ -18,7 +18,7 @@ CRUD das regras que geram previstos automaticamente (veja [Recorrência](#concei
 - "Desativar" para a regra e tira os previstos dela ainda não confirmados; os confirmados ficam. "Ativar" volta a gerar os previstos a partir de hoje.
 - Excluir remove a regra e seus previstos — os já confirmados ficam.
 
-**Obrigatórios:** valor, categoria. **Têm padrão:** início (hoje), dia do mês (1). **Opcional:** parcelas (vazio = sem fim).
+**Obrigatórios:** valor, categoria. **Têm padrão:** início (hoje), dia do mês (1). **Opcional:** parcelas (vazio = sem fim). Com dois ou mais bancos na box, a recorrência também escolhe o banco (padrão: o banco padrão da box); os previstos saem dele.
 
 ## Boxes
 
@@ -35,15 +35,15 @@ Uma box representa a **pessoa**, e uma pessoa costuma ter mais de uma conta. Aqu
 
 Serve para conferir: a tela Hoje passa a mostrar uma linha por banco, e a diferença contra a projeção é calculada sobre a soma. Sem bancos cadastrados, a conferência usa um único campo de saldo.
 
-> Nesta versão o saldo do banco é **informado por você, não calculado**. Ele não se atualiza sozinho quando você lança: lançamento ainda não aponta para banco.
+> O saldo de cada banco é o último saldo **informado por você** mais os lançamentos efetivos desse banco depois da data informada. Informar de novo, na tela Hoje, recomeça a conta. Lançamento sem banco não entra na conta de nenhum banco.
 
-Cada banco mostra o saldo informado com a data e quantos cartões estão vinculados a ele. Excluir um banco desliga o vínculo dos cartões que apontavam para ele — nenhum cartão fica órfão.
+Cada banco mostra o saldo, a data em que você o informou e quantos cartões estão vinculados a ele. Com dois ou mais bancos na box, um deles é o **padrão**: aparece com o selo "padrão" e vem marcado em todo lançamento novo. Toque em "Tornar padrão" para trocar. Excluir um banco desliga o vínculo dos cartões, dos lançamentos e das recorrências que apontavam para ele — nada é apagado.
 
 **Obrigatórios:** nome. **Têm padrão:** box (a selecionada no topo; na visão casa, a box "casa"), saldo (não informado).
 
 ## Cartões
 
-Cadastre cartões no formulário no topo; para editar, toque no lápis do item. Configure nome, dia de fechamento, dia de vencimento e, se a box tiver bancos cadastrados, o banco dono do cartão. A categoria de gasto que recebe a [[fatura]] o app cria sozinho, com o nome do cartão.
+Cadastre cartões no formulário no topo; para editar, toque no lápis do item. Configure nome, dia de fechamento, dia de vencimento e, se a box tiver bancos cadastrados, o banco dono do cartão. A fatura do cartão sai desse banco; sem banco no cartão, sai do banco padrão da box. A categoria de gasto que recebe a [[fatura]] o app cria sozinho, com o nome do cartão.
 
 Uma box pode ter vários cartões **ativos** ao mesmo tempo. "Desativar" desliga o cartão por completo: para de sincronizar a fatura como lançamento, e some da tela Cartão e do menu Adicionar.
 

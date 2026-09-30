@@ -24,19 +24,27 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   transferência entre bancos da própria box. Elas nascem sob demanda, na primeira
   transferência (`transferirEntreBancos`, `src/db/repo.ts`) e são escondidas de qualquer
   seletor manual por `categoriasTransferenciaIds` (`src/domain/transferencia.ts`).
-- **Banco** — conta bancária **dentro** de uma box, com `nome`, `ordem` e o par
-  `saldoDeclaradoCent`/`dataSaldoDeclarado`. Existe porque a box modela a *pessoa*, e uma
-  pessoa costuma ter várias contas. **O saldo do banco é informado pelo usuário, não
-  calculado**: fora da transferência entre bancos (abaixo), lançamento ainda não aponta
-  para banco — `Lancamento.bancoId` de uso geral é a entrega 2, ainda aberta, do item 12 do
-  backlog (`TODO.md`) — então nada aqui se atualiza sozinho ao lançar (ver a seção de
-  conferência, abaixo). Os dois lançamentos que `transferirEntreBancos` (`src/db/repo.ts`)
-  cria são a exceção: eles carregam `bancoId`, só para amarrar cada perna ao banco certo — o
-  saldo dos dois bancos é escrito à parte, na mesma transação, não derivado do lançamento.
-  Um `Cartao` pode apontar para um banco
-  (`bancoId`, opcional e sem índice); excluir o banco desliga esse vínculo
-  (`excluirBanco`, `src/db/repo.ts`), para não sobrar cartão apontando para banco
-  inexistente.
+- **Banco** — conta bancária **dentro** de uma box, com `nome`, `ordem`, `padrao` (opcional) e o
+  par `saldoDeclaradoCent`/`dataSaldoDeclarado`. Existe porque a box modela a *pessoa*, e uma
+  pessoa costuma ter várias contas. **O saldo mostrado é calculado**: `saldoCalculadoBanco`
+  (`src/domain/bancos.ts`) soma ao último saldo informado o efeito dos lançamentos efetivos do
+  banco com data **depois** da data informada. Lançamento com `bancoId` de banco inexistente, e
+  lançamento sem banco (histórico, ou box sem bancos), não entram na conta de nenhum banco.
+  `Lancamento.bancoId` vale para todo lançamento: manual (`TelaLancar`, `LancEditor`), previsto
+  de recorrência (herda `Recorrencia.bancoId`), fatura de cartão e as duas pernas de uma
+  transferência. Na leitura, uma fatura sem `bancoId` gravado usa o banco do **cartão**
+  (`bancoIdDoLancamento`), nunca o padrão. Um `Cartao` aponta para um banco (`bancoId`,
+  opcional e sem índice); `sincronizarCartoes` (`src/db/repo.ts`) grava o banco do cartão (ou o
+  padrão da box) nas faturas novas e previstas, e nunca nas já pagas.
+  **O banco padrão** (`bancoPadrao`) é o marcado com `padrao`; sem marca, o primeiro por
+  `ordem`. `definirBancoPadrao` (`src/db/repo.ts`) deixa um só marcado por box, mas um backup
+  mesclado pode trazer dois — nesse caso vale o primeiro por `ordem` (**expectativa não
+  garantida**, checada no dossiê). Excluir o banco (`excluirBanco`) apaga o `bancoId` dos
+  cartões, lançamentos e recorrências que apontavam para ele.
+  `transferirEntreBancos` grava as duas pernas com `bancoId` e **não escreve** no saldo
+  informado: o saldo calculado dos dois bancos muda pelas pernas. Uma transferência antiga já
+  tinha ajustado o saldo informado e gravado `dataSaldoDeclarado` igual à data dela; como só
+  contam lançamentos de data posterior, as pernas antigas não contam duas vezes.
 - **Categoria** — rótulo de ganho/gasto dentro de uma box, com `ordem` (posição definida
   pelo usuário em Ajustes) e `arquivada` (fica fora das listas de seleção, mas seu
   histórico continua contando nos agregados). A ordem de exibição não é `ordem` cru: é
