@@ -420,3 +420,32 @@ it('modo Mês: o seletor de mês fica na barra fixa', async () => {
   expect(within(barra).getByRole('button', { name: 'Mês anterior' })).toBeInTheDocument();
   expect(within(barra).getByText('setembro de 2026')).toBeInTheDocument();
 });
+
+it('categoria de fatura com pagamento lançado à mão no mês abre os lançamentos, não a fatura', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box } = await seedBoxComCategoria();
+    const cartao = await repo.salvarCartao({
+      boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
+    }, '2027-12-31');
+    // pagamento antigo, anterior ao cadastro das compras: o valor da barra não é a fatura calculada
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: cartao.categoriaFaturaId, data: '2026-05-29', valor: 83995,
+      status: 'efetivo', nota: 'Pagamento antigo',
+    });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-05-15' });
+
+    render(<TelaAnalises />);
+    await userEvent.click(screen.getByRole('button', { name: /Nubank/ }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Nubank' });
+    expect(within(dialog).getByText('Pagamento antigo')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: /fatura de/ })).not.toBeInTheDocument();
+
+    // o link leva à fatura do mês, que ainda existe (vazia aqui, sem compras)
+    await userEvent.click(within(dialog).getByRole('button', { name: /Ver a fatura de maio de 2026/ }));
+    expect(await screen.findByRole('dialog', { name: `Nubank · fatura de ${nomeDoMes('2026-05')}` })).toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});

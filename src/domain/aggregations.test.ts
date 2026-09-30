@@ -1,5 +1,5 @@
 import type { Cartao, CategoriaCartao, CompraCartao, Dados, Categoria, Lancamento } from './types';
-import { compararMeses, compararPeriodos, lancamentosDaCategoria, mediaMovel3, resumoMensal, resumoPeriodo, serieMensal, serieMensalResumo, frequentes } from './aggregations';
+import { compararMeses, compararPeriodos, lancamentosDaCategoria, faturaExplicaOMes, mediaMovel3, resumoMensal, resumoPeriodo, serieMensal, serieMensalResumo, frequentes } from './aggregations';
 
 const ts = { criadoEm: '2026-01-01T00:00:00Z', alteradoEm: '2026-01-01T00:00:00Z' };
 const cats: Categoria[] = [
@@ -351,4 +351,45 @@ it('compararPeriodos com 12 meses: ano anterior é null (igual ao anterior)', ()
 it('compararPeriodos só traz categoria com algum valor', () => {
   const r = compararPeriodos(['2024-01'], ['be'], cats, lancs, false);
   expect(r).toEqual([]);
+});
+
+describe('faturaExplicaOMes', () => {
+  const fat = (p: Partial<Lancamento> & Pick<Lancamento, 'id' | 'data' | 'valor'>) =>
+    lanc({ categoriaId: 'car', origem: 'cartao', ...p });
+
+  it('lançamento do cartão com o valor da fatura: explica', () => {
+    const ls = [fat({ id: 'f', data: '2026-08-03', valor: 97824 })];
+    expect(faturaExplicaOMes('car', '2026-08', ['be'], ls, true, 97824)).toBe(true);
+  });
+
+  it('valor pago diferente da fatura (compra retroativa, pagamento parcial): não explica', () => {
+    const ls = [fat({ id: 'f', data: '2026-08-03', valor: 17132 })];
+    expect(faturaExplicaOMes('car', '2026-08', ['be'], ls, true, 106581)).toBe(false);
+  });
+
+  it('pagamento lançado à mão (ou antigo) no mês: não explica, mesmo com a soma igual', () => {
+    const ls = [
+      fat({ id: 'f', data: '2026-05-05', valor: 50000 }),
+      fat({ id: 'm', data: '2026-05-29', valor: 50000, origem: 'manual' }),
+    ];
+    expect(faturaExplicaOMes('car', '2026-05', ['be'], ls, true, 100000)).toBe(false);
+  });
+
+  it('mês sem lançamento e fatura zerada: explica; com fatura acima de zero: não explica', () => {
+    expect(faturaExplicaOMes('car', '2024-01', ['be'], lancs, true, 0)).toBe(true);
+    expect(faturaExplicaOMes('car', '2024-01', ['be'], lancs, true, 5000)).toBe(false);
+  });
+
+  it('ignora outra categoria, outro mês, outra box, cenário e previsto sem "incluir previstos"', () => {
+    const ls = [
+      fat({ id: 'f', data: '2026-05-05', valor: 1000 }),
+      lanc({ id: 'a', data: '2026-05-10', valor: 100, categoriaId: 'psi' }),
+      fat({ id: 'b', data: '2026-06-10', valor: 100, origem: 'manual' }),
+      fat({ id: 'c', data: '2026-05-10', valor: 100, boxId: 'outra', origem: 'manual' }),
+      fat({ id: 'd', data: '2026-05-10', valor: 100, status: 'previsto', cenarioId: 'x', origem: 'manual' }),
+      fat({ id: 'e', data: '2026-05-10', valor: 100, status: 'previsto', origem: 'manual' }),
+    ];
+    expect(faturaExplicaOMes('car', '2026-05', ['be'], ls, false, 1000)).toBe(true);
+    expect(faturaExplicaOMes('car', '2026-05', ['be'], ls, true, 1000)).toBe(false); // o previsto 'e' passa a contar
+  });
 });

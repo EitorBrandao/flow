@@ -1,5 +1,5 @@
 import { formatarDataBR, nomeDoMes } from '../domain/dates';
-import { ajustesDoCartao, calcularFaturas, datasFaturaDoMes, resumoPorCategoria } from '../domain/fatura';
+import { ajustesDoCartao, faturaDoMes, resumoPorCategoria } from '../domain/fatura';
 import { classeEfeito, formatarBRL } from '../domain/money';
 import type { AjusteFechamento, Cartao, CategoriaCartao, CompraCartao, ISODate } from '../domain/types';
 import Sheet from './Sheet';
@@ -24,11 +24,7 @@ export default function FaturaCategoriaSheet({
 }: Props) {
   if (!cartao) return null;
   const compras = comprasCartao.filter((c) => c.cartaoId === cartao.id);
-  const ajustes = ajustesDoCartao(ajustesFechamento, cartao.id);
-  const { dataFechamento, dataVencimento } = datasFaturaDoMes(cartao, mes, ajustes);
-  const ate = dataVencimento > horizonteProjecao ? dataVencimento : horizonteProjecao;
-  const fatura = calcularFaturas(cartao, compras, ate, ajustes).find((f) => f.mes === mes)
-    ?? { mes, dataFechamento, dataVencimento, itens: [], totalCent: 0 };
+  const fatura = faturaDoMes(cartao, compras, mes, ajustesDoCartao(ajustesFechamento, cartao.id), horizonteProjecao);
   const resumo = resumoPorCategoria(fatura);
   const nomeCat = (id: string) => categoriasCartao.find((c) => c.id === id)?.nome ?? '?';
   const total = fatura.totalCent;

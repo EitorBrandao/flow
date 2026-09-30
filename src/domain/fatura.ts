@@ -105,6 +105,18 @@ export function calcularFaturas(
   return out;
 }
 
+/** A fatura de um mês ('AAAA-MM' do vencimento), vazia se nenhuma compra cair nela. `compras`
+ *  são só as deste cartão. Calcula até o horizonte ou o vencimento, o que vier depois. */
+export function faturaDoMes(
+  cartao: CicloCartao, compras: CompraCartao[], mes: string,
+  ajustes: ReadonlyMap<string, number>, horizonteProjecao: ISODate,
+): Fatura {
+  const { dataFechamento, dataVencimento } = datasFaturaDoMes(cartao, mes, ajustes);
+  const ate = dataVencimento > horizonteProjecao ? dataVencimento : horizonteProjecao;
+  return calcularFaturas(cartao, compras, ate, ajustes).find((f) => f.mes === mes)
+    ?? { mes, dataFechamento, dataVencimento, itens: [], totalCent: 0 };
+}
+
 /** Subtotal da fatura por categoria de cartão, do maior para o menor. */
 export function resumoPorCategoria(fatura: Fatura): [ID, number][] {
   const porCategoria = new Map<ID, number>();

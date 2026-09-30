@@ -182,7 +182,9 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   nota, sinal ganho/gasto); usa `Sheet`, `CampoData`, `CampoValor`, `SeletorCategoria`.
 - **`LancamentosSheet.tsx`** — sheet somente leitura com os lançamentos de uma categoria no
   mês, agrupados por nota (`lancamentosDaCategoria`); usado no drill-down de Análises. Prop
-  opcional `onVoltar`: "‹ voltar ao período" (`.botao-ver-mais`) no topo.
+  opcional `onVoltar`: "‹ voltar ao período" (`.botao-ver-mais`) no topo. Prop opcional
+  `verFatura` (categoria de fatura cujo valor do mês não é a fatura — pagamento diferente,
+  manual ou antigo): link "Ver a fatura de <mês> (<total>) →" (`.botao-ver-mais`) no fim.
 - **`FaturaCategoriaSheet.tsx`** — sheet somente leitura com o resumo por categoria de uma
   fatura de cartão (drill-down a partir de `FaturaResumo`/`TelaCartao`). Prop opcional
   `onVoltar`: "‹ voltar ao período" (`.botao-ver-mais`) no topo.

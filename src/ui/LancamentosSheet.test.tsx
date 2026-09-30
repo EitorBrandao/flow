@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Lancamento } from '../domain/types';
+import { formatarBRL } from '../domain/money';
 import LancamentosSheet from './LancamentosSheet';
 
 const ts = { criadoEm: '2026-01-01T00:00:00Z', alteradoEm: '2026-01-01T00:00:00Z' };
@@ -166,5 +167,26 @@ describe('LancamentosSheet', () => {
   it('sem onVoltar, não mostra o botão de voltar', () => {
     abrirPix();
     expect(screen.queryByRole('button', { name: /voltar ao período/ })).not.toBeInTheDocument();
+  });
+
+  it('com verFatura, mostra o link com o mês e o total da fatura e chama onAbrir', async () => {
+    const abrir = vi.fn();
+    render(
+      <LancamentosSheet
+        aberto categoriaId="pix" nome="Pix" tipo="gasto" mes="2026-07" boxIds={['be']}
+        lancamentos={[lanc({ id: '1', data: '2026-07-05', valor: 30000, nota: 'Padaria' })]}
+        incluirPrevistos={false} onFechar={() => {}} verFatura={{ totalCent: 106581, onAbrir: abrir }}
+      />,
+    );
+    const link = screen.getByRole('button', { name: /Ver a fatura de julho de 2026/ });
+    expect(link).toHaveTextContent('R$');
+    expect(link.textContent).toContain(formatarBRL(106581));
+    await userEvent.click(link);
+    expect(abrir).toHaveBeenCalledOnce();
+  });
+
+  it('sem verFatura, não mostra o link da fatura', () => {
+    abrirPix();
+    expect(screen.queryByRole('button', { name: /Ver a fatura/ })).not.toBeInTheDocument();
   });
 });
