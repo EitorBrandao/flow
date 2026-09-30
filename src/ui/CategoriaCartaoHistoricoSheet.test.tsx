@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { Cartao, CategoriaCartao, CompraCartao } from '../domain/types';
+import { formatarBRL } from '../domain/money';
 import CategoriaCartaoHistoricoSheet from './CategoriaCartaoHistoricoSheet';
 
 const ts = { criadoEm: '2026-01-01T00:00:00Z', alteradoEm: '2026-01-01T00:00:00Z' };
@@ -71,5 +72,22 @@ describe('CategoriaCartaoHistoricoSheet', () => {
       />,
     );
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('com período: mostra os meses do período, o intervalo e a média por mês', () => {
+    render(
+      <CategoriaCartaoHistoricoSheet
+        aberto cartao={cartao} categoria={mercado} mes="2026-09"
+        periodo={['2026-07', '2026-08', '2026-09']}
+        comprasCartao={[compra('b', '2026-07-10', 60000), compra('c', '2026-08-10', 90000)]}
+        ajustesFechamento={[]} onFechar={() => {}}
+      />,
+    );
+    const dialog = screen.getByRole('dialog', { name: 'Mercado · Cartão Azul' });
+    const rotulos = within(dialog).getAllByText(/^[a-z]{3}\/2026$/).map((e) => e.textContent);
+    expect(rotulos).toEqual(['jul/2026', 'ago/2026', 'set/2026']);
+    expect(within(dialog).getByText('jul/2026 – set/2026, pelo mês da fatura')).toBeInTheDocument();
+    // (0 + 60000 + 90000) / 3 = 50000
+    expect(within(dialog).getByText('média por mês').querySelector('strong')?.textContent).toBe(formatarBRL(50000));
   });
 });

@@ -169,7 +169,9 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   cenários não mexer nas colunas.
 - **`EvolucaoMensalChart.tsx`** — evolução de ganho/gasto/sobra dos últimos 6 meses na aba
   Análises: barras agrupadas + linha de tendência tracejada, via `recharts` carregado sob
-  demanda (`React.lazy`), mesmo padrão do `FluxoChartModal`.
+  demanda (`React.lazy`), mesmo padrão do `FluxoChartModal`. Recebe a série de meses do período;
+  acima de 6 meses, a fileira de sobra vira a linha "sobra do período"; acima de 12, o eixo mostra
+  um mês a cada 3 (`jan/25`).
 - **`AdicionarSheet.tsx`** — sheet do botão flutuante "+": menu com passos (lançamento manual,
   compra no cartão) que troca de tela via `passo`; escolhe o cartão automaticamente quando só
   há um ativo, senão mostra `.pills` pra escolher; renderiza `FormCompra` no passo final.
@@ -179,16 +181,21 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 - **`LancEditor.tsx`** — sheet de edição de um lançamento existente (valor, data, categoria,
   nota, sinal ganho/gasto); usa `Sheet`, `CampoData`, `CampoValor`, `SeletorCategoria`.
 - **`LancamentosSheet.tsx`** — sheet somente leitura com os lançamentos de uma categoria no
-  mês, agrupados por nota (`lancamentosDaCategoria`); usado no drill-down de Análises.
+  mês, agrupados por nota (`lancamentosDaCategoria`); usado no drill-down de Análises. Prop
+  opcional `onVoltar`: "‹ voltar ao período" (`.botao-ver-mais`) no topo.
 - **`FaturaCategoriaSheet.tsx`** — sheet somente leitura com o resumo por categoria de uma
-  fatura de cartão (drill-down a partir de `FaturaResumo`/`TelaCartao`).
+  fatura de cartão (drill-down a partir de `FaturaResumo`/`TelaCartao`). Prop opcional
+  `onVoltar`: "‹ voltar ao período" (`.botao-ver-mais`) no topo.
 - **`CategoriaCartaoHistoricoSheet.tsx`** — sheet somente leitura com uma categoria do cartão
   nos 6 meses de fatura até o mês escolhido, em barras `.composicao-*` (100% = maior mês) e a
-  média; aberto pelo card "Categorias do cartão" de Análises (`totaisCategoriaCartaoPorMes`).
+  média, ou nos meses do período (`periodo`), com "média por mês"; aberto pelo card "Categorias do
+  cartão" de Análises (`totaisCategoriaCartaoPorMes`).
+- **`CategoriaPeriodoSheet.tsx`** — sheet de uma categoria num período de vários meses (Análises): total no cabeçalho, uma barra por mês (`.composicao-*`, 100% = maior mês) e a média por mês; tocar num mês (`role="button"`, Enter/espaço) chama `onAbrirMes`, e a Análises abre o `LancamentosSheet` ou o `FaturaCategoriaSheet` daquele mês com "‹ voltar ao período".
 - **`CategoriasCartaoCard.tsx`** — card "Categorias do cartão" de Análises: tabela no formato
   do Comparativo (mês · mês anterior · ano passado · média 3m) por categoria do cartão, um
   bloco por cartão (subtítulo `.rotulo-grupo` na coluna fixa, só com 2+ cartões); o nome
-  (`.tabela-nome-tocavel`) abre o `CategoriaCartaoHistoricoSheet`.
+  (`.tabela-nome-tocavel`) abre o `CategoriaCartaoHistoricoSheet`. Com `periodo` (2+ meses): período ·
+  anterior · ano anterior (some com 12 meses) · média/mês, e a nota de intervalos no subtítulo.
 - **`ViagemSheet.tsx`** — sheet somente leitura com os lançamentos/compras de uma viagem,
   agrupados (`itensDaViagem`); mesmo padrão visual do `LancamentosSheet`.
 - **`PrimeiroUso.tsx`** — cartão de onboarding renderizado em `TelaHoje` quando o app está sem

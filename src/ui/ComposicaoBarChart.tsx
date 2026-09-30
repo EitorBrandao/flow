@@ -14,9 +14,11 @@ interface Props {
   linhas: LinhaComposicao[];
   base: number;
   onClicarLinha: (chave: string) => void;
+  /** texto quando não há linhas */
+  vazio?: string;
 }
 
-export default function ComposicaoBarChart({ linhas, base, onClicarLinha }: Props) {
+export default function ComposicaoBarChart({ linhas, base, onClicarLinha, vazio = 'Sem movimentos no mês.' }: Props) {
   return (
     <div className="composicao-lista">
       {linhas.map((l) => {
@@ -54,7 +56,7 @@ export default function ComposicaoBarChart({ linhas, base, onClicarLinha }: Prop
           </div>
         );
       })}
-      {linhas.length === 0 && <p className="sub">Sem movimentos no mês.</p>}
+      {linhas.length === 0 && <p className="sub">{vazio}</p>}
     </div>
   );
 }

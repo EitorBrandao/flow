@@ -13,6 +13,8 @@ interface Props {
   lancamentos: Lancamento[];
   incluirPrevistos: boolean;
   onFechar: () => void;
+  /** mostra "‹ voltar ao período" (folha aberta a partir da folha de um período) */
+  onVoltar?: () => void;
 }
 
 function dataFormatada(iso: string): string {
@@ -20,7 +22,7 @@ function dataFormatada(iso: string): string {
 }
 
 export default function LancamentosSheet({
-  aberto, categoriaId, nome, tipo, mes, boxIds, lancamentos, incluirPrevistos, onFechar,
+  aberto, categoriaId, nome, tipo, mes, boxIds, lancamentos, incluirPrevistos, onFechar, onVoltar,
 }: Props) {
   const grupos = categoriaId
     ? lancamentosDaCategoria(mes, categoriaId, boxIds, lancamentos, incluirPrevistos)
@@ -30,6 +32,7 @@ export default function LancamentosSheet({
 
   return (
     <Sheet aberto={aberto} onFechar={onFechar} rotulo={nome}>
+      {onVoltar && <button className="botao-ver-mais" onClick={onVoltar}>‹ voltar ao período</button>}
       <div className="linha" style={{ justifyContent: 'space-between' }}>
         <h2 style={{ margin: 0 }}>{nome}</h2>
         <strong className={classe(total)}>{formatarBRL(total)}</strong>
