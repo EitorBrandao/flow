@@ -44,11 +44,11 @@ Hoje o lançamento comum pertence só à box. O saldo de cada banco é informado
 |---|---|
 | Manual (Lançar) | O banco escolhido. Pré-selecionado: o padrão. |
 | Recorrência (previsto) | `Recorrencia.bancoId`. Sem valor na regra, o previsto fica sem banco. |
-| Fatura de cartão (`origem: 'cartao'`) | `Cartao.bancoId`, ou o padrão da box. |
+| Fatura de cartão (`origem: 'cartao'`) | Previstos e novos: `Cartao.bancoId`, ou o padrão da box. Na leitura, fatura sem `bancoId` gravado usa o banco do cartão. |
 | Transferência | Como hoje: origem e destino. |
-| Cenário | Segue a regra do tipo (manual ou recorrência). |
+| Cenário | Sem banco. Não tem o campo. | |
 
-Só grava banco em lançamento `previsto` ou novo. Lançamento `efetivo` que já existe não muda sozinho. A sincronização de faturas (`sincronizarCartoes`) atualiza o `bancoId` dos previstos e dos novos, e nunca o das faturas já pagas.
+Só grava banco em lançamento `previsto` ou novo. Lançamento `efetivo` que já existe não muda sozinho. A leitura (`bancoIdDoLancamento`) cobre o histórico: fatura sem `bancoId` gravado usa o banco do **cartão** (nunca o padrão). A sincronização de faturas (`sincronizarCartoes`) atualiza o `bancoId` dos previstos e dos novos, e nunca o das faturas já pagas.
 
 ## Saldo calculado do banco
 
@@ -71,6 +71,8 @@ Só grava banco em lançamento `previsto` ou novo. Lançamento `efetivo` que já
 
 `excluirTransferencia` deixa de ter a ressalva "não desfaz o saldo": apagar as pernas já muda o saldo calculado. Só em transferência antiga o saldo informado continua sujeito ao ajuste manual.
 
+A `TransferenciaSheet` passa a avisar só sobre transferências feitas antes desta versão.
+
 ## Telas
 
 Todas usam classes e componentes que já existem (nível 1). Nenhuma classe nova, nenhum token novo.
@@ -83,6 +85,8 @@ Componente novo `SeletorBanco` (em `src/ui/`), fino: `SeletorPills` com rótulo 
 - **Editar lançamento** (`LancEditor.tsx`): mesma posição. Lançamento sem banco abre sem pílula marcada; salvar sem escolher mantém sem banco.
 - **Recorrências** (`ajustes/Recorrencias.tsx`): mesmo campo. Regra sem banco abre com o padrão marcado.
 - **Compra no cartão:** não muda. O banco vem do cartão.
+
+O filtro usa outro componente pequeno, `SeletorFiltroBanco` (`SeletorPills` com Todos, cada banco e Sem banco), compartilhado por Fluxo e Análises.
 
 Parcela de recorrência de cenário e transferência não ganham campo (somente leitura, como hoje).
 
@@ -103,7 +107,7 @@ Parcela de recorrência de cenário e transferência não ganham campo (somente 
 - O filtro só aparece com 2 ou mais bancos. O estado do filtro vive no componente, não no store, e volta a "Todos" ao trocar de box.
 - Um lançamento de transferência aparece nos dois filtros (uma perna em cada).
 
-**Consistência entre telas.** O banco aparece do mesmo jeito onde há lançamento: linha `.sub` com o nome, ou "Sem banco". A lista de lançamentos da sheet `LancamentosSheet` e a `TransferenciaSheet` recebem a mesma linha. A conferência da Hoje não muda: continua comparando o total informado com o total do Flow.
+**Consistência entre telas.** O banco aparece do mesmo jeito onde há lançamento: linha `.sub` com o nome, ou "Sem banco". O nome do banco por item aparece só no Fluxo. `LancamentosSheet` não muda: ele agrupa por nota, e o filtro das Análises já restringe o que ele mostra. A conferência da Hoje não muda: continua comparando o total informado com o total do Flow.
 
 ## Backup
 
@@ -116,7 +120,7 @@ Parcela de recorrência de cenário e transferência não ganham campo (somente 
 
 O plano refaz esta lista por grep. Ponto de partida:
 
-- **Escrita de lançamento:** `salvarLancamento`, `atualizarLancamento`, `materializarRecorrencia`, `sincronizarCartoes`, `transferirEntreBancos`, `converterCenarioEmReal`, e a gravação de itens de cenário em `FormItemCenario` (`gravarItemNovo`).
+- **Escrita de lançamento:** `salvarLancamento`, `atualizarLancamento`, `materializarRecorrencia`, `sincronizarCartoes`, `transferirEntreBancos`, `converterCenarioEmReal` (não muda: cenário fica sem banco).
 - **Exclusão:** `excluirBanco`, `excluirTransferencia`, `excluirLancamento`.
 - **Leitura de saldo por banco:** `Bancos.tsx`, `TelaHoje.tsx` (conferência).
 - **Backup:** `validarBackup`, `mesclar`, importação e restauração.
@@ -137,7 +141,7 @@ O plano refaz esta lista por grep. Ponto de partida:
 
 ## Docs e entrega
 
-- `docs/dominio.md`: `Lancamento.bancoId` de uso geral, banco padrão, saldo calculado e a nova regra da transferência. Sai a frase "entrega 2, ainda aberta".
+- `docs/dominio.md`: `Lancamento.bancoId` de uso geral, banco padrão, saldo calculado e a nova regra da transferência. Sai a frase "entrega 2, ainda aberta". Os dois invariantes novos são `expectativa`.
 - `docs/wiki/`: capítulos de Bancos e de Lançar.
 - `docs/estilo/catalogo.md`: entrada de `SeletorBanco.tsx`.
 - Fragmento em `changelog.d/`, dados sintéticos.
