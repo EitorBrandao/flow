@@ -334,6 +334,18 @@ it('com dois bancos, o primeiro leva o selo padrão e só o outro oferece "Torna
 
   render(<Bancos />);
 
+  const itemUm = screen.getByText('Banco Um').closest('.item') as HTMLElement;
+  const itemDois = screen.getByText('Banco Dois').closest('.item') as HTMLElement;
+
+  // Afirma que o Banco Um (primeiro) tem o selo
+  expect(within(itemUm).getByText('padrão')).toBeInTheDocument();
+  expect(within(itemDois).queryByText('padrão')).not.toBeInTheDocument();
+
+  // Afirma que apenas o Banco Dois (não-padrão) oferece o botão
+  expect(within(itemDois).getByRole('button', { name: 'Tornar padrão' })).toBeInTheDocument();
+  expect(within(itemUm).queryByRole('button', { name: 'Tornar padrão' })).not.toBeInTheDocument();
+
+  // Contagem global
   expect(await screen.findAllByText('padrão')).toHaveLength(1);
   expect(screen.getAllByRole('button', { name: 'Tornar padrão' })).toHaveLength(1);
 });
@@ -382,11 +394,68 @@ it('mostra o saldo calculado: o informado mais o movimento depois da data inform
   render(<Bancos />);
 
   // 100000 - 2000 = 98000
-  // O formatarSaldo pode conter espaço não-quebrável, então normalizamos na comparação.
   const saldoCalculado = formatarSaldo(98000).replace(/\s/g, ' ');
   const saldoDeclVelho = formatarSaldo(100000).replace(/\s/g, ' ');
-  const item = await screen.findByText(/Banco Um/);
-  const sub = item.closest('.item')?.querySelector('.sub');
-  expect(sub?.textContent?.replace(/\s/g, ' ')).toContain(saldoCalculado);
+
+  // Procura o saldo calculado (98000) no elemento do saldo, normalizando espaços
+  const itemUm = screen.getByText('Banco Um').closest('.item') as HTMLElement;
+  const sub = itemUm.querySelector('.sub') as HTMLElement;
+  expect(await within(itemUm).findByText((content) => content.replace(/\s/g, ' ') === saldoCalculado)).toBeInTheDocument();
+
+  // Afirma que o texto "informado em 01/08/2026" está na mesma linha
+  expect(sub.textContent).toContain('informado em 01/08/2026');
+
+  // Afirma que o saldo declarado antigo (100000) não está no documento
   expect(screen.queryByText((content) => content.replace(/\s/g, ' ') === saldoDeclVelho)).not.toBeInTheDocument();
+});
+
+it('visão "casa" mostra exatamente um selo padrão quando há bancos em múltiplas boxes', async () => {
+  const agora = agoraISO();
+  // Cria box "casa"
+  const casa = {
+    id: 'zzz-casa', nome: 'casa', saldoInicial: null, dataSaldoInicial: null,
+    criadoEm: agora, alteradoEm: agora,
+  };
+  // Cria box A com dois bancos
+  const boxA = {
+    id: 'aaa-boxA', nome: 'Box A', saldoInicial: 0, dataSaldoInicial: '2026-01-01',
+    criadoEm: agora, alteradoEm: agora,
+  };
+  // Cria box B com um banco
+  const boxB = {
+    id: 'bbb-boxB', nome: 'Box B', saldoInicial: 0, dataSaldoInicial: '2026-01-01',
+    criadoEm: agora, alteradoEm: agora,
+  };
+  await repo.salvarBox(casa);
+  await repo.salvarBox(boxA);
+  await repo.salvarBox(boxB);
+
+  // Dois bancos em box A
+  await repo.salvarBanco({ boxId: boxA.id, nome: 'Banco A1', ordem: 0 });
+  await repo.salvarBanco({ boxId: boxA.id, nome: 'Banco A2', ordem: 1 });
+
+  // Um banco em box B
+  await repo.salvarBanco({ boxId: boxB.id, nome: 'Banco B1', ordem: 0 });
+
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: 'casa', hoje: '2026-08-05' });
+
+  render(<Bancos />);
+
+  // Espera exatamente UM selo "padrão" (o primeiro banco de box A, por ordem)
+  expect(await screen.findAllByText('padrão')).toHaveLength(1);
+
+  // O banco único de box B não deve ter selo nem botão
+  const itemB1 = screen.getByText('Banco B1').closest('.item') as HTMLElement;
+  expect(within(itemB1).queryByText('padrão')).not.toBeInTheDocument();
+  expect(within(itemB1).queryByRole('button', { name: 'Tornar padrão' })).not.toBeInTheDocument();
+
+  // O primeiro banco de box A tem o selo
+  const itemA1 = screen.getByText('Banco A1').closest('.item') as HTMLElement;
+  expect(within(itemA1).getByText('padrão')).toBeInTheDocument();
+
+  // O segundo banco de box A tem o botão, mas não o selo
+  const itemA2 = screen.getByText('Banco A2').closest('.item') as HTMLElement;
+  expect(within(itemA2).queryByText('padrão')).not.toBeInTheDocument();
+  expect(within(itemA2).getByRole('button', { name: 'Tornar padrão' })).toBeInTheDocument();
 });
