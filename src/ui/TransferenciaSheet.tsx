@@ -7,14 +7,14 @@ import Sheet from './Sheet';
 
 /** Sheet somente leitura com o detalhe de uma transferência entre bancos (nota já traz
  *  "banco origem → banco destino", gravada por `repo.transferirEntreBancos`). Excluir apaga
- *  as duas pernas juntas, mas não reverte o saldo declarado dos bancos — aviso explícito
- *  aqui, correção manual em Ajustes → Bancos se precisar. */
+ *  as duas pernas juntas. Só em transferência feita antes do banco no lançamento o saldo
+ *  informado dos bancos já tinha sido ajustado e não volta sozinho — daí o aviso. */
 export default function TransferenciaSheet({ lanc, onFechar }: { lanc: Lancamento; onFechar: () => void }) {
   const { recarregar } = useApp();
 
   async function excluir() {
     if (!lanc.transferenciaId) return;
-    if (!window.confirm('Excluir esta transferência? Isso não desfaz o ajuste de saldo nos bancos.')) return;
+    if (!window.confirm('Excluir esta transferência? Os dois lançamentos serão apagados.')) return;
     await repo.excluirTransferencia(lanc.transferenciaId);
     await recarregar();
     onFechar();
@@ -37,8 +37,9 @@ export default function TransferenciaSheet({ lanc, onFechar }: { lanc: Lancament
         </div>
       </div>
       <p className="aviso" style={{ marginTop: 14 }}>
-        Excluir apaga os dois lançamentos, mas não desfaz o ajuste de saldo nos bancos —
-        corrija em Ajustes → Bancos se precisar.
+        Excluir apaga os dois lançamentos. Numa transferência feita antes desta versão, o saldo
+        informado dos bancos já tinha sido ajustado e não volta sozinho — corrija em Ajustes → Bancos
+        se precisar.
       </p>
       <button className="botao botao-perigo" style={{ marginTop: 14, width: '100%' }} onClick={excluir}>
         Excluir transferência

@@ -15,6 +15,14 @@ aparece aqui: o `docs/dominio.md` diz que o código não o promete.
 | backup dá a volta | garantido | depois da volta do backup | passa | — |
 | backup dá a volta | garantido | com o cenário ligado | passa | — |
 | backup dá a volta | garantido | fim do roteiro | passa | — |
+| banco do lançamento existe | expectativa | antes do primeiro fechamento | passa | — |
+| banco do lançamento existe | expectativa | entre fechamento e vencimento | passa | — |
+| banco do lançamento existe | expectativa | depois do primeiro vencimento | passa | — |
+| banco do lançamento existe | expectativa | depois do pagamento parcial | passa | — |
+| banco do lançamento existe | expectativa | no meio da viagem | passa | — |
+| banco do lançamento existe | expectativa | depois da volta do backup | passa | — |
+| banco do lançamento existe | expectativa | com o cenário ligado | passa | — |
+| banco do lançamento existe | expectativa | fim do roteiro | passa | — |
 | categoria de fatura fica escondida | garantido | antes do primeiro fechamento | passa | — |
 | categoria de fatura fica escondida | garantido | entre fechamento e vencimento | passa | — |
 | categoria de fatura fica escondida | garantido | depois do primeiro vencimento | passa | — |
@@ -93,6 +101,14 @@ aparece aqui: o `docs/dominio.md` diz que o código não o promete.
 | nenhuma tela lança | garantido | depois da volta do backup | passa | — |
 | nenhuma tela lança | garantido | com o cenário ligado | passa | — |
 | nenhuma tela lança | garantido | fim do roteiro | passa | — |
+| no máximo um banco padrão por box | expectativa | antes do primeiro fechamento | passa | — |
+| no máximo um banco padrão por box | expectativa | entre fechamento e vencimento | passa | — |
+| no máximo um banco padrão por box | expectativa | depois do primeiro vencimento | passa | — |
+| no máximo um banco padrão por box | expectativa | depois do pagamento parcial | passa | — |
+| no máximo um banco padrão por box | expectativa | no meio da viagem | passa | — |
+| no máximo um banco padrão por box | expectativa | depois da volta do backup | passa | — |
+| no máximo um banco padrão por box | expectativa | com o cenário ligado | passa | — |
+| no máximo um banco padrão por box | expectativa | fim do roteiro | passa | — |
 | projeção acumula | garantido | antes do primeiro fechamento | passa | — |
 | projeção acumula | garantido | entre fechamento e vencimento | passa | — |
 | projeção acumula | garantido | depois do primeiro vencimento | passa | — |

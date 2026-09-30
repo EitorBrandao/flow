@@ -5,11 +5,13 @@ import { categoriasFaturaIds } from '../../domain/fatura';
 import { categoriasTransferenciaIds } from '../../domain/transferencia';
 import { formatarDataBR } from '../../domain/dates';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../../domain/money';
+import { bancoPadrao, bancosDaBox } from '../../domain/bancos';
 import type { TipoCategoria } from '../../domain/types';
 import { boxIdEfetivo, useApp } from '../../state/store';
 import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 import SeletorCategoria from '../SeletorCategoria';
+import SeletorBanco from '../SeletorBanco';
 import SeletorPills, { OPCOES_TIPO } from '../SeletorPills';
 
 interface CamposRecorrenciaInicial {
@@ -19,6 +21,7 @@ interface CamposRecorrenciaInicial {
   dataInicio: string;
   diaDoMes: string;
   parcelas: string;
+  bancoId: string | null;
 }
 interface CamposRecorrenciaSalvos {
   categoriaId: string;
@@ -26,14 +29,17 @@ interface CamposRecorrenciaSalvos {
   dataInicio: string;
   diaDoMes: number;
   parcelas: number | null;
+  bancoId?: string;
 }
 
 /** Campos de uma recorrência, usados para criar (no topo) e para editar (dentro do item). */
-function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
+function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar, usarPadrao = true }: {
   inicial: CamposRecorrenciaInicial;
   rotuloSalvar: 'Criar' | 'Salvar';
   onSalvo: (campos: CamposRecorrenciaSalvos) => Promise<void>;
   onCancelar?: () => void;
+  /** Na criação, usa o banco padrão se não escolhido. Na edição, banco padrão só se houver. */
+  usarPadrao?: boolean;
 }) {
   const { dados, boxSel } = useApp();
   const [tipo, setTipo] = useState<TipoCategoria>(inicial.tipo);
@@ -43,9 +49,15 @@ function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
   const [diaDoMes, setDiaDoMes] = useState(inicial.diaDoMes);
   const [parcelas, setParcelas] = useState(inicial.parcelas);
   const [aviso, setAviso] = useState('');
+  // `null` = "o banco padrão da box"; só vira ID quando a pessoa escolhe outro.
+  const [bancoEscolhido, setBancoEscolhido] = useState<string | null>(inicial.bancoId);
   const uid = useId();
 
   const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+  const bancos = dados && boxId ? bancosDaBox(dados.bancos, [boxId]) : [];
+  const bancoId = usarPadrao
+    ? (bancoEscolhido ?? (dados && boxId ? bancoPadrao(dados.bancos, boxId)?.id : undefined))
+    : bancoEscolhido;
   const ocultas = dados
     ? new Set([...categoriasFaturaIds(dados.cartoes), ...categoriasTransferenciaIds(dados.boxes)])
     : new Set<string>();
@@ -72,7 +84,10 @@ function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
     setAviso('');
     const diaDoMesNum = Math.min(31, Math.max(1, Number(diaDoMes) || 1));
     const parcelasNum = parcelas ? Number(parcelas) : null;
-    await onSalvo({ categoriaId, valor, dataInicio, diaDoMes: diaDoMesNum, parcelas: parcelasNum });
+    await onSalvo({
+      categoriaId, valor, dataInicio, diaDoMes: diaDoMesNum, parcelas: parcelasNum,
+      ...(bancoId ? { bancoId } : {}),
+    });
   }
 
   return (
@@ -91,6 +106,7 @@ function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
         <label>Categoria</label>
         <SeletorCategoria categorias={categoriasDaBox} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
       </div>
+      <SeletorBanco bancos={bancos} selecionadaId={bancoId ?? null} onSelecionar={setBancoEscolhido} />
       <div className="form-linha">
         <div className="campo">
           <label htmlFor={`${uid}-inicio`}>Início</label>
@@ -196,7 +212,7 @@ export default function Recorrencias() {
           <h2>Nova recorrência</h2>
           <FormRecorrencia
             key={`${boxId}-${versaoNova}`}
-            inicial={{ ...ultimosCampos, valor: 0, parcelas: '' }}
+            inicial={{ ...ultimosCampos, valor: 0, parcelas: '', bancoId: null }}
             rotuloSalvar="Criar" onSalvo={criar}
           />
         </>
@@ -211,8 +227,10 @@ export default function Recorrencias() {
                 inicial={{
                   tipo: tipoCat(r.categoriaId) ?? 'gasto', valor: r.valor, categoriaId: r.categoriaId,
                   dataInicio: r.dataInicio, diaDoMes: String(r.diaDoMes), parcelas: r.parcelas != null ? String(r.parcelas) : '',
+                  bancoId: r.bancoId ?? null,
                 }}
                 rotuloSalvar="Salvar"
+                usarPadrao={false}
                 onSalvo={(campos) => atualizar(r.id, campos)} onCancelar={() => setEditandoId(null)}
               />
             </div>

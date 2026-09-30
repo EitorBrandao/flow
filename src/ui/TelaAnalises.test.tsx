@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import * as repo from '../db/repo';
@@ -448,4 +448,66 @@ it('categoria de fatura com pagamento lançado à mão no mês abre os lançamen
     await userEvent.click(within(dialog).getByRole('button', { name: /Ver a fatura de maio de 2026/ }));
     expect(await screen.findByRole('dialog', { name: `Nubank · fatura de ${nomeDoMes('2026-05')}` })).toBeInTheDocument();
   } finally { vi.useRealTimers(); }
+});
+
+it('com dois bancos, o filtro por banco restringe as categorias do resumo', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const mercado = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  const lazer = await repo.salvarCategoria({ boxId: box.id, nome: 'lazer', tipo: 'gasto', ordem: 1 });
+  const um = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+  const dois = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: mercado.id, data: '2026-07-10', valor: 4290, status: 'efetivo', bancoId: um.id,
+  });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: lazer.id, data: '2026-07-11', valor: 1800, status: 'efetivo', bancoId: dois.id,
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+
+  render(<TelaAnalises />);
+  expect((await screen.findAllByText('mercado')).length).toBeGreaterThan(0);
+  expect(screen.getAllByText('lazer').length).toBeGreaterThan(0);
+
+  await userEvent.click(screen.getByRole('radio', { name: 'Banco Dois' }));
+
+  await waitFor(() => {
+    expect(screen.queryByText('mercado')).not.toBeInTheDocument();
+  });
+  expect(screen.getAllByText('lazer').length).toBeGreaterThan(0);
+});
+
+it('filtro por banco reseta ao trocar de box nas Análises', async () => {
+  const agora = agoraISO();
+  const boxA = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(boxA);
+  const catA = await repo.salvarCategoria({ boxId: boxA.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  const umA = await repo.salvarBanco({ boxId: boxA.id, nome: 'Banco Um', ordem: 0 });
+  await repo.salvarBanco({ boxId: boxA.id, nome: 'Banco Dois', ordem: 1 });
+  await repo.salvarLancamento({ boxId: boxA.id, categoriaId: catA.id, data: '2026-07-10', valor: 4290, status: 'efetivo', bancoId: umA.id });
+
+  const boxB = { id: novoId(), nome: 'outra', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(boxB);
+  const catB = await repo.salvarCategoria({ boxId: boxB.id, nome: 'lazer', tipo: 'gasto', ordem: 0 });
+  await repo.salvarBanco({ boxId: boxB.id, nome: 'Banco Um', ordem: 0 });
+  const doisB = await repo.salvarBanco({ boxId: boxB.id, nome: 'Banco Dois', ordem: 1 });
+  await repo.salvarLancamento({ boxId: boxB.id, categoriaId: catB.id, data: '2026-07-11', valor: 1800, status: 'efetivo', bancoId: doisB.id });
+
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: boxA.id, hoje: '2026-07-15' });
+
+  render(<TelaAnalises />);
+
+  // Na box A, selecionar "Banco Dois"
+  await userEvent.click(await screen.findByRole('radio', { name: 'Banco Dois' }));
+  expect(screen.getByRole('radio', { name: 'Banco Dois' })).toHaveAttribute('aria-checked', 'true');
+
+  // Trocar para box B
+  act(() => useApp.setState({ boxSel: boxB.id }));
+
+  // Na box B, o filtro deve ter resetado para "Todos"
+  expect(screen.getByRole('radio', { name: 'Todos' })).toHaveAttribute('aria-checked', 'true');
+  expect(screen.queryByRole('radio', { name: 'Banco Dois' })).not.toHaveAttribute('aria-checked', 'true');
 });

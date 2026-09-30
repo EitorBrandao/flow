@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Maximize2, Search } from 'lucide-react';
 import { addDias, formatarDataBR } from '../domain/dates';
+import { bancosDaBox, lancamentoNoFiltro, nomeBancoDoLancamento, type FiltroBanco } from '../domain/bancos';
 import { ajustesDoCartao, calcularFaturas, type Fatura } from '../domain/fatura';
 import { classeEfeito, efeitoNoSaldo, formatarBRL, formatarSaldo } from '../domain/money';
 import { projetarBoxes } from '../domain/projection';
@@ -10,6 +11,7 @@ import BalanceChart from './BalanceChart';
 import CampoData from './CampoData';
 import FaturaResumo from './FaturaResumo';
 import LancEditor from './LancEditor';
+import SeletorFiltroBanco from './SeletorFiltroBanco';
 import SimuladorFluxo from './SimuladorFluxo';
 import TransferenciaSheet from './TransferenciaSheet';
 
@@ -42,6 +44,10 @@ export default function TelaFluxo() {
     if (fluxoAba) limparFluxoAba();
   }, [fluxoAba, limparFluxoAba]);
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
+  const [filtroBanco, setFiltroBanco] = useState<FiltroBanco>('todos');
+  useEffect(() => {
+    setFiltroBanco('todos');
+  }, [boxSel]);
   const ids = dados ? boxIdsSelecionadas(dados, boxSel) : [];
   const ligados = dados ? cenariosLigados(dados) : new Set<string>();
 
@@ -56,6 +62,7 @@ export default function TelaFluxo() {
   if (!dados) return null;
 
   const inicioLista = addDias(hoje, -diasAtras);
+  const bancosSel = bancosDaBox(dados.bancos, ids);
   const nomeCat = (id: string) => dados.categorias.find((c) => c.id === id)?.nome ?? '?';
   const tipoCat = (id: string) => dados.categorias.find((c) => c.id === id)?.tipo ?? 'gasto';
   const nomeCatCartao = (id: string) => dados.categoriasCartao.find((c) => c.id === id)?.nome ?? '?';
@@ -100,6 +107,7 @@ export default function TelaFluxo() {
   const porDia = new Map<string, Lancamento[]>();
   for (const l of dados.lancamentos) {
     if (!ids.includes(l.boxId)) continue;
+    if (!lancamentoNoFiltro(l, filtroBanco, dados.cartoes, dados.bancos)) continue;
     if (l.cenarioId && !ligados.has(l.cenarioId)) continue;
     if (dataAtiva) {
       if (l.data < dataDeFiltro || l.data > dataAteFiltro) continue;
@@ -158,6 +166,10 @@ export default function TelaFluxo() {
 
       {abaFluxo === 'lista' && (
         <>
+          <SeletorFiltroBanco bancos={bancosSel} valor={filtroBanco} onMudar={setFiltroBanco} />
+          {filtroBanco !== 'todos' && (
+            <p className="sub">O filtro vale só para a lista: o saldo de cada dia continua sendo o da box inteira.</p>
+          )}
           <div className="linha" style={{ justifyContent: 'space-between' }}>
             <span className="sub">{dataAtiva ? 'Filtro por data ativo' : `Mostrando desde ${dataBonita(inicioLista)}`}</span>
             <button
@@ -251,6 +263,7 @@ export default function TelaFluxo() {
                         {l.status === 'previsto' && <span className="badge" style={{ marginLeft: 6 }}>{l.cenarioId ? 'cenário' : 'previsto'}</span>}
                         {l.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
                         {l.nota && <div className="sub">{l.nota}</div>}
+                        {bancosSel.length >= 2 && <div className="sub">{nomeBancoDoLancamento(l, dados)}</div>}
                       </div>
                       <span className={classeEfeito(efeitoNoSaldo(l.valor, tipoCat(l.categoriaId)))}>
                         {formatarBRL(l.valor)}

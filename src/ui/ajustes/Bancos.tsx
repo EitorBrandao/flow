@@ -1,7 +1,7 @@
 import { Pencil } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import * as repo from '../../db/repo';
-import { bancosDaBox } from '../../domain/bancos';
+import { bancoPadrao, bancosDaBox, saldoCalculadoBanco } from '../../domain/bancos';
 import { proximaOrdem } from '../../domain/categorias';
 import { formatarDataBR } from '../../domain/dates';
 import { classeSaldo, formatarSaldo } from '../../domain/money';
@@ -71,6 +71,7 @@ export default function Bancos() {
     }
     const ordem = proximaOrdem(bancos.filter((b) => b.boxId === boxIdCriacao));
     await repo.salvarBanco({ boxId: boxIdCriacao!, nome: nomeNovo.trim(), ordem });
+    await repo.sincronizarCartoes(dados!.config.horizonteProjecao);
     await recarregar();
     setNomeNovo('');
     setAvisoCriacao('');
@@ -109,8 +110,15 @@ export default function Bancos() {
   }
 
   async function excluir(id: string) {
-    if (!window.confirm('Excluir este banco? Os cartões vinculados a ele perdem a vinculação, sem apagar nada.')) return;
+    if (!window.confirm('Excluir este banco? Os cartões, os lançamentos e as recorrências dele ficam sem banco. Nada é apagado.')) return;
     await repo.excluirBanco(id);
+    await repo.sincronizarCartoes(dados!.config.horizonteProjecao);
+    await recarregar();
+  }
+
+  async function tornarPadrao(id: string) {
+    await repo.definirBancoPadrao(id);
+    await repo.sincronizarCartoes(dados!.config.horizonteProjecao);
     await recarregar();
   }
 
@@ -139,8 +147,12 @@ export default function Bancos() {
       <div className="lista">
         {bancos.map((b) => {
           const emEdicao = editandoId === b.id;
+          const bancosDaMesmaBox = bancos.filter((x) => x.boxId === b.boxId);
+          const temPadrao = bancosDaMesmaBox.length >= 2;
+          const ehPadrao = temPadrao && bancoPadrao(dados.bancos, b.boxId)?.id === b.id;
+          const saldo = saldoCalculadoBanco(b, dados);
           return (
-            <div className={`item${emEdicao ? ' item-coluna' : ''}`} key={b.id}>
+            <div className="item item-coluna" key={b.id}>
               {emEdicao ? (
                 <>
                   <div className="form-linha">
@@ -197,20 +209,28 @@ export default function Bancos() {
                 </>
               ) : (
                 <>
-                  <div className="cresce">
-                    {b.nome}
-                    <div className="sub">
-                      {b.saldoDeclaradoCent != null ? (
-                        <>
-                          <span className={classeSaldo(b.saldoDeclaradoCent)}>{formatarSaldo(b.saldoDeclaradoCent)}</span>
-                          {` informado em ${formatarDataBR(b.dataSaldoDeclarado!)}`}
-                        </>
-                      ) : 'saldo ainda não informado'}
-                      {' · '}{textoContagemCartoes(cartoesDoBanco(b.id))}
+                  <div className="linha-topo">
+                    <div className="cresce">
+                      {b.nome}
+                      {ehPadrao && <span className="badge" style={{ marginLeft: 6 }}>padrão</span>}
+                      <div className="sub">
+                        {saldo != null ? (
+                          <>
+                            <span className={classeSaldo(saldo)}>{formatarSaldo(saldo)}</span>
+                            {` calculado a partir do saldo informado em ${formatarDataBR(b.dataSaldoDeclarado!)}`}
+                          </>
+                        ) : 'saldo ainda não informado'}
+                        {' · '}{textoContagemCartoes(cartoesDoBanco(b.id))}
+                      </div>
                     </div>
+                    <button className="botao" aria-label="Editar" onClick={() => editar(b.id)}><Pencil size={16} /></button>
                   </div>
-                  <button className="botao" aria-label="Editar" onClick={() => editar(b.id)}><Pencil size={16} /></button>
-                  <button className="botao botao-perigo" onClick={() => excluir(b.id)}>Excluir</button>
+                  <div className="acoes">
+                    {temPadrao && !ehPadrao && (
+                      <button className="botao" onClick={() => tornarPadrao(b.id)}>Tornar padrão</button>
+                    )}
+                    <button className="botao botao-perigo" onClick={() => excluir(b.id)}>Excluir</button>
+                  </div>
                 </>
               )}
             </div>
@@ -224,6 +244,13 @@ export default function Bancos() {
           </p>
         )}
       </div>
+      {bancos.length > 0 && (
+        <p className="sub">
+          O saldo mostrado é o último saldo informado mais os lançamentos do banco depois dessa data.
+          Informar um novo valor, na tela Hoje, recomeça a conta. Lançamento sem banco não entra na conta
+          de nenhum banco.
+        </p>
+      )}
     </div>
   );
 }

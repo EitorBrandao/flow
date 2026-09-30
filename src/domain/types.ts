@@ -21,14 +21,17 @@ export interface Box extends Entidade {
   categoriaTransferenciaEntradaId?: ID; // categoria oculta "Transferência" (ganho), criada sob demanda
 }
 
-/** Conta bancária dentro de uma box. Nesta entrega o saldo é informado pelo usuário, não
- *  calculado: lançamento ainda não aponta para banco (ver a spec, entrega 2). */
+/** Conta bancária dentro de uma box. O saldo mostrado é calculado: o último saldo informado
+ *  mais os lançamentos do banco depois da data informada (`saldoCalculadoBanco`,
+ *  `domain/bancos.ts`). `padrao` marca o banco pré-selecionado nos lançamentos novos; sem
+ *  nenhum marcado, vale o primeiro por `ordem` (`bancoPadrao`). */
 export interface Banco extends Entidade {
   boxId: ID;
   nome: string;
   ordem: number;
   saldoDeclaradoCent: number | null;
   dataSaldoDeclarado: ISODate | null;
+  padrao?: boolean;
 }
 
 export interface Categoria extends Entidade {
@@ -52,7 +55,7 @@ export interface Lancamento extends Entidade {
   cartaoId?: ID;     // lançamento de fatura: cartão dono
   faturaMes?: string; // 'AAAA-MM' do vencimento — chave estável da fatura
   viagemId?: ID; // lançamento marcado como gasto de uma viagem
-  bancoId?: ID;          // qual banco esta perna afeta (só em lançamentos de transferência)
+  bancoId?: ID;          // banco do lançamento; sem valor = "sem banco" (histórico, ou box sem bancos)
   transferenciaId?: ID;  // liga as duas pernas do mesmo movimento
 }
 
@@ -67,6 +70,7 @@ export interface Recorrencia extends Entidade {
   ativa: boolean;
   origem: 'manual';
   cenarioId?: ID;
+  bancoId?: ID; // banco dos previstos que a regra gera; sem valor = previstos sem banco
 }
 
 export interface Cartao extends Entidade {

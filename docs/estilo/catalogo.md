@@ -141,6 +141,15 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   da sobra da fatura) — a box em si não tem mais seletor próprio nessas telas: todas as telas de
   Ajustes seguem a box selecionada no chip do topo (`boxIdEfetivo`, `state/store.ts`),
   reforçando a sensação de "perfil" (ver `docs/superpowers/specs/`).
+- **`SeletorBanco.tsx`** — pílulas (`SeletorPills`) para escolher o banco de um lançamento ou de
+  uma recorrência. Props `bancos`, `selecionadaId` (`null` = nenhum marcado, lançamento antigo sem
+  banco) e `onSelecionar`. Devolve `null` com menos de dois bancos: o campo some. O banco padrão
+  vem marcado por quem usa (`bancoPadrao`, `domain/bancos.ts`). Usado em `TelaLancar.tsx`,
+  `LancEditor.tsx` e `ajustes/Recorrencias.tsx`.
+- **`SeletorFiltroBanco.tsx`** — filtro por banco: pílulas (`SeletorPills`) "Todos", cada banco da
+  box e "Sem banco". Props `bancos`, `valor` (`FiltroBanco`, de `domain/bancos.ts`) e `onMudar`.
+  Devolve `null` com menos de dois bancos. Usado no `TelaFluxo.tsx` (só a lista; o saldo do dia
+  segue o da box inteira) e no `TelaAnalises.tsx` (filtra os agregados por `dadosDoBanco`).
 - **`LinhaOrcamentoViagem.tsx`** — linha do orçamento de viagem, "R$ X de R$ Y · falta R$ Z"
   (verde, `strong.valor-ganho`) ou "· passou R$ Z" (vermelho, `strong.valor-gasto`, com o
   `TriangleAlert` dentro do valor). Prop `comEsteGasto` põe o prefixo "Com este gasto: ". Usada
@@ -179,7 +188,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   parcelas já pagas, descrição, viagem, nota fiscal anexada). Usado por `AdicionarSheet`
   (nova) e `TelaCartao` (edição).
 - **`LancEditor.tsx`** — sheet de edição de um lançamento existente (valor, data, categoria,
-  nota, sinal ganho/gasto); usa `Sheet`, `CampoData`, `CampoValor`, `SeletorCategoria`.
+  banco, nota, sinal ganho/gasto); usa `Sheet`, `CampoData`, `CampoValor`, `SeletorCategoria`; o campo Banco (`SeletorBanco`) não aparece para fatura, transferência, previsto de recorrência nem cenário.
 - **`LancamentosSheet.tsx`** — sheet somente leitura com os lançamentos de uma categoria no
   mês, agrupados por nota (`lancamentosDaCategoria`); usado no drill-down de Análises. Prop
   opcional `onVoltar`: "‹ voltar ao período" (`.botao-ver-mais`) no topo. Prop opcional

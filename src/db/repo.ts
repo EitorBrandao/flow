@@ -1,4 +1,5 @@
 import { compararCategorias, compararCategoriasCartao, proximaOrdem } from '../domain/categorias';
+import { bancoIdDoCartao } from '../domain/bancos';
 import { hojeISO } from '../domain/dates';
 import {
   ajustesDoCartao, calcularFaturas, datasFaturaDoMes, dedupAjustesFechamento, dedupConferencias,
@@ -76,7 +77,7 @@ export async function carregarTudo(): Promise<Dados> {
 
 export interface NovoLancamento {
   boxId: ID; categoriaId: ID; data: ISODate; valor: number;
-  nota?: string; status: StatusLancamento; cenarioId?: ID; viagemId?: ID;
+  nota?: string; status: StatusLancamento; cenarioId?: ID; viagemId?: ID; bancoId?: ID;
 }
 
 export async function salvarLancamento(n: NovoLancamento): Promise<Lancamento> {
@@ -92,7 +93,7 @@ export async function salvarLancamento(n: NovoLancamento): Promise<Lancamento> {
 
 export async function atualizarLancamento(
   id: ID,
-  patch: Partial<Pick<Lancamento, 'valor' | 'data' | 'nota' | 'categoriaId' | 'status' | 'viagemId'>>,
+  patch: Partial<Pick<Lancamento, 'valor' | 'data' | 'nota' | 'categoriaId' | 'status' | 'viagemId' | 'bancoId'>>,
 ): Promise<void> {
   await db.transaction('rw', db.lancamentos, db.config, async () => {
     if (patch.status === 'efetivo') {
@@ -160,9 +161,10 @@ async function materializarRecorrencia(rec: Recorrencia, horizonte: ISODate): Pr
     ...(rec.nota ? { nota: rec.nota } : {}),
     status: 'previsto', origem: 'recorrencia', recorrenciaId: rec.id,
     ...(rec.cenarioId ? { cenarioId: rec.cenarioId } : {}),
+    ...(rec.bancoId ? { bancoId: rec.bancoId } : {}),
     criadoEm: agora, alteradoEm: agora,
   })));
-  // previstos remanescentes acompanham a regra atual (valor/categoria/nota); efetivos são história
+  // previstos remanescentes acompanham a regra atual (valor/categoria/nota/banco); efetivos são história
   await db.lancamentos.where('recorrenciaId').equals(rec.id)
     .filter((l) => l.status === 'previsto')
     .modify((l) => {
@@ -170,13 +172,15 @@ async function materializarRecorrencia(rec: Recorrencia, horizonte: ISODate): Pr
       l.categoriaId = rec.categoriaId;
       if (rec.nota) l.nota = rec.nota;
       else delete l.nota;
+      if (rec.bancoId) l.bancoId = rec.bancoId;
+      else delete l.bancoId;
       l.alteradoEm = agora;
     });
 }
 
 export interface NovaRecorrencia {
   boxId: ID; categoriaId: ID; valor: number; dataInicio: ISODate;
-  diaDoMes: number; parcelas: number | null; nota?: string; cenarioId?: ID;
+  diaDoMes: number; parcelas: number | null; nota?: string; cenarioId?: ID; bancoId?: ID;
 }
 
 export async function salvarRecorrencia(
@@ -361,17 +365,44 @@ export async function atualizarBanco(
   });
 }
 
-/** Excluir um banco desliga os cartões que apontavam para ele. Cartão apontando para
- *  banco inexistente é inconsistência silenciosa — o mesmo cuidado que
- *  `converterCenarioEmReal` toma com as recorrências. */
-export async function excluirBanco(id: ID): Promise<void> {
-  await db.transaction('rw', db.bancos, db.cartoes, db.config, async () => {
+/** Marca o banco como padrão da box dele e desmarca os outros da mesma box, numa transação só.
+ *  Sem nenhuma marca, o padrão é o primeiro por `ordem` (`bancoPadrao`, `domain/bancos.ts`). */
+export async function definirBancoPadrao(id: ID): Promise<void> {
+  await db.transaction('rw', db.bancos, db.config, async () => {
+    const alvo = await db.bancos.get(id);
+    if (!alvo) throw new Error('Banco não encontrado.');
     const agora = agoraISO();
-    // `bancoId` não é índice (a Tarefa 1 o declarou só como campo), então é `.filter()`
-    // e não `.where()` — mesmo idioma de `converterCenarioEmReal` (`repo.ts:212`).
+    // `boxId` não é índice de `bancos`: `.filter()`, não `.where()`.
+    const daBox = await db.bancos.filter((b) => b.boxId === alvo.boxId).toArray();
+    for (const b of daBox) {
+      const deveSerPadrao = b.id === id;
+      if ((b.padrao === true) !== deveSerPadrao) {
+        await db.bancos.update(b.id, { padrao: deveSerPadrao, alteradoEm: agora });
+      }
+    }
+    await marcarMudanca();
+  });
+}
+
+/** Excluir um banco desliga tudo que apontava para ele: cartões, lançamentos e recorrências
+ *  perdem o `bancoId` e passam a "sem banco". Referência a banco inexistente é inconsistência
+ *  silenciosa — o mesmo cuidado que `converterCenarioEmReal` toma com as recorrências. */
+export async function excluirBanco(id: ID): Promise<void> {
+  await db.transaction('rw', db.bancos, db.cartoes, db.lancamentos, db.recorrencias, db.config, async () => {
+    const agora = agoraISO();
+    // `bancoId` não é índice em nenhuma dessas tabelas: `.filter()` e não `.where()` — mesmo
+    // idioma de `converterCenarioEmReal`.
     await db.cartoes.filter((c) => c.bancoId === id).modify((c) => {
       delete c.bancoId;
       c.alteradoEm = agora;
+    });
+    await db.lancamentos.filter((l) => l.bancoId === id).modify((l) => {
+      delete l.bancoId;
+      l.alteradoEm = agora;
+    });
+    await db.recorrencias.filter((r) => r.bancoId === id).modify((r) => {
+      delete r.bancoId;
+      r.alteradoEm = agora;
     });
     await db.bancos.delete(id);
     await marcarMudanca();
@@ -816,13 +847,14 @@ export async function sincronizarCartoes(
   const hoje = hojeISO();
   await db.transaction('rw', [
     db.cartoes, db.comprasCartao, db.recorrenciasCartao, db.conferenciasFatura, db.ajustesFechamento,
-    db.lancamentos, db.notasFiscais,
+    db.lancamentos, db.notasFiscais, db.bancos,
   ], async () => {
     for (const ass of await db.recorrenciasCartao.toArray()) {
       await materializarAssinatura(ass, hoje, horizonte, {
         permitirCicloAtual: ass.id === opts?.permitirCicloAtualPara,
       });
     }
+    const bancos = await db.bancos.toArray();
     for (const cartao of await db.cartoes.toArray()) {
       const [compras, conferencias, ajustes, existentes] = await Promise.all([
         db.comprasCartao.where('cartaoId').equals(cartao.id).toArray(),
@@ -837,12 +869,23 @@ export async function sincronizarCartoes(
       for (const a of diff.atualizar) {
         await db.lancamentos.update(a.id, { valor: a.valor, data: a.data, alteradoEm: agora });
       }
+      // A fatura sai do banco do cartão (ou do padrão da box). Só previstos e novos mudam:
+      // fatura paga é história e não anda quando o cartão troca de banco.
+      const bancoDaFatura = bancoIdDoCartao(cartao, bancos);
       await db.lancamentos.bulkAdd(diff.criar.map((n): Lancamento => ({
         id: novoId(), boxId: cartao.boxId, categoriaId: cartao.categoriaFaturaId,
         data: n.data, valor: n.valor, status: 'previsto', origem: 'cartao',
         cartaoId: cartao.id, faturaMes: n.faturaMes,
+        ...(bancoDaFatura ? { bancoId: bancoDaFatura } : {}),
         criadoEm: agora, alteradoEm: agora,
       })));
+      await db.lancamentos.where('cartaoId').equals(cartao.id)
+        .filter((l) => l.origem === 'cartao' && l.status === 'previsto' && l.bancoId !== bancoDaFatura)
+        .modify((l) => {
+          if (bancoDaFatura) l.bancoId = bancoDaFatura;
+          else delete l.bancoId;
+          l.alteradoEm = agora;
+        });
     }
   });
 }
@@ -875,11 +918,12 @@ async function categoriaTransferenciaEntradaDe(boxId: ID): Promise<ID> {
   return categoriaId;
 }
 
-/** Move saldo declarado de um banco para outro DA MESMA BOX, gravando dois lançamentos
- *  ligados (`transferenciaId` compartilhado) numa categoria oculta "Transferência" — um de
- *  saída (gasto) na origem, um de entrada (ganho) no destino — e ajustando o saldo declarado
- *  dos dois bancos na mesma transação. Ver `docs/superpowers/specs/2026-09-16-transferencia-
- *  entre-bancos-design.md`. */
+/** Move dinheiro de um banco para outro DA MESMA BOX, gravando dois lançamentos ligados
+ *  (`transferenciaId` compartilhado) numa categoria oculta "Transferência" — um de saída
+ *  (gasto) na origem, um de entrada (ganho) no destino. Não escreve no saldo informado dos
+ *  bancos: o saldo calculado (`saldoCalculadoBanco`, `domain/bancos.ts`) já conta as duas
+ *  pernas, que têm data posterior à do saldo informado. Ver `docs/superpowers/specs/2026-09-16-
+ *  transferencia-entre-bancos-design.md` e `2026-09-30-banco-no-lancamento-design.md`. */
 export async function transferirEntreBancos(
   bancoOrigemId: ID, bancoDestinoId: ID, valorCent: number, data: ISODate,
 ): Promise<void> {
@@ -890,7 +934,7 @@ export async function transferirEntreBancos(
   if (!origem || !destino) throw new Error('Banco não encontrado.');
   if (origem.boxId !== destino.boxId) throw new Error('Transferência só entre bancos da mesma box.');
 
-  await db.transaction('rw', db.bancos, db.categorias, db.boxes, db.lancamentos, db.config, async () => {
+  await db.transaction('rw', db.categorias, db.boxes, db.lancamentos, db.config, async () => {
     const categoriaSaidaId = await categoriaTransferenciaSaidaDe(origem.boxId);
     const categoriaEntradaId = await categoriaTransferenciaEntradaDe(origem.boxId);
     const agora = agoraISO();
@@ -909,20 +953,13 @@ export async function transferirEntreBancos(
       },
     ];
     await db.lancamentos.bulkAdd(lancamentos);
-    await db.bancos.update(origem.id, {
-      saldoDeclaradoCent: (origem.saldoDeclaradoCent ?? 0) - valorCent,
-      dataSaldoDeclarado: data, alteradoEm: agora,
-    });
-    await db.bancos.update(destino.id, {
-      saldoDeclaradoCent: (destino.saldoDeclaradoCent ?? 0) + valorCent,
-      dataSaldoDeclarado: data, alteradoEm: agora,
-    });
     await marcarMudanca();
   });
 }
 
-/** Apaga as duas pernas de uma transferência. Não toca em `saldoDeclaradoCent` dos bancos —
- *  reverter exigiria saber se o banco já foi conferido de novo depois; corrigir o saldo é
+/** Apaga as duas pernas de uma transferência. O saldo calculado dos dois bancos volta ao que
+ *  era. Uma transferência feita ANTES do banco no lançamento (v0.29 a v0.50) já tinha
+ *  ajustado o `saldoDeclaradoCent` dos bancos; esse ajuste antigo não é desfeito — corrigir é
  *  manual, em Ajustes → Bancos. `transferenciaId` não é índice: `.filter()`, não `.where()`. */
 export async function excluirTransferencia(transferenciaId: ID): Promise<void> {
   await db.transaction('rw', db.lancamentos, db.config, async () => {

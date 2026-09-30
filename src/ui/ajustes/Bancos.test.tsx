@@ -143,7 +143,7 @@ it('edita nome, saldo e data de um banco existente', async () => {
   expect(atualizado?.dataSaldoDeclarado).toBe('2026-08-01');
   const item = screen.getByText('Banco Novo').closest('.item') as HTMLElement;
   const sub = item?.querySelector('.sub') as HTMLElement;
-  expect(sub?.textContent?.replace(/\s/g, ' ').startsWith('R$ 1.500,00 informado em 01/08')).toBe(true);
+  expect(sub?.textContent?.replace(/\s/g, ' ').startsWith('R$ 1.500,00 calculado a partir do saldo informado em 01/08')).toBe(true);
 });
 
 it('saldo informado negativo aparece em vermelho, com o sinal "−"', async () => {
@@ -324,4 +324,176 @@ it('erro ao salvar um banco aberto mostra o aviso dentro do item, não no topo',
   await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
 
   expect(await within(item).findByText('Dê um nome ao banco para salvar.')).toBeInTheDocument();
+});
+
+it('com dois bancos, o primeiro leva o selo padrão e só o outro oferece "Tornar padrão"', async () => {
+  const box = await comBox();
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+  await recarregarDados();
+
+  render(<Bancos />);
+
+  const itemUm = screen.getByText('Banco Um').closest('.item') as HTMLElement;
+  const itemDois = screen.getByText('Banco Dois').closest('.item') as HTMLElement;
+
+  // Afirma que o Banco Um (primeiro) tem o selo
+  expect(within(itemUm).getByText('padrão')).toBeInTheDocument();
+  expect(within(itemDois).queryByText('padrão')).not.toBeInTheDocument();
+
+  // Afirma que apenas o Banco Dois (não-padrão) oferece o botão
+  expect(within(itemDois).getByRole('button', { name: 'Tornar padrão' })).toBeInTheDocument();
+  expect(within(itemUm).queryByRole('button', { name: 'Tornar padrão' })).not.toBeInTheDocument();
+
+  // Contagem global
+  expect(await screen.findAllByText('padrão')).toHaveLength(1);
+  expect(screen.getAllByRole('button', { name: 'Tornar padrão' })).toHaveLength(1);
+});
+
+it('"Tornar padrão" passa o selo para o outro banco', async () => {
+  const box = await comBox();
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+  const dois = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+  await recarregarDados();
+
+  render(<Bancos />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Tornar padrão' }));
+
+  await waitFor(async () => {
+    expect((await db.bancos.get(dois.id))?.padrao).toBe(true);
+  });
+  const itemDois = screen.getByText('Banco Dois').closest('.item') as HTMLElement;
+  await waitFor(() => {
+    expect(within(itemDois).getByText('padrão')).toBeInTheDocument();
+  });
+  expect(screen.getAllByText('padrão')).toHaveLength(1);
+});
+
+it('com um banco só, não mostra o selo nem o botão', async () => {
+  const box = await comBox();
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Único', ordem: 0 });
+  await recarregarDados();
+
+  render(<Bancos />);
+
+  expect(await screen.findByText('Banco Único')).toBeInTheDocument();
+  expect(screen.queryByText('padrão')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Tornar padrão' })).not.toBeInTheDocument();
+});
+
+it('mostra o saldo calculado: o informado mais o movimento depois da data informada', async () => {
+  const box = await comBox();
+  const banco = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+  await repo.atualizarBanco(banco.id, { saldoDeclaradoCent: 100000, dataSaldoDeclarado: '2026-08-01' });
+  const gasto = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: gasto.id, data: '2026-08-03', valor: 2000, status: 'efetivo', bancoId: banco.id,
+  });
+  await recarregarDados();
+
+  render(<Bancos />);
+
+  // 100000 - 2000 = 98000
+  const saldoCalculado = formatarSaldo(98000).replace(/\s/g, ' ');
+  const saldoDeclVelho = formatarSaldo(100000).replace(/\s/g, ' ');
+
+  // Procura o saldo calculado (98000) no elemento do saldo, normalizando espaços
+  const itemUm = screen.getByText('Banco Um').closest('.item') as HTMLElement;
+  const sub = itemUm.querySelector('.sub') as HTMLElement;
+  expect(await within(itemUm).findByText((content) => content.replace(/\s/g, ' ') === saldoCalculado)).toBeInTheDocument();
+
+  // Afirma que o texto "calculado a partir do saldo informado em 01/08/2026" está na mesma linha
+  expect(sub.textContent).toContain('calculado a partir do saldo informado em 01/08/2026');
+
+  // Afirma que o saldo declarado antigo (100000) não está no documento
+  expect(screen.queryByText((content) => content.replace(/\s/g, ' ') === saldoDeclVelho)).not.toBeInTheDocument();
+});
+
+it('visão "casa" mostra exatamente um selo padrão quando há bancos em múltiplas boxes', async () => {
+  const agora = agoraISO();
+  // Cria box "casa"
+  const casa = {
+    id: 'zzz-casa', nome: 'casa', saldoInicial: null, dataSaldoInicial: null,
+    criadoEm: agora, alteradoEm: agora,
+  };
+  // Cria box A com dois bancos
+  const boxA = {
+    id: 'aaa-boxA', nome: 'Box A', saldoInicial: 0, dataSaldoInicial: '2026-01-01',
+    criadoEm: agora, alteradoEm: agora,
+  };
+  // Cria box B com um banco
+  const boxB = {
+    id: 'bbb-boxB', nome: 'Box B', saldoInicial: 0, dataSaldoInicial: '2026-01-01',
+    criadoEm: agora, alteradoEm: agora,
+  };
+  await repo.salvarBox(casa);
+  await repo.salvarBox(boxA);
+  await repo.salvarBox(boxB);
+
+  // Dois bancos em box A
+  await repo.salvarBanco({ boxId: boxA.id, nome: 'Banco A1', ordem: 0 });
+  await repo.salvarBanco({ boxId: boxA.id, nome: 'Banco A2', ordem: 1 });
+
+  // Um banco em box B
+  await repo.salvarBanco({ boxId: boxB.id, nome: 'Banco B1', ordem: 0 });
+
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: 'casa', hoje: '2026-08-05' });
+
+  render(<Bancos />);
+
+  // Espera exatamente UM selo "padrão" (o primeiro banco de box A, por ordem)
+  expect(await screen.findAllByText('padrão')).toHaveLength(1);
+
+  // O banco único de box B não deve ter selo nem botão
+  const itemB1 = screen.getByText('Banco B1').closest('.item') as HTMLElement;
+  expect(within(itemB1).queryByText('padrão')).not.toBeInTheDocument();
+  expect(within(itemB1).queryByRole('button', { name: 'Tornar padrão' })).not.toBeInTheDocument();
+
+  // O primeiro banco de box A tem o selo
+  const itemA1 = screen.getByText('Banco A1').closest('.item') as HTMLElement;
+  expect(within(itemA1).getByText('padrão')).toBeInTheDocument();
+
+  // O segundo banco de box A tem o botão, mas não o selo
+  const itemA2 = screen.getByText('Banco A2').closest('.item') as HTMLElement;
+  expect(within(itemA2).queryByText('padrão')).not.toBeInTheDocument();
+  expect(within(itemA2).getByRole('button', { name: 'Tornar padrão' })).toBeInTheDocument();
+});
+
+it('cartão sem banco com fatura prevista realinha o bancoId da fatura ao clicar Tornar padrão', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const box = await comBox();
+    const um = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    const dois = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+    // Cartão SEM banco explícito (usará o padrão, que é Banco Um)
+    const cartao = await repo.salvarCartao({
+      boxId: box.id, nome: 'Cartão', diaFechamento: 28, diaVencimento: 5,
+    }, '2027-12-31');
+    const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+    // Gera uma compra que resulta em uma fatura prevista
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-05', valorTotal: 90000, parcelas: 1,
+    }, '2027-12-31');
+
+    // Recarrega os dados da UI
+    await recarregarDados();
+    render(<Bancos />);
+
+    // Verifica que a fatura inicial tem o bancoId do Banco Um (padrão)
+    let fatura = (await db.lancamentos.toArray()).find((l) => l.origem === 'cartao')!;
+    expect(fatura.bancoId).toBe(um.id);
+
+    // Clica em "Tornar padrão" do Banco Dois
+    await userEvent.click(await screen.findByRole('button', { name: 'Tornar padrão' }));
+
+    // Verifica que a fatura agora tem o bancoId do Banco Dois
+    await waitFor(async () => {
+      fatura = (await db.lancamentos.get(fatura.id))!;
+      expect(fatura.bancoId).toBe(dois.id);
+    });
+  } finally {
+    vi.useRealTimers();
+  }
 });

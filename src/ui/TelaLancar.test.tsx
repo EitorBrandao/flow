@@ -399,3 +399,129 @@ it('não avisa quando a data é depois do saldo da box', async () => {
   render(<TelaLancar />);
   expect(screen.queryByText(/já está dentro do saldo inicial/)).not.toBeInTheDocument();
 });
+
+// TAREFA 5: CAMPO BANCO EM LANÇAR
+
+async function boxComDoisBancos({ padraoDois = false }: { padraoDois?: boolean } = {}) {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  const um = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+  const dois = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+  if (padraoDois) await repo.definirBancoPadrao(dois.id);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+  return { box, um, dois };
+}
+
+it('com dois bancos, o banco padrão vem marcado e o lançamento sai nele', async () => {
+  const { um } = await boxComDoisBancos();
+
+  render(<TelaLancar />);
+  expect(screen.getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'true');
+  await userEvent.type(screen.getByLabelText('Valor'), '42,90');
+  await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+
+  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  expect((await db.lancamentos.toArray())[0].bancoId).toBe(um.id);
+});
+
+it('troca o banco no lançamento e volta ao padrão depois de lançar', async () => {
+  const { dois } = await boxComDoisBancos();
+
+  render(<TelaLancar />);
+  await userEvent.click(screen.getByRole('radio', { name: 'Banco Dois' }));
+  await userEvent.type(screen.getByLabelText('Valor'), '10,00');
+  await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+
+  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  expect((await db.lancamentos.toArray())[0].bancoId).toBe(dois.id);
+  expect(screen.getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'true');
+});
+
+it('respeita o banco marcado como padrão em Ajustes', async () => {
+  await boxComDoisBancos({ padraoDois: true });
+
+  render(<TelaLancar />);
+
+  expect(screen.getByRole('radio', { name: 'Banco Dois' })).toHaveAttribute('aria-checked', 'true');
+  expect(screen.getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'false');
+});
+
+it('com um banco só, não mostra o campo e grava nele', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  const unico = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Único', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  expect(screen.queryByRole('radio', { name: 'Banco Único' })).not.toBeInTheDocument();
+  await userEvent.type(screen.getByLabelText('Valor'), '5,00');
+  await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+
+  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  expect((await db.lancamentos.toArray())[0].bancoId).toBe(unico.id);
+});
+
+it('sem bancos, o lançamento sai sem banco', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  await userEvent.type(screen.getByLabelText('Valor'), '5,00');
+  await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+
+  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  expect((await db.lancamentos.toArray())[0].bancoId).toBeUndefined();
+});
+
+it('escolher banco e trocar de box volta ao banco padrão da nova box', async () => {
+  const agora = agoraISO();
+  // Primeira box com 2 bancos
+  const box1 = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box1);
+  await repo.salvarCategoria({ boxId: box1.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await repo.salvarBanco({ boxId: box1.id, nome: 'Banco Um', ordem: 0 });
+  await repo.salvarBanco({ boxId: box1.id, nome: 'Banco Dois', ordem: 1 });
+
+  // Segunda box com 2 bancos, banco padrão diferente
+  const box2 = { id: novoId(), nome: 'conjunta', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box2);
+  await repo.salvarCategoria({ boxId: box2.id, nome: 'contas', tipo: 'gasto', ordem: 0 });
+  await repo.salvarBanco({ boxId: box2.id, nome: 'Banco Três', ordem: 0 });
+  const banco2dois = await repo.salvarBanco({ boxId: box2.id, nome: 'Banco Quatro', ordem: 1 });
+  // Define banco 2 como padrão na segunda box
+  await repo.definirBancoPadrao(banco2dois.id);
+
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box1.id, hoje: '2026-07-02' });
+
+  const { rerender } = render(<TelaLancar />);
+
+  // Começa com Banco Um marcado (padrão de box1)
+  expect(screen.getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'true');
+
+  // Escolhe Banco Dois
+  await userEvent.click(screen.getByRole('radio', { name: 'Banco Dois' }));
+  expect(screen.getByRole('radio', { name: 'Banco Dois' })).toHaveAttribute('aria-checked', 'true');
+
+  // Troca de box
+  act(() => useApp.setState({ boxSel: box2.id }));
+  rerender(<TelaLancar />);
+
+  // Deve voltar ao padrão da nova box (Banco Quatro)
+  expect(screen.getByRole('radio', { name: 'Banco Quatro' })).toHaveAttribute('aria-checked', 'true');
+  expect(screen.getByRole('radio', { name: 'Banco Três' })).toHaveAttribute('aria-checked', 'false');
+});

@@ -128,6 +128,40 @@ export const INVARIANTES: Invariante[] = [
     },
   },
 
+  // `excluirBanco` limpa o `bancoId` dos lançamentos. Fica como expectativa, e não como
+  // garantido, porque `mesclar` de backup pode trazer um lançamento que aponta para um banco
+  // que o outro lado excluiu — a leitura trata isso como "sem banco" (`bancoIdDoLancamento`).
+  {
+    nome: 'banco do lançamento existe',
+    classe: 'expectativa',
+    checar(r) {
+      const bancos = new Set(r.dados.bancos.map((b) => b.id));
+      const culpado = r.dados.lancamentos.find((l) => l.bancoId != null && !bancos.has(l.bancoId));
+      return culpado
+        ? { ok: false, detalhe: `lançamento ${culpado.id} aponta para o banco ${culpado.bancoId}, que não existe` }
+        : OK;
+    },
+  },
+
+  // `definirBancoPadrao` deixa um só marcado por box; um backup mesclado pode trazer dois, e
+  // `bancoPadrao` então vale o primeiro por `ordem`.
+  {
+    nome: 'no máximo um banco padrão por box',
+    classe: 'expectativa',
+    checar(r) {
+      const vistos = new Map<string, string>();
+      for (const b of r.dados.bancos) {
+        if (b.padrao !== true) continue;
+        const outroId = vistos.get(b.boxId);
+        if (outroId) {
+          return { ok: false, detalhe: `bancos ${outroId} e ${b.id} são padrão na mesma box ${b.boxId}` };
+        }
+        vistos.set(b.boxId, b.id);
+      }
+      return OK;
+    },
+  },
+
   // A soma dos itens da fatura só é comparada ao lançamento de fatura quando este ainda é
   // `previsto`: `registrarPagamentoFatura` (o único caminho que reescreve um `efetivo`) grava o
   // valor realmente pago, que pode ser menor que o total — divergência legítima, não bug.
