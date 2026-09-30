@@ -1,5 +1,5 @@
 import { lancamentosDaCategoria } from '../domain/aggregations';
-import { mesAbreviado } from '../domain/dates';
+import { mesAbreviado, nomeDoMes } from '../domain/dates';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
 import type { ID, Lancamento, TipoCategoria } from '../domain/types';
 import Sheet from './Sheet';
@@ -16,6 +16,8 @@ interface Props {
   onFechar: () => void;
   /** mostra "‹ voltar ao período" (folha aberta a partir da folha de um período) */
   onVoltar?: () => void;
+  /** categoria de fatura cujo valor do mês não é a fatura: link para abrir a fatura do mês */
+  verFatura?: { totalCent: number; onAbrir: () => void };
 }
 
 function dataFormatada(iso: string): string {
@@ -23,7 +25,7 @@ function dataFormatada(iso: string): string {
 }
 
 export default function LancamentosSheet({
-  aberto, categoriaId, nome, tipo, mes, boxIds, lancamentos, incluirPrevistos, onFechar, onVoltar,
+  aberto, categoriaId, nome, tipo, mes, boxIds, lancamentos, incluirPrevistos, onFechar, onVoltar, verFatura,
 }: Props) {
   const grupos = categoriaId
     ? lancamentosDaCategoria(mes, categoriaId, boxIds, lancamentos, incluirPrevistos)
@@ -65,6 +67,11 @@ export default function LancamentosSheet({
         ))}
         {grupos.length === 0 && <p className="sub">Sem lançamentos no mês.</p>}
       </div>
+      {verFatura && (
+        <button className="botao-ver-mais" style={{ marginTop: 10 }} onClick={verFatura.onAbrir}>
+          Ver a fatura de {nomeDoMes(mes)} ({formatarBRL(verFatura.totalCent)}) →
+        </button>
+      )}
     </Sheet>
   );
 }

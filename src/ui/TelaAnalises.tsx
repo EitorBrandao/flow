@@ -1,9 +1,10 @@
 import { Suspense, lazy, useState } from 'react';
 import {
   compararMeses, compararPeriodos, mediaMovel3, resumoPeriodo, serieMensal, serieMensalResumo,
+  faturaExplicaOMes,
 } from '../domain/aggregations';
 import { addMeses, formatarDataBR, mesAbreviado, mesDe } from '../domain/dates';
-import { resumoAssinaturasDoPeriodo } from '../domain/fatura';
+import { ajustesDoCartao, faturaDoMes, resumoAssinaturasDoPeriodo } from '../domain/fatura';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
 import {
   anoAnteriorRepete, estadoInicial, mesesDoPeriodo, notaComparacao, rotuloColunaPeriodo, rotuloIntervalo,
@@ -29,7 +30,7 @@ export default function TelaAnalises() {
   const [periodo, setPeriodo] = useState<EstadoPeriodo>(() => estadoInicial(mesDe(hoje)));
   const [incluirPrevistos, setIncluirPrevistos] = useState(true);
   // folha de um mês (lançamentos ou fatura); `doPeriodo` = aberta pela folha do período
-  const [detalhe, setDetalhe] = useState<{ categoriaId: ID; mes: string; doPeriodo: boolean } | null>(null);
+  const [detalhe, setDetalhe] = useState<{ categoriaId: ID; mes: string; doPeriodo: boolean; forcarFatura?: boolean } | null>(null);
   // folha do período (vários meses) de uma categoria
   const [categoriaPeriodo, setCategoriaPeriodo] = useState<ID | null>(null);
   const [assinaturasAberto, setAssinaturasAberto] = useState(false);
@@ -48,6 +49,20 @@ export default function TelaAnalises() {
   const cartaoDoHistorico = dados.cartoes.find((c) => c.id === categoriaCartaoAberta?.cartaoId) ?? null;
   const categoriaDoHistorico = dados.categoriasCartao.find((c) => c.id === categoriaCartaoAberta?.categoriaCartaoId) ?? null;
   const ids = boxIdsSelecionadas(dados, boxSel);
+  // total da fatura de um cartão num mês — base para decidir se a folha do mês é a fatura
+  const totalFatura = (cartaoId: ID, m: string) => {
+    const cartao = dados.cartoes.find((c) => c.id === cartaoId)!;
+    return faturaDoMes(
+      cartao, dados.comprasCartao.filter((c) => c.cartaoId === cartaoId), m,
+      ajustesDoCartao(dados.ajustesFechamento, cartaoId), dados.config.horizonteProjecao,
+    ).totalCent;
+  };
+  // categoria de fatura: a folha da fatura só quando ela explica o valor do mês (tudo veio do
+  // cartão e bate com o total); senão, a folha lista os lançamentos que somam a barra, com um
+  // link para a fatura (`forcarFatura`)
+  const totalFaturaDetalhe = cartaoDaCategoria ? totalFatura(cartaoDaCategoria.id, mesDetalhe) : 0;
+  const abrirFatura = cartaoDaCategoria != null && categoriaAberta != null && (detalhe?.forcarFatura === true
+    || faturaExplicaOMes(categoriaAberta, mesDetalhe, ids, dados.lancamentos, incluirPrevistos, totalFaturaDetalhe));
   const resumo = resumoPeriodo(meses, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
   const base = Math.max(resumo.totalGanhos, resumo.totalGastos, 1);
   const comparativo = varios ? [] : compararMeses(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
@@ -108,7 +123,17 @@ export default function TelaAnalises() {
   const seriePeriodo = categoriaPeriodo
     ? serieMensal(categoriaPeriodo, meses, ids, dados.lancamentos, incluirPrevistos)
     : [];
-  const periodoEhFatura = dados.cartoes.some((c) => c.categoriaFaturaId === categoriaPeriodo);
+  const cartaoDoPeriodo = dados.cartoes.find((c) => c.categoriaFaturaId === categoriaPeriodo);
+  // o que o toque num mês abre, na mesma regra da folha do mês (`abrirFatura`): fatura em todo
+  // mês, lançamentos em todo mês, ou cada mês o seu — aí o texto fica neutro
+  const mesesComLancamentoAvulso = categoriaPeriodo && cartaoDoPeriodo
+    ? meses.filter((m) => !faturaExplicaOMes(
+      categoriaPeriodo, m, ids, dados.lancamentos, incluirPrevistos, totalFatura(cartaoDoPeriodo.id, m),
+    )).length
+    : meses.length;
+  const verMesPeriodo = mesesComLancamentoAvulso === 0
+    ? 'a fatura'
+    : mesesComLancamentoAvulso === meses.length ? 'os lançamentos' : 'o detalhe do mês';
   const fecharDetalhe = () => setDetalhe(null);
   const voltarAoPeriodo = detalhe?.doPeriodo
     ? () => { setCategoriaPeriodo(detalhe.categoriaId); setDetalhe(null); }
@@ -247,7 +272,7 @@ export default function TelaAnalises() {
         onAbrir={setCategoriaCartaoAberta}
       />
 
-      {cartaoDaCategoria ? (
+      {abrirFatura && cartaoDaCategoria ? (
         <FaturaCategoriaSheet
           aberto={categoriaAberta !== null}
           cartao={cartaoDaCategoria}
@@ -272,6 +297,10 @@ export default function TelaAnalises() {
           incluirPrevistos={incluirPrevistos}
           onFechar={fecharDetalhe}
           onVoltar={voltarAoPeriodo}
+          verFatura={cartaoDaCategoria && detalhe ? {
+            totalCent: totalFaturaDetalhe,
+            onAbrir: () => setDetalhe({ ...detalhe, mes: mesDetalhe, forcarFatura: true }),
+          } : undefined}
         />
       )}
 
@@ -281,7 +310,7 @@ export default function TelaAnalises() {
         tipo={categoriaPeriodoObj?.tipo ?? 'gasto'}
         meses={meses}
         serie={seriePeriodo}
-        verMes={periodoEhFatura ? 'a fatura' : 'os lançamentos'}
+        verMes={verMesPeriodo}
         onAbrirMes={(m) => {
           if (categoriaPeriodo) setDetalhe({ categoriaId: categoriaPeriodo, mes: m, doPeriodo: true });
           setCategoriaPeriodo(null);

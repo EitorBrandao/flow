@@ -156,6 +156,25 @@ export function compararPeriodos(
     });
 }
 
+/** Numa categoria de fatura, a fatura do mês explica o valor que Análises mostra para o mês?
+ *  Explica quando todo lançamento do mês veio do cartão e a soma é o total da fatura. Não
+ *  explica com pagamento lançado à mão ou antigo (de antes do cartão), nem com valor pago
+ *  diferente da fatura (compra retroativa, pagamento parcial). Decide a folha do mês: a fatura,
+ *  ou os lançamentos que somam a barra. Mesmo filtro das somas de Análises (box, cenário,
+ *  transferência, previstos). */
+export function faturaExplicaOMes(
+  categoriaId: ID,
+  mes: string,
+  boxIds: readonly ID[],
+  lancamentos: Lancamento[],
+  incluirPrevistos: boolean,
+  totalFatura: number,
+): boolean {
+  const doMes = filtrar([mes], boxIds, lancamentos, incluirPrevistos).filter((l) => l.categoriaId === categoriaId);
+  return doMes.every((l) => l.origem === 'cartao')
+    && doMes.reduce((soma, l) => soma + l.valor, 0) === totalFatura;
+}
+
 export function serieMensal(
   categoriaId: ID,
   meses: string[],
