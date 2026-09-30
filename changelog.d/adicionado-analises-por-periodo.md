@@ -1,3 +1,0 @@
-- Análises por período: além do mês, os últimos 12 meses, um ano inteiro ou um intervalo livre de até 24 meses.
-  - Resumo com a média por mês, e Comparativo com o período anterior e o mesmo período do ano anterior.
-  - Tocar numa categoria mostra uma barra por mês; tocar num mês abre os lançamentos daquele mês.

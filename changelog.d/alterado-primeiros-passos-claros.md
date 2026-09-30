@@ -1,5 +1,0 @@
-- Nova box agora pede o saldo do banco e a data do saldo, com uma frase explicando a regra
-- Lançar mostra em qual box o lançamento vai e avisa quando a data já está dentro do saldo da box
-- Depois de criar as categorias sugeridas, o app oferece fazer o primeiro lançamento
-- A box casa explica para que serve
-- O aviso de backup em Hoje só aparece depois do primeiro lançamento
