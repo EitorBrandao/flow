@@ -1077,7 +1077,6 @@ Claude-Session: https://claude.ai/code/session_01A2Tk5f8CChgvK234VPC1F2"
 - Testar: `src/backup/backup.test.ts`
 - Modificar: `src/dossie/invariantes.ts`
 - Testar: `src/dossie/invariantes.test.ts`
-- Regenerar: `docs/dossie/*`
 
 `src/backup/backup.ts` **não muda**: os campos novos são opcionais e `validarBackup` só confere as tabelas. Esta tarefa prova isso com testes.
 
@@ -1240,26 +1239,18 @@ Em `src/dossie/invariantes.ts`, logo depois do invariante `'referências resolve
   },
 ```
 
-- [ ] **Passo 5: Rodar e regenerar o dossiê**
+- [ ] **Passo 5: Rodar os testes dos invariantes**
 
 ```bash
-npx vitest run src/dossie
+npx vitest run src/dossie/invariantes.test.ts
 ```
 
-O teste `dossie.test.ts` acusa o dossiê desatualizado (há invariantes novos). Regenere e rode de novo:
-
-```bash
-npm run dossie
-npx vitest run src/dossie
-git diff --stat docs/dossie
-```
-
-Esperado: `docs/dossie/01-invariantes.md` ganha as duas linhas novas; `03-telas.md` muda se a tela Lançar ainda não tem o campo (não muda nesta tarefa). Tudo verde.
+Esperado: passam. **Não regenere `docs/dossie/`.** As tarefas de UI (5 a 7) mudam as telas que o dossiê registra, e a regeneração acontece uma única vez, na Tarefa 8. Por isso `src/dossie/dossie.test.ts` pode reprovar por "dossiê desatualizado" até lá: é esperado e não é defeito desta tarefa.
 
 - [ ] **Passo 6: Commitar**
 
 ```bash
-git add src/backup/backup.test.ts src/dossie/invariantes.ts src/dossie/invariantes.test.ts docs/dossie
+git add src/backup/backup.test.ts src/dossie/invariantes.ts src/dossie/invariantes.test.ts
 git commit -m "test(bancos): backup com os campos novos e invariantes do banco no dossiê" -m "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01A2Tk5f8CChgvK234VPC1F2"
 ```
@@ -1268,7 +1259,7 @@ Claude-Session: https://claude.ai/code/session_01A2Tk5f8CChgvK234VPC1F2"
 
 ### Tarefa 5: Campo Banco em Lançar, Editar lançamento e Recorrências
 
-**Antes de editar a UI:** leia `docs/estilo-visual.md` e `docs/estilo/nivel-1-editar-tela.md`. Esta tarefa é nível 1 (sem classe nova) **mais** um componente novo pequeno, `SeletorBanco`, que só compõe `SeletorPills`. O componente novo entra no catálogo na Tarefa 8 (mesmo branch; o verificador roda no release). Se preferir o catálogo já aqui, faça o Passo 8 desta tarefa.
+**Antes de editar a UI:** leia `docs/estilo-visual.md` e `docs/estilo/nivel-1-editar-tela.md`. Esta tarefa é nível 1 (sem classe nova) **mais** um componente novo pequeno, `SeletorBanco`, que só compõe `SeletorPills`. O componente novo entra no catálogo na Tarefa 8 (mesmo branch; o verificador roda no release).
 
 **Arquivos:**
 - Criar: `src/ui/SeletorBanco.tsx`, `src/ui/SeletorBanco.test.tsx`
@@ -1686,20 +1677,12 @@ npx tsc -b
 
 Esperado: verde e sem erro de tipo.
 
-- [ ] **Passo 8: Catalogar o componente e commitar**
+- [ ] **Passo 8: Commitar**
 
-Em `docs/estilo/catalogo.md`, na lista "Componentes compartilhados", logo depois do item `**SeletorPills.tsx**` (termina em "...reforçando a sensação de "perfil" (ver `docs/superpowers/specs/`).") acrescente:
-
-```markdown
-- **`SeletorBanco.tsx`** — pílulas (`SeletorPills`) para escolher o banco de um lançamento ou de
-  uma recorrência. Props `bancos`, `selecionadaId` (`null` = nenhum marcado, lançamento antigo sem
-  banco) e `onSelecionar`. Devolve `null` com menos de dois bancos: o campo some. O banco padrão
-  vem marcado por quem usa (`bancoPadrao`, `domain/bancos.ts`). Usado em `TelaLancar.tsx`,
-  `LancEditor.tsx` e `ajustes/Recorrencias.tsx`.
-```
+`docs/estilo/catalogo.md` **não** é editado aqui: a Tarefa 8 cataloga os dois componentes novos de uma vez. Assim as tarefas 5 e 7, que rodam em paralelo, não colidem no mesmo arquivo. Pelo mesmo motivo, `npm test` pode reprovar só em `src/dossie/dossie.test.ts` ("dossiê desatualizado"): a Tarefa 8 regenera o dossiê. Qualquer outra falha é defeito seu.
 
 ```bash
-git add src/ui/SeletorBanco.tsx src/ui/SeletorBanco.test.tsx src/ui/TelaLancar.tsx src/ui/TelaLancar.test.tsx src/ui/LancEditor.tsx src/ui/LancEditor.test.tsx src/ui/ajustes/Recorrencias.tsx src/ui/ajustes/Recorrencias.test.tsx docs/estilo/catalogo.md
+git add src/ui/SeletorBanco.tsx src/ui/SeletorBanco.test.tsx src/ui/TelaLancar.tsx src/ui/TelaLancar.test.tsx src/ui/LancEditor.tsx src/ui/LancEditor.test.tsx src/ui/ajustes/Recorrencias.tsx src/ui/ajustes/Recorrencias.test.tsx
 git commit -m "feat(bancos): campo Banco em Lançar, Editar lançamento e Recorrências, com o padrão pré-selecionado" -m "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01A2Tk5f8CChgvK234VPC1F2"
 ```
@@ -2156,19 +2139,12 @@ e `import SeletorFiltroBanco from './SeletorFiltroBanco';`.
 
 Rode `npx vitest run src/ui/TelaAnalises.test.tsx` — verde.
 
-- [ ] **Passo 5: Catalogar e commitar**
+- [ ] **Passo 5: Commitar**
 
-Em `docs/estilo/catalogo.md`, logo depois do item `**SeletorBanco.tsx**` (Tarefa 5) acrescente:
-
-```markdown
-- **`SeletorFiltroBanco.tsx`** — filtro por banco: pílulas (`SeletorPills`) "Todos", cada banco da
-  box e "Sem banco". Props `bancos`, `valor` (`FiltroBanco`, de `domain/bancos.ts`) e `onMudar`.
-  Devolve `null` com menos de dois bancos. Usado no `TelaFluxo.tsx` (só a lista; o saldo do dia
-  segue o da box inteira) e no `TelaAnalises.tsx` (filtra os agregados por `dadosDoBanco`).
-```
+`docs/estilo/catalogo.md` **não** é editado aqui: a Tarefa 8 cataloga os dois componentes novos. `npm test` pode reprovar só em `src/dossie/dossie.test.ts` ("dossiê desatualizado"): a Tarefa 8 regenera o dossiê. Qualquer outra falha é defeito seu.
 
 ```bash
-git add src/ui/SeletorFiltroBanco.tsx src/ui/SeletorFiltroBanco.test.tsx src/ui/TelaFluxo.tsx src/ui/TelaFluxo.test.tsx src/ui/TelaAnalises.tsx src/ui/TelaAnalises.test.tsx docs/estilo/catalogo.md
+git add src/ui/SeletorFiltroBanco.tsx src/ui/SeletorFiltroBanco.test.tsx src/ui/TelaFluxo.tsx src/ui/TelaFluxo.test.tsx src/ui/TelaAnalises.tsx src/ui/TelaAnalises.test.tsx
 git commit -m "feat(bancos): filtro por banco no Fluxo e nas Análises, e o banco em cada item do Fluxo" -m "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01A2Tk5f8CChgvK234VPC1F2"
 ```
@@ -2244,7 +2220,21 @@ No mesmo arquivo, procure `Lancamento.bancoId` de uso geral e a frase "entrega 2
 - Troque a linha da `transferência entre bancos` por:
   `: transferência entre bancos | Mover dinheiro de um banco para outro da mesma box (Hoje → Conferir). Cria um lançamento de saída e um de entrada, visíveis no Fluxo mas fora dos totais de Análises — não é ganho nem gasto real. O saldo calculado dos dois bancos muda na hora.`
 
-`docs/estilo/catalogo.md`: no item `**LancEditor.tsx**`, troque "(valor, data, categoria, nota, sinal ganho/gasto)" por "(valor, data, categoria, banco, nota, sinal ganho/gasto)" e acrescente ao fim "; o campo Banco (`SeletorBanco`) não aparece para fatura, transferência, previsto de recorrência nem cenário."
+`docs/estilo/catalogo.md`: na lista "Componentes compartilhados", logo depois do item `**SeletorPills.tsx**` (termina em "...reforçando a sensação de "perfil" (ver `docs/superpowers/specs/`).") acrescente os dois itens novos:
+
+```markdown
+- **`SeletorBanco.tsx`** — pílulas (`SeletorPills`) para escolher o banco de um lançamento ou de
+  uma recorrência. Props `bancos`, `selecionadaId` (`null` = nenhum marcado, lançamento antigo sem
+  banco) e `onSelecionar`. Devolve `null` com menos de dois bancos: o campo some. O banco padrão
+  vem marcado por quem usa (`bancoPadrao`, `domain/bancos.ts`). Usado em `TelaLancar.tsx`,
+  `LancEditor.tsx` e `ajustes/Recorrencias.tsx`.
+- **`SeletorFiltroBanco.tsx`** — filtro por banco: pílulas (`SeletorPills`) "Todos", cada banco da
+  box e "Sem banco". Props `bancos`, `valor` (`FiltroBanco`, de `domain/bancos.ts`) e `onMudar`.
+  Devolve `null` com menos de dois bancos. Usado no `TelaFluxo.tsx` (só a lista; o saldo do dia
+  segue o da box inteira) e no `TelaAnalises.tsx` (filtra os agregados por `dadosDoBanco`).
+```
+
+Ainda no `docs/estilo/catalogo.md`: no item `**LancEditor.tsx**`, troque "(valor, data, categoria, nota, sinal ganho/gasto)" por "(valor, data, categoria, banco, nota, sinal ganho/gasto)" e acrescente ao fim "; o campo Banco (`SeletorBanco`) não aparece para fatura, transferência, previsto de recorrência nem cenário."
 
 - [ ] **Passo 3: Fragmento de changelog**
 
