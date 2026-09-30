@@ -3,6 +3,21 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.50.1] - 2026-09-30
+
+### Alterado
+
+- Textos mais claros para quem chega agora
+  - Hoje → Conferir explica para que serve o saldo real, e Pendentes explica quais previstos aparecem
+  - Simular ganha uma legenda para Com, Sem e Diferença, e explica o que é um cenário
+  - O gráfico do Fluxo diz o que é a linha pontilhada e como ver o saldo de cada dia
+  - Bancos e Importar e conferir ficam mais diretos: o segundo avisa que só lê Nubank e Santander
+- Cartão mais fácil de configurar
+  - Cadastrar cartão leva direto a Ajustes → Cartões, também a partir de Categorias e Assinaturas do cartão
+  - A compra no cartão sem categoria diz onde criá-la
+  - O botão da nota fiscal no Adicionar agora mostra o texto Ler nota fiscal
+- Esc fecha a folha aberta, sem fechar a que está por baixo
+
 ## [0.50.0] - 2026-09-30
 
 ### Adicionado
