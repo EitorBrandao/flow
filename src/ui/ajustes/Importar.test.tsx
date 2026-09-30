@@ -57,6 +57,7 @@ vi.mock('../../importar/adapters/textoPdf', () => ({
 
 beforeEach(async () => {
   await limparDb();
+  useApp.getState().limparImportacao();
 });
 
 async function montarBox() {
@@ -458,6 +459,83 @@ describe('Importar', () => {
     expect(await screen.findByText(/Escolha o CSV do extrato do Nubank/)).toBeInTheDocument();
     expect(screen.queryByText('2. Destino')).not.toBeInTheDocument();
     expect(screen.queryByText('3. Conferir')).not.toBeInTheDocument();
+  });
+
+  it('guarda o arquivo e as decisões ao sair da tela, e devolve tudo ao voltar', async () => {
+    await montarBox();
+    await useApp.getState().iniciar();
+    const primeira = render(<Importar />);
+    await uploadCsvDuasLinhas();
+    await userEvent.click(screen.getByRole('button', { name: 'Marcar todos como ignorar' }));
+    expect(await screen.findByRole('button', { name: /Confirmar — 0 mudanças/ })).toBeInTheDocument();
+
+    primeira.unmount();
+    render(<Importar />);
+
+    expect(screen.getByText('extrato-nubank.csv')).toBeInTheDocument();
+    expect(screen.getByText('3. Conferir')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Confirmar — 0 mudanças/ })).toBeInTheDocument();
+  });
+
+  it('"Escolher outro arquivo" também apaga o que estava guardado', async () => {
+    await montarBox();
+    await useApp.getState().iniciar();
+    const primeira = render(<Importar />);
+    await uploadCsvDuasLinhas();
+    await userEvent.click(screen.getByRole('button', { name: 'Escolher outro arquivo' }));
+
+    primeira.unmount();
+    render(<Importar />);
+
+    expect(screen.getByText(/Escolha o CSV do extrato do Nubank/)).toBeInTheDocument();
+    expect(useApp.getState().importacao.nomeArquivo).toBe('');
+  });
+
+  // Defeito relatado: dois blocos no mesmo cartão eram conferidos separadamente. A compra casada
+  // num bloco virava "sobra" no outro, e a mesma sobra aparecia duas vezes com a mesma chave —
+  // o React deixava linhas velhas no topo da lista ao filtrar.
+  it('dois blocos no mesmo cartão são conferidos juntos: sem sobra falsa e sem chave repetida', async () => {
+    const { box, cartaoA } = await montarBoxComDoisCartoes();
+    const cat = await repo.salvarCategoriaCartao({ cartaoId: cartaoA.id, nome: 'Geral', ordem: 0 });
+    // Casa com POSTO BETA (segundo bloco), mas cai dentro do período do primeiro bloco.
+    await repo.salvarCompraCartao({
+      cartaoId: cartaoA.id, categoriaCartaoId: cat.id, data: '2026-08-19', valorTotal: 5190,
+      parcelas: 1, descricao: 'posto',
+    }, '2027-12-31');
+    expect(box.id).toBe(cartaoA.boxId);
+    extrairTextoPdfMock.mockResolvedValueOnce([
+      'Vencimento 05/09/2026',
+      'Detalhamento da Fatura',
+      'FULANO DE TAL - 0000 XXXX XXXX 0000',
+      'Despesas',
+      'Compra Data Descrição Parcela R$ US$',
+      '3 07/08 MERCADO ALFA 45,00',
+      '3 25/08 LOJA DELTA 10,00',
+      'VALOR TOTAL 55,00 0,00',
+      '@ FULANO DE TAL - 1234 5678 9012 3456',
+      'Despesas',
+      'Compra Data Descrição Parcela R$ US$ 3 19/08 POSTO BETA 51,90',
+      'VALOR TOTAL 51,90 0,00',
+      '3/4',
+    ].join('\n'));
+    const erros = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await useApp.getState().iniciar();
+    render(<Importar />);
+    await userEvent.upload(
+      screen.getByLabelText('Escolher arquivo'),
+      new File(['%PDF-1.4 fatura sintética'], 'fatura.pdf', { type: 'application/pdf' }),
+    );
+    await screen.findByText('FULANO DE TAL - 0000 XXXX XXXX 0000');
+    for (const rotulo of ['FULANO DE TAL - 0000 XXXX XXXX 0000', '@ FULANO DE TAL - 1234 5678 9012 3456']) {
+      const grupo = screen.getByRole('radiogroup', { name: `Destino de ${rotulo}` });
+      await userEvent.click(within(grupo).getByRole('radio', { name: cartaoA.nome }));
+    }
+
+    expect(await screen.findByText('POSTO BETA')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /0 sobras/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /1 confere/ })).toBeInTheDocument();
+    expect(erros.mock.calls.some((c) => String(c[0]).includes('same key'))).toBe(false);
+    erros.mockRestore();
   });
 });
 

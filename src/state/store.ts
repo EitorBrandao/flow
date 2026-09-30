@@ -4,6 +4,9 @@ import { hojeISO } from '../domain/dates';
 import { categoriasFaturaIds } from '../domain/fatura';
 import { categoriasTransferenciaIds } from '../domain/transferencia';
 import { agoraISO, novoId, type Dados, type ID, type ISODate } from '../domain/types';
+import type {
+  Adapter, DecisaoTotal, DecisaoTroca, EstadoItem, LeituraAdapter,
+} from '../importar/tipos';
 
 export type Aba = 'hoje' | 'fluxo' | 'lancar' | 'cartao' | 'analises' | 'ajustes';
 export type BoxSelecionada = ID | 'casa';
@@ -16,6 +19,29 @@ export type AbaFluxo = 'lista' | 'grafico' | 'simular';
 /** Semente de um lançamento vinda dos atalhos da sheet Adicionar; de uso único. */
 export interface RascunhoLancar { categoriaId: ID; valorCent: number }
 
+/** Destino de um bloco da fatura: um cartão, ou "não importar". `undefined` = ainda não escolhido. */
+export type DestinoBloco = ID | 'nao-importar' | undefined;
+
+/** A conferência em andamento (Ajustes → Importar e conferir). Mora no store, e não no
+ *  componente, para sobreviver à troca de aba: o arquivo lido e as decisões já tomadas só
+ *  somem ao confirmar ou ao escolher outro arquivo. Nunca vai para o IndexedDB. */
+export interface ImportacaoPendente {
+  nomeArquivo: string;
+  buf: ArrayBuffer | null;
+  adapterAtual: Adapter | undefined;
+  leitura: LeituraAdapter | null;
+  boxIdEscolhida: ID | null;
+  destinoBlocos: Record<number, DestinoBloco>;
+  trocas: Record<string, DecisaoTroca>;
+  totaisCorrigidos: Record<string, DecisaoTotal>;
+  filtro: EstadoItem | null;
+}
+
+export const IMPORTACAO_VAZIA: ImportacaoPendente = {
+  nomeArquivo: '', buf: null, adapterAtual: undefined, leitura: null, boxIdEscolhida: null,
+  destinoBlocos: {}, trocas: {}, totaisCorrigidos: {}, filtro: null,
+};
+
 interface AppState {
   carregado: boolean;
   dados: Dados | null;
@@ -25,6 +51,7 @@ interface AppState {
   ajustesSecao: SecaoAjustes | null;
   fluxoAba: AbaFluxo | null;
   rascunhoLancar: RascunhoLancar | null;
+  importacao: ImportacaoPendente;
   iniciar(): Promise<void>;
   recarregar(): Promise<void>;
   setAba(aba: Aba): void;
@@ -34,6 +61,9 @@ interface AppState {
   abrirFluxo(aba: AbaFluxo): void;
   limparFluxoAba(): void;
   setRascunhoLancar(r: RascunhoLancar | null): void;
+  /** Mescla o que `f` devolve na conferência pendente; `f` recebe o estado mais recente. */
+  setImportacao(f: (atual: ImportacaoPendente) => Partial<ImportacaoPendente>): void;
+  limparImportacao(): void;
 }
 
 export const useApp = create<AppState>((set) => ({
@@ -45,6 +75,7 @@ export const useApp = create<AppState>((set) => ({
   ajustesSecao: null,
   fluxoAba: null,
   rascunhoLancar: null,
+  importacao: IMPORTACAO_VAZIA,
   async iniciar() {
     const inicial = await repo.carregarTudo();
     if (!inicial.boxes.some((b) => b.nome === 'casa')) {
@@ -69,6 +100,8 @@ export const useApp = create<AppState>((set) => ({
   abrirFluxo: (aba) => set({ aba: 'fluxo', fluxoAba: aba }),
   limparFluxoAba: () => set({ fluxoAba: null }),
   setRascunhoLancar: (rascunhoLancar) => set({ rascunhoLancar }),
+  setImportacao: (f) => set((st) => ({ importacao: { ...st.importacao, ...f(st.importacao) } })),
+  limparImportacao: () => set({ importacao: IMPORTACAO_VAZIA }),
 }));
 
 /**

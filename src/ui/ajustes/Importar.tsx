@@ -6,40 +6,38 @@ import {
   type OpcoesConferencia,
 } from '../../importar/conferencia';
 import type {
-  Adapter, DecisaoTotal, DecisaoTroca, EstadoItem, ItemConferencia, LeituraAdapter,
+  Adapter, EstadoItem, ItemConferencia, LancamentoBruto,
 } from '../../importar/tipos';
 import type { ID } from '../../domain/types';
-import { boxIdEfetivo, useApp } from '../../state/store';
+import { boxIdEfetivo, IMPORTACAO_VAZIA, useApp, type DestinoBloco } from '../../state/store';
 import EscolherArquivo from '../EscolherArquivo';
 import ListaConferencia, { type ItemComContexto } from './ListaConferencia';
 
 const NAO_IMPORTAR = 'nao-importar' as const;
-type DestinoBloco = ID | typeof NAO_IMPORTAR | undefined;
 
 export default function Importar() {
-  const { dados, boxSel, recarregar } = useApp();
+  const { dados, boxSel, recarregar, importacao, setImportacao, limparImportacao } = useApp();
+  const {
+    nomeArquivo, buf, adapterAtual, leitura, boxIdEscolhida, destinoBlocos, trocas,
+    totaisCorrigidos, filtro,
+  } = importacao;
   const uid = useId();
   // Trava síncrona contra o duplo toque: `aplicando` (estado) só vale depois do re-render, e
   // dois cliques seguidos acontecem antes disso. Sem esta ref, os dois disparam `aplicar`.
   const aplicandoRef = useRef(false);
 
-  const [nomeArquivo, setNomeArquivo] = useState('');
-  const [buf, setBuf] = useState<ArrayBuffer | null>(null);
-  const [adapterAtual, setAdapterAtual] = useState<Adapter | undefined>(undefined);
+  // O arquivo lido e as decisões vivem no store (`importacao`), para sobreviver à troca de aba.
+  // Aqui ficam só os estados passageiros da tela.
   const [escolhendoFormato, setEscolhendoFormato] = useState(false);
-  const [leitura, setLeitura] = useState<LeituraAdapter | null>(null);
   const [lendo, setLendo] = useState(false);
   const [erro, setErro] = useState('');
 
-  const [boxIdEscolhida, setBoxIdEscolhida] = useState<ID | null>(null);
-  const [destinoBlocos, setDestinoBlocos] = useState<Record<number, DestinoBloco>>({});
-
-  const [trocas, setTrocas] = useState<Record<string, DecisaoTroca>>({});
-  const [totaisCorrigidos, setTotaisCorrigidos] = useState<Record<string, DecisaoTotal>>({});
-
-  // Filtro de exibição do resumo do passo 3 (pílula tocada) — nunca muda o que `confirmar`
-  // grava, só o que aparece na lista. Trocar destino ou arquivo limpa o filtro (regra da spec).
-  const [filtro, setFiltro] = useState<EstadoItem | null>(null);
+  // `filtro` é o filtro de exibição do resumo do passo 3 (pílula tocada) — nunca muda o que
+  // `confirmar` grava, só o que aparece na lista. Trocar destino ou arquivo limpa o filtro.
+  const setFiltro = (v: EstadoItem | null) => setImportacao(() => ({ filtro: v }));
+  const setDestinoBloco = (i: number, destino: DestinoBloco) => setImportacao((im) => ({
+    destinoBlocos: { ...im.destinoBlocos, [i]: destino }, filtro: null,
+  }));
 
   const [resumoAplicado, setResumoAplicado] = useState<ResumoAplicacao | null>(null);
   const [erroAplicar, setErroAplicar] = useState('');
@@ -63,10 +61,18 @@ export default function Importar() {
   const itensComContexto: ItemComContexto[] = useMemo(() => {
     if (!leitura || !dados) return [];
     if (leitura.blocos) {
-      return leitura.blocos.flatMap((bloco, i) => {
+      // Um cartão pode receber mais de um bloco (titular e adicionais na mesma fatura). A
+      // conferência roda UMA vez por cartão, com os brutos de todos os blocos dele: rodar por
+      // bloco fazia a compra casada num bloco virar "sobra" no outro, e repetia a mesma
+      // sobra (mesma chave) em cada bloco.
+      const brutosPorCartao = new Map<ID, LancamentoBruto[]>();
+      leitura.blocos.forEach((bloco, i) => {
         const destino = destinoBlocos[i];
-        if (!destino || destino === NAO_IMPORTAR) return [];
-        const cartao = dados.cartoes.find((c) => c.id === destino);
+        if (!destino || destino === NAO_IMPORTAR) return;
+        brutosPorCartao.set(destino, [...(brutosPorCartao.get(destino) ?? []), ...bloco.brutos]);
+      });
+      return [...brutosPorCartao].flatMap(([cartaoId, brutos]) => {
+        const cartao = dados.cartoes.find((c) => c.id === cartaoId);
         if (!cartao) return [];
         const opcoes: OpcoesConferencia = {
           boxId: cartao.boxId,
@@ -74,7 +80,7 @@ export default function Importar() {
           categoriasPadrao: { ganho: CATEGORIA_A_CLASSIFICAR.ganho, gasto: CATEGORIA_A_CLASSIFICAR.gasto },
           categoriaCartaoPadraoId: CATEGORIA_A_CLASSIFICAR.cartao,
         };
-        return conferir(bloco.brutos, dados, opcoes)
+        return conferir(brutos, dados, opcoes)
           .map((item) => ({
             item, boxId: cartao.boxId, cartaoId: cartao.id, chave: chaveDoItem(item, leitura),
           }));
@@ -109,10 +115,8 @@ export default function Importar() {
   if (!dados) return null;
 
   function limparTudo() {
-    setNomeArquivo(''); setBuf(null); setAdapterAtual(undefined); setEscolhendoFormato(false);
-    setLeitura(null); setLendo(false); setErro('');
-    setBoxIdEscolhida(null); setDestinoBlocos({});
-    setTrocas({}); setTotaisCorrigidos({}); setFiltro(null);
+    limparImportacao(); setEscolhendoFormato(false);
+    setLendo(false); setErro('');
     setResumoAplicado(null); setErroAplicar('');
     setCopiarEstado('ocioso'); setMostrarLinhasIgnoradas(false);
   }
@@ -130,27 +134,24 @@ export default function Importar() {
   }
 
   async function lerComAdapter(adapter: Adapter, conteudo: ArrayBuffer) {
-    setAdapterAtual(adapter);
+    setImportacao(() => ({ adapterAtual: adapter, trocas: {}, totaisCorrigidos: {}, filtro: null }));
     setEscolhendoFormato(false);
     setLendo(true);
     setErro('');
-    setTrocas({});
-    setTotaisCorrigidos({});
-    setFiltro(null);
     setCopiarEstado('ocioso'); setMostrarLinhasIgnoradas(false);
     try {
       const r = await adapter.ler(conteudo);
-      setLeitura(r);
-      setBoxIdEscolhida(boxIdEfetivo(dados!, boxSel));
       const destinos: Record<number, DestinoBloco> = {};
       // Mesma lista do passo 2 (`cartoesAtivos`, já filtrada pela box selecionada): a
       // pré-seleção só acontece quando ela sobra com exatamente um cartão elegível.
       (r.blocos ?? []).forEach((_, i) => {
         destinos[i] = cartoesAtivos.length === 1 ? cartoesAtivos[0].id : undefined;
       });
-      setDestinoBlocos(destinos);
+      setImportacao(() => ({
+        leitura: r, boxIdEscolhida: boxIdEfetivo(dados!, boxSel), destinoBlocos: destinos,
+      }));
     } catch (e) {
-      setLeitura(null);
+      setImportacao(() => ({ leitura: null }));
       // O detalhe técnico fica na mensagem: foi ele que permitiu diagnosticar o defeito do
       // buffer esvaziado do PDF. Sem o prefixo em português, a exceção crua aparecia na tela.
       const mensagem = e instanceof Error ? e.message : 'motivo desconhecido';
@@ -163,21 +164,13 @@ export default function Importar() {
   async function onArquivoEscolhido(file: File) {
     const conteudo = await file.arrayBuffer();
     const inicio = new TextDecoder().decode(conteudo.slice(0, 2048));
-    setNomeArquivo(file.name);
-    setBuf(conteudo);
-    setLeitura(null);
-    setBoxIdEscolhida(null);
-    setDestinoBlocos({});
-    setTrocas({});
-    setTotaisCorrigidos({});
-    setFiltro(null);
+    setImportacao(() => ({ ...IMPORTACAO_VAZIA, nomeArquivo: file.name, buf: conteudo }));
     setResumoAplicado(null);
     setErroAplicar('');
     const adapter = detectarAdapter(file.name, inicio);
     if (adapter) {
       await lerComAdapter(adapter, conteudo);
     } else {
-      setAdapterAtual(undefined);
       setEscolhendoFormato(true);
     }
   }
@@ -191,10 +184,10 @@ export default function Importar() {
    *  filtro, "visíveis" é a lista inteira; com filtro, só o estado escolhido no resumo. É um
    *  jeito rápido de "esvaziar" a conferência antes de escolher, item a item, o que entra. */
   function marcarTodosComoIgnorar() {
-    setTrocas((t) => {
-      const novo = { ...t };
+    setImportacao((im) => {
+      const novo = { ...im.trocas };
       for (const ic of itensVisiveis) novo[ic.chave] = { estado: ic.item.estado, acao: { tipo: 'ignorar' } };
-      return novo;
+      return { trocas: novo };
     });
   }
 
@@ -377,7 +370,7 @@ export default function Importar() {
                 key={b.id}
                 role="radio" aria-checked={boxIdEscolhida === b.id}
                 className={boxIdEscolhida === b.id ? 'ativo' : ''}
-                onClick={() => { setBoxIdEscolhida(b.id); setFiltro(null); }}
+                onClick={() => setImportacao(() => ({ boxIdEscolhida: b.id, filtro: null }))}
               >{b.nome}</button>
             ))}
           </div>
@@ -397,13 +390,13 @@ export default function Importar() {
                     key={c.id}
                     role="radio" aria-checked={destinoBlocos[i] === c.id}
                     className={destinoBlocos[i] === c.id ? 'ativo' : ''}
-                    onClick={() => { setDestinoBlocos((d) => ({ ...d, [i]: c.id })); setFiltro(null); }}
+                    onClick={() => setDestinoBloco(i, c.id)}
                   >{c.nome}</button>
                 ))}
                 <button
                   role="radio" aria-checked={destinoBlocos[i] === NAO_IMPORTAR}
                   className={destinoBlocos[i] === NAO_IMPORTAR ? 'ativo' : ''}
-                  onClick={() => { setDestinoBlocos((d) => ({ ...d, [i]: NAO_IMPORTAR })); setFiltro(null); }}
+                  onClick={() => setDestinoBloco(i, NAO_IMPORTAR)}
                 >Não importar</button>
               </div>
             </div>
@@ -427,9 +420,13 @@ export default function Importar() {
             itens={itensComContexto}
             dados={dados}
             trocas={trocas}
-            onTrocar={(chave, estado, acao) => setTrocas((t) => ({ ...t, [chave]: { estado, acao } }))}
+            onTrocar={(chave, estado, acao) => setImportacao((im) => ({
+              trocas: { ...im.trocas, [chave]: { estado, acao } },
+            }))}
             totaisCorrigidos={totaisCorrigidos}
-            onCorrigirTotal={(chave, estado, v) => setTotaisCorrigidos((t) => ({ ...t, [chave]: { estado, valorCent: v } }))}
+            onCorrigirTotal={(chave, estado, v) => setImportacao((im) => ({
+              totaisCorrigidos: { ...im.totaisCorrigidos, [chave]: { estado, valorCent: v } },
+            }))}
             mostrarLinhasIgnoradas={mostrarLinhasIgnoradas}
             onToggleLinhasIgnoradas={() => setMostrarLinhasIgnoradas((v) => !v)}
             copiarEstado={copiarEstado}

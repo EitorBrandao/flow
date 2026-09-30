@@ -1,0 +1,6 @@
+- Conferência guarda o arquivo e as decisões ao trocar de aba
+  - O menu de Ajustes mostra "Conferência em andamento" em Importar e conferir
+  - Só confirmar ou escolher outro arquivo apaga o que foi guardado
+- Fatura com dois blocos no mesmo cartão é conferida como uma só
+  - Acaba com as "sobras" falsas e com as linhas que ficavam no topo ao filtrar
+- Botão Confirmar da conferência não deixa mais texto aparecer atrás nem abaixo da mensagem
