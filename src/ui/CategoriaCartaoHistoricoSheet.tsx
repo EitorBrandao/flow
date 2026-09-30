@@ -18,7 +18,7 @@ interface Props {
 }
 
 /** Folha somente leitura: uma categoria do cartão nos 6 meses de fatura que terminam em `mes`,
- *  ou nos meses de `periodo`, em barras (100% = maior mês), com a média dos 6. Mesma conta da tabela de Análises. */
+ *  ou nos meses de `periodo`, em barras (100% = maior mês), com a média dos meses mostrados. Mesma conta da tabela de Análises. */
 export default function CategoriaCartaoHistoricoSheet({
   aberto, cartao, categoria, mes, periodo, comprasCartao, ajustesFechamento, onFechar,
 }: Props) {

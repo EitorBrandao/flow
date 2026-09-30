@@ -6,7 +6,7 @@ import { addMeses, formatarDataBR, mesAbreviado, mesDe } from '../domain/dates';
 import { resumoAssinaturasDoPeriodo } from '../domain/fatura';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
 import {
-  anoAnteriorRepete, estadoInicial, mesesDoPeriodo, notaComparacao, rotuloColunaPeriodo,
+  anoAnteriorRepete, estadoInicial, mesesDoPeriodo, notaComparacao, rotuloColunaPeriodo, rotuloIntervalo,
   type EstadoPeriodo,
 } from '../domain/periodo';
 import type { ID, Viagem } from '../domain/types';
@@ -293,6 +293,7 @@ export default function TelaAnalises() {
         aberto={assinaturasAberto}
         itens={resumoAssinaturas.itens}
         totalCent={resumoAssinaturas.totalCent}
+        periodo={varios ? rotuloIntervalo(meses) : undefined}
         onFechar={() => setAssinaturasAberto(false)}
       />
       <ViagemSheet

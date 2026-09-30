@@ -6,10 +6,12 @@ interface Props {
   aberto: boolean;
   itens: ItemResumoAssinaturas[];
   totalCent: number;
+  /** Intervalo analisado, quando são vários meses (ex.: "out/2025 – set/2026"). */
+  periodo?: string;
   onFechar: () => void;
 }
 
-export default function AssinaturasResumoSheet({ aberto, itens, totalCent, onFechar }: Props) {
+export default function AssinaturasResumoSheet({ aberto, itens, totalCent, periodo, onFechar }: Props) {
   const porCartao = new Map<string, { cartaoNome: string; itens: ItemResumoAssinaturas[] }>();
   for (const item of itens) {
     let grupo = porCartao.get(item.cartaoId);
@@ -26,6 +28,7 @@ export default function AssinaturasResumoSheet({ aberto, itens, totalCent, onFec
         <h2 style={{ margin: 0 }}>Assinaturas</h2>
         <strong className="valor-gasto">{formatarBRL(totalCent)}</strong>
       </div>
+      {periodo && <p className="sub" style={{ margin: '4px 0 0' }}>{periodo}</p>}
       <div className="lista" style={{ marginTop: 12 }}>
         {[...porCartao.entries()].map(([cartaoId, grupo]) => (
           <div key={cartaoId}>

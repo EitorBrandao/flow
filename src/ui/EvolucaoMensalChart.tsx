@@ -51,7 +51,7 @@ export default function EvolucaoMensalChart({ serie, mesAtual }: Props) {
       )}
       <div className="evolucao-area">
         <ResponsiveContainer width="100%" height={140}>
-          <ComposedChart data={serie} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+          <ComposedChart data={serie} margin={longo ? { top: 4, right: 16, bottom: 0, left: 16 } : { top: 4, right: 4, bottom: 0, left: 4 }}>
             <XAxis
               dataKey="mes"
               interval={longo ? 2 : 0}

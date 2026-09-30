@@ -1,4 +1,5 @@
 import { lancamentosDaCategoria } from '../domain/aggregations';
+import { mesAbreviado } from '../domain/dates';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
 import type { ID, Lancamento, TipoCategoria } from '../domain/types';
 import Sheet from './Sheet';
@@ -34,7 +35,7 @@ export default function LancamentosSheet({
     <Sheet aberto={aberto} onFechar={onFechar} rotulo={nome}>
       {onVoltar && <button className="botao-ver-mais" onClick={onVoltar}>‹ voltar ao período</button>}
       <div className="linha" style={{ justifyContent: 'space-between' }}>
-        <h2 style={{ margin: 0 }}>{nome}</h2>
+        <h2 style={{ margin: 0 }}>{onVoltar ? `${nome} · ${mesAbreviado(mes)}` : nome}</h2>
         <strong className={classe(total)}>{formatarBRL(total)}</strong>
       </div>
       <div className="lista" style={{ marginTop: 12 }}>

@@ -153,7 +153,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   lançamento da fatura e o total dela, porque nem sempre um é o outro (fatura já paga em
   parte tem valor menor que o total calculado).
 - **`AssinaturasResumoSheet.tsx`** — sheet de Análises com o total de assinaturas do mês,
-  agrupado por cartão, no mesmo padrão do `LancamentosSheet`: cabeçalho do grupo em
+  agrupado por cartão (prop opcional `periodo`: o intervalo, sob o título, quando Análises cobre vários meses), no mesmo padrão do `LancamentosSheet`: cabeçalho do grupo em
   `.recuo-1` com o subtotal, itens em `.recuo-2`.
 - **`EscolherArquivo.tsx`** — o botão "Escolher arquivo" do app sobre um `input[type=file]`
   invisível (`.selecionar-arquivo`), no lugar do controle nativo, cujo texto vem do navegador.

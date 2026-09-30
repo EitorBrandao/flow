@@ -45,3 +45,12 @@ it('cada grupo mostra o subtotal do cartão, no padrão da lista de lançamentos
   expect(within(cabecalhoNubank).getByText('R$ 51,90')).toBeInTheDocument();
   expect(within(dialog).getByText('Netflix').closest('.item')).toHaveClass('recuo-2');
 });
+
+it('mostra o período sob o título só quando informado', () => {
+  const { rerender } = render(
+    <AssinaturasResumoSheet aberto totalCent={0} itens={[]} periodo="out/2025 – set/2026" onFechar={() => {}} />,
+  );
+  expect(screen.getByText('out/2025 – set/2026')).toBeInTheDocument();
+  rerender(<AssinaturasResumoSheet aberto totalCent={0} itens={[]} onFechar={() => {}} />);
+  expect(screen.queryByText('out/2025 – set/2026')).not.toBeInTheDocument();
+});

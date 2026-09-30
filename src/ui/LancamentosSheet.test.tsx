@@ -153,6 +153,16 @@ describe('LancamentosSheet', () => {
     expect(voltar).toHaveBeenCalledOnce();
   });
 
+  it('o título mostra o mês só quando aberta a partir do período', () => {
+    abrirPix(() => {});
+    expect(screen.getByRole('heading', { name: 'Pix · jul/2026' })).toBeInTheDocument();
+  });
+
+  it('sem onVoltar, o título é só o nome', () => {
+    abrirPix();
+    expect(screen.getByRole('heading', { name: 'Pix' })).toBeInTheDocument();
+  });
+
   it('sem onVoltar, não mostra o botão de voltar', () => {
     abrirPix();
     expect(screen.queryByRole('button', { name: /voltar ao período/ })).not.toBeInTheDocument();
