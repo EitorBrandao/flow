@@ -366,3 +366,36 @@ it('linha orçamento viagem: viagem sem orçamento não mostra a linha', async (
   render(<TelaLancar />);
   expect(screen.queryByText(/· falta|· passou/)).not.toBeInTheDocument();
 });
+
+it('mostra em qual box o lançamento vai', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  expect(screen.getByText(/Lançando na box/)).toHaveTextContent('Lançando na box eitor');
+});
+
+it('avisa que a data já está dentro do saldo da box, e some ao escolher data depois dele', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-07-02', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  expect(screen.getByText(/já está dentro do saldo inicial da box \(02\/07\/2026\)/)).toBeInTheDocument();
+});
+
+it('não avisa quando a data é depois do saldo da box', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  expect(screen.queryByText(/já está dentro do saldo inicial/)).not.toBeInTheDocument();
+});

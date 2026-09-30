@@ -1,4 +1,4 @@
-import { addDias, diasEntre } from './dates';
+import { addDias, diasEntre, formatarDataBR } from './dates';
 import type { Box, Categoria, ID, ISODate, Lancamento } from './types';
 
 export interface DiaSaldo {
@@ -73,4 +73,17 @@ export function pendentes(lancamentos: Lancamento[], hoje: ISODate): Lancamento[
   return lancamentos
     .filter((l) => l.status === 'previsto' && !l.cenarioId && l.data <= limite)
     .sort((a, b) => a.data.localeCompare(b.data));
+}
+
+/**
+ * Aviso para quem lança numa data que a projeção ignora: `projetarBoxes` descarta o
+ * lançamento com `data <= dataSaldoInicial` da própria box, porque o saldo inicial já o
+ * conteria. Sem o aviso, o lançamento aparece na lista e o saldo não se mexe — e quem
+ * acabou de criar a box (saldo de hoje) tropeça já no primeiro gasto.
+ */
+export function avisoDataNoSaldo(box: Box | undefined, data: ISODate): string | null {
+  const limite = box?.dataSaldoInicial;
+  if (!limite || data === '' || data > limite) return null;
+  const br = formatarDataBR(limite);
+  return `Esta data já está dentro do saldo inicial da box (${br}). O lançamento fica no histórico, mas não muda o saldo. Use uma data depois de ${br} para descontar.`;
 }

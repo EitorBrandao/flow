@@ -400,6 +400,8 @@ option: carteira
 option: reserva
 option: casa
 Lançar
+Lançando na box
+carteira
 label: Valor
 radio: Gasto
 radio: Ganho
@@ -841,6 +843,8 @@ option: carteira
 option: reserva
 option: casa
 Lançar
+Lançando na box
+carteira
 label: Valor
 radio: Gasto
 radio: Ganho
@@ -1360,6 +1364,8 @@ option: carteira
 option: reserva
 option: casa
 Lançar
+Lançando na box
+carteira
 label: Valor
 radio: Gasto
 radio: Ganho
@@ -1816,6 +1822,8 @@ option: carteira
 option: reserva
 option: casa
 Lançar
+Lançando na box
+carteira
 label: Valor
 radio: Gasto
 radio: Ganho
@@ -2291,6 +2299,8 @@ option: carteira
 option: reserva
 option: casa
 Lançar
+Lançando na box
+carteira
 label: Valor
 radio: Gasto
 radio: Ganho
@@ -2727,6 +2737,8 @@ option: carteira
 option: reserva
 option: casa
 Lançar
+Lançando na box
+carteira
 label: Valor
 radio: Gasto
 radio: Ganho
@@ -3148,6 +3160,8 @@ option: carteira
 option: reserva
 option: casa
 Lançar
+Lançando na box
+carteira
 label: Valor
 radio: Gasto
 radio: Ganho
@@ -3534,6 +3548,8 @@ option: carteira
 option: reserva
 option: casa
 Lançar
+Lançando na box
+carteira
 label: Valor
 radio: Gasto
 radio: Ganho

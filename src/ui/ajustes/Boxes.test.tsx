@@ -108,14 +108,36 @@ it('o formulário de criação não tem botão Cancelar', async () => {
   expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument();
 });
 
-it('o campo Nome e o botão Criar ficam na mesma linha de formulário', async () => {
+it('criar a box grava o saldo informado, com sinal, na data escolhida', async () => {
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-09-30' });
+  render(<Boxes />);
+
+  await userEvent.type(screen.getByLabelText('Nome'), 'conta');
+  await userEvent.type(screen.getByLabelText(/Saldo agora/), '125000');
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+  const criada = (await db.boxes.toArray()).find((b) => b.nome === 'conta');
+  expect(criada?.saldoInicial).toBe(125000);
+  expect(criada?.dataSaldoInicial).toBe('2026-09-30');
+});
+
+it('criar a box com o sinal alternado grava saldo negativo', async () => {
   await useApp.getState().iniciar();
   render(<Boxes />);
 
-  const campoNome = screen.getByLabelText('Nome');
-  const formLinha = campoNome.closest('.form-linha') as HTMLElement;
-  expect(formLinha).not.toBeNull();
-  expect(within(formLinha).getByRole('button', { name: 'Criar' })).toBeInTheDocument();
+  await userEvent.type(screen.getByLabelText('Nome'), 'cheque');
+  await userEvent.type(screen.getByLabelText(/Saldo agora/), '5000');
+  await userEvent.click(screen.getAllByRole('button', { name: /Alternar sinal/ })[0]);
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+  expect((await db.boxes.toArray()).find((b) => b.nome === 'cheque')?.saldoInicial).toBe(-5000);
+});
+
+it('a box "casa" explica para que serve', async () => {
+  await useApp.getState().iniciar();
+  render(<Boxes />);
+  expect(screen.getByText(/Gastos divididos, sem saldo próprio/)).toBeInTheDocument();
 });
 
 it('toca no lápis para editar: abre os campos dentro do item e some "Nova box"', async () => {

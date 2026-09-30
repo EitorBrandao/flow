@@ -8,6 +8,7 @@ import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
+import { avisoDataNoSaldo } from '../domain/projection';
 import SeletorCategoria from './SeletorCategoria';
 import Sheet from './Sheet';
 
@@ -94,6 +95,10 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
               <label htmlFor="ed-data">Data</label>
               <CampoData id="ed-data" value={data} onChange={setData} />
             </div>
+            {(() => {
+              const aviso = avisoDataNoSaldo(dados.boxes.find((b) => b.id === lanc.boxId), data);
+              return aviso ? <p className="aviso">{aviso}</p> : null;
+            })()}
             <div className="campo">
               <label>Categoria</label>
               <SeletorCategoria categorias={categorias} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />

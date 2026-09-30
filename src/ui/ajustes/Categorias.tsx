@@ -65,7 +65,8 @@ function ItemCategoria({
 }
 
 export default function Categorias() {
-  const { dados, boxSel, recarregar } = useApp();
+  const { dados, boxSel, recarregar, setAba } = useApp();
+  const [criouSugeridas, setCriouSugeridas] = useState(false);
   const [nome, setNome] = useState('');
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -134,6 +135,7 @@ export default function Categorias() {
       }
     }
     await recarregar();
+    setCriouSugeridas(true);
     setSugestoesMarcadas(new Set(CATEGORIAS_SUGERIDAS.filter((c) => c.marcadaPorPadrao).map((c) => `${c.nome}:${c.tipo}`)));
   }
 
@@ -245,6 +247,16 @@ export default function Categorias() {
           </div>
           <button className="botao botao-primario" onClick={criarSugeridas} disabled={contagem === 0}>
             Criar as {contagem} marcadas
+          </button>
+        </div>
+      )}
+
+      {criouSugeridas && cats.length > 0 && (
+        <div className="card">
+          <p className="rotulo">Categorias criadas ✓</p>
+          <p>Falta só o primeiro lançamento. Ele sai em três toques: valor, categoria, Lançar.</p>
+          <button className="botao botao-primario" onClick={() => setAba('lancar')}>
+            Fazer meu primeiro lançamento
           </button>
         </div>
       )}

@@ -10,7 +10,7 @@ import CampoValor from '../CampoValor';
 
 interface CamposBox { nome: string; saldoInicial: number | null; dataSaldoInicial: string | null }
 
-/** Campos de uma box, usados só para editar dentro do item — a criação usa apenas o nome. */
+/** Campos de uma box, usados para editar dentro do item. */
 function FormBox({ inicial, onSalvo, onCancelar }: {
   inicial: CamposBox;
   onSalvo: (campos: CamposBox) => Promise<void>;
@@ -83,7 +83,11 @@ function FormBox({ inicial, onSalvo, onCancelar }: {
 
 export default function Boxes() {
   const { dados, recarregar, setBoxSel } = useApp();
+  const { hoje } = useApp();
   const [nomeNova, setNomeNova] = useState('');
+  const [saldoNova, setSaldoNova] = useState(0);
+  const [negativaNova, setNegativaNova] = useState(false);
+  const [dataNova, setDataNova] = useState(hoje);
   const [aviso, setAviso] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const uid = useId();
@@ -99,7 +103,8 @@ export default function Boxes() {
     const agora = agoraISO();
     const id = novoId();
     await repo.salvarBox({
-      id, nome: nomeNova.trim(), saldoInicial: 0, dataSaldoInicial: useApp.getState().hoje,
+      id, nome: nomeNova.trim(),
+      saldoInicial: negativaNova ? -saldoNova : saldoNova, dataSaldoInicial: dataNova || hoje,
       criadoEm: agora, alteradoEm: agora,
     });
     await recarregar();
@@ -107,6 +112,9 @@ export default function Boxes() {
     // fora da seleção fazia a pessoa criar e não ver nada mudar no topo.
     setBoxSel(id);
     setNomeNova('');
+    setSaldoNova(0);
+    setNegativaNova(false);
+    setDataNova(hoje);
     setAviso('');
   }
 
@@ -130,10 +138,30 @@ export default function Boxes() {
           <div className="form-linha">
             <div className="campo">
               <label htmlFor={`${uid}-novabox`}>Nome</label>
-              <input id={`${uid}-novabox`} placeholder="nome" value={nomeNova} onChange={(e) => setNomeNova(e.target.value)} />
+              <input id={`${uid}-novabox`} placeholder="ex.: Conta Nubank" value={nomeNova} onChange={(e) => setNomeNova(e.target.value)} />
             </div>
-            <button className="botao botao-primario" onClick={criar}>Criar</button>
           </div>
+          <div className="form-linha">
+            <div className="campo">
+              <label htmlFor={`${uid}-novo-saldo`}>Saldo agora (o que o app do banco mostra)</label>
+              <div className="linha">
+                <button type="button" className="botao botao-sinal" aria-label="Alternar sinal (positivo/negativo)" onClick={() => setNegativaNova(n => !n)}>
+                  {negativaNova ? '−' : '+'}
+                </button>
+                <CampoValor id={`${uid}-novo-saldo`} valorCentavos={saldoNova} onChange={setSaldoNova} style={{ flex: 1, minWidth: 0 }} />
+              </div>
+            </div>
+          </div>
+          <div className="form-linha">
+            <div className="campo">
+              <label htmlFor={`${uid}-nova-data`}>Data do saldo</label>
+              <CampoData id={`${uid}-nova-data`} value={dataNova} onChange={setDataNova} />
+            </div>
+          </div>
+          <p className="sub">
+            Lançamentos até essa data já estão dentro do saldo. Só os lançamentos depois dela mudam o saldo.
+          </p>
+          <button className="botao botao-primario" onClick={criar}>Criar</button>
           {aviso && <p className="aviso">{aviso}</p>}
         </>
       )}
@@ -158,7 +186,7 @@ export default function Boxes() {
                       <span className={classeSaldo(b.saldoInicial)}>{formatarSaldo(b.saldoInicial)}</span>
                       {b.dataSaldoInicial ? ` em ${formatarDataBR(b.dataSaldoInicial)}` : ''}
                     </>
-                  ) : 'sem saldo próprio (compartilhada)'}
+                  ) : 'Gastos divididos, sem saldo próprio. Escolher "casa" no topo soma todas as suas boxes.'}
                 </div>
               </div>
               {dados.config.boxPadraoId === b.id ? (

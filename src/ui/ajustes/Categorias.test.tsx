@@ -402,3 +402,18 @@ it('criar ou salvar sem nome avisa embaixo dos botões', async () => {
   expect(screen.getByText('Dê um nome à categoria para salvar.')).toBeInTheDocument();
   expect((await db.categorias.get(cat.id))?.nome).toBe('mercado');
 });
+
+it('depois de criar as sugeridas, oferece o primeiro lançamento', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, aba: 'ajustes' });
+
+  render(<Categorias />);
+  expect(screen.queryByText('Fazer meu primeiro lançamento')).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: /Criar as \d+ marcadas/ }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Fazer meu primeiro lançamento' }));
+
+  expect(useApp.getState().aba).toBe('lancar');
+});
