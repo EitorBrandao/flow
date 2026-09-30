@@ -45,6 +45,11 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   informado: o saldo calculado dos dois bancos muda pelas pernas. Uma transferência antiga já
   tinha ajustado o saldo informado e gravado `dataSaldoDeclarado` igual à data dela; como só
   contam lançamentos de data posterior, as pernas antigas não contam duas vezes.
+  **Limitação de leitura:** compras de cartão sem banco (de um cartão cuja conta do banco
+  foi excluída ou nunca foi definida) contam no banco padrão via `bancoIdDoCartao` na
+  agregação; faturas antigas desse cartão, se não tiverem `bancoId` gravado diretamente,
+  ficam em "sem banco" — isso causa uma divergência entre o filtro por banco e os totais do
+  cartão em meses antigos.
 - **Categoria** — rótulo de ganho/gasto dentro de uma box, com `ordem` (posição definida
   pelo usuário em Ajustes) e `arquivada` (fica fora das listas de seleção, mas seu
   histórico continua contando nos agregados). A ordem de exibição não é `ordem` cru: é

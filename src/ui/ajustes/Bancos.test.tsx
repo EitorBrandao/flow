@@ -143,7 +143,7 @@ it('edita nome, saldo e data de um banco existente', async () => {
   expect(atualizado?.dataSaldoDeclarado).toBe('2026-08-01');
   const item = screen.getByText('Banco Novo').closest('.item') as HTMLElement;
   const sub = item?.querySelector('.sub') as HTMLElement;
-  expect(sub?.textContent?.replace(/\s/g, ' ').startsWith('R$ 1.500,00 informado em 01/08')).toBe(true);
+  expect(sub?.textContent?.replace(/\s/g, ' ').startsWith('R$ 1.500,00 calculado a partir do saldo informado em 01/08')).toBe(true);
 });
 
 it('saldo informado negativo aparece em vermelho, com o sinal "−"', async () => {
@@ -402,8 +402,8 @@ it('mostra o saldo calculado: o informado mais o movimento depois da data inform
   const sub = itemUm.querySelector('.sub') as HTMLElement;
   expect(await within(itemUm).findByText((content) => content.replace(/\s/g, ' ') === saldoCalculado)).toBeInTheDocument();
 
-  // Afirma que o texto "informado em 01/08/2026" está na mesma linha
-  expect(sub.textContent).toContain('informado em 01/08/2026');
+  // Afirma que o texto "calculado a partir do saldo informado em 01/08/2026" está na mesma linha
+  expect(sub.textContent).toContain('calculado a partir do saldo informado em 01/08/2026');
 
   // Afirma que o saldo declarado antigo (100000) não está no documento
   expect(screen.queryByText((content) => content.replace(/\s/g, ' ') === saldoDeclVelho)).not.toBeInTheDocument();
@@ -458,4 +458,42 @@ it('visão "casa" mostra exatamente um selo padrão quando há bancos em múltip
   const itemA2 = screen.getByText('Banco A2').closest('.item') as HTMLElement;
   expect(within(itemA2).queryByText('padrão')).not.toBeInTheDocument();
   expect(within(itemA2).getByRole('button', { name: 'Tornar padrão' })).toBeInTheDocument();
+});
+
+it('cartão sem banco com fatura prevista realinha o bancoId da fatura ao clicar Tornar padrão', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const box = await comBox();
+    const um = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    const dois = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+    // Cartão SEM banco explícito (usará o padrão, que é Banco Um)
+    const cartao = await repo.salvarCartao({
+      boxId: box.id, nome: 'Cartão', diaFechamento: 28, diaVencimento: 5,
+    }, '2027-12-31');
+    const catCartao = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+    // Gera uma compra que resulta em uma fatura prevista
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-05', valorTotal: 90000, parcelas: 1,
+    }, '2027-12-31');
+
+    // Recarrega os dados da UI
+    await recarregarDados();
+    render(<Bancos />);
+
+    // Verifica que a fatura inicial tem o bancoId do Banco Um (padrão)
+    let fatura = (await db.lancamentos.toArray()).find((l) => l.origem === 'cartao')!;
+    expect(fatura.bancoId).toBe(um.id);
+
+    // Clica em "Tornar padrão" do Banco Dois
+    await userEvent.click(await screen.findByRole('button', { name: 'Tornar padrão' }));
+
+    // Verifica que a fatura agora tem o bancoId do Banco Dois
+    await waitFor(async () => {
+      fatura = (await db.lancamentos.get(fatura.id))!;
+      expect(fatura.bancoId).toBe(dois.id);
+    });
+  } finally {
+    vi.useRealTimers();
+  }
 });

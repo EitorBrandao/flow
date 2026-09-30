@@ -71,6 +71,7 @@ export default function Bancos() {
     }
     const ordem = proximaOrdem(bancos.filter((b) => b.boxId === boxIdCriacao));
     await repo.salvarBanco({ boxId: boxIdCriacao!, nome: nomeNovo.trim(), ordem });
+    await repo.sincronizarCartoes(dados!.config.horizonteProjecao);
     await recarregar();
     setNomeNovo('');
     setAvisoCriacao('');
@@ -109,13 +110,15 @@ export default function Bancos() {
   }
 
   async function excluir(id: string) {
-    if (!window.confirm('Excluir este banco? Os cartões vinculados a ele perdem a vinculação, sem apagar nada.')) return;
+    if (!window.confirm('Excluir este banco? Os cartões, os lançamentos e as recorrências dele ficam sem banco. Nada é apagado.')) return;
     await repo.excluirBanco(id);
+    await repo.sincronizarCartoes(dados!.config.horizonteProjecao);
     await recarregar();
   }
 
   async function tornarPadrao(id: string) {
     await repo.definirBancoPadrao(id);
+    await repo.sincronizarCartoes(dados!.config.horizonteProjecao);
     await recarregar();
   }
 
@@ -214,7 +217,7 @@ export default function Bancos() {
                         {saldo != null ? (
                           <>
                             <span className={classeSaldo(saldo)}>{formatarSaldo(saldo)}</span>
-                            {` informado em ${formatarDataBR(b.dataSaldoDeclarado!)}`}
+                            {` calculado a partir do saldo informado em ${formatarDataBR(b.dataSaldoDeclarado!)}`}
                           </>
                         ) : 'saldo ainda não informado'}
                         {' · '}{textoContagemCartoes(cartoesDoBanco(b.id))}
@@ -244,7 +247,7 @@ export default function Bancos() {
       {bancos.length > 0 && (
         <p className="sub">
           O saldo mostrado é o último saldo informado mais os lançamentos do banco depois dessa data.
-          Informar de novo, na tela Hoje, recomeça a conta. Lançamento sem banco não entra na conta
+          Informar um novo valor, na tela Hoje, recomeça a conta. Lançamento sem banco não entra na conta
           de nenhum banco.
         </p>
       )}
