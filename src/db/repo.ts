@@ -1,4 +1,5 @@
 import { compararCategorias, compararCategoriasCartao, proximaOrdem } from '../domain/categorias';
+import { bancoIdDoCartao } from '../domain/bancos';
 import { hojeISO } from '../domain/dates';
 import {
   ajustesDoCartao, calcularFaturas, datasFaturaDoMes, dedupAjustesFechamento, dedupConferencias,
@@ -846,13 +847,14 @@ export async function sincronizarCartoes(
   const hoje = hojeISO();
   await db.transaction('rw', [
     db.cartoes, db.comprasCartao, db.recorrenciasCartao, db.conferenciasFatura, db.ajustesFechamento,
-    db.lancamentos, db.notasFiscais,
+    db.lancamentos, db.notasFiscais, db.bancos,
   ], async () => {
     for (const ass of await db.recorrenciasCartao.toArray()) {
       await materializarAssinatura(ass, hoje, horizonte, {
         permitirCicloAtual: ass.id === opts?.permitirCicloAtualPara,
       });
     }
+    const bancos = await db.bancos.toArray();
     for (const cartao of await db.cartoes.toArray()) {
       const [compras, conferencias, ajustes, existentes] = await Promise.all([
         db.comprasCartao.where('cartaoId').equals(cartao.id).toArray(),
@@ -867,12 +869,23 @@ export async function sincronizarCartoes(
       for (const a of diff.atualizar) {
         await db.lancamentos.update(a.id, { valor: a.valor, data: a.data, alteradoEm: agora });
       }
+      // A fatura sai do banco do cartão (ou do padrão da box). Só previstos e novos mudam:
+      // fatura paga é história e não anda quando o cartão troca de banco.
+      const bancoDaFatura = bancoIdDoCartao(cartao, bancos);
       await db.lancamentos.bulkAdd(diff.criar.map((n): Lancamento => ({
         id: novoId(), boxId: cartao.boxId, categoriaId: cartao.categoriaFaturaId,
         data: n.data, valor: n.valor, status: 'previsto', origem: 'cartao',
         cartaoId: cartao.id, faturaMes: n.faturaMes,
+        ...(bancoDaFatura ? { bancoId: bancoDaFatura } : {}),
         criadoEm: agora, alteradoEm: agora,
       })));
+      await db.lancamentos.where('cartaoId').equals(cartao.id)
+        .filter((l) => l.origem === 'cartao' && l.status === 'previsto' && l.bancoId !== bancoDaFatura)
+        .modify((l) => {
+          if (bancoDaFatura) l.bancoId = bancoDaFatura;
+          else delete l.bancoId;
+          l.alteradoEm = agora;
+        });
     }
   });
 }
@@ -905,11 +918,12 @@ async function categoriaTransferenciaEntradaDe(boxId: ID): Promise<ID> {
   return categoriaId;
 }
 
-/** Move saldo declarado de um banco para outro DA MESMA BOX, gravando dois lançamentos
- *  ligados (`transferenciaId` compartilhado) numa categoria oculta "Transferência" — um de
- *  saída (gasto) na origem, um de entrada (ganho) no destino — e ajustando o saldo declarado
- *  dos dois bancos na mesma transação. Ver `docs/superpowers/specs/2026-09-16-transferencia-
- *  entre-bancos-design.md`. */
+/** Move dinheiro de um banco para outro DA MESMA BOX, gravando dois lançamentos ligados
+ *  (`transferenciaId` compartilhado) numa categoria oculta "Transferência" — um de saída
+ *  (gasto) na origem, um de entrada (ganho) no destino. Não escreve no saldo informado dos
+ *  bancos: o saldo calculado (`saldoCalculadoBanco`, `domain/bancos.ts`) já conta as duas
+ *  pernas, que têm data posterior à do saldo informado. Ver `docs/superpowers/specs/2026-09-16-
+ *  transferencia-entre-bancos-design.md` e `2026-09-30-banco-no-lancamento-design.md`. */
 export async function transferirEntreBancos(
   bancoOrigemId: ID, bancoDestinoId: ID, valorCent: number, data: ISODate,
 ): Promise<void> {
@@ -920,7 +934,7 @@ export async function transferirEntreBancos(
   if (!origem || !destino) throw new Error('Banco não encontrado.');
   if (origem.boxId !== destino.boxId) throw new Error('Transferência só entre bancos da mesma box.');
 
-  await db.transaction('rw', db.bancos, db.categorias, db.boxes, db.lancamentos, db.config, async () => {
+  await db.transaction('rw', db.categorias, db.boxes, db.lancamentos, db.config, async () => {
     const categoriaSaidaId = await categoriaTransferenciaSaidaDe(origem.boxId);
     const categoriaEntradaId = await categoriaTransferenciaEntradaDe(origem.boxId);
     const agora = agoraISO();
@@ -939,20 +953,13 @@ export async function transferirEntreBancos(
       },
     ];
     await db.lancamentos.bulkAdd(lancamentos);
-    await db.bancos.update(origem.id, {
-      saldoDeclaradoCent: (origem.saldoDeclaradoCent ?? 0) - valorCent,
-      dataSaldoDeclarado: data, alteradoEm: agora,
-    });
-    await db.bancos.update(destino.id, {
-      saldoDeclaradoCent: (destino.saldoDeclaradoCent ?? 0) + valorCent,
-      dataSaldoDeclarado: data, alteradoEm: agora,
-    });
     await marcarMudanca();
   });
 }
 
-/** Apaga as duas pernas de uma transferência. Não toca em `saldoDeclaradoCent` dos bancos —
- *  reverter exigiria saber se o banco já foi conferido de novo depois; corrigir o saldo é
+/** Apaga as duas pernas de uma transferência. O saldo calculado dos dois bancos volta ao que
+ *  era. Uma transferência feita ANTES do banco no lançamento (v0.29 a v0.50) já tinha
+ *  ajustado o `saldoDeclaradoCent` dos bancos; esse ajuste antigo não é desfeito — corrigir é
  *  manual, em Ajustes → Bancos. `transferenciaId` não é índice: `.filter()`, não `.where()`. */
 export async function excluirTransferencia(transferenciaId: ID): Promise<void> {
   await db.transaction('rw', db.lancamentos, db.config, async () => {

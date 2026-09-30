@@ -604,7 +604,7 @@ describe('conferência por banco', () => {
     expect(screen.getByRole('button', { name: 'Transferir de Nubank' })).toBeInTheDocument();
   });
 
-  it('confirmar a transferência ajusta os dois saldos e cria os dois lançamentos ligados', async () => {
+  it('confirmar a transferência cria os dois lançamentos ligados e não mexe nos saldos informados', async () => {
     const box = await comBoxESaldo();
     const bancoA = await repo.salvarBanco({ boxId: box.id, nome: 'Bradesco', ordem: 0 });
     const bancoB = await repo.salvarBanco({ boxId: box.id, nome: 'Nubank', ordem: 1 });
@@ -620,11 +620,11 @@ describe('conferência por banco', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Confirmar transferência' }));
 
     await vi.waitFor(async () => {
-      expect((await db.bancos.get(bancoA.id))?.saldoDeclaradoCent).toBe(250000);
+      expect((await db.lancamentos.toArray()).filter((l) => l.origem === 'transferencia')).toHaveLength(2);
     });
-    expect((await db.bancos.get(bancoB.id))?.saldoDeclaradoCent).toBe(50000);
+    expect((await db.bancos.get(bancoA.id))?.saldoDeclaradoCent).toBe(300000);
+    expect((await db.bancos.get(bancoB.id))?.saldoDeclaradoCent).toBeNull();
     const pernas = (await db.lancamentos.toArray()).filter((l) => l.origem === 'transferencia');
-    expect(pernas).toHaveLength(2);
     expect(pernas[0].transferenciaId).toBe(pernas[1].transferenciaId);
   });
 
