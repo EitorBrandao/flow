@@ -438,3 +438,64 @@ it('mesclar preserva ajustes de meses e cartões diferentes', () => {
   ];
   expect(mesclar(a, b).ajustesFechamento.map((x) => x.id).sort()).toEqual(['af1', 'af2', 'af3']);
 });
+
+it('round-trip preserva o banco padrão, o banco do lançamento e o da recorrência', () => {
+  const d = dados();
+  d.bancos = [{
+    id: 'bk1', boxId: 'b1', nome: 'Banco Um', ordem: 0, saldoDeclaradoCent: null,
+    dataSaldoDeclarado: null, padrao: true, criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z',
+  }];
+  d.lancamentos = [{
+    id: 'l1', boxId: 'b1', categoriaId: 'c1', data: '2026-08-02', valor: 1000, status: 'efetivo',
+    origem: 'manual', bancoId: 'bk1', criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z',
+  }];
+  d.recorrencias = [{
+    id: 'r1', boxId: 'b1', categoriaId: 'c1', valor: 1000, dataInicio: '2026-08-01', diaDoMes: 5,
+    parcelas: null, ativa: true, origem: 'manual', bancoId: 'bk1', criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z',
+  }];
+
+  const volta = validarBackup(JSON.parse(JSON.stringify(gerarBackup(d))));
+
+  expect(volta.dados.bancos[0].padrao).toBe(true);
+  expect(volta.dados.lancamentos[0].bancoId).toBe('bk1');
+  expect(volta.dados.recorrencias[0].bancoId).toBe('bk1');
+});
+
+it('backup antigo, sem os campos de banco padrão e de banco do lançamento, continua válido', () => {
+  const d = dados();
+  d.bancos = [{
+    id: 'bk1', boxId: 'b1', nome: 'Banco Um', ordem: 0, saldoDeclaradoCent: null,
+    dataSaldoDeclarado: null, criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z',
+  }];
+  d.lancamentos = [{
+    id: 'l1', boxId: 'b1', categoriaId: 'c1', data: '2026-08-02', valor: 1000, status: 'efetivo',
+    origem: 'manual', criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z',
+  }];
+
+  const volta = validarBackup(JSON.parse(JSON.stringify(gerarBackup(d))));
+
+  expect(volta.dados.bancos[0].padrao).toBeUndefined();
+  expect(volta.dados.lancamentos[0].bancoId).toBeUndefined();
+});
+
+it('mesclar: o banco padrão e o banco do lançamento seguem o registro mais recente', () => {
+  const base = {
+    id: 'bk1', boxId: 'b1', nome: 'Banco Um', ordem: 0, saldoDeclaradoCent: null,
+    dataSaldoDeclarado: null, criadoEm: 'x',
+  };
+  const atual = dados();
+  const backup = dados();
+  atual.bancos = [{ ...base, padrao: true, alteradoEm: '2026-01-01T00:00:00Z' }];
+  backup.bancos = [{ ...base, padrao: false, alteradoEm: '2026-02-01T00:00:00Z' }];
+  const lancBase = {
+    id: 'l1', boxId: 'b1', categoriaId: 'c1', data: '2026-08-02', valor: 1000, status: 'efetivo' as const,
+    origem: 'manual' as const, criadoEm: 'x',
+  };
+  atual.lancamentos = [{ ...lancBase, bancoId: 'bk1', alteradoEm: '2026-03-01T00:00:00Z' }];
+  backup.lancamentos = [{ ...lancBase, alteradoEm: '2026-02-01T00:00:00Z' }];
+
+  const m = mesclar(atual, backup);
+
+  expect(m.bancos[0].padrao).toBe(false);
+  expect(m.lancamentos[0].bancoId).toBe('bk1');
+});
