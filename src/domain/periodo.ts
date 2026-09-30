@@ -57,9 +57,15 @@ export function periodoAnoAnterior(meses: readonly string[]): string[] {
   return meses.map((m) => addMeses(m, -12));
 }
 
-/** Com 12 meses, "anterior" e "ano anterior" são o mesmo intervalo: a coluna repetida some. */
+/** Com 12 meses, "anterior" e "ano anterior" são o mesmo intervalo. */
 export function anoAnteriorRepete(meses: readonly string[]): boolean {
   return meses.length === 12;
+}
+
+/** A coluna "ano anterior" some com 12 meses ou mais: com 12, repete o anterior; com mais,
+ *  os mesmos meses 12 antes se sobrepõem ao próprio período e a comparação perde o sentido. */
+export function semColunaAnoAnterior(meses: readonly string[]): boolean {
+  return meses.length >= 12;
 }
 
 /** Move o início do período. Passar do fim arrasta o fim; passar do teto puxa o fim. */
@@ -93,7 +99,7 @@ export function rotuloColunaPeriodo(modo: ModoPeriodo, meses: readonly string[])
 /** Linha fina sob o título das tabelas de comparação: diz que intervalo cada coluna usa. */
 export function notaComparacao(meses: readonly string[]): string {
   const anterior = `anterior = ${rotuloIntervalo(periodoAnterior(meses))}`;
-  return anoAnteriorRepete(meses)
-    ? `${anterior} (é também o ano anterior)`
-    : `${anterior} · ano anterior = ${rotuloIntervalo(periodoAnoAnterior(meses))}`;
+  if (anoAnteriorRepete(meses)) return `${anterior} (é também o ano anterior)`;
+  if (semColunaAnoAnterior(meses)) return anterior;
+  return `${anterior} · ano anterior = ${rotuloIntervalo(periodoAnoAnterior(meses))}`;
 }
