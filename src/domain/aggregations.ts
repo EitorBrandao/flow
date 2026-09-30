@@ -1,7 +1,7 @@
 import { addMeses, mesDe, addDias } from './dates';
 import type { Categoria, ID, ISODate, Lancamento, TipoCategoria, Dados } from './types';
 import { compararCategorias, categoriasCartaoReservadasIds } from './categorias';
-import { anoAnteriorRepete, periodoAnoAnterior, periodoAnterior } from './periodo';
+import { periodoAnoAnterior, periodoAnterior, semColunaAnoAnterior } from './periodo';
 
 export interface LinhaResumo {
   categoriaId: ID;
@@ -120,7 +120,7 @@ export interface ComparativoPeriodo {
   tipo: TipoCategoria;
   atual: number;
   anterior: number;
-  /** `null` com 12 meses: o ano anterior é o próprio período anterior */
+  /** `null` com 12 meses ou mais (`semColunaAnoAnterior`): repetiria o anterior ou se sobreporia ao período */
   anoAnterior: number | null;
   mediaMensal: number;
 }
@@ -134,10 +134,10 @@ export function compararPeriodos(
   lancamentos: Lancamento[],
   incluirPrevistos: boolean,
 ): ComparativoPeriodo[] {
-  const repete = anoAnteriorRepete(meses);
+  const semAnoAnterior = semColunaAnoAnterior(meses);
   const atual = totaisPorCategoria(filtrar(meses, boxIds, lancamentos, incluirPrevistos));
   const anterior = totaisPorCategoria(filtrar(periodoAnterior(meses), boxIds, lancamentos, incluirPrevistos));
-  const anoAnterior = repete
+  const anoAnterior = semAnoAnterior
     ? null
     : totaisPorCategoria(filtrar(periodoAnoAnterior(meses), boxIds, lancamentos, incluirPrevistos));
   return categorias

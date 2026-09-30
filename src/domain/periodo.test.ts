@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ajustarAte, ajustarDe, anoAnteriorRepete, estadoInicial, mesesDoPeriodo, mesesEntre, notaComparacao,
+  ajustarAte, ajustarDe, anoAnteriorRepete, semColunaAnoAnterior, estadoInicial, mesesDoPeriodo, mesesEntre, notaComparacao,
   periodoAnoAnterior, periodoAnterior, rotuloColunaPeriodo, rotuloIntervalo,
 } from './periodo';
 
@@ -90,5 +90,17 @@ describe('rótulos', () => {
       .toBe('anterior = out/2024 – set/2025 (é também o ano anterior)');
     expect(notaComparacao(mesesEntre('2026-03', '2026-09')))
       .toBe('anterior = ago/2025 – fev/2026 · ano anterior = mar/2025 – set/2025');
+  });
+});
+
+describe('semColunaAnoAnterior', () => {
+  it('some com 12 meses ou mais; aparece com menos', () => {
+    expect(semColunaAnoAnterior(mesesEntre('2026-03', '2026-09'))).toBe(false); // 7
+    expect(semColunaAnoAnterior(mesesEntre('2025-10', '2026-09'))).toBe(true); // 12
+    expect(semColunaAnoAnterior(mesesEntre('2025-09', '2026-09'))).toBe(true); // 13
+    expect(semColunaAnoAnterior(mesesEntre('2024-10', '2026-09'))).toBe(true); // 24
+  });
+  it('acima de 12 meses a nota só fala do anterior', () => {
+    expect(notaComparacao(mesesEntre('2024-07', '2026-06'))).toBe('anterior = jul/2022 – jun/2024');
   });
 });

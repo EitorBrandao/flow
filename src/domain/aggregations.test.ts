@@ -393,3 +393,11 @@ describe('faturaExplicaOMes', () => {
     expect(faturaExplicaOMes('car', '2026-05', ['be'], ls, true, 1000)).toBe(false); // o previsto 'e' passa a contar
   });
 });
+
+it('compararPeriodos com mais de 12 meses: sem ano anterior (se sobreporia ao período)', () => {
+  const meses: string[] = [];
+  for (let i = 0; i < 24; i++) meses.push(new Date(Date.UTC(2024, 7 + i, 1)).toISOString().slice(0, 7)); // ago/2024–jul/2026
+  const car = compararPeriodos(meses, ['be'], cats, lancs, false).find((c) => c.categoriaId === 'car')!;
+  expect(car.anoAnterior).toBeNull();
+  expect(car.atual).toBe(270000); // jul/2025 70000 + jun/2026 90000 + jul/2026 110000 (só efetivos)
+});

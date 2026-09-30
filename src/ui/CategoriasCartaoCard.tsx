@@ -4,7 +4,7 @@ import { addMeses, mesAbreviado } from '../domain/dates';
 import { ajustesDoCartao, totaisCategoriaCartaoPorMes } from '../domain/fatura';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
 import {
-  anoAnteriorRepete, notaComparacao, periodoAnoAnterior, periodoAnterior,
+  notaComparacao, periodoAnoAnterior, periodoAnterior, semColunaAnoAnterior,
 } from '../domain/periodo';
 import type { AjusteFechamento, Cartao, CategoriaCartao, CompraCartao, ID } from '../domain/types';
 
@@ -49,7 +49,7 @@ function colunasDoPeriodo(meses: readonly string[], rotulo: string): Coluna[] {
   return [
     { cabecalho: rotulo, meses, divisor: 1, media: false },
     { cabecalho: 'anterior', meses: periodoAnterior(meses), divisor: 1, media: false },
-    ...(anoAnteriorRepete(meses)
+    ...(semColunaAnoAnterior(meses)
       ? []
       : [{ cabecalho: 'ano anterior', meses: periodoAnoAnterior(meses), divisor: 1, media: false }]),
     { cabecalho: 'média/mês', meses, divisor: meses.length, media: true },

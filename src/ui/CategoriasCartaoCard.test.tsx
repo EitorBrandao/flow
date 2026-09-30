@@ -186,6 +186,16 @@ describe('CategoriasCartaoCard', () => {
     expect(valores).toEqual([formatarBRL(134000), formatarBRL(50000), formatarBRL(11167)]);
   });
 
+  it('24 meses: sem a coluna ano anterior, e a nota só fala do anterior', () => {
+    const card = renderizar({
+      periodo: mesesEntre('2024-10', 24), rotuloPeriodo: '24 meses',
+      compras: [compra('a', 'k1', 'mercado', '2026-08-10', 124000)],
+    });
+    const cabecalhos = within(card).getAllByRole('columnheader').map((th) => th.textContent);
+    expect(cabecalhos).toEqual(['Categoria', '24 meses', 'anterior', 'média/mês']);
+    expect(within(card).getByText('pelo mês da fatura · anterior = out/2022 – set/2024')).toBeInTheDocument();
+  });
+
   it('7 meses: inclui a coluna ano anterior', () => {
     const card = renderizar({
       periodo: mesesEntre('2026-03', 7), rotuloPeriodo: '7 meses',

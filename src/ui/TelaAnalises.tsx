@@ -7,7 +7,7 @@ import { addMeses, formatarDataBR, mesAbreviado, mesDe } from '../domain/dates';
 import { ajustesDoCartao, faturaDoMes, resumoAssinaturasDoPeriodo } from '../domain/fatura';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
 import {
-  anoAnteriorRepete, estadoInicial, mesesDoPeriodo, notaComparacao, rotuloColunaPeriodo, rotuloIntervalo,
+  semColunaAnoAnterior, estadoInicial, mesesDoPeriodo, notaComparacao, rotuloColunaPeriodo, rotuloIntervalo,
   type EstadoPeriodo,
 } from '../domain/periodo';
 import type { ID, Viagem } from '../domain/types';
@@ -67,7 +67,7 @@ export default function TelaAnalises() {
   const base = Math.max(resumo.totalGanhos, resumo.totalGastos, 1);
   const comparativo = varios ? [] : compararMeses(mes, ids, dados.categorias, dados.lancamentos, incluirPrevistos);
   const comparativoPeriodo = varios ? compararPeriodos(meses, ids, dados.categorias, dados.lancamentos, incluirPrevistos) : [];
-  const repete = anoAnteriorRepete(meses);
+  const semAnoAnterior = semColunaAnoAnterior(meses);
   const resumoAssinaturas = resumoAssinaturasDoPeriodo(
     meses, ids, dados.cartoes, dados.comprasCartao, dados.recorrenciasCartao, dados.ajustesFechamento,
   );
@@ -215,7 +215,7 @@ export default function TelaAnalises() {
                 <thead>
                   <tr>
                     <th>Categoria</th><th>{rotuloColunaPeriodo(periodo.modo, meses)}</th><th>anterior</th>
-                    {!repete && <th>ano anterior</th>}<th>média/mês</th>
+                    {!semAnoAnterior && <th>ano anterior</th>}<th>média/mês</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -231,7 +231,7 @@ export default function TelaAnalises() {
                       </tr>
                     );
                   })}
-                  {comparativoPeriodo.length === 0 && <tr><td colSpan={repete ? 4 : 5}>Sem dados para comparar.</td></tr>}
+                  {comparativoPeriodo.length === 0 && <tr><td colSpan={semAnoAnterior ? 4 : 5}>Sem dados para comparar.</td></tr>}
                 </tbody>
               </>
             ) : (
