@@ -54,3 +54,8 @@ it('estorno maior que o gasto da categoria: total negativo aparece verde, sem si
   expect(valor).not.toHaveClass('valor-gasto');
   expect(screen.getByText('5,0%')).toBeInTheDocument(); // percentual sem sinal — a cor já diz o sentido
 });
+
+it('texto de vazio configurável', () => {
+  render(<ComposicaoBarChart linhas={[]} base={1} onClicarLinha={() => {}} vazio="Sem movimentos no período." />);
+  expect(screen.getByText('Sem movimentos no período.')).toBeInTheDocument();
+});

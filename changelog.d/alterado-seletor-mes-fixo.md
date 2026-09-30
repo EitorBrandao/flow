@@ -1,0 +1,1 @@
+- O seletor de mês das Análises e do Cartão fica preso sob a barra do topo ao rolar a tela.

@@ -192,11 +192,16 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const mostrarGrupos = aVista.length > 0 && parceladas.length > 0;
 
   return (
-    <>
+    // Um bloco por cartão: a barra fixa só gruda dentro do próprio bloco, e na visão casa o
+    // bloco do cartão seguinte empurra o anterior para fora.
+    <div className="tela">
       {/* O nome do cartão abre o bloco, acima do seletor de mês: na visão casa, com vários
-          cartões, o seletor do segundo ficava entre os dois cards e parecia do de cima. */}
-      <h2>{cartao.nome}</h2>
-      <SeletorMes mes={mes} onMudar={setMes} />
+          cartões, o seletor do segundo ficava entre os dois cards e parecia do de cima. Os dois
+          grudam juntos sob o topo: o mês nunca aparece sem o nome do cartão. */}
+      <div className="barra-fixa">
+        <h2 style={{ margin: '2px 0 6px' }}>{cartao.nome}</h2>
+        <SeletorMes mes={mes} onMudar={setMes} />
+      </div>
       <div className="card">
         <div style={{ textAlign: 'center' }}>
           <p className="rotulo" style={{ margin: 0 }}>Fatura</p>
@@ -306,7 +311,7 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
           onFechar={() => setPagando(false)}
         />
       </div>
-    </>
+    </div>
   );
 }
 

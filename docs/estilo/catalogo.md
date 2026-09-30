@@ -59,7 +59,8 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.resumo-barras` / `.resumo-barra-trilho` / `.resumo-barra-preenchimento` | barras de composição ganho/gasto do card resumo em `TelaAnalises.tsx` |
 | `.composicao-*` | classes internas do `ComposicaoBarChart.tsx` (mesmo padrão de prefixo por componente) |
 | `.evolucao-*` | classes internas do `EvolucaoMensalChart.tsx` (mesmo padrão de prefixo por componente) |
-| `.wiki-barra` | barra do índice da wiki: `<button>` sticky sob o `.topo` (`top: var(--wiki-topo)`, medido no Wiki.tsx), z-index 9, largura total (margem −16px), `--bg`, 44px mínimo; `☰ Capítulo · Seção atual`; `h3[id]` e `.wiki-campos > div` ganham `scroll-margin-top: var(--wiki-rolagem)` |
+| `.barra-fixa` | barra que gruda logo abaixo do `.topo` (`top: var(--topo-altura)`, medido no Shell.tsx), z-index 9, largura total (margem −16px), fundo `--bg`, padding 6px 16px. Usada pelo seletor de período (Análises), pelo nome + seletor de mês de cada cartão (Cartão, um `div.tela` por cartão para o sticky valer só no bloco) e pela barra do índice da Wiki. Toda barra nova que precise ficar à vista ao rolar usa esta classe |
+| `.wiki-barra` | aparência da barra do índice da wiki (`<button className="barra-fixa wiki-barra">`): flex, 44px mínimo, padding 8px 16px, `--fg` em peso 600; `☰ Capítulo · Seção atual`. A posição fixa vem de `.barra-fixa`. `h3[id]` e `.wiki-campos > div` ganham `scroll-margin-top` = `--topo-altura` + `--wiki-barra-altura` (medida no Wiki.tsx) + 8px |
 | `.wiki-barra-texto` | texto da barra numa linha só, cortado com reticências |
 | `.wiki-barra-secao` | nome da seção atual na barra, em `--muted` e peso normal |
 | `.wiki-corpo` | artigo com conteúdo da wiki; `h3` (22px margem superior), `p` (10px margem inferior), `ul` (12px margem, 20px padding-left), `li` (5px margem), `code` (quebra de overflow); position: relative (âncora do .wiki-balao) |
@@ -130,7 +131,8 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 - **`SeletorCategoria.tsx`** — grid de 3 colunas (`.grade-categorias`) pra escolher uma
   categoria por toque, sem abrir o picker nativo do `<select>`. Usado em `TelaLancar.tsx`,
   `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `FormItemCenario.tsx`.
-- **`SeletorMes.tsx`** — navegação de mês: `‹` e `›` em `.botao` (rótulos "Mês anterior" e "Mês seguinte") com o mês por nome no meio (`nomeDoMes`, "outubro de 2026"). Props `mes` (`AAAA-MM`) e `onMudar`. Usado nas Análises e no Cartão — qualquer tela nova que navegue por mês usa este componente.
+- **`SeletorMes.tsx`** — navegação de mês: `‹` e `›` em `.botao` (rótulos "Mês anterior" e "Mês seguinte") com o mês por nome no meio (`nomeDoMes`, "outubro de 2026"). Props `mes` (`AAAA-MM`) e `onMudar`. Usado nas Análises e no Cartão — qualquer tela nova que navegue por mês usa este componente. No Cartão, fica dentro de `.barra-fixa` junto com o nome do cartão; nas Análises, entra pelo `SeletorPeriodo` no modo Mês.
+- **`SeletorPeriodo.tsx`** — seletor de período das Análises: pílulas `Mês · 12 meses · Ano · Período` (`SeletorPills`), as linhas `de ‹ › ` e `até ‹ ›` com a nota "N meses · máximo de 24" (só no modo Período) e a linha `‹ período ›` dentro de `.barra-fixa` (no modo Mês, é o próprio `SeletorMes`). Props `estado` (`EstadoPeriodo`, de `domain/periodo.ts`), `mesHoje` e `onMudar`. Filho direto de `.tela`.
 - **`SeletorPills.tsx`** — pílulas em linha (`.pills`) pra escolher entre poucas opções sem
   abrir o picker nativo do `<select>`; cada pílula é `role="radio"` com `aria-checked`, e a
   prop opcional `rotulo` nomeia o grupo. Exporta `OPCOES_TIPO` (Gasto/Ganho), o controle
@@ -151,7 +153,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   lançamento da fatura e o total dela, porque nem sempre um é o outro (fatura já paga em
   parte tem valor menor que o total calculado).
 - **`AssinaturasResumoSheet.tsx`** — sheet de Análises com o total de assinaturas do mês,
-  agrupado por cartão, no mesmo padrão do `LancamentosSheet`: cabeçalho do grupo em
+  agrupado por cartão (prop opcional `periodo`: o intervalo, sob o título, quando Análises cobre vários meses), no mesmo padrão do `LancamentosSheet`: cabeçalho do grupo em
   `.recuo-1` com o subtotal, itens em `.recuo-2`.
 - **`EscolherArquivo.tsx`** — o botão "Escolher arquivo" do app sobre um `input[type=file]`
   invisível (`.selecionar-arquivo`), no lugar do controle nativo, cujo texto vem do navegador.
@@ -167,7 +169,9 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   cenários não mexer nas colunas.
 - **`EvolucaoMensalChart.tsx`** — evolução de ganho/gasto/sobra dos últimos 6 meses na aba
   Análises: barras agrupadas + linha de tendência tracejada, via `recharts` carregado sob
-  demanda (`React.lazy`), mesmo padrão do `FluxoChartModal`.
+  demanda (`React.lazy`), mesmo padrão do `FluxoChartModal`. Recebe a série de meses do período;
+  acima de 6 meses, a fileira de sobra vira a linha "sobra do período"; acima de 12, o eixo mostra
+  um mês a cada 3 (`jan/25`).
 - **`AdicionarSheet.tsx`** — sheet do botão flutuante "+": menu com passos (lançamento manual,
   compra no cartão) que troca de tela via `passo`; escolhe o cartão automaticamente quando só
   há um ativo, senão mostra `.pills` pra escolher; renderiza `FormCompra` no passo final.
@@ -177,16 +181,21 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 - **`LancEditor.tsx`** — sheet de edição de um lançamento existente (valor, data, categoria,
   nota, sinal ganho/gasto); usa `Sheet`, `CampoData`, `CampoValor`, `SeletorCategoria`.
 - **`LancamentosSheet.tsx`** — sheet somente leitura com os lançamentos de uma categoria no
-  mês, agrupados por nota (`lancamentosDaCategoria`); usado no drill-down de Análises.
+  mês, agrupados por nota (`lancamentosDaCategoria`); usado no drill-down de Análises. Prop
+  opcional `onVoltar`: "‹ voltar ao período" (`.botao-ver-mais`) no topo.
 - **`FaturaCategoriaSheet.tsx`** — sheet somente leitura com o resumo por categoria de uma
-  fatura de cartão (drill-down a partir de `FaturaResumo`/`TelaCartao`).
+  fatura de cartão (drill-down a partir de `FaturaResumo`/`TelaCartao`). Prop opcional
+  `onVoltar`: "‹ voltar ao período" (`.botao-ver-mais`) no topo.
 - **`CategoriaCartaoHistoricoSheet.tsx`** — sheet somente leitura com uma categoria do cartão
   nos 6 meses de fatura até o mês escolhido, em barras `.composicao-*` (100% = maior mês) e a
-  média; aberto pelo card "Categorias do cartão" de Análises (`totaisCategoriaCartaoPorMes`).
+  média, ou nos meses do período (`periodo`), com "média por mês"; aberto pelo card "Categorias do
+  cartão" de Análises (`totaisCategoriaCartaoPorMes`).
+- **`CategoriaPeriodoSheet.tsx`** — sheet de uma categoria num período de vários meses (Análises): total no cabeçalho, uma barra por mês (`.composicao-*`, 100% = maior mês) e a média por mês; tocar num mês (`role="button"`, Enter/espaço) chama `onAbrirMes`, e a Análises abre o `LancamentosSheet` ou o `FaturaCategoriaSheet` daquele mês com "‹ voltar ao período".
 - **`CategoriasCartaoCard.tsx`** — card "Categorias do cartão" de Análises: tabela no formato
   do Comparativo (mês · mês anterior · ano passado · média 3m) por categoria do cartão, um
   bloco por cartão (subtítulo `.rotulo-grupo` na coluna fixa, só com 2+ cartões); o nome
-  (`.tabela-nome-tocavel`) abre o `CategoriaCartaoHistoricoSheet`.
+  (`.tabela-nome-tocavel`) abre o `CategoriaCartaoHistoricoSheet`. Com `periodo` (2+ meses): período ·
+  anterior · ano anterior (some com 12 meses) · média/mês, e a nota de intervalos no subtítulo.
 - **`ViagemSheet.tsx`** — sheet somente leitura com os lançamentos/compras de uma viagem,
   agrupados (`itensDaViagem`); mesmo padrão visual do `LancamentosSheet`.
 - **`PrimeiroUso.tsx`** — cartão de onboarding renderizado em `TelaHoje` quando o app está sem

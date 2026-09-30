@@ -26,11 +26,15 @@ const cats = [
   categoria('outra', 'k3', 'Outra', 0),
 ];
 
-function renderizar(p: { cartoes?: Cartao[]; compras: CompraCartao[]; boxIds?: string[]; onAbrir?: () => void }) {
+function renderizar(p: {
+  cartoes?: Cartao[]; compras: CompraCartao[]; boxIds?: string[]; onAbrir?: () => void;
+  periodo?: string[]; rotuloPeriodo?: string;
+}) {
   render(
     <CategoriasCartaoCard
       mes="2026-09" boxIds={p.boxIds ?? ['b1']} cartoes={p.cartoes ?? [azul]} categoriasCartao={cats}
       comprasCartao={p.compras} ajustesFechamento={[]} onAbrir={p.onAbrir ?? (() => {})}
+      periodo={p.periodo} rotuloPeriodo={p.rotuloPeriodo}
     />,
   );
   return screen.getByText('Categorias do cartão').closest('.card') as HTMLElement;
@@ -155,5 +159,47 @@ describe('CategoriasCartaoCard', () => {
     const card = renderizar({ compras: [] });
     expect(within(card).getByText('Sem gastos no cartão para comparar.')).toBeInTheDocument();
     expect(within(card).queryByRole('table')).not.toBeInTheDocument();
+  });
+
+  const mesesEntre = (de: string, n: number) => Array.from({ length: n }, (_, i) => {
+    const [a, m] = de.split('-').map(Number);
+    const d = new Date(Date.UTC(a, m - 1 + i, 1));
+    return d.toISOString().slice(0, 7);
+  });
+
+  // fecha 28, vence 5: compra de 10/08/2026 → fatura 09/2026; 10/09/2025 → 10/2025; 10/08/2025 → 09/2025
+  it('12 meses: período · anterior · média/mês, sem a coluna ano anterior', () => {
+    const card = renderizar({
+      periodo: mesesEntre('2025-10', 12), rotuloPeriodo: '12 meses',
+      compras: [
+        compra('a', 'k1', 'mercado', '2026-08-10', 124000),
+        compra('b', 'k1', 'mercado', '2025-09-10', 10000),
+        compra('c', 'k1', 'mercado', '2025-08-10', 50000),
+      ],
+    });
+    const cabecalhos = within(card).getAllByRole('columnheader').map((th) => th.textContent);
+    expect(cabecalhos).toEqual(['Categoria', '12 meses', 'anterior', 'média/mês']);
+    expect(within(card).getByText('pelo mês da fatura · anterior = out/2024 – set/2025 (é também o ano anterior)')).toBeInTheDocument();
+    const linha = within(card).getByRole('button', { name: 'Mercado' }).closest('tr') as HTMLElement;
+    const valores = within(linha).getAllByRole('cell').slice(1).map((td) => td.textContent);
+    // 124000 + 10000 = 134000; anterior (out/2024–set/2025) = 50000; média = round(134000 / 12) = 11167
+    expect(valores).toEqual([formatarBRL(134000), formatarBRL(50000), formatarBRL(11167)]);
+  });
+
+  it('7 meses: inclui a coluna ano anterior', () => {
+    const card = renderizar({
+      periodo: mesesEntre('2026-03', 7), rotuloPeriodo: '7 meses',
+      compras: [
+        compra('a', 'k1', 'mercado', '2026-08-10', 124000),
+        compra('c', 'k1', 'mercado', '2025-08-10', 50000),
+      ],
+    });
+    const cabecalhos = within(card).getAllByRole('columnheader').map((th) => th.textContent);
+    expect(cabecalhos).toEqual(['Categoria', '7 meses', 'anterior', 'ano anterior', 'média/mês']);
+    const linha = within(card).getByRole('button', { name: 'Mercado' }).closest('tr') as HTMLElement;
+    const valores = within(linha).getAllByRole('cell').slice(1).map((td) => td.textContent);
+    // fatura 09/2025 cai no anterior (ago/2025–fev/2026) e no ano anterior (mar–set/2025);
+    // média = round(124000 / 7) = 17714
+    expect(valores).toEqual([formatarBRL(124000), formatarBRL(50000), formatarBRL(50000), formatarBRL(17714)]);
   });
 });

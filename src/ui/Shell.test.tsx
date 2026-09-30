@@ -58,3 +58,23 @@ it('engrenagem sempre volta pro menu inicial de Ajustes, mesmo já estando numa 
   expect(screen.queryByText('Boxes', { selector: 'h2' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Categorias' })).toBeInTheDocument();
 });
+
+it('publica a altura do topo em --topo-altura no .shell', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+  const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
+  Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+    configurable: true,
+    get(this: HTMLElement) { return this.classList.contains('topo') ? 60 : 0; },
+  });
+  try {
+    const { container } = render(<Shell />);
+    const shell = container.querySelector('.shell') as HTMLElement;
+    expect(shell.style.getPropertyValue('--topo-altura')).toBe('60px');
+  } finally {
+    if (original) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', original);
+  }
+});

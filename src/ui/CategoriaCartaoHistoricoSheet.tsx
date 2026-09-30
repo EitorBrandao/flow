@@ -1,6 +1,7 @@
 import { addMeses, mesAbreviado } from '../domain/dates';
 import { ajustesDoCartao, totaisCategoriaCartaoPorMes } from '../domain/fatura';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
+import { rotuloIntervalo } from '../domain/periodo';
 import type { AjusteFechamento, Cartao, CategoriaCartao, CompraCartao } from '../domain/types';
 import Sheet from './Sheet';
 
@@ -9,18 +10,20 @@ interface Props {
   cartao: Cartao | null;
   categoria: CategoriaCartao | null;
   mes: string;
+  /** meses do período (2+); sem ele, os 6 meses até `mes` */
+  periodo?: readonly string[];
   comprasCartao: CompraCartao[];
   ajustesFechamento: AjusteFechamento[];
   onFechar: () => void;
 }
 
 /** Folha somente leitura: uma categoria do cartão nos 6 meses de fatura que terminam em `mes`,
- *  em barras (100% = maior mês), com a média dos 6. Mesma conta da tabela de Análises. */
+ *  ou nos meses de `periodo`, em barras (100% = maior mês), com a média dos meses mostrados. Mesma conta da tabela de Análises. */
 export default function CategoriaCartaoHistoricoSheet({
-  aberto, cartao, categoria, mes, comprasCartao, ajustesFechamento, onFechar,
+  aberto, cartao, categoria, mes, periodo, comprasCartao, ajustesFechamento, onFechar,
 }: Props) {
   if (!cartao || !categoria) return null;
-  const meses = [-5, -4, -3, -2, -1, 0].map((n) => addMeses(mes, n));
+  const meses: readonly string[] = periodo ?? [-5, -4, -3, -2, -1, 0].map((n) => addMeses(mes, n));
   const serie = totaisCategoriaCartaoPorMes(
     cartao,
     comprasCartao.filter((c) => c.cartaoId === cartao.id),
@@ -38,7 +41,9 @@ export default function CategoriaCartaoHistoricoSheet({
       cabecalho={(
         <>
           <h2 style={{ marginTop: 0 }}>{titulo}</h2>
-          <p className="sub" style={{ margin: 0 }}>últimos 6 meses, pelo mês da fatura</p>
+          <p className="sub" style={{ margin: 0 }}>
+            {periodo ? `${rotuloIntervalo(periodo)}, pelo mês da fatura` : 'últimos 6 meses, pelo mês da fatura'}
+          </p>
         </>
       )}
     >
@@ -62,7 +67,7 @@ export default function CategoriaCartaoHistoricoSheet({
         })}
       </div>
       <p className="sub" style={{ marginTop: 14 }}>
-        média 6m <strong className={cor(media)}>{formatarBRL(media)}</strong>
+        {periodo ? 'média por mês' : 'média 6m'} <strong className={cor(media)}>{formatarBRL(media)}</strong>
       </p>
     </Sheet>
   );

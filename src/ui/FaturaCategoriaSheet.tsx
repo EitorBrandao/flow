@@ -14,11 +14,13 @@ interface Props {
   ajustesFechamento?: AjusteFechamento[];
   onFechar: () => void;
   onAbrirCartao: () => void;
+  /** mostra "‹ voltar ao período" (folha aberta a partir da folha de um período) */
+  onVoltar?: () => void;
 }
 
 export default function FaturaCategoriaSheet({
   aberto, cartao, mes, comprasCartao, categoriasCartao, horizonteProjecao, ajustesFechamento = [],
-  onFechar, onAbrirCartao,
+  onFechar, onAbrirCartao, onVoltar,
 }: Props) {
   if (!cartao) return null;
   const compras = comprasCartao.filter((c) => c.cartaoId === cartao.id);
@@ -36,6 +38,7 @@ export default function FaturaCategoriaSheet({
       aberto={aberto} onFechar={onFechar} rotulo={`${cartao.nome} · fatura de ${nomeDoMes(mes)}`}
       cabecalho={(
         <>
+          {onVoltar && <button className="botao-ver-mais" onClick={onVoltar}>‹ voltar ao período</button>}
           <h2 style={{ marginTop: 0 }}>{cartao.nome} · fatura de {nomeDoMes(mes)}</h2>
           <p className="sub" style={{ margin: 0 }}>
             <strong className={classeEfeito(-total)}>{formatarBRL(total)}</strong>

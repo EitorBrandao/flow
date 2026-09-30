@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -564,4 +564,15 @@ it('com vários cartões, cada bloco abre com o nome do cartão antes do seu sel
   const anteriores = screen.getAllByRole('button', { name: 'Mês anterior' });
   expect(titulos[1].compareDocumentPosition(anteriores[1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(anteriores[0].compareDocumentPosition(titulos[1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+it('nome do cartão e seletor de mês ficam juntos na barra fixa', async () => {
+  const { box } = await montarCartao();
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
+  render(<TelaCartao />);
+  const nome = await screen.findByRole('heading', { name: 'Nubank' });
+  const barra = nome.closest('.barra-fixa') as HTMLElement;
+  expect(barra).not.toBeNull();
+  expect(within(barra).getByRole('button', { name: 'Mês anterior' })).toBeInTheDocument();
 });

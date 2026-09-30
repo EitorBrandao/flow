@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import type { Lancamento } from '../domain/types';
 import LancamentosSheet from './LancamentosSheet';
 
@@ -133,5 +134,37 @@ describe('LancamentosSheet', () => {
       />,
     );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  function abrirPix(onVoltar?: () => void) {
+    render(
+      <LancamentosSheet
+        aberto categoriaId="pix" nome="Pix" tipo="gasto" mes="2026-07" boxIds={['be']}
+        lancamentos={[lanc({ id: '1', data: '2026-07-05', valor: 30000, nota: 'Padaria' })]}
+        incluirPrevistos={false} onFechar={() => {}} onVoltar={onVoltar}
+      />,
+    );
+  }
+
+  it('com onVoltar, mostra "‹ voltar ao período" e chama a função', async () => {
+    const voltar = vi.fn();
+    abrirPix(voltar);
+    await userEvent.click(screen.getByRole('button', { name: /voltar ao período/ }));
+    expect(voltar).toHaveBeenCalledOnce();
+  });
+
+  it('o título mostra o mês só quando aberta a partir do período', () => {
+    abrirPix(() => {});
+    expect(screen.getByRole('heading', { name: 'Pix · jul/2026' })).toBeInTheDocument();
+  });
+
+  it('sem onVoltar, o título é só o nome', () => {
+    abrirPix();
+    expect(screen.getByRole('heading', { name: 'Pix' })).toBeInTheDocument();
+  });
+
+  it('sem onVoltar, não mostra o botão de voltar', () => {
+    abrirPix();
+    expect(screen.queryByRole('button', { name: /voltar ao período/ })).not.toBeInTheDocument();
   });
 });

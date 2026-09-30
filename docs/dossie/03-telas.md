@@ -346,6 +346,10 @@ option: carteira
 option: reserva
 option: casa
 Análises
+radio: Mês
+radio: 12 meses
+radio: Ano
+radio: Período
 button: ‹
 janeiro de 2026
 button: ›
@@ -787,6 +791,10 @@ option: carteira
 option: reserva
 option: casa
 Análises
+radio: Mês
+radio: 12 meses
+radio: Ano
+radio: Período
 button: ‹
 janeiro de 2026
 button: ›
@@ -1271,6 +1279,10 @@ option: carteira
 option: reserva
 option: casa
 Análises
+radio: Mês
+radio: 12 meses
+radio: Ano
+radio: Período
 button: ‹
 fevereiro de 2026
 button: ›
@@ -1734,6 +1746,10 @@ option: carteira
 option: reserva
 option: casa
 Análises
+radio: Mês
+radio: 12 meses
+radio: Ano
+radio: Período
 button: ‹
 junho de 2026
 button: ›
@@ -2192,6 +2208,10 @@ option: carteira
 option: reserva
 option: casa
 Análises
+radio: Mês
+radio: 12 meses
+radio: Ano
+radio: Período
 button: ‹
 julho de 2026
 button: ›
@@ -2633,6 +2653,10 @@ option: carteira
 option: reserva
 option: casa
 Análises
+radio: Mês
+radio: 12 meses
+radio: Ano
+radio: Período
 button: ‹
 setembro de 2026
 button: ›
@@ -3059,6 +3083,10 @@ option: carteira
 option: reserva
 option: casa
 Análises
+radio: Mês
+radio: 12 meses
+radio: Ano
+radio: Período
 button: ‹
 outubro de 2026
 button: ›
@@ -3450,6 +3478,10 @@ option: carteira
 option: reserva
 option: casa
 Análises
+radio: Mês
+radio: 12 meses
+radio: Ano
+radio: Período
 button: ‹
 novembro de 2026
 button: ›

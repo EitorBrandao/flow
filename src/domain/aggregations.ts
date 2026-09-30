@@ -1,6 +1,7 @@
 import { addMeses, mesDe, addDias } from './dates';
 import type { Categoria, ID, ISODate, Lancamento, TipoCategoria, Dados } from './types';
 import { compararCategorias, categoriasCartaoReservadasIds } from './categorias';
+import { anoAnteriorRepete, periodoAnoAnterior, periodoAnterior } from './periodo';
 
 export interface LinhaResumo {
   categoriaId: ID;
@@ -19,18 +20,19 @@ export interface ResumoMensal {
 }
 
 function filtrar(
-  mes: string,
+  meses: readonly string[],
   boxIds: readonly ID[],
   lancamentos: Lancamento[],
   incluirPrevistos: boolean,
 ): Lancamento[] {
   const sel = new Set(boxIds);
+  const noPeriodo = new Set(meses);
   return lancamentos.filter(
     (l) =>
       sel.has(l.boxId) &&
       !l.cenarioId &&
       l.origem !== 'transferencia' &&
-      mesDe(l.data) === mes &&
+      noPeriodo.has(mesDe(l.data)) &&
       (l.status === 'efetivo' || incluirPrevistos),
   );
 }
@@ -48,7 +50,18 @@ export function resumoMensal(
   lancamentos: Lancamento[],
   incluirPrevistos: boolean,
 ): ResumoMensal {
-  const totais = totaisPorCategoria(filtrar(mes, boxIds, lancamentos, incluirPrevistos));
+  return resumoPeriodo([mes], boxIds, categorias, lancamentos, incluirPrevistos);
+}
+
+/** Resumo de vários meses somados. Mesma conta do `resumoMensal`; `mes` = último mês da lista. */
+export function resumoPeriodo(
+  meses: readonly string[],
+  boxIds: readonly ID[],
+  categorias: Categoria[],
+  lancamentos: Lancamento[],
+  incluirPrevistos: boolean,
+): ResumoMensal {
+  const totais = totaisPorCategoria(filtrar(meses, boxIds, lancamentos, incluirPrevistos));
   const catsOrdenadas = [...categorias].sort(compararCategorias);
   let totalGanhos = 0;
   let totalGastos = 0;
@@ -67,7 +80,7 @@ export function resumoMensal(
       pctDaRenda:
         c.tipo === 'gasto' && totalGanhos > 0 ? totais.get(c.id)! / totalGanhos : null,
     }));
-  return { mes, linhas, totalGanhos, totalGastos, sobra: totalGanhos - totalGastos };
+  return { mes: meses[meses.length - 1] ?? '', linhas, totalGanhos, totalGastos, sobra: totalGanhos - totalGastos };
 }
 
 export interface ComparativoCategoria {
@@ -86,9 +99,9 @@ export function compararMeses(
   lancamentos: Lancamento[],
   incluirPrevistos: boolean,
 ): ComparativoCategoria[] {
-  const atual = totaisPorCategoria(filtrar(mes, boxIds, lancamentos, incluirPrevistos));
-  const anterior = totaisPorCategoria(filtrar(addMeses(mes, -1), boxIds, lancamentos, incluirPrevistos));
-  const anoPassado = totaisPorCategoria(filtrar(addMeses(mes, -12), boxIds, lancamentos, incluirPrevistos));
+  const atual = totaisPorCategoria(filtrar([mes], boxIds, lancamentos, incluirPrevistos));
+  const anterior = totaisPorCategoria(filtrar([addMeses(mes, -1)], boxIds, lancamentos, incluirPrevistos));
+  const anoPassado = totaisPorCategoria(filtrar([addMeses(mes, -12)], boxIds, lancamentos, incluirPrevistos));
   return categorias
     .filter((c) => atual.has(c.id) || anterior.has(c.id) || anoPassado.has(c.id))
     .map((c) => ({
@@ -101,6 +114,48 @@ export function compararMeses(
     }));
 }
 
+export interface ComparativoPeriodo {
+  categoriaId: ID;
+  nome: string;
+  tipo: TipoCategoria;
+  atual: number;
+  anterior: number;
+  /** `null` com 12 meses: o ano anterior é o próprio período anterior */
+  anoAnterior: number | null;
+  mediaMensal: number;
+}
+
+/** Comparativo de um período de vários meses: período × os N meses antes × os mesmos meses do
+ *  ano anterior × média por mês. A linha aparece se o período, o anterior ou o ano anterior têm valor. */
+export function compararPeriodos(
+  meses: readonly string[],
+  boxIds: readonly ID[],
+  categorias: Categoria[],
+  lancamentos: Lancamento[],
+  incluirPrevistos: boolean,
+): ComparativoPeriodo[] {
+  const repete = anoAnteriorRepete(meses);
+  const atual = totaisPorCategoria(filtrar(meses, boxIds, lancamentos, incluirPrevistos));
+  const anterior = totaisPorCategoria(filtrar(periodoAnterior(meses), boxIds, lancamentos, incluirPrevistos));
+  const anoAnterior = repete
+    ? null
+    : totaisPorCategoria(filtrar(periodoAnoAnterior(meses), boxIds, lancamentos, incluirPrevistos));
+  return categorias
+    .filter((c) => atual.has(c.id) || anterior.has(c.id) || (anoAnterior?.has(c.id) ?? false))
+    .map((c) => {
+      const total = atual.get(c.id) ?? 0;
+      return {
+        categoriaId: c.id,
+        nome: c.nome,
+        tipo: c.tipo,
+        atual: total,
+        anterior: anterior.get(c.id) ?? 0,
+        anoAnterior: anoAnterior ? anoAnterior.get(c.id) ?? 0 : null,
+        mediaMensal: Math.round(total / meses.length),
+      };
+    });
+}
+
 export function serieMensal(
   categoriaId: ID,
   meses: string[],
@@ -109,7 +164,7 @@ export function serieMensal(
   incluirPrevistos: boolean,
 ): number[] {
   return meses.map(
-    (mes) => totaisPorCategoria(filtrar(mes, boxIds, lancamentos, incluirPrevistos)).get(categoriaId) ?? 0,
+    (mes) => totaisPorCategoria(filtrar([mes], boxIds, lancamentos, incluirPrevistos)).get(categoriaId) ?? 0,
   );
 }
 
@@ -134,7 +189,7 @@ export function serieMensalResumo(
   incluirPrevistos: boolean,
 ): ResumoMesSimples[] {
   return meses.map((mes) => {
-    const totais = totaisPorCategoria(filtrar(mes, boxIds, lancamentos, incluirPrevistos));
+    const totais = totaisPorCategoria(filtrar([mes], boxIds, lancamentos, incluirPrevistos));
     let ganhos = 0;
     let gastos = 0;
     for (const c of categorias) {
@@ -164,7 +219,7 @@ export function lancamentosDaCategoria(
   lancamentos: Lancamento[],
   incluirPrevistos: boolean,
 ): GrupoLancamentos[] {
-  const doCategoria = filtrar(mes, boxIds, lancamentos, incluirPrevistos).filter(
+  const doCategoria = filtrar([mes], boxIds, lancamentos, incluirPrevistos).filter(
     (l) => l.categoriaId === categoriaId,
   );
   const grupos = new Map<string, GrupoLancamentos>();

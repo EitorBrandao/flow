@@ -78,6 +78,7 @@ Aba dedicada à fatura do cartão da box selecionada (ou os dois cartões empilh
 
 - Cada cartão abre com o nome dele num título, acima da navegação de mês — na visão casa, é o título que separa um cartão do outro.
 - Mostra a fatura do mês atual por padrão, com navegação ‹ mês anterior / mês seguinte › — o mês aparece por nome (janeiro, fevereiro etc.).
+- O nome do cartão e o seletor de mês ficam presos logo abaixo da barra do topo ao rolar. Na visão casa, com vários cartões, o bloco do cartão seguinte empurra o anterior.
 - Cabeçalho da fatura, sempre visível fora das abas: total da fatura, dia de fechamento e de vencimento.
 - **Resumo:** valor pago ou a pagar, com atalho para corrigir; o resumo por categoria do cartão aparece sempre que há ao menos uma. Tocar numa categoria filtra os lançamentos para ela, pula para a aba Lançamentos e deixa a categoria destacada no Resumo; tocar de novo tira o filtro.
 - **Lançamentos:** busca por descrição, categoria, data ou valor; itens agrupados em À vista/Parceladas, com marcação de parcela (ex.: "3/12"); tocar abre edição; excluir remove a compra e todas as parcelas dela.
@@ -91,11 +92,19 @@ Aba dedicada à fatura do cartão da box selecionada (ou os dois cartões empilh
 
 ## Análises
 
-Resumo mensal e comparativos, navegando mês a mês com as setas ‹ › — o mês aparece por nome (janeiro, fevereiro etc.).
+Resumo e comparativos de um período. No topo, quatro opções:
 
-- Caixa "incluir previstos" — desligada, mostra só o que já é efetivo no mês.
-- **Resumo:** ganhos, gastos e sobra do mês.
-- **Por categoria:** total de cada categoria e seu percentual da renda do mês (só para categorias de gasto). Tocar numa categoria de cartão abre a fatura desse mês (veja o capítulo [Cartão de crédito](#cartao)). Uma [viagem](#conceitos/viagem) com gasto no mês aparece aqui como linha própria.
+- **Mês:** um mês, navegando com as setas ‹ › — o mês aparece por nome (janeiro, fevereiro etc.).
+- **12 meses:** os 12 meses que terminam no mês atual; as setas deslizam a janela um mês por vez.
+- **Ano:** de janeiro a dezembro. Abre no último ano fechado; o ano atual aparece marcado "até agora".
+- **Período:** um intervalo livre, de um mês a outro (no máximo 24 meses), escolhido nas linhas "de" e "até". As setas da linha de baixo deslizam o intervalo inteiro.
+
+A linha com as setas fica presa logo abaixo da barra do topo: dá para trocar o mês ou o período sem voltar ao começo da tela.
+
+- Caixa "incluir previstos" — desligada, mostra só o que já é efetivo no período.
+- **Resumo:** ganhos, gastos e sobra do período. Com mais de um mês, mostra também a média por mês.
+- **Por categoria:** total de cada categoria e seu percentual da renda do período (só para categorias de gasto). Tocar numa categoria de cartão abre a fatura (veja o capítulo [Cartão de crédito](#cartao)). Uma [viagem](#conceitos/viagem) com gasto no período aparece aqui como linha própria. Com mais de um mês, tocar numa categoria abre uma barra por mês; tocar num mês abre os lançamentos (ou a fatura) daquele mês, com "‹ voltar ao período".
+- **Evolução mensal:** ganhos e gastos de cada mês — os 6 meses até o mês escolhido, no modo Mês; os meses do período, nos outros. Com até 6 meses, a sobra de cada mês aparece sobre as barras; com mais, uma linha só mostra a sobra do período.
 - **Viagens:** cada viagem cadastrada, com o total gasto nela. Tocar abre o detalhamento, agrupado pela descrição.
-- **Comparativo:** mês atual × mês anterior × mesmo mês do ano passado × média móvel de 3 meses, por categoria. A coluna do mês atual mostra o mês abreviado (out/2026).
-- **Categorias do cartão:** as categorias do cartão (Mercado, Restaurante etc.) no formato do Comparativo — mês atual × mês anterior × mesmo mês do ano passado × média de 3 meses. O mês é o da fatura: cada parcela conta na fatura em que cai, então a coluna do mês bate com o Resumo da mesma fatura na aba Cartão. Com mais de um cartão, cada um vem num bloco com o nome dele. Dentro de cada bloco, as categorias vêm do maior para o menor valor no mês. A caixa "incluir previstos" não muda este card. Tocar no nome de uma categoria abre os últimos 6 meses dela em barras, com a média.
+- **Comparativo:** por categoria. No modo Mês: mês atual × mês anterior × mesmo mês do ano passado × média móvel de 3 meses; a coluna do mês atual mostra o mês abreviado (out/2026). Nos outros modos: período × período anterior (os mesmos tantos meses, logo antes) × mesmo período do ano anterior × média por mês. Com 12 meses, o período anterior já é o ano anterior, e essa coluna aparece uma vez só. Uma linha sob o título diz os meses de cada coluna.
+- **Categorias do cartão:** as categorias do cartão (Mercado, Restaurante etc.) com as mesmas colunas do Comparativo. O mês é o da fatura: cada parcela conta na fatura em que cai, então a coluna do mês bate com o Resumo da mesma fatura na aba Cartão. Com mais de um cartão, cada um vem num bloco com o nome dele. Dentro de cada bloco, as categorias vêm do maior para o menor valor na primeira coluna. A caixa "incluir previstos" não muda este card. Tocar no nome de uma categoria abre os meses dela em barras, com a média — os últimos 6 meses, no modo Mês; os meses do período, nos outros.

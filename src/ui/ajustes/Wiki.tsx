@@ -14,7 +14,7 @@ const BRUTOS = Object.fromEntries(
 );
 
 /** Espaço entre a barra e o título de destino. O mesmo valor decide a seção atual: um salto para a seção a deixa como atual. */
-const FOLGA = 8;
+const FOLGA = 8; // mesma folga do scroll-margin-top da wiki em styles.css
 
 interface Acoes {
   ir: (capitulo: string, secao?: string) => void;
@@ -116,13 +116,11 @@ export default function Wiki() {
     setDestino(null);
   }, [destino, atualId]);
 
-  // A barra gruda logo abaixo do .topo do app; títulos e campos param FOLGA px abaixo da barra ao rolar até eles.
+  // A barra gruda logo abaixo do .topo do app (.barra-fixa, que usa --topo-altura do Shell).
+  // Aqui só a altura da própria barra: títulos e campos param FOLGA px abaixo dela (ver styles.css).
   useEffect(() => {
     const medir = () => {
-      const topo = document.querySelector<HTMLElement>('.topo')?.offsetHeight ?? 0;
-      const altura = barra.current?.offsetHeight ?? 0;
-      raiz.current?.style.setProperty('--wiki-topo', `${topo}px`);
-      raiz.current?.style.setProperty('--wiki-rolagem', `${topo + altura + FOLGA}px`);
+      raiz.current?.style.setProperty('--wiki-barra-altura', `${barra.current?.offsetHeight ?? 0}px`);
     };
     medir();
     window.addEventListener('resize', medir);
@@ -199,7 +197,7 @@ export default function Wiki() {
     <div className="tela" ref={raiz}>
       <h2>Wiki</h2>
       <button
-        ref={barra} className="wiki-barra"
+        ref={barra} className="barra-fixa wiki-barra"
         aria-label={`Índice: ${atual.titulo}${tituloSecao ? ` · ${tituloSecao}` : ''}`}
         onClick={() => setIndiceAberto(true)}
       >

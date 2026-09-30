@@ -105,4 +105,27 @@ describe('FaturaCategoriaSheet', () => {
     );
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
+
+  function abrirFatura(onVoltar?: () => void) {
+    render(
+      <FaturaCategoriaSheet
+        aberto cartao={cartao} mes="2026-08"
+        comprasCartao={[compra({ id: 'c1', data: '2026-07-10', valorTotal: 62000, categoriaCartaoId: 'mercado' })]}
+        categoriasCartao={categoriasCartao} horizonteProjecao="2027-12-31"
+        onFechar={() => {}} onAbrirCartao={() => {}} onVoltar={onVoltar}
+      />,
+    );
+  }
+
+  it('com onVoltar, mostra "‹ voltar ao período" e chama a função', async () => {
+    const voltar = vi.fn();
+    abrirFatura(voltar);
+    await userEvent.click(screen.getByRole('button', { name: /voltar ao período/ }));
+    expect(voltar).toHaveBeenCalledOnce();
+  });
+
+  it('sem onVoltar, não mostra o botão de voltar', () => {
+    abrirFatura();
+    expect(screen.queryByRole('button', { name: /voltar ao período/ })).not.toBeInTheDocument();
+  });
 });
