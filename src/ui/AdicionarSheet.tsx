@@ -21,7 +21,7 @@ const ROTULOS: Record<Passo, string> = {
 };
 
 export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; onFechar: () => void }) {
-  const { dados, boxSel, hoje, setAba, setRascunhoLancar } = useApp();
+  const { dados, boxSel, hoje, setAba, abrirAjustes, setRascunhoLancar } = useApp();
   const [passo, setPasso] = useState<Passo>('menu');
   const [cartaoEscolhido, setCartaoEscolhido] = useState<Cartao | null>(null);
   const [inicialCompra, setInicialCompra] = useState<InicialCompra | null>(null);
@@ -108,7 +108,7 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
 
   function irParaAjustes() {
     onFechar();
-    setAba('ajustes');
+    abrirAjustes('cartoes');
   }
 
   return (
@@ -118,7 +118,7 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ marginTop: 0 }}>Adicionar</h2>
           <button className="chip chip-elevado" aria-label="Compra por nota fiscal" onClick={irParaEscanear}>
-            <Camera size={18} />
+            <Camera size={18} /> Ler nota fiscal
           </button>
         </div>
       ) : undefined}

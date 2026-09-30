@@ -208,7 +208,10 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
       </div>
       <div className="campo">
         <label>Categoria</label>
-        <SeletorCategoria categorias={cats} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
+        <SeletorCategoria
+          categorias={cats} selecionadaId={categoriaId} onSelecionar={setCategoriaId}
+          vazio="Nenhuma categoria do cartão — crie em Ajustes → Categorias do cartão. Elas são separadas das categorias da box."
+        />
       </div>
       {anexando ? (
         <div className="nota-bloco">

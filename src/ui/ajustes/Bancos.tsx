@@ -218,9 +218,9 @@ export default function Bancos() {
         })}
         {bancos.length === 0 && (
           <p className="sub">
-            Nenhum banco cadastrado nesta box. Sem bancos, a conferência da tela Hoje continua
-            com um campo único, como sempre foi — cadastre um banco para cada conta que você
-            quiser conferir separadamente.
+            Nenhum banco cadastrado nesta box. Cadastre um banco para cada conta que você quiser
+            conferir separadamente (por exemplo, corrente e poupança). Sem bancos, a conferência
+            da tela Hoje usa um único campo de saldo.
           </p>
         )}
       </div>

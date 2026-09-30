@@ -43,6 +43,9 @@ export default function TabelaSimulacao({ linhas, larguraCh }: Props) {
           </tbody>
         </table>
       </div>
+      <p className="sub" style={{ margin: '8px 16px 12px' }}>
+        Saldo no fim de cada mês. Com: contando os cenários ligados. Sem: só o saldo real. Diferença: o quanto os cenários mudam.
+      </p>
     </>
   );
 }

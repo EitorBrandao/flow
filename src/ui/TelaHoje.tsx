@@ -6,7 +6,7 @@ import { addDias, formatarDataBR } from '../domain/dates';
 import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../domain/estadoBackup';
 import { classeEfeito, classeSaldo, efeitoNoSaldo, formatarBRL, formatarSaldo } from '../domain/money';
 import type { Banco, Box, ISODate, Lancamento } from '../domain/types';
-import { pendentes, projetarBoxes } from '../domain/projection';
+import { ANTECEDENCIA_PENDENTE_DIAS, pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, estadoPrimeiroUso, useApp } from '../state/store';
 import BalanceChart from './BalanceChart';
 import CampoData from './CampoData';
@@ -410,6 +410,9 @@ export default function TelaHoje() {
 
       {abaHoje === 'conferir' && (
         <div className="card">
+          <p className="sub" style={{ margin: '0 0 12px' }}>
+            Digite o saldo que o app do banco mostra e toque em Salvar. O Flow compara com o total que ele calculou e diz se bate.
+          </p>
           {bancos.length === 0 ? (
             <ConferenciaSaldo key={boxSel} saldoApp={deHoje?.saldoEfetivo ?? 0} declaradoCent={declaradoCent}
               dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} />
@@ -497,7 +500,7 @@ export default function TelaHoje() {
             lancamento={pagando} totalFaturaCent={totalDaFaturaPendente}
             onFechar={() => setPagando(null)}
           />
-          {fila.length === 0 && <p className="sub">Nada a confirmar — tudo em dia.</p>}
+          {fila.length === 0 && <p className="sub">Nada a confirmar — tudo em dia. Aqui aparecem os previstos que já venceram ou vencem em até {ANTECEDENCIA_PENDENTE_DIAS} dias, para você confirmar.</p>}
         </div>
       )}
     </div>

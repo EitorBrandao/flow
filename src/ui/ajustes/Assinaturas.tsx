@@ -94,7 +94,7 @@ function FormAssinatura({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
 }
 
 export default function Assinaturas() {
-  const { dados, boxSel, hoje, recarregar } = useApp();
+  const { dados, boxSel, hoje, recarregar, abrirAjustes } = useApp();
   const [cartaoId, setCartaoId] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   // Muda a cada criação para o formulário do topo voltar vazio (remonta com `key`).
@@ -118,7 +118,13 @@ export default function Assinaturas() {
     );
   }
   if (dados.cartoes.length === 0) {
-    return <div className="tela"><h2>Assinaturas do cartão</h2><p className="sub">Cadastre um cartão primeiro.</p></div>;
+    return <div className="tela">
+        <h2>Assinaturas do cartão</h2>
+        <p className="sub">Cadastre um cartão primeiro.</p>
+        <button className="botao botao-primario" style={{ alignSelf: 'flex-start' }} onClick={() => abrirAjustes('cartoes')}>
+          Cadastrar cartão
+        </button>
+      </div>;
   }
   const horizonte = dados.config.horizonteProjecao;
   const cartoesDaBox = dados.cartoes.filter((c) => c.boxId === boxId && c.ativo);

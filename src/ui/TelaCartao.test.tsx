@@ -39,7 +39,9 @@ it('box sem cartão oferece cadastro', async () => {
   useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
   render(<TelaCartao />);
   expect(screen.getByText(/Nenhum cartão cadastrado/)).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Cadastrar cartão' })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Cadastrar cartão' }));
+  expect(useApp.getState().aba).toBe('ajustes');
+  expect(useApp.getState().ajustesSecao).toBe('cartoes');
 });
 
 it('editar uma compra existente abre o formulário num Sheet', async () => {

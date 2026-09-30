@@ -45,6 +45,7 @@ it('sem cartão cadastrado: "Compra no cartão" mostra aviso e leva para Ajustes
   await userEvent.click(screen.getByRole('button', { name: 'Cadastrar cartão' }));
   expect(onFechar).toHaveBeenCalledOnce();
   expect(useApp.getState().aba).toBe('ajustes');
+  expect(useApp.getState().ajustesSecao).toBe('cartoes');
 });
 
 it('cartão único bloqueado para compra mostra aviso específico, não "nenhum cartão cadastrado"', async () => {

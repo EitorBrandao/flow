@@ -36,7 +36,7 @@ it('mostra saldo e confirma um pendente', async () => {
   expect(screen.getByText(/salario/)).toBeInTheDocument();     // pendente na fila
 
   await userEvent.click(screen.getByRole('button', { name: /Confirmar/ }));
-  await screen.findByText('Nada a confirmar — tudo em dia.'); // aguarda o recarregar() do clique terminar
+  await screen.findByText(/Nada a confirmar — tudo em dia./); // aguarda o recarregar() do clique terminar
   const lanc = (await db.lancamentos.toArray())[0];
   expect(lanc.status).toBe('efetivo');
 });
@@ -839,7 +839,7 @@ it('confirma o pendente com o valor corrigido e o tira da fila', async () => {
   await userEvent.type(await screen.findByLabelText('Valor pago'), '13700');
   await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
 
-  await screen.findByText('Nada a confirmar — tudo em dia.');
+  await screen.findByText(/Nada a confirmar — tudo em dia./);
   const salvo = await db.lancamentos.get(lanc.id);
   expect(salvo?.status).toBe('efetivo');
   expect(salvo?.valor).toBe(13700);
@@ -856,7 +856,7 @@ it('confirma o pendente com a data corrigida', async () => {
   await userEvent.type(data, '2026-08-25');
   await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
 
-  await screen.findByText('Nada a confirmar — tudo em dia.');
+  await screen.findByText(/Nada a confirmar — tudo em dia./);
   const salvo = await db.lancamentos.get(lanc.id);
   expect(salvo?.data).toBe('2026-08-25');
 });
@@ -870,7 +870,7 @@ it('previsto com valor negativo continua negativo depois de corrigido', async ()
   await userEvent.type(await screen.findByLabelText('Valor pago'), '5000');
   await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
 
-  await screen.findByText('Nada a confirmar — tudo em dia.');
+  await screen.findByText(/Nada a confirmar — tudo em dia./);
   const salvo = await db.lancamentos.get(lanc.id);
   expect(salvo?.valor).toBe(-5000);
 });
@@ -884,7 +884,7 @@ it('confirma pendente de valor negativo sem mexer em nada, preservando valor e s
   await screen.findByLabelText('Valor pago'); // aguarda abertura dos campos
   await userEvent.click(screen.getByRole('button', { name: 'Confirmar luz' }));
 
-  await screen.findByText('Nada a confirmar — tudo em dia.');
+  await screen.findByText(/Nada a confirmar — tudo em dia./);
   const salvo = await db.lancamentos.get(lanc.id);
   expect(salvo?.status).toBe('efetivo');
   expect(salvo?.valor).toBe(-4000);
