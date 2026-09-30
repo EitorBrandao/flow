@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.52.0] - 2026-09-30
+
+### Alterado
+
+- O menu de Ajustes agora tem 5 grupos: Contas, Planejamento, Cartão, Dados e Sobre o app
+  - Toque num grupo para ver as telas dele; o botão "‹" no topo volta um nível
+
 ## [0.51.0] - 2026-09-30
 
 ### Adicionado

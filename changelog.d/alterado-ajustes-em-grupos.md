@@ -1,2 +1,0 @@
-- O menu de Ajustes agora tem 5 grupos: Contas, Planejamento, Cartão, Dados e Sobre o app
-  - Toque num grupo para ver as telas dele; o botão "‹" no topo volta um nível
