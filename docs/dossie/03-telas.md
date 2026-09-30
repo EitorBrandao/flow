@@ -431,18 +431,16 @@ option: carteira
 option: reserva
 option: casa
 Ajustes
-Boxes
-Bancos
-Categorias
-Recorrências
-Cartões
-Categorias do cartão
-Assinaturas do cartão
-Viagens
-Backup e restauração
-Importar e conferir
-Wiki
-Versão
+Contas
+Boxes · Bancos
+Planejamento
+Categorias · Recorrências · Viagens
+Cartão
+Cartões · Categorias do cartão · Assinaturas do cartão
+Dados
+Importar e conferir · Backup e restauração
+Sobre o app
+Wiki · Versão
 ```
 
 ## 2026-01-28 — entre fechamento e vencimento
@@ -945,18 +943,16 @@ option: carteira
 option: reserva
 option: casa
 Ajustes
-Boxes
-Bancos
-Categorias
-Recorrências
-Cartões
-Categorias do cartão
-Assinaturas do cartão
-Viagens
-Backup e restauração
-Importar e conferir
-Wiki
-Versão
+Contas
+Boxes · Bancos
+Planejamento
+Categorias · Recorrências · Viagens
+Cartão
+Cartões · Categorias do cartão · Assinaturas do cartão
+Dados
+Importar e conferir · Backup e restauração
+Sobre o app
+Wiki · Versão
 ```
 
 ## 2026-02-10 — depois do primeiro vencimento
@@ -1552,18 +1548,16 @@ option: carteira
 option: reserva
 option: casa
 Ajustes
-Boxes
-Bancos
-Categorias
-Recorrências
-Cartões
-Categorias do cartão
-Assinaturas do cartão
-Viagens
-Backup e restauração
-Importar e conferir
-Wiki
-Versão
+Contas
+Boxes · Bancos
+Planejamento
+Categorias · Recorrências · Viagens
+Cartão
+Cartões · Categorias do cartão · Assinaturas do cartão
+Dados
+Importar e conferir · Backup e restauração
+Sobre o app
+Wiki · Versão
 ```
 
 ## 2026-06-20 — depois do pagamento parcial
@@ -2082,18 +2076,16 @@ option: carteira
 option: reserva
 option: casa
 Ajustes
-Boxes
-Bancos
-Categorias
-Recorrências
-Cartões
-Categorias do cartão
-Assinaturas do cartão
-Viagens
-Backup e restauração
-Importar e conferir
-Wiki
-Versão
+Contas
+Boxes · Bancos
+Planejamento
+Categorias · Recorrências · Viagens
+Cartão
+Cartões · Categorias do cartão · Assinaturas do cartão
+Dados
+Importar e conferir · Backup e restauração
+Sobre o app
+Wiki · Versão
 ```
 
 ## 2026-07-18 — no meio da viagem
@@ -2632,18 +2624,16 @@ option: carteira
 option: reserva
 option: casa
 Ajustes
-Boxes
-Bancos
-Categorias
-Recorrências
-Cartões
-Categorias do cartão
-Assinaturas do cartão
-Viagens
-Backup e restauração
-Importar e conferir
-Wiki
-Versão
+Contas
+Boxes · Bancos
+Planejamento
+Categorias · Recorrências · Viagens
+Cartão
+Cartões · Categorias do cartão · Assinaturas do cartão
+Dados
+Importar e conferir · Backup e restauração
+Sobre o app
+Wiki · Versão
 ```
 
 ## 2026-09-12 — depois da volta do backup
@@ -3134,18 +3124,16 @@ option: carteira
 option: reserva
 option: casa
 Ajustes
-Boxes
-Bancos
-Categorias
-Recorrências
-Cartões
-Categorias do cartão
-Assinaturas do cartão
-Viagens
-Backup e restauração
-Importar e conferir
-Wiki
-Versão
+Contas
+Boxes · Bancos
+Planejamento
+Categorias · Recorrências · Viagens
+Cartão
+Cartões · Categorias do cartão · Assinaturas do cartão
+Dados
+Importar e conferir · Backup e restauração
+Sobre o app
+Wiki · Versão
 ```
 
 ## 2026-10-15 — com o cenário ligado
@@ -3620,18 +3608,16 @@ option: carteira
 option: reserva
 option: casa
 Ajustes
-Boxes
-Bancos
-Categorias
-Recorrências
-Cartões
-Categorias do cartão
-Assinaturas do cartão
-Viagens
-Backup e restauração
-Importar e conferir
-Wiki
-Versão
+Contas
+Boxes · Bancos
+Planejamento
+Categorias · Recorrências · Viagens
+Cartão
+Cartões · Categorias do cartão · Assinaturas do cartão
+Dados
+Importar e conferir · Backup e restauração
+Sobre o app
+Wiki · Versão
 ```
 
 ## 2026-11-30 — fim do roteiro
@@ -4064,16 +4050,14 @@ option: carteira
 option: reserva
 option: casa
 Ajustes
-Boxes
-Bancos
-Categorias
-Recorrências
-Cartões
-Categorias do cartão
-Assinaturas do cartão
-Viagens
-Backup e restauração
-Importar e conferir
-Wiki
-Versão
+Contas
+Boxes · Bancos
+Planejamento
+Categorias · Recorrências · Viagens
+Cartão
+Cartões · Categorias do cartão · Assinaturas do cartão
+Dados
+Importar e conferir · Backup e restauração
+Sobre o app
+Wiki · Versão
 ```

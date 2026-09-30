@@ -1,6 +1,12 @@
 # Ajustes
 
-Atrás do ícone ⚙️ no topo. Um menu simples leva a cada seção abaixo.
+Atrás do ícone ⚙️ no topo. O menu tem cinco grupos; toque num grupo para ver as seções dele. O botão "‹" no topo da seção volta ao grupo, e o do grupo volta ao menu.
+
+- **Contas:** Boxes e Bancos.
+- **Planejamento:** Categorias, Recorrências e Viagens.
+- **Cartão:** Cartões, Categorias do cartão e Assinaturas do cartão.
+- **Dados:** Importar e conferir, e Backup e restauração.
+- **Sobre o app:** Wiki e Versão.
 
 Nas seções de cadastro, o formulário no topo serve para criar; para editar, toque no lápis do próprio item.
 
