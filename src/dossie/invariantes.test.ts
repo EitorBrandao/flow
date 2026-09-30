@@ -92,6 +92,36 @@ it('detecta referência quebrada e nomeia o registro', async () => {
   expect(achado!.detalhe).toContain('id-inexistente');
 });
 
+it('lançamento que aponta para banco inexistente reprova "banco do lançamento existe"', async () => {
+  const retratos = await executarRoteiro(ROTEIRO);
+  retratos[0].dados.lancamentos[0].bancoId = 'banco-fantasma';
+  const achado = checarTudo(retratos)
+    .find((r) => r.nome === 'banco do lançamento existe' && !r.ok);
+  expect(achado).toBeDefined();
+  expect(achado!.classe).toBe('expectativa');
+  expect(achado!.detalhe).toContain('banco-fantasma');
+});
+
+it('dois bancos padrão na mesma box reprovam "no máximo um banco padrão por box"', async () => {
+  const retratos = await executarRoteiro(ROTEIRO);
+  // acha um corte em que alguma box já tem dois bancos (o roteiro cria `banco azul` e
+  // `banco amarelo` na box `carteira`: `src/dossie/roteiro.ts:57` e `:145`)
+  const gruposDe = (bancos: { boxId: string; padrao?: boolean }[]) => {
+    const porBox = new Map<string, typeof bancos>();
+    for (const b of bancos) porBox.set(b.boxId, [...(porBox.get(b.boxId) ?? []), b]);
+    return [...porBox.values()].find((g) => g.length >= 2);
+  };
+  const corte = [...retratos].reverse().find((r) => gruposDe(r.dados.bancos) !== undefined);
+  expect(corte).toBeDefined();
+  const grupo = gruposDe(corte!.dados.bancos)!;
+  grupo[0].padrao = true;
+  grupo[1].padrao = true;
+  const achado = checarTudo(retratos)
+    .find((r) => r.nome === 'no máximo um banco padrão por box' && !r.ok);
+  expect(achado).toBeDefined();
+  expect(achado!.classe).toBe('expectativa');
+});
+
 it('violação de expectativa não conta como garantida', async () => {
   const retratos = await executarRoteiro(ROTEIRO);
   // Muda o mesmo lançamento, pelo id, em todos os cortes onde ele existe — e sempre para o
