@@ -174,6 +174,12 @@ describe('Wiki', () => {
     expect(screen.getByRole('button', { name: /^Índice/ })).toHaveTextContent('Os primeiros passos');
   });
 
+  it('a barra do índice usa a barra fixa comum do app', async () => {
+    render(<Wiki />);
+    await screen.findByRole('article');
+    expect(screen.getByRole('button', { name: /^Índice/ })).toHaveClass('barra-fixa', 'wiki-barra');
+  });
+
   function simularPosicoes(titulos: Element[], passaram: number) {
     // Barra: topo 0, base 20. Títulos até `passaram` já subiram além da barra; os demais estão abaixo.
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {

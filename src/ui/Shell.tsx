@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Settings } from 'lucide-react';
 import { useApp, type Aba } from '../state/store';
@@ -27,10 +27,22 @@ export default function Shell() {
   const { aba, setAba, boxSel, setBoxSel, dados } = useApp();
   const [menuAberto, setMenuAberto] = useState(false);
   const [ajustesKey, setAjustesKey] = useState(0);
+  const shellRef = useRef<HTMLDivElement>(null);
+  const topoRef = useRef<HTMLElement>(null);
+  const carregado = dados != null;
+  // Altura do .topo para toda barra fixa logo abaixo dele (.barra-fixa): medida uma vez aqui.
+  useLayoutEffect(() => {
+    const medir = () => {
+      shellRef.current?.style.setProperty('--topo-altura', `${topoRef.current?.offsetHeight ?? 0}px`);
+    };
+    medir();
+    window.addEventListener('resize', medir);
+    return () => window.removeEventListener('resize', medir);
+  }, [carregado]);
   if (!dados) return null;
   const boxesComSaldo = dados.boxes.filter((b) => b.saldoInicial != null);
   return (
-    <div className="shell">
+    <div className="shell" ref={shellRef}>
       <nav className="navegacao">
         {ABAS.map((a) => (
           <button
@@ -44,7 +56,7 @@ export default function Shell() {
         ))}
       </nav>
       <div className="shell-corpo">
-        <header className="topo">
+        <header className="topo" ref={topoRef}>
           <select className="chip" value={boxSel} onChange={(e) => setBoxSel(e.target.value)} aria-label="Box">
             {boxesComSaldo.map((b) => (
               <option key={b.id} value={b.id}>{b.nome}</option>

@@ -394,19 +394,28 @@ table.tabela th:first-child, table.tabela td:first-child {
 .evolucao-legenda-cor.ganho { background: var(--pos); }
 .evolucao-legenda-cor.gasto { background: var(--neg); }
 
+/* Barra que gruda logo abaixo do .topo (seletor de mês/período nas Análises e no Cartão, índice
+   da Wiki). --topo-altura vem do Shell.tsx, que mede o .topo. A margem negativa anula o padding
+   lateral de .conteudo e o fundo cobre o que rola por baixo. z-index 9: abaixo do .topo (10). */
+.barra-fixa {
+  position: sticky; top: var(--topo-altura, 0px); z-index: 9;
+  margin: 0 -16px; padding: 6px 16px; background: var(--bg);
+}
+
 /* --- Wiki ------------------------------------------------------------- */
-/* Barra do índice: gruda sob o .topo (--wiki-topo vem do Wiki.tsx) e ocupa a largura toda,
-   anulando o padding lateral de .conteudo. Fica abaixo do .topo (z-index 10). */
+/* Barra do índice: a posição fixa vem de .barra-fixa (o botão usa as duas classes); aqui fica só
+   a aparência. O padding de 8px sobrepõe o 6px da .barra-fixa, por vir depois. */
 .wiki-barra {
-  position: sticky; top: var(--wiki-topo, 0px); z-index: 9;
   display: flex; align-items: center; gap: 10px; min-height: 44px;
-  margin: 0 -16px; padding: 8px 16px; border: none; text-align: left;
-  background: var(--bg); color: var(--fg); font-weight: 600;
+  padding: 8px 16px; border: none; text-align: left;
+  color: var(--fg); font-weight: 600;
 }
 .wiki-barra-texto { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wiki-barra-secao { color: var(--muted); font-weight: 400; }
-/* Destino de rolagem para abaixo da barra, não por trás dela. */
-.wiki-corpo h3[id], .wiki-campos > div { scroll-margin-top: var(--wiki-rolagem, 0px); }
+/* Destino de rolagem para abaixo do topo e da barra do índice, não por trás deles. */
+.wiki-corpo h3[id], .wiki-campos > div {
+  scroll-margin-top: calc(var(--topo-altura, 0px) + var(--wiki-barra-altura, 0px) + 8px);
+}
 
 .wiki-corpo { max-width: 70ch; position: relative; }
 .wiki-corpo h3 { margin: 22px 0 6px; font-size: 17px; }

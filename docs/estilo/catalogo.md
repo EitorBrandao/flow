@@ -59,7 +59,8 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.resumo-barras` / `.resumo-barra-trilho` / `.resumo-barra-preenchimento` | barras de composição ganho/gasto do card resumo em `TelaAnalises.tsx` |
 | `.composicao-*` | classes internas do `ComposicaoBarChart.tsx` (mesmo padrão de prefixo por componente) |
 | `.evolucao-*` | classes internas do `EvolucaoMensalChart.tsx` (mesmo padrão de prefixo por componente) |
-| `.wiki-barra` | barra do índice da wiki: `<button>` sticky sob o `.topo` (`top: var(--wiki-topo)`, medido no Wiki.tsx), z-index 9, largura total (margem −16px), `--bg`, 44px mínimo; `☰ Capítulo · Seção atual`; `h3[id]` e `.wiki-campos > div` ganham `scroll-margin-top: var(--wiki-rolagem)` |
+| `.barra-fixa` | barra que gruda logo abaixo do `.topo` (`top: var(--topo-altura)`, medido no Shell.tsx), z-index 9, largura total (margem −16px), fundo `--bg`, padding 6px 16px. Usada pelo seletor de período (Análises), pelo nome + seletor de mês de cada cartão (Cartão, um `div.tela` por cartão para o sticky valer só no bloco) e pela barra do índice da Wiki. Toda barra nova que precise ficar à vista ao rolar usa esta classe |
+| `.wiki-barra` | aparência da barra do índice da wiki (`<button className="barra-fixa wiki-barra">`): flex, 44px mínimo, padding 8px 16px, `--fg` em peso 600; `☰ Capítulo · Seção atual`. A posição fixa vem de `.barra-fixa`. `h3[id]` e `.wiki-campos > div` ganham `scroll-margin-top` = `--topo-altura` + `--wiki-barra-altura` (medida no Wiki.tsx) + 8px |
 | `.wiki-barra-texto` | texto da barra numa linha só, cortado com reticências |
 | `.wiki-barra-secao` | nome da seção atual na barra, em `--muted` e peso normal |
 | `.wiki-corpo` | artigo com conteúdo da wiki; `h3` (22px margem superior), `p` (10px margem inferior), `ul` (12px margem, 20px padding-left), `li` (5px margem), `code` (quebra de overflow); position: relative (âncora do .wiki-balao) |
@@ -130,7 +131,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 - **`SeletorCategoria.tsx`** — grid de 3 colunas (`.grade-categorias`) pra escolher uma
   categoria por toque, sem abrir o picker nativo do `<select>`. Usado em `TelaLancar.tsx`,
   `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `FormItemCenario.tsx`.
-- **`SeletorMes.tsx`** — navegação de mês: `‹` e `›` em `.botao` (rótulos "Mês anterior" e "Mês seguinte") com o mês por nome no meio (`nomeDoMes`, "outubro de 2026"). Props `mes` (`AAAA-MM`) e `onMudar`. Usado nas Análises e no Cartão — qualquer tela nova que navegue por mês usa este componente.
+- **`SeletorMes.tsx`** — navegação de mês: `‹` e `›` em `.botao` (rótulos "Mês anterior" e "Mês seguinte") com o mês por nome no meio (`nomeDoMes`, "outubro de 2026"). Props `mes` (`AAAA-MM`) e `onMudar`. Usado nas Análises e no Cartão — qualquer tela nova que navegue por mês usa este componente. No Cartão, fica dentro de `.barra-fixa` junto com o nome do cartão; nas Análises, entra pelo `SeletorPeriodo` no modo Mês.
 - **`SeletorPills.tsx`** — pílulas em linha (`.pills`) pra escolher entre poucas opções sem
   abrir o picker nativo do `<select>`; cada pílula é `role="radio"` com `aria-checked`, e a
   prop opcional `rotulo` nomeia o grupo. Exporta `OPCOES_TIPO` (Gasto/Ganho), o controle
