@@ -486,3 +486,42 @@ it('sem bancos, o lançamento sai sem banco', async () => {
   expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
   expect((await db.lancamentos.toArray())[0].bancoId).toBeUndefined();
 });
+
+it('escolher banco e trocar de box volta ao banco padrão da nova box', async () => {
+  const agora = agoraISO();
+  // Primeira box com 2 bancos
+  const box1 = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box1);
+  await repo.salvarCategoria({ boxId: box1.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await repo.salvarBanco({ boxId: box1.id, nome: 'Banco Um', ordem: 0 });
+  await repo.salvarBanco({ boxId: box1.id, nome: 'Banco Dois', ordem: 1 });
+
+  // Segunda box com 2 bancos, banco padrão diferente
+  const box2 = { id: novoId(), nome: 'conjunta', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box2);
+  await repo.salvarCategoria({ boxId: box2.id, nome: 'contas', tipo: 'gasto', ordem: 0 });
+  await repo.salvarBanco({ boxId: box2.id, nome: 'Banco Três', ordem: 0 });
+  const banco2dois = await repo.salvarBanco({ boxId: box2.id, nome: 'Banco Quatro', ordem: 1 });
+  // Define banco 2 como padrão na segunda box
+  await repo.definirBancoPadrao(banco2dois.id);
+
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box1.id, hoje: '2026-07-02' });
+
+  const { rerender } = render(<TelaLancar />);
+
+  // Começa com Banco Um marcado (padrão de box1)
+  expect(screen.getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'true');
+
+  // Escolhe Banco Dois
+  await userEvent.click(screen.getByRole('radio', { name: 'Banco Dois' }));
+  expect(screen.getByRole('radio', { name: 'Banco Dois' })).toHaveAttribute('aria-checked', 'true');
+
+  // Troca de box
+  act(() => useApp.setState({ boxSel: box2.id }));
+  rerender(<TelaLancar />);
+
+  // Deve voltar ao padrão da nova box (Banco Quatro)
+  expect(screen.getByRole('radio', { name: 'Banco Quatro' })).toHaveAttribute('aria-checked', 'true');
+  expect(screen.getByRole('radio', { name: 'Banco Três' })).toHaveAttribute('aria-checked', 'false');
+});

@@ -320,3 +320,67 @@ it('nova recorrência grava o banco escolhido', async () => {
   });
   expect((await db.recorrencias.toArray())[0].bancoId).toBe(dois.id);
 });
+
+it('editar recorrência antiga sem banco abre sem pílula marcada e salva sem banco', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+  // Recorrência antiga sem bancoId
+  const rec = await repo.salvarRecorrencia({
+    boxId: box.id, categoriaId: cat.id, valor: 5000, dataInicio: '2026-07-01',
+    diaDoMes: 5, parcelas: 3,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<Recorrencias />);
+  const item = screen.getByText('assinatura', { selector: 'div' }).closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  // Deve abrir sem nenhuma pílula marcada
+  expect(within(item).getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'false');
+  expect(within(item).getByRole('radio', { name: 'Banco Dois' })).toHaveAttribute('aria-checked', 'false');
+
+  await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(async () => {
+    expect((await db.recorrencias.get(rec.id))?.alteradoEm).not.toBe(rec.alteradoEm);
+  });
+  // Deve continuar sem banco
+  expect((await db.recorrencias.get(rec.id))?.bancoId).toBeUndefined();
+});
+
+it('editar recorrência que tem banco preserva o banco e permite trocar', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
+  const um = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+  const dois = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+  // Recorrência COM bancoId
+  const rec = await repo.salvarRecorrencia({
+    boxId: box.id, categoriaId: cat.id, valor: 5000, dataInicio: '2026-07-01',
+    diaDoMes: 5, parcelas: 3, bancoId: um.id,
+  }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<Recorrencias />);
+  const item = screen.getByText('assinatura', { selector: 'div' }).closest('.item') as HTMLElement;
+  await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+
+  // Deve abrir com o banco atual marcado
+  expect(within(item).getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'true');
+  expect(within(item).getByRole('radio', { name: 'Banco Dois' })).toHaveAttribute('aria-checked', 'false');
+
+  // Trocar para o outro banco
+  await userEvent.click(within(item).getByRole('radio', { name: 'Banco Dois' }));
+  await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(async () => {
+    expect((await db.recorrencias.get(rec.id))?.bancoId).toBe(dois.id);
+  });
+});

@@ -33,11 +33,13 @@ interface CamposRecorrenciaSalvos {
 }
 
 /** Campos de uma recorrência, usados para criar (no topo) e para editar (dentro do item). */
-function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
+function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar, usarPadrao = true }: {
   inicial: CamposRecorrenciaInicial;
   rotuloSalvar: 'Criar' | 'Salvar';
   onSalvo: (campos: CamposRecorrenciaSalvos) => Promise<void>;
   onCancelar?: () => void;
+  /** Na criação, usa o banco padrão se não escolhido. Na edição, banco padrão só se houver. */
+  usarPadrao?: boolean;
 }) {
   const { dados, boxSel } = useApp();
   const [tipo, setTipo] = useState<TipoCategoria>(inicial.tipo);
@@ -53,7 +55,9 @@ function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
 
   const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
   const bancos = dados && boxId ? bancosDaBox(dados.bancos, [boxId]) : [];
-  const bancoId = bancoEscolhido ?? (dados && boxId ? bancoPadrao(dados.bancos, boxId)?.id : undefined);
+  const bancoId = usarPadrao
+    ? (bancoEscolhido ?? (dados && boxId ? bancoPadrao(dados.bancos, boxId)?.id : undefined))
+    : bancoEscolhido;
   const ocultas = dados
     ? new Set([...categoriasFaturaIds(dados.cartoes), ...categoriasTransferenciaIds(dados.boxes)])
     : new Set<string>();
@@ -226,6 +230,7 @@ export default function Recorrencias() {
                   bancoId: r.bancoId ?? null,
                 }}
                 rotuloSalvar="Salvar"
+                usarPadrao={false}
                 onSalvo={(campos) => atualizar(r.id, campos)} onCancelar={() => setEditandoId(null)}
               />
             </div>

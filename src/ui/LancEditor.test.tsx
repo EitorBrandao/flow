@@ -271,3 +271,20 @@ it('previsto de recorrência não mostra o campo Banco: quem manda é a regra', 
     expect(screen.queryByRole('radio', { name: 'Banco Um' })).not.toBeInTheDocument();
   } finally { vi.useRealTimers(); }
 });
+
+it('com um banco só na box, o campo Banco não aparece', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const categoria = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  await repo.salvarBanco({ boxId: box.id, nome: 'Banco Único', ordem: 0 });
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-07-05', valor: 5000, status: 'efetivo',
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<LancEditor lanc={lanc} onFechar={() => {}} />);
+
+  expect(screen.queryByRole('radio', { name: 'Banco Único' })).not.toBeInTheDocument();
+});
