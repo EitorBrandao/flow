@@ -46,7 +46,7 @@ Hoje o lançamento comum pertence só à box. O saldo de cada banco é informado
 | Recorrência (previsto) | `Recorrencia.bancoId`. Sem valor na regra, o previsto fica sem banco. |
 | Fatura de cartão (`origem: 'cartao'`) | Previstos e novos: `Cartao.bancoId`, ou o padrão da box. Na leitura, fatura sem `bancoId` gravado usa o banco do cartão. |
 | Transferência | Como hoje: origem e destino. |
-| Cenário | Sem banco. Não tem o campo. | |
+| Cenário | Sem banco. Não tem o campo. |
 
 Só grava banco em lançamento `previsto` ou novo. Lançamento `efetivo` que já existe não muda sozinho. A leitura (`bancoIdDoLancamento`) cobre o histórico: fatura sem `bancoId` gravado usa o banco do **cartão** (nunca o padrão). A sincronização de faturas (`sincronizarCartoes`) atualiza o `bancoId` dos previstos e dos novos, e nunca o das faturas já pagas.
 
