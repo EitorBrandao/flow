@@ -189,3 +189,11 @@ it('criar ou salvar sem nome avisa embaixo dos botões', async () => {
   expect(screen.getByText('Dê um nome à categoria para salvar.')).toBeInTheDocument();
   expect((await db.categoriasCartao.get(cat.id))?.nome).toBe('mercado');
 });
+
+it('sem cartão, o aviso leva a Ajustes → Cartões', async () => {
+  await useApp.getState().iniciar();
+  render(<CategoriasCartao />);
+  expect(screen.getByText('Cadastre um cartão primeiro.')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Cadastrar cartão' }));
+  expect(useApp.getState().ajustesSecao).toBe('cartoes');
+});

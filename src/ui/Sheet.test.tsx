@@ -75,3 +75,28 @@ describe('Sheet', () => {
     expect(onFechar).not.toHaveBeenCalled();
   });
 });
+
+describe('Sheet — tecla Esc', () => {
+  it('Esc fecha o sheet aberto', async () => {
+    const onFechar = vi.fn();
+    render(<Sheet aberto onFechar={onFechar}><p>conteúdo</p></Sheet>);
+    await userEvent.keyboard('{Escape}');
+    expect(onFechar).toHaveBeenCalledOnce();
+  });
+
+  it('com dois sheets abertos, Esc fecha só o de cima', async () => {
+    const debaixo = vi.fn();
+    const decima = vi.fn();
+    render(<><Sheet aberto onFechar={debaixo}><p>a</p></Sheet><Sheet aberto onFechar={decima}><p>b</p></Sheet></>);
+    await userEvent.keyboard('{Escape}');
+    expect(decima).toHaveBeenCalledOnce();
+    expect(debaixo).not.toHaveBeenCalled();
+  });
+
+  it('sheet fechado não escuta Esc', async () => {
+    const onFechar = vi.fn();
+    render(<Sheet aberto={false} onFechar={onFechar}><p>conteúdo</p></Sheet>);
+    await userEvent.keyboard('{Escape}');
+    expect(onFechar).not.toHaveBeenCalled();
+  });
+});

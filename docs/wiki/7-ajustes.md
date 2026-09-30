@@ -33,7 +33,7 @@ Saldo inicial negativo é aceito (digitar com "−" na frente). Uma box sem sald
 
 Uma box representa a **pessoa**, e uma pessoa costuma ter mais de uma conta. Aqui você cadastra os [bancos](#glossario/banco) de cada box e informa quanto tem em cada um.
 
-Serve para conferir: a tela Hoje passa a mostrar uma linha por banco, e a diferença contra a projeção é calculada sobre a soma. Sem bancos cadastrados, nada muda — a conferência continua com o campo único de sempre.
+Serve para conferir: a tela Hoje passa a mostrar uma linha por banco, e a diferença contra a projeção é calculada sobre a soma. Sem bancos cadastrados, a conferência usa um único campo de saldo.
 
 > Nesta versão o saldo do banco é **informado por você, não calculado**. Ele não se atualiza sozinho quando você lança: lançamento ainda não aponta para banco.
 
@@ -87,7 +87,7 @@ Excluir tira só a marcação de viagem; os lançamentos e as compras continuam 
 
 Serve para dois casos: você passou uns dias sem lançar, ou quer conferir o Flow contra o banco. Em vez de digitar tudo de novo, entregue o arquivo do banco: o Flow compara cada linha com o que já está lançado.
 
-Hoje o Flow lê dois arquivos: o extrato da conta Nubank, em CSV, e a fatura do cartão
+A tela avisa que outros bancos ainda não são lidos. Hoje o Flow lê dois arquivos: o extrato da conta Nubank, em CSV, e a fatura do cartão
 Santander, em PDF. Baixe o arquivo direto no site ou no aplicativo do banco.
 
 A tela tem três passos, e nada é gravado antes do terceiro:

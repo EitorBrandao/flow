@@ -66,7 +66,7 @@ export function projetarBoxes(boxIds: readonly ID[], e: EntradaProjecao): DiaSal
 }
 
 /** Quantos dias antes do vencimento um previsto já aparece como pendente. */
-const ANTECEDENCIA_PENDENTE_DIAS = 3;
+export const ANTECEDENCIA_PENDENTE_DIAS = 3;
 
 export function pendentes(lancamentos: Lancamento[], hoje: ISODate): Lancamento[] {
   const limite = addDias(hoje, ANTECEDENCIA_PENDENTE_DIAS);

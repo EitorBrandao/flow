@@ -14,6 +14,9 @@ interface Props {
 const DISTANCIA_FECHAR = 80;
 const VELOCIDADE_FECHAR = 500;
 
+/** Sheets abertos, do mais antigo ao mais novo: Esc fecha só o de cima. */
+const pilhaAbertos: Array<{ fechar: () => void }> = [];
+
 export default function Sheet({ aberto, onFechar, rotulo, cabecalho, children }: Props) {
   const dragControls = useDragControls();
   const y = useMotionValue(0);
@@ -21,6 +24,20 @@ export default function Sheet({ aberto, onFechar, rotulo, cabecalho, children }:
   const onFecharRef = useRef(onFechar);
   onFecharRef.current = onFechar;
   useTravarRolagem(aberto);
+
+  useEffect(() => {
+    if (!aberto) return;
+    const entrada = { fechar: () => onFecharRef.current() };
+    pilhaAbertos.push(entrada);
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && pilhaAbertos[pilhaAbertos.length - 1] === entrada) entrada.fechar();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      pilhaAbertos.splice(pilhaAbertos.indexOf(entrada), 1);
+    };
+  }, [aberto]);
 
   // Puxar o conteúdo para baixo quando ele já está no topo arrasta o sheet, como nos
   // sheets nativos. Fora disso o toque rola o conteúdo. Precisa de touchmove não-passivo

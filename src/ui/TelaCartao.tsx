@@ -333,7 +333,7 @@ function ItemFaturaBotao({ item, nomeCat, onClick }: {
 }
 
 export default function TelaCartao() {
-  const { dados, boxSel, setAba } = useApp();
+  const { dados, boxSel, abrirAjustes } = useApp();
   if (!dados) return null;
   const ids = boxIdsSelecionadas(dados, boxSel);
   const cartoes = dados.cartoes.filter((c) => c.ativo && ids.includes(c.boxId));
@@ -342,7 +342,7 @@ export default function TelaCartao() {
       <div className="tela">
         <p className="sub">Nenhum cartão cadastrado para esta seleção.</p>
         <button className="botao botao-primario" style={{ alignSelf: 'flex-start' }}
-          onClick={() => setAba('ajustes')}>Cadastrar cartão</button>
+          onClick={() => abrirAjustes('cartoes')}>Cadastrar cartão</button>
       </div>
     );
   }

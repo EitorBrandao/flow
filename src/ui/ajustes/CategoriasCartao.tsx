@@ -59,7 +59,7 @@ function ItemCategoriaCartao({
 }
 
 export default function CategoriasCartao() {
-  const { dados, boxSel, recarregar } = useApp();
+  const { dados, boxSel, recarregar, abrirAjustes } = useApp();
   const [cartaoId, setCartaoId] = useState('');
   const [nome, setNome] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -90,7 +90,13 @@ export default function CategoriasCartao() {
     );
   }
   if (dados.cartoes.length === 0) {
-    return <div className="tela"><h2>Categorias do cartão</h2><p className="sub">Cadastre um cartão primeiro.</p></div>;
+    return <div className="tela">
+        <h2>Categorias do cartão</h2>
+        <p className="sub">Cadastre um cartão primeiro.</p>
+        <button className="botao botao-primario" style={{ alignSelf: 'flex-start' }} onClick={() => abrirAjustes('cartoes')}>
+          Cadastrar cartão
+        </button>
+      </div>;
   }
   const ocultas = categoriasCartaoReservadasIds(dados.cartoes);
   const cartoesDaBox = dados.cartoes.filter((c) => c.boxId === boxId);

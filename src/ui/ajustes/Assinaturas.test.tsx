@@ -218,3 +218,11 @@ it('apagar a descrição e salvar remove a descrição', async () => {
   await screen.findByRole('heading', { name: 'Nova assinatura' });
   expect((await db.recorrenciasCartao.get(ass.id))?.descricao).toBeUndefined();
 });
+
+it('sem cartão, o aviso leva a Ajustes → Cartões', async () => {
+  await useApp.getState().iniciar();
+  render(<Assinaturas />);
+  expect(screen.getByText('Cadastre um cartão primeiro.')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Cadastrar cartão' }));
+  expect(useApp.getState().ajustesSecao).toBe('cartoes');
+});

@@ -59,6 +59,9 @@ export default function SimuladorFluxo() {
         </div>
         <button className="botao botao-primario" disabled={!nomeNovo.trim()} onClick={criar}>Criar</button>
       </div>
+      <p className="sub" style={{ margin: '0 0 12px' }}>
+        Cenário é uma hipótese, como comprar algo ou trocar de aluguel. Ele nunca altera o seu saldo real: só aparece aqui e no gráfico, quando ligado.
+      </p>
 
       <section aria-label="Cenários ligados">
         <p className="rotulo-grupo">Cenários ligados · {ligados.size}</p>

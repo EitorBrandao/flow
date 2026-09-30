@@ -150,6 +150,11 @@ export default function TelaFluxo() {
           </div>
         )
       )}
+      {abaFluxo === 'grafico' && serie.length >= 2 && (
+        <p className="sub">
+          A linha pontilhada vertical é hoje. Toque no gráfico para ampliar: arraste para ver o saldo de cada dia e use dois dedos para aproximar.
+        </p>
+      )}
 
       {abaFluxo === 'lista' && (
         <>

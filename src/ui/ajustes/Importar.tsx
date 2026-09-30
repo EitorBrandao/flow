@@ -287,8 +287,8 @@ export default function Importar() {
               onEscolher={(f) => void onArquivoEscolhido(f)}
             />
             <p className="sub">
-              Escolha o CSV do extrato do Nubank ou o PDF da fatura do Santander. Nada é
-              gravado até você conferir e confirmar.
+              Escolha o CSV do extrato do Nubank ou o PDF da fatura do Santander — outros
+              bancos ainda não são lidos. Nada é gravado até você conferir e confirmar.
             </p>
           </>
         ) : (
