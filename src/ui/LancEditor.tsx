@@ -4,12 +4,14 @@ import { formatarDataBR } from '../domain/dates';
 import { categoriasFaturaIds } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import { categoriasTransferenciaIds } from '../domain/transferencia';
+import { bancosDaBox } from '../domain/bancos';
 import type { Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import { avisoDataNoSaldo } from '../domain/projection';
 import SeletorCategoria from './SeletorCategoria';
+import SeletorBanco from './SeletorBanco';
 import Sheet from './Sheet';
 
 export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFechar: () => void }) {
@@ -19,8 +21,10 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
   const [data, setData] = useState(lanc.data);
   const [categoriaId, setCategoriaId] = useState(lanc.categoriaId);
   const [nota, setNota] = useState(lanc.nota ?? '');
+  const [bancoId, setBancoId] = useState<string | null>(lanc.bancoId ?? null);
   const [erro, setErro] = useState('');
   if (!dados) return null;
+  const bancos = bancosDaBox(dados.bancos, [lanc.boxId]);
 
   const ocultas = new Set([...categoriasFaturaIds(dados.cartoes), ...categoriasTransferenciaIds(dados.boxes)]);
   const categorias = dados.categorias
@@ -36,6 +40,7 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
     await repo.atualizarLancamento(lanc.id, {
       valor: cents, data, categoriaId, nota: nota || undefined,
       ...(confirmarTb ? { status: 'efetivo' as const } : {}),
+      ...(bancoId && bancoId !== lanc.bancoId ? { bancoId } : {}),
     });
     await recarregar();
     onFechar();
@@ -55,6 +60,10 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
   // parcela de volta, porque recorrência de cenário materializa também o passado (não há
   // "descartado" a respeitar, já que cenário nunca entra na fila de Pendentes).
   const parcelaDeRecorrenciaCenario = doCenario && lanc.recorrenciaId != null;
+  // Quem manda no banco de fatura, transferência, previsto de recorrência e cenário não é o
+  // editor: é o cartão, a transferência, a regra e o cenário (que fica sem banco).
+  const podeEscolherBanco = !doCenario && !previstoDeRecorrencia
+    && lanc.origem !== 'cartao' && lanc.origem !== 'transferencia';
 
   return (
     <Sheet aberto onFechar={onFechar} rotulo={lanc.status === 'previsto' ? 'Previsto' : 'Lançamento'}>
@@ -103,6 +112,9 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
               <label>Categoria</label>
               <SeletorCategoria categorias={categorias} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
             </div>
+            {podeEscolherBanco && (
+              <SeletorBanco bancos={bancos} selecionadaId={bancoId} onSelecionar={setBancoId} />
+            )}
             <div className="campo">
               <label htmlFor="ed-nota">Nota</label>
               <input id="ed-nota" value={nota} onChange={(e) => setNota(e.target.value)} />
