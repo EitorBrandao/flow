@@ -58,7 +58,7 @@ function Linha({ rotulo, detalhe, onClick }: { rotulo: string; detalhe?: string;
 }
 
 export default function TelaAjustes() {
-  const { ajustesSecao, limparAjustesSecao } = useApp();
+  const { ajustesSecao, limparAjustesSecao, importacao } = useApp();
 
   // Inicializa a seção: se ajustesSecao foi definido, o lê; caso contrário, menu
   const inicial = (ajustesSecao && ajustesSecao !== 'menu') ? ajustesSecao : 'menu';
@@ -94,7 +94,10 @@ export default function TelaAjustes() {
         <h2>{grupoAtual.rotulo}</h2>
         <div className="lista">
           {grupoAtual.itens.map((i) => (
-            <Linha key={i.id} rotulo={i.rotulo} onClick={() => setSecao(i.id)} />
+            <Linha
+              key={i.id} rotulo={i.rotulo} onClick={() => setSecao(i.id)}
+              detalhe={i.id === 'importar' && importacao.nomeArquivo ? 'Conferência em andamento' : undefined}
+            />
           ))}
         </div>
       </div>
