@@ -205,7 +205,7 @@ describe('saldoCalculadoBanco', () => {
   it('ignora previsto, cenário, lançamento sem banco e lançamento de outro banco', () => {
     const lancamentos = [
       lanc('l1', { bancoId: 'b1', status: 'previsto' }),
-      lanc('l2', { bancoId: 'b1', cenarioId: 'c1', status: 'previsto' }),
+      lanc('l2', { bancoId: 'b1', cenarioId: 'c1', status: 'efetivo' }),
       lanc('l3', {}),
       lanc('l4', { bancoId: 'b2' }),
     ];

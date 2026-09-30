@@ -35,9 +35,11 @@ Uma box representa a **pessoa**, e uma pessoa costuma ter mais de uma conta. Aqu
 
 Serve para conferir: a tela Hoje passa a mostrar uma linha por banco, e a diferença contra a projeção é calculada sobre a soma. Sem bancos cadastrados, a conferência usa um único campo de saldo.
 
-> O saldo de cada banco é o último saldo **informado por você** mais os lançamentos efetivos desse banco depois da data informada. Informar de novo, na tela Hoje, recomeça a conta. Lançamento sem banco não entra na conta de nenhum banco.
+> O saldo de cada banco é o último saldo **informado por você** mais os lançamentos efetivos desse banco depois da data informada. O que caiu no mesmo dia do saldo informado já está nele: só contam os lançamentos de depois dessa data. Informar um novo valor, na tela Hoje, recomeça a conta. Lançamento sem banco não entra na conta de nenhum banco.
 
 Cada banco mostra o saldo, a data em que você o informou e quantos cartões estão vinculados a ele. Com dois ou mais bancos na box, um deles é o **padrão**: aparece com o selo "padrão" e vem marcado em todo lançamento novo. Toque em "Tornar padrão" para trocar. Excluir um banco desliga o vínculo dos cartões, dos lançamentos e das recorrências que apontavam para ele — nada é apagado.
+
+No editor de lançamento, a fatura paga, o previsto de recorrência e a transferência não trocam de banco: a fatura segue o banco do cartão e o previsto segue a regra da recorrência.
 
 **Obrigatórios:** nome. **Têm padrão:** box (a selecionada no topo; na visão casa, a box "casa"), saldo (não informado).
 
