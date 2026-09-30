@@ -1,1 +1,0 @@
-- Análises: com um período de mais de 12 meses, o Comparativo e as Categorias do cartão deixam de mostrar a coluna "ano anterior", que se sobrepunha ao próprio período.

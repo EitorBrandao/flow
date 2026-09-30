@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.50.3] - 2026-09-30
+
+### Alterado
+
+- Análises: com um período de mais de 12 meses, o Comparativo e as Categorias do cartão deixam de mostrar a coluna "ano anterior", que se sobrepunha ao próprio período.
+
 ## [0.50.2] - 2026-09-30
 
 ### Alterado
