@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.50.2] - 2026-09-30
+
+### Alterado
+
+- Análises: tocar na categoria de um cartão num mês em que o valor pago difere da fatura abre os lançamentos que somam o valor mostrado, em vez da fatura.
+  - Vale para pagamento parcial, compra lançada depois e pagamentos registrados à mão ou vindos de antes do cartão.
+  - Um link no fim leva à fatura do mês, com o total dela.
+
 ## [0.50.1] - 2026-09-30
 
 ### Alterado

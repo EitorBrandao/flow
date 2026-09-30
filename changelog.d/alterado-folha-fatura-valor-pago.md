@@ -1,3 +1,0 @@
-- Análises: tocar na categoria de um cartão num mês em que o valor pago difere da fatura abre os lançamentos que somam o valor mostrado, em vez da fatura.
-  - Vale para pagamento parcial, compra lançada depois e pagamentos registrados à mão ou vindos de antes do cartão.
-  - Um link no fim leva à fatura do mês, com o total dela.
