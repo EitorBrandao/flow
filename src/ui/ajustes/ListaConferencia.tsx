@@ -4,7 +4,8 @@ import { acaoEfetiva, totalEfetivo } from '../../importar/conferencia';
 import type {
   AcaoItem, DecisaoTotal, DecisaoTroca, EstadoItem, ItemConferencia, LeituraAdapter,
 } from '../../importar/tipos';
-import LinhaConferencia, { dataDoItem } from './LinhaConferencia';
+import { formatarBRL } from '../../domain/money';
+import LinhaConferencia, { dataDoItem, valorDoItem } from './LinhaConferencia';
 
 /** Um item classificado junto com o destino (box e, se for cartão, o cartão) do grupo a que
  *  ele pertence — é o que `Importar.tsx` usa depois para agrupar a gravação por `aplicar`.
@@ -17,7 +18,11 @@ export interface ItemComContexto {
   chave: string;
 }
 
-const ORDEM_ESTADOS: EstadoItem[] = ['confere', 'previsto', 'divergente', 'novo', 'sobra', 'interno'];
+// Ordem das pílulas, lida em pares (duas por linha): confere e interno; sobra e novos; previsto e
+// divergente. Os dois últimos quase só aparecem no extrato da conta e no pagamento da fatura,
+// então a pílula deles só entra quando há itens naquele estado.
+const ORDEM_ESTADOS: EstadoItem[] = ['confere', 'interno', 'sobra', 'novo', 'previsto', 'divergente'];
+const ESTADOS_SEMPRE_VISIVEIS: EstadoItem[] = ['confere', 'interno', 'sobra', 'novo'];
 
 const ROTULOS_CONTAGEM: Record<EstadoItem, [singular: string, plural: string]> = {
   confere: ['confere', 'conferem'],
@@ -58,6 +63,15 @@ export default function ListaConferencia({
     for (const { item } of itens) c[item.estado]++;
     return c;
   }, [itens]);
+
+  // Soma dos valores dos itens de cada estado, sem sinal (mesmo valor que a linha exibe).
+  const valores = useMemo(() => {
+    const v: Record<EstadoItem, number> = {
+      confere: 0, previsto: 0, divergente: 0, novo: 0, sobra: 0, interno: 0,
+    };
+    for (const { item } of itens) v[item.estado] += valorDoItem(item, dados, undefined);
+    return v;
+  }, [itens, dados]);
 
   // O filtro só decide o que aparece aqui embaixo — as contagens acima (e tudo que
   // `Importar.tsx` confirma) continuam olhando `itens` inteiro, sem filtro.
@@ -110,7 +124,7 @@ export default function ListaConferencia({
       )}
 
       <div className="importar-resumo">
-        {ORDEM_ESTADOS.map((estado) => {
+        {ORDEM_ESTADOS.filter((e) => ESTADOS_SEMPRE_VISIVEIS.includes(e) || contagens[e] > 0 || filtro === e).map((estado) => {
           const n = contagens[estado];
           const [singular, plural] = ROTULOS_CONTAGEM[estado];
           const ativo = filtro === estado;
@@ -123,8 +137,11 @@ export default function ListaConferencia({
               disabled={n === 0}
               onClick={() => onFiltroChange(ativo ? null : estado)}
             >
-              <i className={`importar-ponto ${estado}`} aria-hidden="true" />
-              <b>{n}</b> {n === 1 ? singular : plural}
+              <span className="importar-contagem-linha">
+                <i className={`importar-ponto ${estado}`} aria-hidden="true" />
+                <b>{n}</b> {n === 1 ? singular : plural}
+              </span>
+              <span className="importar-valor">{formatarBRL(valores[estado])}</span>
             </button>
           );
         })}

@@ -358,7 +358,7 @@ describe('Importar', () => {
     expect(screen.getByText('LOJA GAMA')).toBeInTheDocument();
     expect(screen.getByText('CONTA PREVISTA')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: /^1 novo$/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^1 novo/ }));
 
     expect(screen.queryByText('PAGAMENTO RECEBIDO')).not.toBeInTheDocument();
     expect(screen.getByText('LOJA GAMA')).toBeInTheDocument();
@@ -369,7 +369,7 @@ describe('Importar', () => {
     expect(screen.getByRole('button', { name: /Confirmar — 2 mudanças/ })).toBeInTheDocument();
 
     // Tocar de novo na mesma pílula tira o filtro.
-    await userEvent.click(screen.getByRole('button', { name: /^1 novo$/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^1 novo/ }));
     expect(screen.getByText('PAGAMENTO RECEBIDO')).toBeInTheDocument();
     expect(screen.getByText('CONTA PREVISTA')).toBeInTheDocument();
     expect(screen.queryByText(/Mostrando só os itens com estado/)).not.toBeInTheDocument();
@@ -381,7 +381,7 @@ describe('Importar', () => {
     render(<Importar />);
     await uploadCsvTresLinhas();
 
-    await userEvent.click(screen.getByRole('button', { name: /^1 novo$/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^1 novo/ }));
     const botaoMarcar = screen.getByRole('button', { name: 'Marcar os visíveis como ignorar' });
     await userEvent.click(botaoMarcar);
 
@@ -389,7 +389,7 @@ describe('Importar', () => {
     // continua com a ação padrão (confirmar) — só ela sobra como mudança.
     await screen.findByRole('button', { name: /Confirmar — 1 mudanças/ });
 
-    await userEvent.click(screen.getByRole('button', { name: /^1 novo$/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^1 novo/ }));
     const linhaPrevisto = linhaDoItem(screen.getByText('CONTA PREVISTA'));
     expect(within(linhaPrevisto).getByRole('button', { name: 'Confirmar' })).toHaveClass('ativo');
     const linhaNovo = linhaDoItem(screen.getByText('LOJA GAMA'));
@@ -423,7 +423,7 @@ describe('Importar', () => {
     render(<Importar />);
     await uploadCsvTresLinhas();
 
-    await userEvent.click(screen.getByRole('button', { name: /^1 novo$/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^1 novo/ }));
     expect(screen.getByText(/Mostrando só os itens com estado "novo"/)).toBeInTheDocument();
 
     const radiogroupDestino = screen.getByRole('radiogroup', { name: 'Box de destino' });
@@ -438,7 +438,7 @@ describe('Importar', () => {
     render(<Importar />);
     await uploadCsvTresLinhas();
 
-    await userEvent.click(screen.getByRole('button', { name: /^1 novo$/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^1 novo/ }));
     expect(screen.getByText(/Mostrando só os itens com estado "novo"/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Escolher outro arquivo' }));

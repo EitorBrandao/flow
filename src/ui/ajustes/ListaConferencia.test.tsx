@@ -16,6 +16,9 @@ function dadosVazios(): Dados {
   };
 }
 
+// `formatarBRL` separa o símbolo e o número com espaço não separável.
+const semNbsp = (t: string | null | undefined) => (t ?? '').replace(/ /g, ' ');
+
 describe('ListaConferencia', () => {
   it('mostra as contagens do resumo e a lista em ordem de data', () => {
     const dados = dadosVazios();
@@ -63,9 +66,21 @@ describe('ListaConferencia', () => {
     expect(resumo.textContent).toContain('1 confere');
     expect(resumo.textContent).toContain('1 novo');
     expect(resumo.textContent).toContain('1 sobra');
-    expect(resumo.textContent).toContain('0 previstos');
-    expect(resumo.textContent).toContain('0 divergentes');
+    expect(resumo.textContent).not.toContain('previstos');
+    expect(resumo.textContent).not.toContain('divergentes');
     expect(resumo.textContent).toContain('0 internos');
+
+    // Uma pílula por estado, em pares: confere e interno; sobra e novo; previsto e divergente.
+    const rotulos = Array.from(resumo.querySelectorAll('.importar-contagem-linha')).map((e) => e.textContent?.trim());
+    expect(rotulos).toEqual([
+      '1 confere', '0 internos', '1 sobra', '1 novo',
+    ]);
+    // Estado sem itens soma zero.
+    const pilulaInterno = Array.from(resumo.querySelectorAll('.importar-contagem'))
+      .find((b) => b.textContent?.includes('internos'))!;
+    expect(semNbsp(pilulaInterno.querySelector('.importar-valor')?.textContent)).toBe('R$ 0,00');
+    const valores = Array.from(resumo.querySelectorAll('.importar-valor')).map((e) => semNbsp(e.textContent));
+    expect(valores).toEqual(['R$ 39,90', 'R$ 0,00', 'R$ 51,90', 'R$ 45,00']);
 
     const descricoes = Array.from(container.querySelectorAll('.item')).map((el) => el.textContent ?? '');
     const indiceLoja = descricoes.findIndex((t) => t.includes('LOJA GAMA'));
@@ -200,7 +215,7 @@ describe('ListaConferencia — filtro por pílula do resumo', () => {
     return botao;
   }
 
-  it('cada pílula é um botão de verdade; a de contagem zero vem desabilitada', () => {
+  it('cada pílula é um botão de verdade; a de contagem zero vem desabilitada, e previsto/divergente vazios somem', () => {
     const { dados, itens, leitura } = montarItens();
     const { container } = render(
       <ListaConferencia
@@ -218,8 +233,9 @@ describe('ListaConferencia — filtro por pílula do resumo', () => {
     expect(pilhaNovo).not.toBeDisabled();
     expect(pilhaNovo).toHaveAttribute('aria-pressed', 'false');
 
-    const pilhaPrevisto = pilhaDoEstado(container, 'previstos');
-    expect(pilhaPrevisto).toBeDisabled();
+    expect(pilhaDoEstado(container, 'internos')).toBeDisabled();
+    // Previsto e divergente sem itens nem aparecem.
+    expect(() => pilhaDoEstado(container, 'previstos')).toThrow();
   });
 
   it('tocar numa pílula com contagem chama onFiltroChange com o estado dela', () => {
