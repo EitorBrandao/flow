@@ -682,3 +682,57 @@ it('dia antes do início da projeção mostra traço e quando a projeção come�
   expect(screen.getByText('—')).toBeInTheDocument();
   expect(screen.getByText('Nenhum lançamento neste dia.')).toBeInTheDocument();
 });
+
+async function seedDoisBancosComLancamentos() {
+  const { box, catMercado } = await seedBoxComCategoria();
+  const um = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+  const dois = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+  const hoje = '2026-07-05';
+  const base = { boxId: box.id, categoriaId: catMercado.id, data: hoje, status: 'efetivo' as const };
+  await repo.salvarLancamento({ ...base, valor: 4290, nota: 'compra do um', bancoId: um.id });
+  await repo.salvarLancamento({ ...base, valor: 1800, nota: 'compra do dois', bancoId: dois.id });
+  await repo.salvarLancamento({ ...base, valor: 950, nota: 'compra sem banco' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje });
+  return { box, um, dois };
+}
+
+it('mostra o banco de cada lançamento e filtra a lista por banco', async () => {
+  await seedDoisBancosComLancamentos();
+
+  render(<TelaFluxo />);
+  expect(await screen.findByText('compra do um')).toBeInTheDocument();
+  expect(screen.getByText('compra do dois')).toBeInTheDocument();
+  expect(screen.getByText('compra sem banco')).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('radio', { name: 'Banco Dois' }));
+  expect(screen.getByText('compra do dois')).toBeInTheDocument();
+  expect(screen.queryByText('compra do um')).not.toBeInTheDocument();
+  expect(screen.queryByText('compra sem banco')).not.toBeInTheDocument();
+  expect(screen.getByText(/o saldo de cada dia continua sendo o da box inteira/)).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('radio', { name: 'Sem banco' }));
+  expect(screen.getByText('compra sem banco')).toBeInTheDocument();
+  expect(screen.queryByText('compra do dois')).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('radio', { name: 'Todos' }));
+  expect(screen.getByText('compra do um')).toBeInTheDocument();
+  expect(screen.queryByText(/o saldo de cada dia continua sendo o da box inteira/)).not.toBeInTheDocument();
+});
+
+it('com um banco só, não mostra o filtro nem o banco em cada lançamento', async () => {
+  const { box, catMercado } = await seedBoxComCategoria();
+  const unico = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Único', ordem: 0 });
+  await repo.salvarLancamento({
+    boxId: box.id, categoriaId: catMercado.id, data: '2026-07-05', valor: 4290, status: 'efetivo',
+    nota: 'compra do único', bancoId: unico.id,
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-05' });
+
+  render(<TelaFluxo />);
+
+  expect(await screen.findByText('compra do único')).toBeInTheDocument();
+  expect(screen.queryByRole('radio', { name: 'Todos' })).not.toBeInTheDocument();
+  expect(screen.queryByText('Banco Único')).not.toBeInTheDocument();
+});

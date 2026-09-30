@@ -1,4 +1,5 @@
-import { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
+import { bancosDaBox, dadosDoBanco, type FiltroBanco } from '../domain/bancos';
 import {
   compararMeses, compararPeriodos, mediaMovel3, resumoPeriodo, serieMensal, serieMensalResumo,
   faturaExplicaOMes,
@@ -20,15 +21,20 @@ import CategoriasCartaoCard, { type LinhaCategoriaCartao } from './CategoriasCar
 import ComposicaoBarChart, { type LinhaComposicao } from './ComposicaoBarChart';
 import FaturaCategoriaSheet from './FaturaCategoriaSheet';
 import LancamentosSheet from './LancamentosSheet';
+import SeletorFiltroBanco from './SeletorFiltroBanco';
 import SeletorPeriodo from './SeletorPeriodo';
 import ViagemSheet from './ViagemSheet';
 
 const EvolucaoMensalChart = lazy(() => import('./EvolucaoMensalChart'));
 
 export default function TelaAnalises() {
-  const { dados, boxSel, hoje, setAba } = useApp();
+  const { dados: dadosTodos, boxSel, hoje, setAba } = useApp();
   const [periodo, setPeriodo] = useState<EstadoPeriodo>(() => estadoInicial(mesDe(hoje)));
   const [incluirPrevistos, setIncluirPrevistos] = useState(true);
+  const [filtroBanco, setFiltroBanco] = useState<FiltroBanco>('todos');
+  useEffect(() => {
+    setFiltroBanco('todos');
+  }, [boxSel]);
   // folha de um mês (lançamentos ou fatura); `doPeriodo` = aberta pela folha do período
   const [detalhe, setDetalhe] = useState<{ categoriaId: ID; mes: string; doPeriodo: boolean; forcarFatura?: boolean } | null>(null);
   // folha do período (vários meses) de uma categoria
@@ -36,7 +42,10 @@ export default function TelaAnalises() {
   const [assinaturasAberto, setAssinaturasAberto] = useState(false);
   const [viagemAberta, setViagemAberta] = useState<Viagem | null>(null);
   const [categoriaCartaoAberta, setCategoriaCartaoAberta] = useState<LinhaCategoriaCartao | null>(null);
-  if (!dados) return null;
+  if (!dadosTodos) return null;
+  // Todo o resto da tela lê `dados`: com o filtro ligado, ele já vem só com os lançamentos e as
+  // compras de cartão do banco escolhido (`dadosDoBanco`).
+  const dados = dadosDoBanco(dadosTodos, filtroBanco);
   const meses = mesesDoPeriodo(periodo);
   const varios = meses.length > 1;
   // no modo Mês, o próprio mês; nos outros, o último do período (base das folhas por mês)
@@ -49,6 +58,7 @@ export default function TelaAnalises() {
   const cartaoDoHistorico = dados.cartoes.find((c) => c.id === categoriaCartaoAberta?.cartaoId) ?? null;
   const categoriaDoHistorico = dados.categoriasCartao.find((c) => c.id === categoriaCartaoAberta?.categoriaCartaoId) ?? null;
   const ids = boxIdsSelecionadas(dados, boxSel);
+  const bancosSel = bancosDaBox(dadosTodos.bancos, ids);
   // total da fatura de um cartão num mês — base para decidir se a folha do mês é a fatura
   const totalFatura = (cartaoId: ID, m: string) => {
     const cartao = dados.cartoes.find((c) => c.id === cartaoId)!;
@@ -147,6 +157,7 @@ export default function TelaAnalises() {
         <input type="checkbox" checked={incluirPrevistos} onChange={(e) => setIncluirPrevistos(e.target.checked)} />
         incluir previstos
       </label>
+      <SeletorFiltroBanco bancos={bancosSel} valor={filtroBanco} onMudar={setFiltroBanco} />
 
       <div className="card">
         <div className="linha" style={{ justifyContent: 'space-between' }}>
