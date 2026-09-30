@@ -179,7 +179,9 @@ describe('rodapé de backup', () => {
     const agora = agoraISO();
     const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
     await repo.salvarBox(box);
-    await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+    // O rodapé só aparece havendo algum lançamento: sem nenhum, não há o que salvar.
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-01-15', valor: 1000, status: 'efetivo' });
     await useApp.getState().iniciar();
     await repo.salvarConfig(config);
     await useApp.getState().recarregar();
@@ -228,6 +230,17 @@ describe('rodapé de backup', () => {
     await abrirAba(/Pendentes/);
     expect(screen.queryByRole('button', { name: /Último backup/ })).not.toBeInTheDocument();
   });
+});
+
+it('com box e categoria, mas sem nenhum lançamento, o rodapé de backup não aparece', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-26', aba: 'hoje', ajustesSecao: null });
+  render(<TelaHoje />);
+  expect(screen.queryByRole('button', { name: /Último backup/ })).not.toBeInTheDocument();
 });
 
 it('no primeiro uso o rodapé de backup não aparece', async () => {

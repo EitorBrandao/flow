@@ -1,5 +1,5 @@
 import type { Box, Categoria, Lancamento } from './types';
-import { pendentes, projetarBoxes, type EntradaProjecao } from './projection';
+import { avisoDataNoSaldo, pendentes, projetarBoxes, type EntradaProjecao } from './projection';
 
 const ts = { criadoEm: '2026-01-01T00:00:00Z', alteradoEm: '2026-01-01T00:00:00Z' };
 
@@ -91,4 +91,19 @@ it('pendentes: também inclui previstos com vencimento em até 3 dias no futuro'
     lanc({ id: 'g', data: '2026-01-08', valor: 1, status: 'previsto' }), // hoje + 4, ainda não
   ];
   expect(pendentes(lancs, '2026-01-04').map((l) => l.id)).toEqual(['f']);
+});
+
+describe('avisoDataNoSaldo', () => {
+  it('avisa na própria data do saldo e antes dela, citando a data', () => {
+    expect(avisoDataNoSaldo(eitor, '2026-01-01')).toContain('01/01/2026');
+    expect(avisoDataNoSaldo(eitor, '2025-12-31')).toContain('01/01/2026');
+  });
+  it('não avisa depois da data do saldo', () => {
+    expect(avisoDataNoSaldo(eitor, '2026-01-02')).toBeNull();
+  });
+  it('não avisa em box sem saldo próprio, sem box ou sem data', () => {
+    expect(avisoDataNoSaldo(casa, '2026-01-01')).toBeNull();
+    expect(avisoDataNoSaldo(undefined, '2026-01-01')).toBeNull();
+    expect(avisoDataNoSaldo(eitor, '')).toBeNull();
+  });
 });

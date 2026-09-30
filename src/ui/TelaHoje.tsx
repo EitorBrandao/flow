@@ -398,9 +398,12 @@ export default function TelaHoje() {
                 </button>
               )}
             </div>
-            <button type="button" className={classeBackup} onClick={() => abrirAjustes('backup')}>
-              Último backup: {backup.idade}{dados.config.mudancasDesdeBackup && SUFIXO_MUDANCAS_BACKUP}
-            </button>
+            {/* Sem nenhum lançamento não há o que salvar: o rodapé só assustaria quem chegou agora. */}
+            {dados.lancamentos.length > 0 && (
+              <button type="button" className={classeBackup} onClick={() => abrirAjustes('backup')}>
+                Último backup: {backup.idade}{dados.config.mudancasDesdeBackup && SUFIXO_MUDANCAS_BACKUP}
+              </button>
+            )}
           </>
         )
       )}

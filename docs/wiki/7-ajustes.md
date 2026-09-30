@@ -24,10 +24,10 @@ CRUD das regras que geram previstos automaticamente (veja [Recorrência](#concei
 
 Toque no lápis de cada box para editar nome, saldo inicial e data; crie boxes novas pelo formulário no topo; escolha a box padrão que abre ao iniciar o app.
 
-Saldo inicial negativo é aceito (digitar com "−" na frente). Uma box sem saldo próprio (como a casa) aparece como "compartilhada" e não pode virar padrão.
+Saldo inicial negativo é aceito (digitar com "−" na frente). Uma box sem saldo próprio (como a casa) serve aos gastos divididos, e escolher "casa" no topo soma todas as suas boxes. Ela não pode virar padrão.
 
-**Nova box — obrigatório:** nome. **Têm padrão:** saldo inicial (0), data (hoje).
-**Ao editar — obrigatório:** nenhum; deixar saldo/data em branco torna a box "sem saldo próprio" (compartilhada).
+**Nova box — obrigatório:** nome. **Têm padrão:** saldo (0), data do saldo (hoje). Lançamentos até a data do saldo, ela inclusive, já estão dentro dele e não o mudam.
+**Ao editar — obrigatório:** nenhum; desmarcar "Esta box tem saldo próprio" torna a box compartilhada.
 
 ## Bancos
 

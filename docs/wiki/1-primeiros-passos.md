@@ -9,10 +9,10 @@ O Flow começa **quase vazio**: sem categoria, sem cartão, sem nada lançado. S
 Uma box é um fluxo de caixa com saldo próprio — normalmente uma conta de banco. É o primeiro passo: o resto depende dela. Fica em Ajustes, Boxes.
 
 - **Saldo inicial:** o saldo que o app do seu banco mostra agora. Pode ser negativo.
-- **Data:** o dia do saldo — normalmente hoje. Lançamentos antes dessa data não mudam o saldo inicial. Comece por hoje e deixe o passado para trás.
+- **Data:** o dia do saldo — normalmente hoje. Lançamentos até essa data, ela inclusive, já estão dentro do saldo e não o mudam; a tela Lançar avisa quando você escolhe uma data assim. Só os lançamentos depois dela descontam ou somam.
 - **Box compartilhada:** a box "casa" já é assim — sem saldo próprio, só para os gastos divididos (energia, água). Para tornar outra box compartilhada, desmarque "Esta box tem saldo próprio" ao editá-la. Ela sai do seletor do topo e não pode mais ser box padrão.
 
-**Obrigatório:** nome. **Têm padrão:** saldo inicial (0), data (hoje).
+**Obrigatório:** nome. **Têm padrão:** saldo inicial (0), data (hoje). O formulário de nova box já pede o saldo e a data.
 
 ## A primeira categoria
 
@@ -29,6 +29,7 @@ Sem categoria não dá para lançar: a tela Lançar fica vazia. Comece pelas sug
 O botão **+** no meio da barra de baixo. Valor → gasto ou ganho → categoria → Lançar. É o gesto que você repete todo dia, por isso ele é curto.
 
 - O teclado numérico já abre pronto: digite o valor sem tocar em mais nada.
+- No alto do formulário, "Lançando na box" diz em qual box o lançamento vai — a que está selecionada no topo.
 - **Data futura vira previsto automaticamente**, mesmo sem marcar a caixinha. É assim que se lança uma conta que ainda vai cair.
 - A **nota** é opcional, mas é ela que salva o pix: "para quem" fica registrado aí.
 
@@ -80,4 +81,4 @@ Fazer isso uma vez por semana é o que mantém a projeção confiável.
 
 - No celular, o botão abre o menu de compartilhamento: dá para salvar direto no Drive, no OneDrive ou mandar para você mesmo.
 - Para levar tudo a outro aparelho, é o mesmo arquivo: importe do outro lado.
-- A tela Hoje mostra, embaixo do saldo, há quanto tempo foi o último backup. Quando ele ficar vermelho, está falando sério.
+- A tela Hoje mostra, embaixo do saldo, há quanto tempo foi o último backup. Quando ele ficar vermelho, está falando sério. O aviso só aparece depois do primeiro lançamento: sem nada lançado, não há o que salvar.

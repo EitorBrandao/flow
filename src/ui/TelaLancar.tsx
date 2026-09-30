@@ -8,6 +8,7 @@ import SeletorPills, { OPCOES_TIPO } from './SeletorPills';
 import { categoriasFaturaIds } from '../domain/fatura';
 import { categoriasTransferenciaIds } from '../domain/transferencia';
 import type { TipoCategoria } from '../domain/types';
+import { avisoDataNoSaldo } from '../domain/projection';
 import { gastoDaViagem, viagemAtivaEm } from '../domain/viagem';
 import { boxIdEfetivo, useApp } from '../state/store';
 
@@ -65,6 +66,9 @@ export default function TelaLancar() {
     [dados, boxId, tipo, ocultas],
   );
 
+  const boxAtual = dados?.boxes.find((b) => b.id === boxId);
+  const avisoSaldo = avisoDataNoSaldo(boxAtual, data);
+
   const valido = boxId != null && cents > 0 && categoriaId != null && data !== '';
 
   // Uma frase por vez, na ordem em que a pessoa preenche — dizer tudo que falta de uma vez
@@ -94,6 +98,7 @@ export default function TelaLancar() {
 
   return (
     <div className="tela">
+      {boxAtual && <p className="sub" style={{ margin: 0 }}>Lançando na box <strong>{boxAtual.nome}</strong></p>}
       <div className="campo">
         <label htmlFor="valor">Valor</label>
         <CampoValor id="valor" valorCentavos={cents} onChange={setCents} autoFocus style={{ fontSize: 28 }} />
@@ -113,6 +118,7 @@ export default function TelaLancar() {
           <input id="nota" value={nota} onChange={(e) => setNota(e.target.value)} />
         </div>
       </div>
+      {avisoSaldo && <p className="aviso">{avisoSaldo}</p>}
       <label htmlFor="previsto">
         <input
           id="previsto" type="checkbox"
