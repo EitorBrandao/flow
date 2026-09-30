@@ -1,5 +1,5 @@
 import type { Cartao, CategoriaCartao, CompraCartao, Dados, Categoria, Lancamento } from './types';
-import { compararMeses, lancamentosDaCategoria, mediaMovel3, resumoMensal, serieMensal, serieMensalResumo, frequentes } from './aggregations';
+import { compararMeses, compararPeriodos, lancamentosDaCategoria, mediaMovel3, resumoMensal, resumoPeriodo, serieMensal, serieMensalResumo, frequentes } from './aggregations';
 
 const ts = { criadoEm: '2026-01-01T00:00:00Z', alteradoEm: '2026-01-01T00:00:00Z' };
 const cats: Categoria[] = [
@@ -302,4 +302,53 @@ it('frequentes: empate em usos desempata pela data mais recente, depois pela cha
 
 it('frequentes: sem histórico devolve lista vazia', () => {
   expect(frequentes(dadosF(), OPCOES)).toEqual([]);
+});
+
+it('resumoPeriodo com um mês é igual ao resumoMensal', () => {
+  expect(resumoPeriodo(['2026-07'], ['be'], cats, lancs, true)).toEqual(resumoMensal('2026-07', ['be'], cats, lancs, true));
+});
+
+it('resumoPeriodo soma os meses do período', () => {
+  // jun: car 90000 · jul: sal 550000, car 110000, psi 80000 (só efetivos)
+  const r = resumoPeriodo(['2026-06', '2026-07'], ['be'], cats, lancs, false);
+  expect(r.totalGanhos).toBe(550000);
+  expect(r.totalGastos).toBe(280000);
+  expect(r.sobra).toBe(270000);
+  expect(r.linhas.find((l) => l.categoriaId === 'car')?.total).toBe(200000);
+  expect(r.mes).toBe('2026-07');
+});
+
+it('resumoPeriodo deixa de fora transferência e cenário', () => {
+  const comExtras = [
+    ...lancs,
+    lanc({ id: 't', data: '2026-06-15', valor: 40000, categoriaId: 'car', origem: 'transferencia' }),
+  ];
+  const r = resumoPeriodo(['2026-06', '2026-07'], ['be'], cats, comExtras, true);
+  // car: 90000 + 110000 + 50000 (previsto); o cenário (999999) e a transferência ficam fora
+  expect(r.linhas.find((l) => l.categoriaId === 'car')?.total).toBe(250000);
+});
+
+it('compararPeriodos: período, anterior, ano anterior e média por mês', () => {
+  const r = compararPeriodos(['2026-06', '2026-07'], ['be'], cats, lancs, false);
+  const car = r.find((c) => c.categoriaId === 'car')!;
+  expect(car.atual).toBe(200000);       // 90000 + 110000
+  expect(car.anterior).toBe(0);         // abr–mai/2026
+  expect(car.anoAnterior).toBe(70000);  // jun–jul/2025
+  expect(car.mediaMensal).toBe(100000);
+  expect(r.find((c) => c.categoriaId === 'psi')?.mediaMensal).toBe(40000);
+});
+
+it('compararPeriodos com 12 meses: ano anterior é null (igual ao anterior)', () => {
+  const doze = ['2025-08', '2025-09', '2025-10', '2025-11', '2025-12', '2026-01',
+    '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07'];
+  const r = compararPeriodos(doze, ['be'], cats, lancs, false);
+  const car = r.find((c) => c.categoriaId === 'car')!;
+  expect(car.anoAnterior).toBeNull();
+  expect(car.anterior).toBe(70000); // 2025-07 cai em ago/2024–jul/2025
+  expect(car.mediaMensal).toBe(Math.round(200000 / 12)); // 16667
+});
+
+it('compararPeriodos só traz categoria com algum valor', () => {
+  const r = compararPeriodos(['2024-01'], ['be'], cats, lancs, false);
+  expect(r).toEqual([]);
 });

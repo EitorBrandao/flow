@@ -393,3 +393,27 @@ export function resumoAssinaturasDoMes(
   }
   return { totalCent: itens.reduce((s, i) => s + i.valorCent, 0), itens };
 }
+
+/** Assinaturas de vários meses de fatura: soma `resumoAssinaturasDoMes` mês a mês e junta a mesma
+ *  assinatura (mesmo cartão e mesma `recorrenciaCartaoId`) num item só. */
+export function resumoAssinaturasDoPeriodo(
+  meses: readonly string[],
+  boxIds: readonly ID[],
+  cartoes: Cartao[],
+  comprasCartao: CompraCartao[],
+  recorrenciasCartao: RecorrenciaCartao[],
+  ajustesFechamento: AjusteFechamento[] = [],
+): ResumoAssinaturas {
+  const porAssinatura = new Map<string, ItemResumoAssinaturas>();
+  for (const mes of meses) {
+    const doMes = resumoAssinaturasDoMes(mes, boxIds, cartoes, comprasCartao, recorrenciasCartao, ajustesFechamento);
+    for (const item of doMes.itens) {
+      const chave = `${item.cartaoId}|${item.recorrenciaCartaoId}`;
+      const existente = porAssinatura.get(chave);
+      if (existente) existente.valorCent += item.valorCent;
+      else porAssinatura.set(chave, { ...item });
+    }
+  }
+  const itens = [...porAssinatura.values()];
+  return { totalCent: itens.reduce((s, i) => s + i.valorCent, 0), itens };
+}

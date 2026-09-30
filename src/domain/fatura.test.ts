@@ -1,7 +1,7 @@
 import type { AjusteFechamento, Cartao, CompraCartao, ConferenciaFatura, Lancamento, RecorrenciaCartao } from './types';
 import {
   ajustesDoCartao, calcularFaturas, categoriasFaturaIds, datasFaturaDoMes, dedupAjustesFechamento,
-  diffSincronizacao, faturaForaDoFluxo, jaLancadoDaFatura, mesFaturaDaCompra, mesFechamentoDaCompra, resumoAssinaturasDoMes, resumoParcelamento,
+  diffSincronizacao, faturaForaDoFluxo, jaLancadoDaFatura, mesFaturaDaCompra, mesFechamentoDaCompra, resumoAssinaturasDoMes, resumoAssinaturasDoPeriodo, resumoParcelamento,
   resumoPorCategoria, totaisCategoriaCartaoPorMes, valorParcela,
 } from './fatura';
 
@@ -309,6 +309,22 @@ describe('resumoAssinaturasDoMes', () => {
       '2026-07', ['b1'], [cartaoNubank], [compraAssinatura], [assNetflix], ajustes,
     );
     expect(comAjuste.totalCent).toBe(3990);
+  });
+
+  it('resumoAssinaturasDoPeriodo junta a mesma assinatura de meses diferentes num item só', () => {
+    // fecha 10, vence 20: compra de 05/07 → fatura 07; de 05/08 → fatura 08
+    const jul = { ...compra('2026-07-05', 3990), recorrenciaCartaoId: 'ass1' };
+    const ago = { ...compra('2026-08-05', 3990), recorrenciaCartaoId: 'ass1' };
+    const r = resumoAssinaturasDoPeriodo(['2026-07', '2026-08'], ['b1'], [cartaoNubank], [jul, ago], [assNetflix]);
+    expect(r.totalCent).toBe(7980);
+    expect(r.itens).toHaveLength(1);
+    expect(r.itens[0]).toMatchObject({ descricao: 'Netflix', valorCent: 7980 });
+  });
+
+  it('resumoAssinaturasDoPeriodo ignora cartão de box fora da seleção', () => {
+    const jul = { ...compra('2026-07-05', 3990), recorrenciaCartaoId: 'ass1' };
+    const r = resumoAssinaturasDoPeriodo(['2026-07'], ['outra'], [cartaoNubank], [jul], [assNetflix]);
+    expect(r).toEqual({ totalCent: 0, itens: [] });
   });
 });
 
