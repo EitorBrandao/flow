@@ -63,14 +63,14 @@ export function anoAnteriorRepete(meses: readonly string[]): boolean {
 }
 
 /** Move o início do período. Passar do fim arrasta o fim; passar do teto puxa o fim. */
-export function ajustarDe(de: string, ate: string, novoDe: string): { de: string; ate: string } {
+export function ajustarDe(_de: string, ate: string, novoDe: string): { de: string; ate: string } {
   let novoAte = novoDe > ate ? novoDe : ate;
   if (mesesEntre(novoDe, novoAte).length > MAX_MESES_PERIODO) novoAte = addMeses(novoDe, MAX_MESES_PERIODO - 1);
   return { de: novoDe, ate: novoAte };
 }
 
 /** Move o fim do período. Voltar antes do início arrasta o início; passar do teto puxa o início. */
-export function ajustarAte(de: string, ate: string, novoAte: string): { de: string; ate: string } {
+export function ajustarAte(de: string, _ate: string, novoAte: string): { de: string; ate: string } {
   let novoDe = novoAte < de ? novoAte : de;
   if (mesesEntre(novoDe, novoAte).length > MAX_MESES_PERIODO) novoDe = addMeses(novoAte, -(MAX_MESES_PERIODO - 1));
   return { de: novoDe, ate: novoAte };
