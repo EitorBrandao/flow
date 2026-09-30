@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as repo from '../db/repo';
 import { addDias, formatarDataBR, nomeDoMes } from '../domain/dates';
@@ -705,6 +705,12 @@ it('mostra o banco de cada lançamento e filtra a lista por banco', async () => 
   expect(screen.getByText('compra do dois')).toBeInTheDocument();
   expect(screen.getByText('compra sem banco')).toBeInTheDocument();
 
+  // Com filtro "Todos", cada lançamento mostra seu banco
+  const itemCompraUm = screen.getByText('compra do um').closest('.item') as HTMLElement;
+  const itemCompraSemBanco = screen.getByText('compra sem banco').closest('.item') as HTMLElement;
+  expect(itemCompraUm.textContent).toContain('Banco Um');
+  expect(itemCompraSemBanco.textContent).toContain('Sem banco');
+
   await userEvent.click(screen.getByRole('radio', { name: 'Banco Dois' }));
   expect(screen.getByText('compra do dois')).toBeInTheDocument();
   expect(screen.queryByText('compra do um')).not.toBeInTheDocument();
@@ -735,4 +741,35 @@ it('com um banco só, não mostra o filtro nem o banco em cada lançamento', asy
   expect(await screen.findByText('compra do único')).toBeInTheDocument();
   expect(screen.queryByRole('radio', { name: 'Todos' })).not.toBeInTheDocument();
   expect(screen.queryByText('Banco Único')).not.toBeInTheDocument();
+});
+
+it('filtro por banco reseta ao trocar de box', async () => {
+  const { box: boxA, catMercado: catA } = await seedBoxComCategoria();
+  const umA = await repo.salvarBanco({ boxId: boxA.id, nome: 'Banco Um', ordem: 0 });
+  await repo.salvarBanco({ boxId: boxA.id, nome: 'Banco Dois', ordem: 1 });
+  await repo.salvarLancamento({ boxId: boxA.id, categoriaId: catA.id, data: '2026-07-05', valor: 1000, status: 'efetivo', bancoId: umA.id });
+
+  const agora = agoraISO();
+  const boxB = { id: novoId(), nome: 'outra', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(boxB);
+  const catB = await repo.salvarCategoria({ boxId: boxB.id, nome: 'categoria', tipo: 'gasto', ordem: 0 });
+  await repo.salvarBanco({ boxId: boxB.id, nome: 'Banco Um', ordem: 0 });
+  const doisB = await repo.salvarBanco({ boxId: boxB.id, nome: 'Banco Dois', ordem: 1 });
+  await repo.salvarLancamento({ boxId: boxB.id, categoriaId: catB.id, data: '2026-07-05', valor: 2000, status: 'efetivo', bancoId: doisB.id });
+
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: boxA.id, hoje: '2026-07-05' });
+
+  render(<TelaFluxo />);
+
+  // Na box A, selecionar "Banco Um"
+  await userEvent.click(await screen.findByRole('radio', { name: 'Banco Um' }));
+  expect(screen.getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'true');
+
+  // Trocar para box B
+  act(() => useApp.setState({ boxSel: boxB.id }));
+
+  // Na box B, o filtro deve ter resetado para "Todos"
+  expect(screen.getByRole('radio', { name: 'Todos' })).toHaveAttribute('aria-checked', 'true');
+  expect(screen.queryByRole('radio', { name: 'Banco Um' })).not.toHaveAttribute('aria-checked', 'true');
 });
