@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.54.0] - 2026-09-30
+
+### Alterado
+
+- Resumo da conferência mostra o valor somado de cada estado, abaixo da contagem
+  - As pílulas ficam em duas colunas: confere e interno, sobra e novos
+  - Previsto e divergente só aparecem quando há itens nesses estados
+
 ## [0.53.0] - 2026-09-30
 
 ### Alterado
