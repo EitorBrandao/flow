@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import * as repo from '../db/repo';
 import { nomeDoMes } from '../domain/dates';
+import { formatarBRL } from '../domain/money';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import TelaAnalises from './TelaAnalises';
@@ -340,4 +341,82 @@ it('card Categorias do cartão: mostra a categoria no mês da fatura e abre o hi
     // mar..ago = [0, 0, 0, 0, 30000, 62000]; média = 92000 / 6 = 15333,33 → 15333
     expect(within(dialog).getByText('média 6m').querySelector('strong')).toHaveTextContent('153,33');
   } finally { vi.useRealTimers(); }
+});
+
+async function seedDoisMeses() {
+  const { box, catPix } = await seedBoxComCategoria();
+  // out/2025 e set/2026: os dois cabem em "12 meses" terminando em set/2026
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2025-10-05', valor: 10000, status: 'efetivo', nota: 'Padaria' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2026-09-05', valor: 25000, status: 'efetivo', nota: 'Feira' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-09-15' });
+  return { box, catPix };
+}
+
+it('12 meses: soma o período e mostra a média por mês', async () => {
+  await seedDoisMeses();
+  render(<TelaAnalises />);
+  await userEvent.click(screen.getByRole('radio', { name: '12 meses' }));
+  expect(screen.getByText('out/2025 – set/2026')).toBeInTheDocument();
+  // pix: 10000 + 25000 = 35000
+  const linha = screen.getByRole('button', { name: /pix/ });
+  expect(within(linha).getByText('R$ 350,00')).toBeInTheDocument();
+  expect(screen.getByText(/^média por mês:/)).toBeInTheDocument();
+});
+
+it('Comparativo com 12 meses: sem a coluna ano anterior, com a nota do intervalo', async () => {
+  await seedDoisMeses();
+  render(<TelaAnalises />);
+  await userEvent.click(screen.getByRole('radio', { name: '12 meses' }));
+  const card = screen.getByRole('heading', { name: 'Comparativo' }).closest('.card') as HTMLElement;
+  const cabecalhos = within(card).getAllByRole('columnheader').map((th) => th.textContent);
+  expect(cabecalhos).toEqual(['Categoria', '12 meses', 'anterior', 'média/mês']);
+  expect(within(card).getByText('anterior = out/2024 – set/2025 (é também o ano anterior)')).toBeInTheDocument();
+  const linha = within(card).getByText('pix').closest('tr') as HTMLElement;
+  // média = round(35000 / 12) = 2917
+  expect(within(linha).getAllByRole('cell').map((td) => td.textContent))
+    .toEqual(['pix', formatarBRL(35000), formatarBRL(0), formatarBRL(2917)]);
+});
+
+it('Período: 7 meses por padrão, com a coluna ano anterior', async () => {
+  await seedDoisMeses();
+  render(<TelaAnalises />);
+  await userEvent.click(screen.getByRole('radio', { name: 'Período' }));
+  expect(screen.getByText('mar/2026 – set/2026')).toBeInTheDocument();
+  const card = screen.getByRole('heading', { name: 'Comparativo' }).closest('.card') as HTMLElement;
+  expect(within(card).getAllByRole('columnheader').map((th) => th.textContent))
+    .toEqual(['Categoria', '7 meses', 'anterior', 'ano anterior', 'média/mês']);
+});
+
+it('Ano: abre no último ano fechado', async () => {
+  await seedDoisMeses();
+  render(<TelaAnalises />);
+  await userEvent.click(screen.getByRole('radio', { name: 'Ano' }));
+  expect(document.querySelector('.barra-fixa')).toHaveTextContent('2025');
+  // só out/2025 cai em 2025
+  expect(within(screen.getByRole('button', { name: /pix/ })).getByText('R$ 100,00')).toBeInTheDocument();
+});
+
+it('categoria com vários meses: folha do período → folha do mês → volta ao período', async () => {
+  await seedDoisMeses();
+  render(<TelaAnalises />);
+  await userEvent.click(screen.getByRole('radio', { name: '12 meses' }));
+  await userEvent.click(screen.getByRole('button', { name: /pix/ }));
+  const periodo = await screen.findByRole('dialog', { name: 'pix' });
+  expect(within(periodo).getByText('out/2025 – set/2026 · toque num mês para ver os lançamentos')).toBeInTheDocument();
+
+  await userEvent.click(within(periodo).getByRole('button', { name: /out\/2025/ }));
+  expect(await screen.findByText('Padaria')).toBeInTheDocument();
+  expect(screen.queryByText('Feira')).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: /voltar ao período/ }));
+  expect(await screen.findByText('out/2025 – set/2026 · toque num mês para ver os lançamentos')).toBeInTheDocument();
+});
+
+it('modo Mês: o seletor de mês fica na barra fixa', async () => {
+  await seedDoisMeses();
+  render(<TelaAnalises />);
+  const barra = document.querySelector('.barra-fixa') as HTMLElement;
+  expect(within(barra).getByRole('button', { name: 'Mês anterior' })).toBeInTheDocument();
+  expect(within(barra).getByText('setembro de 2026')).toBeInTheDocument();
 });
