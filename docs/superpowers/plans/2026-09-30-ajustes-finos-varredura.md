@@ -35,6 +35,15 @@ Quatro itens de esforço baixo da lista não entram. A leitura do código mostro
 | VB-13 | O percentual é "do total da renda" (`pctDaRenda`). Só faz sentido para gasto. |
 | VB-15 | O `<h2>` com o nome da subtela repete em dez telas de Ajustes. É o padrão do app; mudar uma tela só criaria divergência. Se o usuário quiser mudar, vira item novo, nas dez telas. |
 
+## Decisões do mockup (2026-10-01)
+
+O usuário respondeu ao mockup da Tarefa 0:
+
+- **VB-01:** `--total-pos` passa a `#4ade80` ("verde claro"). A Tarefa 8 segue com esse valor.
+- **VB-02:** aprovado, opacidade de 45%.
+- **VB-05, VB-12, VB-14:** aprovados como no mockup.
+- **VB-04 mudou de escopo.** O botão "↔" por banco **sai** da linha. No lugar entra **um** botão "Transferir entre bancos", abaixo da lista de bancos. Ao tocar nele, a pessoa escolhe a origem e o destino, o app mostra o saldo de cada um dos dois, e depois da transferência mostra o saldo de cada um de novo. Isso é desenho novo e **precisa de mockup próprio aprovado**: a Tarefa 5 fica reduzida a VB-05, e VB-04 vira a Tarefa 11, que só começa depois da aprovação.
+
 ## Mapa de arquivos e paralelismo
 
 | Tarefa | Itens | Arquivos que ela toca | Fase |
@@ -44,7 +53,7 @@ Quatro itens de esforço baixo da lista não entram. A leitura do código mostro
 | 2 | VB-06, VB-16 | `src/ui/ajustes/Boxes.tsx` | 1 |
 | 3 | VB-11 | `src/ui/ajustes/Cartoes.tsx` | 1 |
 | 4 | VB-12 | `src/ui/TelaLancar.tsx`, `src/styles.css` (junto de `.aviso-urgente`) | 1, após Tarefa 0 |
-| 5 | VB-04, VB-05 | `src/ui/TelaHoje.tsx`, `src/styles.css` (junto de `.conferencia-bancos`) | 1, após Tarefa 0 |
+| 5 | VB-05 (VB-04 saiu para a Tarefa 11) | `src/ui/TelaHoje.tsx`, `src/styles.css` (junto de `.conferencia-bancos`) | 1, após Tarefa 0 |
 | 6 | VB-14 | `src/ui/TelaAnalises.tsx` | 1, após Tarefa 0 |
 | 7 | VB-02 | `src/styles.css` (junto de `.botao-perigo`) | 1, após Tarefa 0 |
 | 8 | VB-01 | `src/styles.css` (linha de `--total-pos`), docs de estilo | 1, após Tarefa 0 e **nível 6** |
@@ -806,3 +815,13 @@ Siga a skill `ciclo-de-entrega`: merge na `main`, `npm run release -- patch`, pu
 - [ ] **Passo 7: Atualizar o `TODO.md`**
 
 Os itens VB-01 a VB-06, VB-09 a VB-12, VB-14 e VB-16 saem do backlog. VB-07, VB-08, VB-13 e VB-15 ficam registrados como "não é defeito", com o motivo da tabela acima.
+
+---
+
+## Tarefa 11: VB-04 — transferir entre bancos num botão abaixo da lista (novo desenho)
+
+**Pré-requisito:** mockup novo aprovado pelo usuário. Esta tarefa não tem passos até lá.
+
+**Pedido do usuário (2026-10-01):** deixar a parte de transferir num botão abaixo; quando a pessoa escolher os bancos, trazer o saldo de cada um; depois da transferência, mostrar o saldo de cada um.
+
+**Pontos de partida no código:** `src/ui/TelaHoje.tsx` (`FormTransferencia`, `setTransferindoDe`, `onTransferir`), `repo.transferirEntreBancos(bancoOrigemId, bancoDestinoId, valorCent, data)` e `saldoCalculadoBanco` (`src/domain/bancos.ts`). Ao mexer em `FormTransferencia`, procure todas as telas que mostram o mesmo conceito (Fluxo mostra transferências, `transferenciaSel`).
