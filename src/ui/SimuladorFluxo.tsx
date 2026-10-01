@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from 'react';
 import * as repo from '../db/repo';
 import { dataComDia, mesAbreviado, mesDe, ultimoDiaDoMes } from '../domain/dates';
+import { cenarioDaVisao } from '../domain/cenarios';
 import { projetarBoxes } from '../domain/projection';
 import { estenderRecorrencias, extremosPossiveis, larguraColunaValor, periodoPadrao, primeiroMesNegativo, resumoMensal, type LinhaMes, type PeriodoSimulacao } from '../domain/simulacao';
 import { agoraISO, novoId, type ID } from '../domain/types';
@@ -39,9 +40,9 @@ export default function SimuladorFluxo() {
       boxes: dados.boxes, categorias: dados.categorias, lancamentos: [...dados.lancamentos, ...extras],
       cenariosLigados: ligados, horizonte,
     }), hoje, p.ate);
-    const ligados = cenariosLigados(dados);
+    const ligados = cenariosLigados(dados, boxSel);
     const combinado = resumo(ligados);
-    const porCenario = new Map<ID, LinhaMes[]>(dados.cenarios.map((c) => [c.id, resumo(new Set([c.id]))]));
+    const porCenario = new Map<ID, LinhaMes[]>(dados.cenarios.filter((c) => cenarioDaVisao(c, boxSel)).map((c) => [c.id, resumo(new Set([c.id]))]));
     const sem = combinado.map((l) => l.sem);
     const ext = extremosPossiveis(sem, [...porCenario.values()].map((ls) => ls.map((l) => l.dif)));
     const larguraCh = larguraColunaValor(sem, ext);
@@ -52,13 +53,14 @@ export default function SimuladorFluxo() {
   }, [dados, boxSel, hoje, periodo]);
   if (!dados || !calc) return null;
   const { ligados, combinado, porCenario, larguraCh, negativoEm, ultimoMes } = calc;
+  const cenariosVisao = dados.cenarios.filter((c) => cenarioDaVisao(c, boxSel));
 
   async function criar() {
     const nome = nomeNovo.trim();
     if (!nome) return;
     const agora = agoraISO();
     const id = novoId();
-    await repo.salvarCenario({ id, nome, ligado: true, criadoEm: agora, alteradoEm: agora });
+    await repo.salvarCenario({ id, nome, ligado: true, escopo: boxSel, criadoEm: agora, alteradoEm: agora });
     await recarregar();
     setNomeNovo('');
     setAberto(id);
@@ -104,14 +106,14 @@ export default function SimuladorFluxo() {
 
       <p className="rotulo-grupo">Cenários</p>
       <div className="lista">
-        {[...dados.cenarios].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm)).map((c) => (
+        {[...cenariosVisao].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm)).map((c) => (
           <CenarioCard
             key={c.id} cenario={c} linhas={porCenario.get(c.id) ?? []} larguraCh={larguraCh}
             aberto={aberto === c.id} onAlternar={() => setAberto(aberto === c.id ? null : c.id)}
             boxIdNovo={boxIdEfetivo(dados, boxSel)}
           />
         ))}
-        {dados.cenarios.length === 0 && <p className="sub">Nenhum cenário ainda.</p>}
+        {cenariosVisao.length === 0 && <p className="sub">Nenhum cenário ainda.</p>}
       </div>
     </>
   );

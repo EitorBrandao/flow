@@ -286,3 +286,27 @@ it('no StrictMode (montar, limpar, montar) a simulação funciona e desmontar de
   unmount();
   await waitFor(async () => expect(await rascunhos()).toHaveLength(0));
 });
+
+it('o rascunho nasce com o escopo da visão e "Guardar" o mantém', async () => {
+  const { box } = await preparar();
+  render(<SimuladorSimples />);
+  await preencher('1500,00', '2026-10-15');
+  await simular();
+  const [rascunho] = await rascunhos();
+  expect(rascunho.escopo).toBe(box.id);
+  await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+  await screen.findByText(/Guardada/);
+  const guardado = (await db.cenarios.toArray()).find((c) => c.nome.startsWith('Simulação de'));
+  expect(guardado?.escopo).toBe(box.id);
+  expect(guardado?.rascunho).toBeUndefined();
+});
+
+it('na casa o rascunho nasce com escopo "casa"', async () => {
+  await preparar();
+  useApp.setState({ boxSel: 'casa' });
+  render(<SimuladorSimples />);
+  await preencher('1500,00', '2026-10-15');
+  await simular();
+  const [rascunho] = await rascunhos();
+  expect(rascunho.escopo).toBe('casa');
+});

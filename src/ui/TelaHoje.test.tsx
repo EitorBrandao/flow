@@ -549,24 +549,6 @@ describe('conferência por banco', () => {
     expect((await db.bancos.get(bancoA.id))?.saldoDeclaradoCent).toBe(77700);
   });
 
-  it('na visão casa os bancos aparecem agrupados por box', async () => {
-    const box = await comBoxESaldo();
-    const agora = agoraISO();
-    const outra = { id: novoId(), nome: 'ju', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
-    await repo.salvarBox(outra);
-    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
-    await repo.salvarBanco({ boxId: outra.id, nome: 'Banco Dois', ordem: 0 });
-    await useApp.getState().recarregar();
-    useApp.setState({ boxSel: 'casa' });
-
-    render(<TelaHoje />);
-    await abrirAba('Conferir');
-    expect(screen.getByLabelText('Banco Um')).toBeInTheDocument();
-    expect(screen.getByLabelText('Banco Dois')).toBeInTheDocument();
-    expect(screen.getByText('ju')).toBeInTheDocument();
-    expect(screen.getByText('eitor')).toBeInTheDocument();
-  });
-
   it('excluir todos os bancos devolve a conferência antiga, com o valor preservado', async () => {
     const box = await comBoxESaldo();
     await repo.salvarBox({ ...box, saldoDeclaradoCent: 12300, dataSaldoDeclarado: '2026-07-01' });
@@ -1228,5 +1210,81 @@ describe('saldo por box na casa', () => {
   it('numa box só, o card não mostra linhas por box', async () => {
     await montar('ana');
     expect(screen.queryByText('bruno')).not.toBeInTheDocument();
+  });
+});
+
+describe('Conferir na casa, por box', () => {
+  async function montarCasa() {
+    const agora = agoraISO();
+    const base = { dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    const ana = { id: novoId(), nome: 'ana', saldoInicial: 100000, ...base };
+    const bruno = { id: novoId(), nome: 'bruno', saldoInicial: 50000, ...base };
+    const casa = { id: novoId(), nome: 'casa', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(ana);
+    await repo.salvarBox(bruno);
+    await repo.salvarBox(casa);
+    await repo.salvarCategoria({ boxId: ana.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+    const nubank = await repo.salvarBanco({ boxId: bruno.id, nome: 'Nubank', ordem: 0 });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-02' });
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+    return { ana, bruno, nubank };
+  }
+
+  it('mostra uma seção por box; a box sem bancos tem "Saldo da box" e a com bancos mostra os bancos', async () => {
+    await montarCasa();
+    const grupos = Array.from(document.querySelectorAll('.conferencia-bancos .rotulo-grupo')).map((e) => e.textContent);
+    // a ordem das boxes é a de `dados.boxes` (ids aleatórios), então só o conjunto importa
+    expect(grupos[0]).toBe('Saldo real em cada box');
+    expect(grupos.slice(1).sort()).toEqual(['ana', 'bruno']);
+    expect(screen.getByLabelText('Saldo da box ana')).toBeInTheDocument();
+    expect(screen.getByLabelText('Nubank')).toBeInTheDocument();
+  });
+
+  it('sem nenhuma box informada, pede o saldo de cada uma e não afirma diferença', async () => {
+    await montarCasa();
+    expect(screen.getByText(/^Informe o saldo de (ana, bruno|bruno, ana) para conferir\.$/)).toBeInTheDocument();
+    expect(screen.queryByText(/Diferença|Bate certinho/)).not.toBeInTheDocument();
+    expect(screen.getByText('Total calculado no Flow')).toBeInTheDocument();
+  });
+
+  it('informar o saldo da box sem bancos grava na box e a frase continua pedindo a outra', async () => {
+    const { ana } = await montarCasa();
+    await userEvent.type(screen.getByLabelText('Saldo da box ana'), '100000');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
+    await waitFor(async () => expect((await db.boxes.get(ana.id))?.saldoDeclaradoCent).toBe(100000));
+    expect((await db.boxes.get(ana.id))?.dataSaldoDeclarado).toBe('2026-07-02');
+    expect(await screen.findByText('Informe o saldo de bruno para conferir.')).toBeInTheDocument();
+  });
+
+  it('com todas informadas mostra o total informado, o do Flow e a diferença', async () => {
+    const { nubank } = await montarCasa();
+    await userEvent.type(screen.getByLabelText('Saldo da box ana'), '100000');
+    await userEvent.type(screen.getByLabelText('Nubank'), '40000');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
+    await waitFor(async () => expect((await db.bancos.get(nubank.id))?.saldoDeclaradoCent).toBe(40000));
+    expect(await screen.findByText(/sobra no app/)).toBeInTheDocument();
+    expect(screen.getByText('Total informado')).toBeInTheDocument();
+    expect(screen.getByText('Total calculado no Flow')).toBeInTheDocument();
+  });
+
+  it('o botão de sinal de cada linha alterna o sinal e grava o valor negativo', async () => {
+    const { ana } = await montarCasa();
+    const sinalDe = (rotulo: string) => within(screen.getByLabelText(rotulo).closest('.linha-banco') as HTMLElement)
+      .getByRole('button', { name: 'Alternar sinal (positivo/negativo)' });
+    expect(screen.getAllByRole('button', { name: 'Alternar sinal (positivo/negativo)' })).toHaveLength(2);
+    await userEvent.type(screen.getByLabelText('Saldo da box ana'), '5000');
+    await userEvent.click(sinalDe('Saldo da box ana'));
+    expect(sinalDe('Saldo da box ana')).toHaveTextContent('−');
+    expect(sinalDe('Nubank')).toHaveTextContent('+');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
+    await waitFor(async () => expect((await db.boxes.get(ana.id))?.saldoDeclaradoCent).toBe(-5000));
+  });
+
+  it('salvar sem mexer em nada não grava nada', async () => {
+    const { ana } = await montarCasa();
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
+    expect((await db.boxes.get(ana.id))?.saldoDeclaradoCent).toBeUndefined();
   });
 });

@@ -151,6 +151,8 @@ describe('Importar', () => {
   });
 
   it('fluxo completo com o CSV do Nubank: lista os dois lançamentos e grava com a categoria certa', async () => {
+    // Sem uma box com saldo próprio não há destino: a box "casa" sozinha não recebe extrato.
+    await montarBox();
     await useApp.getState().iniciar();
     render(<Importar />);
 
@@ -539,6 +541,111 @@ describe('Importar', () => {
   });
 });
 
+describe('Importar — extrato da conta com a casa no topo', () => {
+  async function duasBoxes() {
+    const agora = agoraISO();
+    const mk = (nome: string) => ({
+      id: novoId(), nome, saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora,
+    });
+    const ana = mk('ana');
+    const bruno = mk('bruno');
+    await repo.salvarBox(ana);
+    await repo.salvarBox(bruno);
+    await repo.salvarBox({
+      id: novoId(), nome: 'casa', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora,
+    });
+    await useApp.getState().iniciar();
+    return { ana, bruno };
+  }
+
+  async function lerExtrato() {
+    await userEvent.upload(
+      screen.getByLabelText('Escolher arquivo'),
+      new File([CSV_DUAS_LINHAS], 'extrato-nubank.csv', { type: 'text/csv' }),
+    );
+    await screen.findByRole('radiogroup', { name: 'Box de destino' });
+  }
+
+  it('na casa: lista só boxes com saldo próprio, nenhuma marcada, e o passo 3 fica bloqueado', async () => {
+    await duasBoxes();
+    useApp.getState().setBoxSel('casa');
+    render(<Importar />);
+    await lerExtrato();
+
+    const grupo = screen.getByRole('radiogroup', { name: 'Box de destino' });
+    const radios = within(grupo).getAllByRole('radio');
+    expect(radios.map((r) => r.textContent).sort()).toEqual(['ana', 'bruno']);
+    radios.forEach((r) => expect(r).toHaveAttribute('aria-checked', 'false'));
+    expect(screen.getByRole('button', { name: /Confirmar/ })).toBeDisabled();
+  });
+
+  it('na casa: escolher bruno marca só ela e libera o passo 3', async () => {
+    await duasBoxes();
+    useApp.getState().setBoxSel('casa');
+    render(<Importar />);
+    await lerExtrato();
+
+    const grupo = screen.getByRole('radiogroup', { name: 'Box de destino' });
+    await userEvent.click(within(grupo).getByRole('radio', { name: 'bruno' }));
+
+    expect(within(grupo).getByRole('radio', { name: 'bruno' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(grupo).getByRole('radio', { name: 'ana' })).toHaveAttribute('aria-checked', 'false');
+    expect(await screen.findByRole('button', { name: /Confirmar — 2 mudanças/ })).toBeEnabled();
+  });
+
+  it('só com a box casa: explica que falta uma box com saldo próprio, sem botões de destino', async () => {
+    const agora = agoraISO();
+    await repo.salvarBox({
+      id: novoId(), nome: 'casa', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora,
+    });
+    await useApp.getState().iniciar();
+    useApp.getState().setBoxSel('casa');
+    render(<Importar />);
+    await userEvent.upload(
+      screen.getByLabelText('Escolher arquivo'),
+      new File([CSV_DUAS_LINHAS], 'extrato-nubank.csv', { type: 'text/csv' }),
+    );
+    expect(await screen.findByText(
+      'Crie uma box com saldo próprio em Ajustes → Boxes para importar o extrato.',
+    )).toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: 'Box de destino' })).not.toBeInTheDocument();
+  });
+
+  it('com a box ana no topo: ana já vem marcada', async () => {
+    const { ana } = await duasBoxes();
+    useApp.getState().setBoxSel(ana.id);
+    render(<Importar />);
+    await lerExtrato();
+
+    const grupo = screen.getByRole('radiogroup', { name: 'Box de destino' });
+    expect(within(grupo).getByRole('radio', { name: 'ana' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(grupo).getByRole('radio', { name: 'bruno' })).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('fatura de cartão na casa: os destinos são cartões ativos de qualquer box', async () => {
+    const { ana, bruno } = await duasBoxes();
+    const cartaoAna = await repo.salvarCartao(
+      { boxId: ana.id, nome: 'Cartão da Ana', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31',
+    );
+    const cartaoBruno = await repo.salvarCartao(
+      { boxId: bruno.id, nome: 'Cartão do Bruno', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31',
+    );
+    await useApp.getState().iniciar();
+    useApp.getState().setBoxSel('casa');
+    render(<Importar />);
+
+    await userEvent.upload(
+      screen.getByLabelText('Escolher arquivo'),
+      new File(['%PDF-1.4 fatura sintética'], 'fatura.pdf', { type: 'application/pdf' }),
+    );
+    const grupo = await screen.findByRole(
+      'radiogroup', { name: 'Destino de FULANO DE TAL - 0000 XXXX XXXX 0000' },
+    );
+    expect(within(grupo).getByRole('radio', { name: cartaoAna.nome })).toBeInTheDocument();
+    expect(within(grupo).getByRole('radio', { name: cartaoBruno.nome })).toBeInTheDocument();
+  });
+});
+
 // Texto que reproduz o formato que a extração do PDF entrega quando o cabeçalho do cartão e o
 // detalhamento caem numa linha só (o defeito original de `textoPdf.ts`): nenhuma transação é
 // reconhecida como pertencendo a um cartão, e a única transação da linha conta como ignorada.
@@ -686,6 +793,8 @@ describe('Importar — diagnóstico com conferência parcial', () => {
   });
 
   it('não mostra o botão de copiar para o CSV do Nubank, mesmo com linha ilegível', async () => {
+    // Sem uma box com saldo próprio não há destino: a box "casa" sozinha não recebe extrato.
+    await montarBox();
     await useApp.getState().iniciar();
     render(<Importar />);
 
