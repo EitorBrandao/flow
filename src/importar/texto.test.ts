@@ -8,12 +8,12 @@ describe('corrigirUtf8Duplo', () => {
   });
 
   it('corrige o UTF-8 duplo', () => {
-    expect(corrigirUtf8Duplo('Pix no Crédito')).toBe('Pix no Crédito');
-    expect(corrigirUtf8Duplo('Serviço à vista')).toBe('Serviço à vista');
+    expect(corrigirUtf8Duplo('Pix no CrÃ©dito')).toBe('Pix no Crédito');
+    expect(corrigirUtf8Duplo('ServiÃ§o Ã  vista')).toBe('Serviço à vista');
   });
 
   it('devolve o original quando há caractere acima de U+00FF', () => {
-    const t = 'Crédito — Loja';
+    const t = 'CrÃ©dito — Loja';
     expect(corrigirUtf8Duplo(t)).toBe(t);
   });
 
