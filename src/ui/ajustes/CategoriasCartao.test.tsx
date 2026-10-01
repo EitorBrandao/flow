@@ -191,7 +191,11 @@ it('criar ou salvar sem nome avisa embaixo dos botões', async () => {
 });
 
 it('sem cartão, o aviso leva a Ajustes → Cartões', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
   await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id });
   render(<CategoriasCartao />);
   expect(screen.getByText('Cadastre um cartão primeiro.')).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Cadastrar cartão' }));

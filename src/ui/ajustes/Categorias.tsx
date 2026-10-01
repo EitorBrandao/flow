@@ -7,7 +7,8 @@ import { categoriasFaturaIds } from '../../domain/fatura';
 import { categoriasTransferenciaIds } from '../../domain/transferencia';
 import { CATEGORIAS_SUGERIDAS } from '../../domain/categoriasSugeridas';
 import type { Categoria, TipoCategoria } from '../../domain/types';
-import { boxIdEfetivo, useApp } from '../../state/store';
+import { boxIdConcreta, useApp } from '../../state/store';
+import AvisoEscolhaBox from './AvisoEscolhaBox';
 import SeletorPills, { OPCOES_TIPO } from '../SeletorPills';
 
 interface ItemProps {
@@ -77,7 +78,7 @@ export default function Categorias() {
     new Set(CATEGORIAS_SUGERIDAS.filter((c) => c.marcadaPorPadrao).map((c) => `${c.nome}:${c.tipo}`)),
   );
   const uid = useId();
-  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+  const boxId = boxIdConcreta(boxSel);
 
   // Trocar de box com um item aberto não pode deixar o item sumido da lista (filtrada pela
   // box nova) e o formulário de criação escondido — mesmo cuidado de Cartoes/Recorrencias.
@@ -92,7 +93,7 @@ export default function Categorias() {
     return (
       <div className="tela">
         <h2>Categorias</h2>
-        <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+        <AvisoEscolhaBox assunto="As categorias" />
       </div>
     );
   }

@@ -268,3 +268,8 @@ desce a subpastas). `Importar.tsx` orquestra os três passos (arquivo, destino, 
 pílula, e a lista em ordem de data (só de exibição — quem confirma continua olhando tudo, em
 `Importar.tsx`); `LinhaConferencia.tsx` renderiza uma linha (etiqueta
 `.importar-ponto`/`.importar-estado`, detalhe, valor, botões de ação).
+
+- **`ajustes/AvisoEscolhaBox.tsx`** — aviso (`.sub`) das telas de Ajustes que pertencem a uma box
+  (Categorias, Categorias do cartão, Cartões, Assinaturas, Recorrências) quando "casa" está no topo:
+  "<assunto> são de cada box. Escolha uma box no topo para ver ou editar." Vive em `src/ui/ajustes/`,
+  fora da varredura do verificador, como `Importar.tsx` acima.

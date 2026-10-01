@@ -139,6 +139,12 @@ export function boxIdEfetivo(dados: Dados, boxSel: BoxSelecionada): ID | null {
   return dados.boxes.find((b) => b.nome === 'casa')?.id ?? null;
 }
 
+/** Box concreta para as telas de configuração por box (Categorias, Cartões, Recorrências…): `null`
+ *  na visão casa, onde elas mostram só um aviso para escolher uma box. */
+export function boxIdConcreta(boxSel: BoxSelecionada): ID | null {
+  return boxSel === 'casa' ? null : boxSel;
+}
+
 /** Ids dos cenários ligados (mostrados na projeção). */
 export function cenariosLigados(dados: Dados): Set<ID> {
   return new Set(dados.cenarios.filter((c) => c.ligado).map((c) => c.id));
