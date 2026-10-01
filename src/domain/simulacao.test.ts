@@ -32,10 +32,10 @@ describe('ajustarDeSim', () => {
     });
   });
 
-  it('passa de 60 meses: ate vira novoDe + 59 meses', () => {
+  it('mover o início para frente num período de 60 meses encurta o período e mantém o fim', () => {
     expect(ajustarDeSim({ de: '2026-09', ate: '2031-08' }, '2026-10', '2026-09')).toEqual({
       de: '2026-10',
-      ate: '2031-09',
+      ate: '2031-08',
     });
   });
 });
@@ -336,5 +336,14 @@ describe('itensDoCenario', () => {
       ['r1', 'parcelado', '2026-10-10'],
       ['l1', 'unica', '2026-11-05'],
     ]);
+  });
+});
+
+describe('ajustarDeSim: o fim não acompanha o início', () => {
+  it('avançar o início um mês mantém o fim', () => {
+    expect(ajustarDeSim({ de: '2026-10', ate: '2027-12' }, '2026-11', '2026-10')).toEqual({ de: '2026-11', ate: '2027-12' });
+  });
+  it('voltar o início um mês mantém o fim', () => {
+    expect(ajustarDeSim({ de: '2026-11', ate: '2027-12' }, '2026-10', '2026-10')).toEqual({ de: '2026-10', ate: '2027-12' });
   });
 });

@@ -30,14 +30,8 @@ export function ajustarDeSim(
 ): PeriodoSimulacao {
   const de = novoDe < mesHoje ? mesHoje : novoDe;
 
-  // Desliza a janela: se de mudou, ate também muda proporcionalmente
-  const diferencaMeses = mesesEntre(p.de, de).length - 1;
-  let ate = addMeses(p.ate, diferencaMeses);
-
-  // Se novoDe passou do ate anterior, expande
-  if (de > p.ate) {
-    ate = de;
-  }
+  // O fim só se mexe se o início passar dele (então vira o início) ou se o período passar do teto.
+  let ate = de > p.ate ? de : p.ate;
 
   const meses = mesesEntre(de, ate).length;
   if (meses > MAX_MESES_SIMULACAO) {
