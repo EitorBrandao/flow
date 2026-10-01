@@ -53,7 +53,7 @@ implementação acontecer.
 | 2026-07-10 | [guia-estilo-por-niveis-design.md](specs/2026-07-10-guia-estilo-por-niveis-design.md) | Reestrutura o guia de estilo num índice roteador + capítulos por nível de edição. | implementada | [guia-estilo-por-niveis.md](plans/2026-07-10-guia-estilo-por-niveis.md) |
 | 2026-07-10 | [ordenacao-categorias-design.md](specs/2026-07-10-ordenacao-categorias-design.md) | Ordenação de categorias passa a vir da fonte de dados, consistente em todas as telas. | implementada | [ordenacao-categorias.md](plans/2026-07-10-ordenacao-categorias.md) |
 | 2026-07-17 | [contraste-cards-design.md](specs/2026-07-17-contraste-cards-design.md) | Mais contraste entre `--surface`/`--surface2` e o fundo do app. | implementada | — |
-| 2026-07-18 | [cor-total-dia-fluxo-design.md](specs/2026-07-18-cor-total-dia-fluxo-design.md) | Tokens de cor próprios (`--total-pos`/`--total-neg`) pro totalizador do dia no Fluxo. | implementada | — |
+| 2026-07-18 | [cor-total-dia-fluxo-design.md](specs/2026-07-18-cor-total-dia-fluxo-design.md) | Tokens de cor próprios (`--total-pos`/`--total-neg`) pro totalizador do dia no Fluxo. | substituída | — |
 | 2026-07-19 | [arrastar-categorias-design.md](specs/2026-07-19-arrastar-categorias-design.md) | Reordenar categorias por arraste (alça), no lugar dos botões ↑/↓. | implementada | [arrastar-categorias.md](plans/2026-07-19-arrastar-categorias.md) |
 | 2026-07-22 | [ajustes-recorrencias-cartoes-design.md](specs/2026-07-22-ajustes-recorrencias-cartoes-design.md) | Escopa Recorrências por box, permite múltiplos cartões ativos por box, categoria "Assinaturas" automática, seletores de categoria/cartão viram grid de botões. | implementada | [ajustes-recorrencias-cartoes.md](plans/2026-07-22-ajustes-recorrencias-cartoes.md) |
 | 2026-07-23 | [alcinha-branca-design.md](specs/2026-07-23-alcinha-branca-design.md) | Alcinha de arrastar dos sheets vira branco puro (token `--alca`). | implementada | — |
@@ -62,6 +62,7 @@ implementação acontecer.
 | 2026-07-23 | [graficos-aba-analises-design.md](specs/2026-07-23-graficos-aba-analises-design.md) | Gráficos (composição por categoria, evolução mensal) e responsividade na aba Análises. | implementada | [graficos-aba-analises.md](plans/2026-07-23-graficos-aba-analises.md) |
 | 2026-07-24 | [perfil-box-global-design.md](specs/2026-07-24-perfil-box-global-design.md) | Chip de box do topo vira única fonte de seleção de box no app inteiro. | implementada | — |
 | 2026-09-23 | [saldo-dia-futuro-e-rodape-backup-design.md](specs/2026-09-23-saldo-dia-futuro-e-rodape-backup-design.md) | Dia filtrado no Fluxo sempre aparece, com saldo e diferença em relação a hoje (item 8, entrega 1); rodapé de backup permanente na Visão da Hoje, em três estados (item 5). | implementada | [saldo-dia-futuro.md](plans/2026-09-23-saldo-dia-futuro.md), [rodape-backup.md](plans/2026-09-23-rodape-backup.md) |
+| 2026-09-30 | [contraste-saldo-verde-design.md](specs/2026-09-30-contraste-saldo-verde-design.md) | Aumentar o contraste de `--total-pos` no totalizador do dia, mudando o verde de `#008000` para `#4ade80`. | não implementada | — |
 
 ## Planos
 
