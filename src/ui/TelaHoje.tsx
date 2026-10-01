@@ -6,6 +6,7 @@ import { addDias, formatarDataBR } from '../domain/dates';
 import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../domain/estadoBackup';
 import { classeEfeito, classeSaldo, efeitoNoSaldo, formatarBRL, formatarSaldo } from '../domain/money';
 import { notaExibivel } from '../domain/notas';
+import { saldosPorBox } from '../domain/saldoPorBox';
 import type { Banco, Box, Dados, ISODate, Lancamento } from '../domain/types';
 import { ANTECEDENCIA_PENDENTE_DIAS, pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, estadoPrimeiroUso, useApp } from '../state/store';
@@ -365,6 +366,14 @@ export default function TelaHoje() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [dados, boxSel],
   );
+  const saldosBoxes = useMemo(
+    () => dados && boxSel === 'casa' ? saldosPorBox(ids, {
+      boxes: dados.boxes, categorias: dados.categorias, lancamentos: dados.lancamentos,
+      cenariosLigados: ligados, horizonte: dados.config.horizonteProjecao,
+    }, hoje) : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dados, boxSel, hoje],
+  );
   if (!dados) return null;
 
   const deHoje = serie.filter((s) => s.data <= hoje).at(-1);
@@ -461,6 +470,16 @@ export default function TelaHoje() {
                   </p>
                 );
               })()}
+              {saldosBoxes.length >= 2 && (
+                <div className="lista" style={{ gap: 6, margin: '8px 0' }}>
+                  {saldosBoxes.map((s) => (
+                    <div className="linha-topo" key={s.boxId}>
+                      <span className="sub cresce">{s.nome}</span>
+                      <strong className={'total-dia ' + classeSaldo(s.saldoEfetivo)}>{formatarSaldo(s.saldoEfetivo)}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
               {(() => {
                 const fim = janela.at(-1);
                 const delta = fim && deHoje ? fim.saldoProjetado - deHoje.saldoEfetivo : null;

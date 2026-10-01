@@ -1073,3 +1073,32 @@ describe('selo da box nos pendentes', () => {
     expect(within(mercado).queryByText('ana')).not.toBeInTheDocument();
   });
 });
+
+describe('saldo por box na casa', () => {
+  async function montar(boxSel: 'casa' | 'ana') {
+    const agora = agoraISO();
+    const ana = { id: novoId(), nome: 'ana', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    const bruno = { id: novoId(), nome: 'bruno', saldoInicial: 50000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(ana);
+    await repo.salvarBox(bruno);
+    await repo.salvarCategoria({ boxId: ana.id, nome: 'mercado', tipo: 'gasto', ordem: 0 }); // sem categoria a tela mostra o primeiro uso
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: boxSel === 'casa' ? 'casa' : ana.id, hoje: '2026-07-02' });
+    render(<TelaHoje />);
+  }
+
+  it('na casa, o card mostra uma linha por box e o total', async () => {
+    await montar('casa');
+    expect(screen.getByText('ana')).toBeInTheDocument();
+    expect(screen.getByText('bruno')).toBeInTheDocument();
+    const linha = (nome: string) => screen.getByText(nome).closest('.linha-topo') as HTMLElement;
+    const semEspaco = (t: string | null) => (t ?? '').replace(/\s/g, ' ');
+    expect(semEspaco(linha('ana').textContent)).toContain(semEspaco(formatarSaldo(100000)));
+    expect(semEspaco(linha('bruno').textContent)).toContain(semEspaco(formatarSaldo(50000)));
+  });
+
+  it('numa box só, o card não mostra linhas por box', async () => {
+    await montar('ana');
+    expect(screen.queryByText('bruno')).not.toBeInTheDocument();
+  });
+});
