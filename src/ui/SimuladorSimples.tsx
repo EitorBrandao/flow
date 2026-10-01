@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import * as repo from '../db/repo';
 import { formatarDataBR } from '../domain/dates';
+import { cenarioDaVisao } from '../domain/cenarios';
 import { classeSaldo, formatarBRL, formatarSaldo } from '../domain/money';
 import { projetarBoxes } from '../domain/projection';
 import { menorSaldo, primeiroDiaNegativo, type Repeticao } from '../domain/simulacao';
@@ -60,7 +61,7 @@ export default function SimuladorSimples() {
 
   // Projeção com o rascunho ligado: "sem" é o saldo projetado, "com" soma o rascunho.
   const resultado = useMemo(() => {
-    if (!dados || !cenarioId || !dados.cenarios.some((c) => c.id === cenarioId)) return null;
+    if (!dados || !cenarioId || !dados.cenarios.some((c) => c.id === cenarioId && cenarioDaVisao(c, boxSel))) return null;
     const serie = projetarBoxes(boxIdsSelecionadas(dados, boxSel), {
       boxes: dados.boxes, categorias: dados.categorias, lancamentos: dados.lancamentos,
       cenariosLigados: new Set([cenarioId]), horizonte: dados.config.horizonteProjecao,
@@ -87,7 +88,7 @@ export default function SimuladorSimples() {
       }
       const agora = agoraISO();
       id = novoId();
-      await repo.salvarCenario({ id, nome: repo.NOME_SIMULACAO_RAPIDA, ligado: false, rascunho: true, criadoEm: agora, alteradoEm: agora });
+      await repo.salvarCenario({ id, nome: repo.NOME_SIMULACAO_RAPIDA, ligado: false, rascunho: true, escopo: boxSel, criadoEm: agora, alteradoEm: agora });
       rascunhoRef.current = id;
       if (desmontadoRef.current) return;
       const categoriaId = await repo.categoriaAClassificarDe(boxId, 'gasto');
@@ -118,7 +119,7 @@ export default function SimuladorSimples() {
 
   async function guardar() {
     const id = rascunhoRef.current;
-    const cenario = id ? dados?.cenarios.find((c) => c.id === id) : undefined;
+    const cenario = id ? dados?.cenarios.find((c) => c.id === id && cenarioDaVisao(c, boxSel)) : undefined;
     if (!id || !cenario || ocupado) return;
     // Zera já, de forma síncrona: um desmonte durante o `await` não apaga o que está sendo guardado.
     rascunhoRef.current = null;

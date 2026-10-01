@@ -6,7 +6,7 @@ import { db } from '../db/database';
 import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
 import * as projection from '../domain/projection';
-import { useApp } from '../state/store';
+import { boxIdsSelecionadas, cenariosLigados, useApp } from '../state/store';
 import SimuladorFluxo from './SimuladorFluxo';
 
 beforeEach(async () => { await limparDb(); });
@@ -365,4 +365,95 @@ it('mudar "Mês final" avança a tabela', async () => {
   } finally {
     vi.useRealTimers();
   }
+});
+
+/** Duas boxes (ana, bruno) mais a box "casa" autocriada. Cada visão tem um cenário ligado com um item de gasto. */
+async function prepararVisoes() {
+  const agora = agoraISO();
+  const ana = { id: novoId(), nome: 'ana', saldoInicial: 100000, dataSaldoInicial: '2026-09-01', criadoEm: agora, alteradoEm: agora };
+  const bruno = { id: novoId(), nome: 'bruno', saldoInicial: 100000, dataSaldoInicial: '2026-09-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(ana);
+  await repo.salvarBox(bruno);
+  const catAna = await repo.salvarCategoria({ boxId: ana.id, nome: 'Casa', tipo: 'gasto', ordem: 0 });
+  const catBruno = await repo.salvarCategoria({ boxId: bruno.id, nome: 'Casa', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  const boxCasa = useApp.getState().dados!.boxes.find((b) => b.nome === 'casa')!;
+  const catCasa = await repo.salvarCategoria({ boxId: boxCasa.id, nome: 'Casa', tipo: 'gasto', ordem: 0 });
+  const cenario = async (nome: string, escopo: string | undefined, boxId: string, categoriaId: string, valor: number) => {
+    const c = { id: novoId(), nome, ligado: true, ...(escopo ? { escopo } : {}), criadoEm: agora, alteradoEm: agora };
+    await repo.salvarCenario(c);
+    await repo.salvarLancamento({ boxId, categoriaId, data: '2026-10-10', valor, status: 'previsto', cenarioId: c.id });
+    return c;
+  };
+  const A = await cenario('Cenario A', ana.id, ana.id, catAna.id, 10000);
+  const B = await cenario('Cenario B', bruno.id, bruno.id, catBruno.id, 20000);
+  const C = await cenario('Cenario C', undefined, boxCasa.id, catCasa.id, 30000);
+  await useApp.getState().recarregar();
+  useApp.setState({ hoje: '2026-09-15' });
+  return { ana, bruno, boxCasa, A, B, C };
+}
+
+it('cada visão lista só os seus cenários e conta só os ligados dela', async () => {
+  const { ana } = await prepararVisoes();
+  useApp.setState({ boxSel: ana.id });
+  const { unmount } = render(<SimuladorFluxo />);
+  expect(screen.getByRole('button', { name: /Cenario A/ })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Cenario B/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Cenario C/ })).not.toBeInTheDocument();
+  expect(screen.getByText('Cenários ligados · 1')).toBeInTheDocument();
+  unmount();
+
+  useApp.setState({ boxSel: 'casa' });
+  render(<SimuladorFluxo />);
+  expect(screen.getByRole('button', { name: /Cenario C/ })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Cenario A/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Cenario B/ })).not.toBeInTheDocument();
+  expect(screen.getByText('Cenários ligados · 1')).toBeInTheDocument();
+});
+
+it('visão sem cenário mostra "Nenhum cenário ainda." e zero ligados, mesmo com ligados em outras visões', async () => {
+  const agora = agoraISO();
+  const { ana } = await prepararVisoes();
+  const sem = { id: novoId(), nome: 'carla', saldoInicial: 0, dataSaldoInicial: '2026-09-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(sem);
+  await useApp.getState().recarregar();
+  useApp.setState({ boxSel: sem.id, hoje: '2026-09-15' });
+  expect(ana.id).not.toBe(sem.id);
+  render(<SimuladorFluxo />);
+  expect(screen.getByText('Nenhum cenário ainda.')).toBeInTheDocument();
+  expect(screen.getByText('Cenários ligados · 0')).toBeInTheDocument();
+});
+
+it('criar um cenário grava o escopo da visão: "casa" na casa, o id da box numa box', async () => {
+  const { ana } = await prepararVisoes();
+  useApp.setState({ boxSel: 'casa' });
+  const { unmount } = render(<SimuladorFluxo />);
+  await userEvent.type(screen.getByLabelText('Novo cenário'), 'Da casa');
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+  await screen.findByRole('button', { name: /Da casa/ });
+  expect((await db.cenarios.toArray()).find((c) => c.nome === 'Da casa')?.escopo).toBe('casa');
+  unmount();
+
+  useApp.setState({ boxSel: ana.id, hoje: '2026-09-15' });
+  render(<SimuladorFluxo />);
+  await userEvent.type(screen.getByLabelText('Novo cenário'), 'Da ana');
+  await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+  await screen.findByRole('button', { name: /Da ana/ });
+  expect((await db.cenarios.toArray()).find((c) => c.nome === 'Da ana')?.escopo).toBe(ana.id);
+});
+
+it('a projeção de cada visão soma só o item dos cenários dela', async () => {
+  const { ana } = await prepararVisoes();
+  const { dados } = useApp.getState();
+  const saldoEm = (ids: string[], boxSel: string) => {
+    const serie = projection.projetarBoxes(ids, {
+      boxes: dados!.boxes, categorias: dados!.categorias, lancamentos: dados!.lancamentos,
+      cenariosLigados: cenariosLigados(dados!, boxSel), horizonte: dados!.config.horizonteProjecao,
+    });
+    const dia = serie.find((d) => d.data === '2026-10-10')!;
+    return dia.saldoComCenarios - dia.saldoProjetado;
+  };
+  // Ana: só o item A (100,00). Casa: só o item C (300,00); A e B não entram.
+  expect(saldoEm(boxIdsSelecionadas(dados!, ana.id), ana.id)).toBe(-10000);
+  expect(saldoEm(boxIdsSelecionadas(dados!, 'casa'), 'casa')).toBe(-30000);
 });
