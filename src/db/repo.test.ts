@@ -1991,4 +1991,54 @@ describe('modos de uso', () => {
   it('limparSimulacoesRapidas sem nenhuma simulação não faz nada', async () => {
     await expect(repo.limparSimulacoesRapidas()).resolves.toBeUndefined();
   });
+
+  it('limparSimulacoesRapidas não marca mudança desde backup', async () => {
+    const { box, gasto } = await boxECategoria();
+    const agora = agoraISO();
+    const rapida = { id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: true, criadoEm: agora, alteradoEm: agora };
+    // Grava cenário diretamente no banco, sem marcar mudança
+    await db.cenarios.add(rapida);
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2027-01-10', valor: 5000, status: 'previsto', cenarioId: rapida.id,
+    });
+    // Reseta o marcador de mudança após salvarLancamento
+    await db.config.update('config', { mudancasDesdeBackup: false });
+    let cfg = await db.config.get('config');
+    expect(cfg?.mudancasDesdeBackup).toBe(false);
+    await repo.limparSimulacoesRapidas();
+    cfg = await db.config.get('config');
+    expect(cfg?.mudancasDesdeBackup).toBe(false);
+  });
+
+  it('excluirCenario comum marca mudança desde backup', async () => {
+    const { box, gasto } = await boxECategoria();
+    const agora = agoraISO();
+    const cenario = { id: novoId(), nome: 'Teste', ligado: true, criadoEm: agora, alteradoEm: agora };
+    // Grava cenário diretamente no banco, sem marcar mudança
+    await db.cenarios.add(cenario);
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2027-01-10', valor: 5000, status: 'previsto', cenarioId: cenario.id,
+    });
+    // Reseta o marcador de mudança após salvarLancamento
+    await db.config.update('config', { mudancasDesdeBackup: false });
+    let cfg = await db.config.get('config');
+    expect(cfg?.mudancasDesdeBackup).toBe(false);
+    await repo.excluirCenario(cenario.id);
+    cfg = await db.config.get('config');
+    expect(cfg?.mudancasDesdeBackup).toBe(true);
+  });
+
+  it('salvarModo simultâneo em duas telas é atômico', async () => {
+    await vazio();
+    await Promise.all([
+      repo.salvarModo('hoje', 'simples'),
+      repo.salvarModo('fluxo', 'simples'),
+    ]);
+    const cfg = await db.config.get('config');
+    expect(cfg?.modos?.hoje).toBe('simples');
+    expect(cfg?.modos?.fluxo).toBe('simples');
+    expect(cfg?.modos?.cartao).toBe('avancado');
+    expect(cfg?.modos?.analises).toBe('avancado');
+    expect(cfg?.modos?.lancar).toBe('avancado');
+  });
 });

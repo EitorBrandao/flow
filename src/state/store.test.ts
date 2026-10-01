@@ -208,3 +208,16 @@ describe('iniciar e simulações rápidas', () => {
     expect(useApp.getState().dados?.cenarios).toEqual([]);
   });
 });
+
+it('iniciar num banco vazio deixa todos os cinco modos em simples', async () => {
+  await Promise.all(db.tables.map((t) => t.clear()));
+  await useApp.getState().iniciar();
+  const s = useApp.getState();
+  expect(s.dados?.config.modos).toEqual({
+    hoje: 'simples',
+    fluxo: 'simples',
+    cartao: 'simples',
+    analises: 'simples',
+    lancar: 'simples',
+  });
+});

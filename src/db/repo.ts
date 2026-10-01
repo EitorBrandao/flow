@@ -231,12 +231,17 @@ export async function salvarCenario(c: Cenario): Promise<void> {
   });
 }
 
+/** Função interna que apaga o cenário e seus itens SEM marcar mudança. Não exportada. */
+async function apagarCenario(id: ID): Promise<void> {
+  await db.lancamentos.where('cenarioId').equals(id).delete();
+  const recs = await db.recorrencias.filter((r) => r.cenarioId === id).primaryKeys();
+  await db.recorrencias.bulkDelete(recs);
+  await db.cenarios.delete(id);
+}
+
 export async function excluirCenario(id: ID): Promise<void> {
   await db.transaction('rw', db.cenarios, db.lancamentos, db.recorrencias, db.config, async () => {
-    await db.lancamentos.where('cenarioId').equals(id).delete();
-    const recs = await db.recorrencias.filter((r) => r.cenarioId === id).primaryKeys();
-    await db.recorrencias.bulkDelete(recs);
-    await db.cenarios.delete(id);
+    await apagarCenario(id);
     await marcarMudanca();
   });
 }
@@ -267,16 +272,26 @@ export async function salvarConfig(patch: Partial<Config>): Promise<void> {
 
 /** Grava o modo de uma tela. Não chama `marcarMudanca`: trocar de modo não é dado a salvar em backup. */
 export async function salvarModo(tela: TelaModo, modo: ModoUso): Promise<void> {
-  const atual = (await db.config.get('config')) ?? configPadrao();
-  await salvarConfig({ modos: { ...modosEfetivos(atual), [tela]: modo } });
+  await db.transaction('rw', db.config, async () => {
+    const atual = (await db.config.get('config')) ?? configPadrao();
+    const novosModos = { ...modosEfetivos(atual), [tela]: modo };
+    const alterado = await db.config.update('config', { modos: novosModos });
+    if (!alterado) {
+      // primeira escrita: garante que a config exista
+      await db.config.put({ ...configPadrao(), modos: novosModos });
+    }
+  });
 }
 
 export const NOME_SIMULACAO_RAPIDA = 'Simulação rápida';
 
-/** Apaga rascunhos de simulação rápida (e seus itens) deixados por um fechamento abrupto. */
+/** Apaga rascunhos de simulação rápida (e seus itens) deixados por um fechamento abrupto.
+ *  Não marca mudança: limpeza de rascunho não afeta dados a salvar em backup. */
 export async function limparSimulacoesRapidas(): Promise<void> {
-  const rascunhos = await db.cenarios.filter((c) => c.nome === NOME_SIMULACAO_RAPIDA).toArray();
-  for (const c of rascunhos) await excluirCenario(c.id);
+  await db.transaction('rw', db.cenarios, db.lancamentos, db.recorrencias, async () => {
+    const rascunhos = await db.cenarios.filter((c) => c.nome === NOME_SIMULACAO_RAPIDA).toArray();
+    for (const c of rascunhos) await apagarCenario(c.id);
+  });
 }
 
 /**
