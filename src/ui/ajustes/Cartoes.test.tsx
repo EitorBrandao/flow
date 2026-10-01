@@ -281,3 +281,13 @@ it('salvar com o nome apagado avisa e não grava', async () => {
   expect(screen.getByText('Dê um nome ao cartão para salvar.')).toBeInTheDocument();
   expect((await db.cartoes.toArray())[0].nome).toBe('Nubank');
 });
+
+it('avisa em qual box o cartão será criado', async () => {
+  const box = await montarBox();
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01', boxSel: box.id });
+
+  render(<Cartoes />);
+
+  expect(await screen.findByText(`Será criado na box ${box.nome}.`)).toBeInTheDocument();
+});
