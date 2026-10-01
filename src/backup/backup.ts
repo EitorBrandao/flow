@@ -80,6 +80,13 @@ export function validarBackup(json: unknown): Backup {
   if (d.notasFiscais !== undefined && TABELAS_NOTA.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
+  // escopo do cenário: opcional (ausente = casa), mas se vier tem que ser texto não vazio.
+  for (const c of d.cenarios as Array<Record<string, unknown> | null>) {
+    if (c && typeof c === 'object' && 'escopo' in c && c.escopo !== undefined
+      && (typeof c.escopo !== 'string' || c.escopo === '')) {
+      throw new Error('Backup corrompido: escopo de cenário inválido.');
+    }
+  }
   const dados = { ...d } as unknown as Dados;
   // 'config' é a chave primária do registro único; um backup sem ela faz o `put` do repo
   // gravar sem chave e falhar. O id é constante por definição — impor aqui é barato.

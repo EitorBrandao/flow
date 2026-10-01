@@ -546,3 +546,59 @@ it('mesclar mantém os modos da config local', () => {
   const semModos = dados();
   expect(mesclar(semModos, backup).config.modos).toBeUndefined();
 });
+
+describe('escopo do cenário no backup', () => {
+  const cenario = (extra: Record<string, unknown> = {}) => ({
+    id: 'c1', nome: 'Viagem', ligado: true, criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z', ...extra,
+  });
+  const comCenario = (extra: Record<string, unknown> = {}) => {
+    const d = dados();
+    d.cenarios = [cenario(extra) as unknown as Dados['cenarios'][number]];
+    return JSON.parse(JSON.stringify(gerarBackup(d)));
+  };
+
+  it('aceita cenário sem escopo e não inventa o campo', () => {
+    const volta = validarBackup(comCenario());
+    expect('escopo' in volta.dados.cenarios[0]).toBe(false);
+  });
+
+  it('aceita escopo casa e escopo de box, preservando o valor', () => {
+    expect(validarBackup(comCenario({ escopo: 'casa' })).dados.cenarios[0].escopo).toBe('casa');
+    expect(validarBackup(comCenario({ escopo: 'b1' })).dados.cenarios[0].escopo).toBe('b1');
+  });
+
+  it.each([[123], [null], [{}], [['x']], [''], [true]])('rejeita escopo inválido %j', (invalido) => {
+    expect(() => validarBackup(comCenario({ escopo: invalido }))).toThrow(/Backup corrompido: escopo de cenário inválido/);
+  });
+
+  it('rejeita escopo inválido mesmo com outros cenários válidos', () => {
+    const b = comCenario({ escopo: 'casa' });
+    b.dados.cenarios.push(cenario({ id: 'c2', escopo: 5 }));
+    expect(() => validarBackup(b)).toThrow(/escopo de cenário inválido/);
+  });
+
+  it('elemento nulo na tabela de cenários não lança erro de tipo no validador', () => {
+    const b = comCenario();
+    b.dados.cenarios.push(null);
+    expect(() => validarBackup(b)).not.toThrow(TypeError);
+  });
+
+  it('mesclar preserva o escopo e não duplica o cenário de mesmo id', () => {
+    const atual = dados();
+    atual.cenarios = [cenario({ escopo: 'b1' }) as unknown as Dados['cenarios'][number]];
+    const backup = validarBackup(comCenario({ escopo: 'casa', alteradoEm: '2026-06-01T00:00:00Z' })).dados;
+    const m = mesclar(atual, backup);
+    expect(m.cenarios).toHaveLength(1);
+    expect(m.cenarios[0].escopo).toBe('casa');
+    const m2 = mesclar(backup, atual);
+    expect(m2.cenarios).toHaveLength(1);
+    expect(m2.cenarios[0].escopo).toBe('casa');
+  });
+
+  it('ida e volta: gerar e validar devolve o mesmo escopo', () => {
+    const d = dados();
+    d.cenarios = [cenario({ escopo: 'b1' }) as unknown as Dados['cenarios'][number]];
+    const volta = validarBackup(JSON.parse(JSON.stringify(gerarBackup(d))));
+    expect(volta.dados.cenarios[0].escopo).toBe('b1');
+  });
+});
