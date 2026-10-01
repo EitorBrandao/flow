@@ -9,7 +9,7 @@ import type {
   Adapter, EstadoItem, ItemConferencia, LancamentoBruto,
 } from '../../importar/tipos';
 import type { ID } from '../../domain/types';
-import { boxIdEfetivo, IMPORTACAO_VAZIA, useApp, type DestinoBloco } from '../../state/store';
+import { boxIdConcreta, IMPORTACAO_VAZIA, useApp, type DestinoBloco } from '../../state/store';
 import EscolherArquivo from '../EscolherArquivo';
 import ListaConferencia, { type ItemComContexto } from './ListaConferencia';
 
@@ -54,8 +54,7 @@ export default function Importar() {
   const cartoesAtivos = useMemo(() => {
     const ativos = (dados?.cartoes ?? []).filter((c) => c.ativo);
     if (!dados || boxSel === 'casa') return ativos;
-    const boxId = boxIdEfetivo(dados, boxSel);
-    return ativos.filter((c) => c.boxId === boxId);
+    return ativos.filter((c) => c.boxId === boxSel);
   }, [dados, boxSel]);
 
   const itensComContexto: ItemComContexto[] = useMemo(() => {
@@ -148,7 +147,7 @@ export default function Importar() {
         destinos[i] = cartoesAtivos.length === 1 ? cartoesAtivos[0].id : undefined;
       });
       setImportacao(() => ({
-        leitura: r, boxIdEscolhida: boxIdEfetivo(dados!, boxSel), destinoBlocos: destinos,
+        leitura: r, boxIdEscolhida: boxIdConcreta(boxSel), destinoBlocos: destinos,
       }));
     } catch (e) {
       setImportacao(() => ({ leitura: null }));
@@ -369,7 +368,7 @@ export default function Importar() {
         <section className="card">
           <div className="secao"><h3>2. Destino</h3></div>
           <div className="pills" role="radiogroup" aria-label="Box de destino">
-            {dados.boxes.map((b) => (
+            {dados.boxes.filter((b) => b.saldoInicial !== null).map((b) => (
               <button
                 key={b.id}
                 role="radio" aria-checked={boxIdEscolhida === b.id}

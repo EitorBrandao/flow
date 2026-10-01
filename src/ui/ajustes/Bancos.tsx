@@ -6,9 +6,10 @@ import { proximaOrdem } from '../../domain/categorias';
 import { formatarDataBR } from '../../domain/dates';
 import { classeSaldo, formatarSaldo } from '../../domain/money';
 import type { ISODate } from '../../domain/types';
-import { boxIdEfetivo, boxIdsSelecionadas, useApp } from '../../state/store';
+import { boxIdConcreta, useApp } from '../../state/store';
 import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
+import AvisoEscolhaBox from './AvisoEscolhaBox';
 
 function textoContagemCartoes(n: number): string {
   if (n === 0) return 'nenhum cartão';
@@ -38,25 +39,18 @@ export default function Bancos() {
 
   if (!dados) return null;
 
-  // Listar usa boxIdsSelecionadas: 'casa' consolida todas as boxes (mesmo contrato de
-  // todas as outras telas que consultam boxIdsSelecionadas); numa box concreta, é sempre
-  // um array de um id só.
-  const boxIds = boxIdsSelecionadas(dados, boxSel);
-  const bancos = bancosDaBox(dados.bancos, boxIds);
-
-  // Criar usa boxIdEfetivo: com 'casa' selecionada e várias boxes, o alvo da criação não
-  // pode ser "a primeira do array" (dependeria da ordem de carregamento) — tem que ser a
-  // box concreta chamada "casa". Mesmo contrato de Cartoes.tsx e CategoriasCartao.tsx.
-  const boxIdCriacao = boxIdEfetivo(dados, boxSel);
-  if (boxIdCriacao == null) {
+  // Os bancos são de cada box: com a casa no topo, a tela pede uma box em vez de consolidar.
+  const boxId = boxIdConcreta(boxSel);
+  if (boxId == null) {
     return (
       <div className="tela">
         <h2>Bancos</h2>
-        <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+        <AvisoEscolhaBox assunto="Os bancos" />
       </div>
     );
   }
-  const nomeBoxCriacao = dados.boxes.find((b) => b.id === boxIdCriacao)!.nome;
+  const bancos = bancosDaBox(dados.bancos, [boxId]);
+  const nomeBoxCriacao = dados.boxes.find((b) => b.id === boxId)!.nome;
 
   function cartoesDoBanco(bancoId: string): number {
     return dados!.cartoes.filter((c) => c.bancoId === bancoId).length;
@@ -69,8 +63,8 @@ export default function Bancos() {
       setAvisoCriacao('Dê um nome ao banco para criar.');
       return;
     }
-    const ordem = proximaOrdem(bancos.filter((b) => b.boxId === boxIdCriacao));
-    await repo.salvarBanco({ boxId: boxIdCriacao!, nome: nomeNovo.trim(), ordem });
+    const ordem = proximaOrdem(bancos.filter((b) => b.boxId === boxId));
+    await repo.salvarBanco({ boxId: boxId!, nome: nomeNovo.trim(), ordem });
     await repo.sincronizarCartoes(dados!.config.horizonteProjecao);
     await recarregar();
     setNomeNovo('');
