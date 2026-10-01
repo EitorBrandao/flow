@@ -1,0 +1,3 @@
+- Tabela do Simular com 12 meses de altura: mostra sempre 12 meses de dados; cabeçalho fica fixo ao rolar verticalmente.
+  - Nas duas tabelas: "Cenários ligados" (saldo simulado geral) e "Impacto só deste cenário" (dentro de cada card).
+- Botão "Tabela por mês" minimiza e expande cada tabela; estado salvo independentemente.

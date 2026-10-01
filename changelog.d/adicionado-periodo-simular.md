@@ -1,0 +1,4 @@
+- Seletor de período no Simular: mês e ano inicial, mês e ano final, até 60 meses atrás e à frente.
+  - Setas para navegar um mês por vez.
+  - Conta exibe quantos meses estão selecionados e o máximo permitido.
+  - Aviso se o período vai além do horizonte de projeção do app (faturas de cartão podem não incluir tudo).
