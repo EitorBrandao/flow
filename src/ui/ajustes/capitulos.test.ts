@@ -191,8 +191,8 @@ describe('capítulos de docs/wiki', () => {
   const brutos = import.meta.glob('../../../docs/wiki/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
   const arquivos = Object.entries(brutos).filter(([caminho]) => !caminho.endsWith('README.md'));
 
-  it('existem nove capítulos numerados', () => {
-    expect(arquivos).toHaveLength(9);
+  it('existem dez capítulos numerados', () => {
+    expect(arquivos).toHaveLength(10);
   });
 
   it.each(arquivos)('%s parseia e não deixa marcação crua', (caminho, raw) => {

@@ -100,6 +100,24 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   modo, nunca pelo arquivo (`substituirTudo`): **substituir** desliga — os dados passam a ser os
   do arquivo; **mesclar** liga — o resultado não está inteiro em arquivo nenhum. O arquivo não
   serve de fonte porque foi exportado com o marcador ainda ligado.
+  `Config.modos` (`ModosUso`, `src/domain/types.ts`) guarda o modo de uso — `'simples'` ou
+  `'avancado'` — de cada tela: `hoje`, `fluxo`, `cartao`, `analises` e `lancar`. **Campo ou
+  tela ausente = Avançado** (`modoDe`, `src/domain/modos.ts`): uma base que já existe, ou um
+  backup anterior aos modos, nunca muda de aparência sozinha. Só uma instalação nova grava
+  Simples (`modosInstalacaoNova`). `modos` não é entidade nova: não há tabela nem `version(n)`
+  no Dexie. Em backup, `validarBackup` rejeita `modos` inválido (`modosValidos`); **mesclar**
+  mantém os modos do aparelho (a `config` vem sempre de `atual`) e **substituir** traz os do
+  arquivo. O modo Simples só muda o que a tela mostra: reaproveita as entidades existentes.
+  - **Hoje simples** grava o saldo declarado da box (ou `Config.saldoDeclaradoCent`, na casa),
+    nunca `Banco.saldoDeclaradoCent`. Esse saldo é separado dos saldos por banco do Avançado.
+  - **Cartão simples** (`CartaoSimples.tsx`) grava uma `ConferenciaFatura` com `usarValorApp`
+    ligado: o valor da fatura do Simples é o mesmo campo da aba Conferência do Avançado.
+    "Remover valor" apaga essa conferência.
+  - **Simular simples** (`SimuladorSimples.tsx`) cria um `Cenario` chamado "Simulação rápida"
+    (`NOME_SIMULACAO_RAPIDA`), que some ao sair da tela e a cada `iniciar()`
+    (`limparSimulacoesRapidas`). "Guardar" o renomeia para "Simulação de DD/MM", desligado.
+  - **Lançar simples** escolhe a categoria do último lançamento manual com a mesma descrição
+    (`categoriaPorDescricao`); sem histórico, usa a categoria "A classificar".
 - **NotaFiscalSalva** — os itens (`ItemNota[]`) de uma NFC-e anexada a uma `CompraCartao`,
   vinda do XML lido pelo scanner. **Só os itens ficam guardados — o XML original nunca é
   salvo**: um XML de nota pesa dezenas de KB, e o backup carregaria isso para sempre. O

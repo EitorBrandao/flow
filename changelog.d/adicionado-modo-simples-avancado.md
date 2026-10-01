@@ -1,0 +1,6 @@
+- Modo simples e avançado: cada tela (Hoje, Fluxo, Cartão, Análises e Lançar) tem o seu modo, em Ajustes › Sobre o app › Modo de uso
+  - O app novo começa no modo Simples; quem já usa o app continua no Avançado
+  - O modo Simples mostra o essencial: um só campo de saldo em Hoje, lançamento em poucos toques, fatura do cartão com um campo e Análises só do mês
+  - Em Fluxo › Simular, o modo Simples traz um "E se eu gastar…" rápido; "Guardar" leva a simulação para o Simular do modo Avançado
+  - Trocar de modo não apaga nenhum dado
+  - A versão do app aparece direto no botão "Versão", em Sobre o app

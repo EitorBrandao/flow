@@ -440,7 +440,7 @@ Cartões · Categorias do cartão · Assinaturas do cartão
 Dados
 Importar e conferir · Backup e restauração
 Sobre o app
-Wiki · Versão
+Modo de uso · Wiki · Versão
 ```
 
 ## 2026-01-28 — entre fechamento e vencimento
@@ -952,7 +952,7 @@ Cartões · Categorias do cartão · Assinaturas do cartão
 Dados
 Importar e conferir · Backup e restauração
 Sobre o app
-Wiki · Versão
+Modo de uso · Wiki · Versão
 ```
 
 ## 2026-02-10 — depois do primeiro vencimento
@@ -1557,7 +1557,7 @@ Cartões · Categorias do cartão · Assinaturas do cartão
 Dados
 Importar e conferir · Backup e restauração
 Sobre o app
-Wiki · Versão
+Modo de uso · Wiki · Versão
 ```
 
 ## 2026-06-20 — depois do pagamento parcial
@@ -2085,7 +2085,7 @@ Cartões · Categorias do cartão · Assinaturas do cartão
 Dados
 Importar e conferir · Backup e restauração
 Sobre o app
-Wiki · Versão
+Modo de uso · Wiki · Versão
 ```
 
 ## 2026-07-18 — no meio da viagem
@@ -2633,7 +2633,7 @@ Cartões · Categorias do cartão · Assinaturas do cartão
 Dados
 Importar e conferir · Backup e restauração
 Sobre o app
-Wiki · Versão
+Modo de uso · Wiki · Versão
 ```
 
 ## 2026-09-12 — depois da volta do backup
@@ -3133,7 +3133,7 @@ Cartões · Categorias do cartão · Assinaturas do cartão
 Dados
 Importar e conferir · Backup e restauração
 Sobre o app
-Wiki · Versão
+Modo de uso · Wiki · Versão
 ```
 
 ## 2026-10-15 — com o cenário ligado
@@ -3617,7 +3617,7 @@ Cartões · Categorias do cartão · Assinaturas do cartão
 Dados
 Importar e conferir · Backup e restauração
 Sobre o app
-Wiki · Versão
+Modo de uso · Wiki · Versão
 ```
 
 ## 2026-11-30 — fim do roteiro
@@ -4059,5 +4059,5 @@ Cartões · Categorias do cartão · Assinaturas do cartão
 Dados
 Importar e conferir · Backup e restauração
 Sobre o app
-Wiki · Versão
+Modo de uso · Wiki · Versão
 ```
