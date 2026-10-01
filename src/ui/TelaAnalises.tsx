@@ -184,7 +184,7 @@ export default function TelaAnalises() {
 
       <div className="card">
         <h2>Por categoria</h2>
-        <p className="sub" style={{ margin: '-4px 0 0' }}>
+        <p className="sub" style={{ margin: '-4px 0 10px' }}>
           barras na mesma escala do card acima (100% = maior entre ganhos e gastos {varios ? 'do período' : 'do mês'})
         </p>
         <ComposicaoBarChart linhas={linhasComposicao} base={base} onClicarLinha={abrirComposicao}
