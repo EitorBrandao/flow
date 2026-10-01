@@ -34,6 +34,15 @@ describe('ModoDeUso', () => {
     expect(screen.getByText(/nada se perde ao trocar/)).toBeInTheDocument();
   });
 
+  it('cada item de tela usa o fundo surface2, para a trilha das pills (surface) aparecer', async () => {
+    await semearBox();
+    await useApp.getState().iniciar();
+    render(<ModoDeUso />);
+    for (const r of ROTULOS) {
+      expect(bloco(r).style.background).toBe('var(--surface2)');
+    }
+  });
+
   it('clicar em Simples no Hoje grava só o modo do Hoje e mostra o selo', async () => {
     await semearBox();
     await useApp.getState().iniciar();

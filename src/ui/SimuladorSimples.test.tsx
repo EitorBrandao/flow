@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { StrictMode } from 'react';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
@@ -265,4 +266,15 @@ it('editar um campo depois de simular limpa o resultado e some o Guardar', async
   await simular();
   await userEvent.click(screen.getByRole('radio', { name: 'Todo mês' }));
   expect(screen.queryByText('Menor saldo sem a compra')).not.toBeInTheDocument();
+});
+
+it('no StrictMode (montar, limpar, montar) a simulação funciona e desmontar de verdade apaga o rascunho', async () => {
+  await preparar();
+  const { unmount } = render(<StrictMode><SimuladorSimples /></StrictMode>);
+  await preencher('1500,00', '2026-10-15');
+  await simular();
+  expect(screen.getByText('Menor saldo com a compra')).toBeInTheDocument();
+  expect(await rascunhos()).toHaveLength(1);
+  unmount();
+  await waitFor(async () => expect(await rascunhos()).toHaveLength(0));
 });

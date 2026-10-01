@@ -29,12 +29,16 @@ export default function SimuladorSimples() {
   // Verdadeiro depois do desmonte: quem estava no meio de um `await` desfaz o que criou e para.
   const desmontadoRef = useRef(false);
 
-  useEffect(() => () => {
-    desmontadoRef.current = true;
-    const id = rascunhoRef.current;
-    if (!id) return;
-    rascunhoRef.current = null;
-    void repo.excluirCenario(id).then(() => useApp.getState().recarregar()).catch(() => {});
+  useEffect(() => {
+    // O StrictMode monta, limpa e monta de novo: ao montar, volta a valer "montado".
+    desmontadoRef.current = false;
+    return () => {
+      desmontadoRef.current = true;
+      const id = rascunhoRef.current;
+      if (!id) return;
+      rascunhoRef.current = null;
+      void repo.excluirCenario(id).then(() => useApp.getState().recarregar()).catch(() => {});
+    };
   }, []);
 
   const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
@@ -146,7 +150,7 @@ export default function SimuladorSimples() {
           </div>
           <div className="campo">
             <label htmlFor={`${uid}-data`}>Quando</label>
-            <CampoData id={`${uid}-data`} value={data} onChange={editar(setData)} min={hoje} />
+            <CampoData id={`${uid}-data`} value={data} onChange={editar(setData)} min={hoje} style={{ minHeight: 44 }} />
           </div>
         </div>
         <SeletorPills
