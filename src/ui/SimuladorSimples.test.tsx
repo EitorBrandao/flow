@@ -33,7 +33,7 @@ async function simular() {
   await screen.findByText('Menor saldo sem a compra');
   useApp.setState({ hoje: '2026-09-15' });
 }
-const rascunhos = async () => (await db.cenarios.toArray()).filter((c) => c.nome === repo.NOME_SIMULACAO_RAPIDA);
+const rascunhos = async () => (await db.cenarios.toArray()).filter((c) => c.rascunho === true);
 
 it('Simular fica desativado sem valor ou sem data', async () => {
   await preparar();
@@ -200,6 +200,14 @@ it('depois de Guardar, uma nova simulação não apaga a guardada', async () => 
   await screen.findByText('R$ 700,00');
   const nomes = (await db.cenarios.toArray()).map((c) => c.nome).sort();
   expect(nomes).toEqual(['Simulação de 15/09', repo.NOME_SIMULACAO_RAPIDA].sort());
+  // o rascunho nasce desligado e marcado; o guardado perde a marca e segue desligado
+  const todos = await db.cenarios.toArray();
+  const guardado = todos.find((c) => c.nome === 'Simulação de 15/09')!;
+  expect(guardado.rascunho).toBeUndefined();
+  expect(guardado.ligado).toBe(false);
+  const rasc = todos.find((c) => c.nome === repo.NOME_SIMULACAO_RAPIDA)!;
+  expect(rasc.rascunho).toBe(true);
+  expect(rasc.ligado).toBe(false);
 });
 
 it('Simular desativado diz o que falta, uma frase por vez', async () => {

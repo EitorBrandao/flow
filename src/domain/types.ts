@@ -156,6 +156,8 @@ export interface AjusteFechamento extends Entidade {
 export interface Cenario extends Entidade {
   nome: string;
   ligado: boolean;
+  /** Rascunho do Simular simples: some ao sair da tela e a cada `iniciar()`. "Guardar" remove o campo. */
+  rascunho?: true;
 }
 
 /** Agrupa gastos (compras de cartão e lançamentos de débito) feitos num período de viagem. */

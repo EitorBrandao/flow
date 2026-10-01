@@ -115,8 +115,10 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
     ligado: o valor da fatura do Simples é o mesmo campo da aba Conferência do Avançado.
     "Remover valor" apaga essa conferência.
   - **Simular simples** (`SimuladorSimples.tsx`) cria um `Cenario` chamado "Simulação rápida"
-    (`NOME_SIMULACAO_RAPIDA`), que some ao sair da tela e a cada `iniciar()`
-    (`limparSimulacoesRapidas`). "Guardar" o renomeia para "Simulação de DD/MM", desligado.
+    (`NOME_SIMULACAO_RAPIDA`, só o nome exibido) com `rascunho: true` e `ligado: false`. Ele some
+    ao sair da tela e a cada `iniciar()` (`limparSimulacoesRapidas`, que filtra por `rascunho`, nunca
+    pelo nome: um cenário do usuário com o mesmo nome fica). "Guardar" remove `rascunho` e o
+    renomeia para "Simulação de DD/MM", desligado.
   - **Lançar simples** escolhe a categoria do último lançamento manual com a mesma descrição
     (`categoriaPorDescricao`); sem histórico, usa a categoria "A classificar".
 - **NotaFiscalSalva** — os itens (`ItemNota[]`) de uma NFC-e anexada a uma `CompraCartao`,

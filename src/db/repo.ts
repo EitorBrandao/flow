@@ -285,11 +285,11 @@ export async function salvarModo(tela: TelaModo, modo: ModoUso): Promise<void> {
 
 export const NOME_SIMULACAO_RAPIDA = 'Simulação rápida';
 
-/** Apaga rascunhos de simulação rápida (e seus itens) deixados por um fechamento abrupto.
+/** Apaga rascunhos de simulação rápida (`rascunho: true`, nunca pelo nome) e seus itens deixados por um fechamento abrupto.
  *  Não marca mudança: limpeza de rascunho não afeta dados a salvar em backup. */
 export async function limparSimulacoesRapidas(): Promise<void> {
   await db.transaction('rw', db.cenarios, db.lancamentos, db.recorrencias, async () => {
-    const rascunhos = await db.cenarios.filter((c) => c.nome === NOME_SIMULACAO_RAPIDA).toArray();
+    const rascunhos = await db.cenarios.filter((c) => c.rascunho === true).toArray();
     for (const c of rascunhos) await apagarCenario(c.id);
   });
 }

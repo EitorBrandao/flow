@@ -18,6 +18,14 @@ it('round-trip: gerar → serializar → validar', () => {
   expect(volta.schema).toBe(6);
 });
 
+it('backup com cenário rascunho valida e mescla com o campo preservado', () => {
+  const d = dados();
+  d.cenarios = [{ id: 'c1', nome: 'Simulação rápida', ligado: false, rascunho: true, criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' }];
+  const volta = validarBackup(JSON.parse(JSON.stringify(gerarBackup(d))));
+  expect(volta.dados.cenarios[0].rascunho).toBe(true);
+  expect(mesclar(dados(), volta.dados).cenarios[0].rascunho).toBe(true);
+});
+
 it('validarBackup rejeita arquivo de outro app ou schema', () => {
   expect(() => validarBackup({ app: 'outro' })).toThrow(/não é um backup do Flow/);
   expect(() => validarBackup({ app: 'flow', schema: 99, dados: {} })).toThrow(/versão/);

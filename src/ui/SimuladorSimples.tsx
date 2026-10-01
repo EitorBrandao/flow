@@ -12,7 +12,7 @@ import { gravarItemNovo, OPCOES_REPETICAO } from './FormItemCenario';
 import SeletorPills from './SeletorPills';
 
 /** Fluxo › Simular no modo Simples: "E se eu gastar…" com um valor, uma data e a repetição.
- *  Grava um cenário de rascunho (`NOME_SIMULACAO_RAPIDA`) com um item e mostra o menor saldo
+ *  Grava um cenário de rascunho (`rascunho: true`, nome `NOME_SIMULACAO_RAPIDA`) com um item e mostra o menor saldo
  *  da projeção com e sem a compra. Sem "Guardar", o rascunho é apagado ao sair. */
 export default function SimuladorSimples() {
   const { dados, boxSel, hoje, recarregar } = useApp();
@@ -87,7 +87,7 @@ export default function SimuladorSimples() {
       }
       const agora = agoraISO();
       id = novoId();
-      await repo.salvarCenario({ id, nome: repo.NOME_SIMULACAO_RAPIDA, ligado: true, criadoEm: agora, alteradoEm: agora });
+      await repo.salvarCenario({ id, nome: repo.NOME_SIMULACAO_RAPIDA, ligado: false, rascunho: true, criadoEm: agora, alteradoEm: agora });
       rascunhoRef.current = id;
       if (desmontadoRef.current) return;
       const categoriaId = await repo.categoriaAClassificarDe(boxId, 'gasto');
@@ -126,7 +126,8 @@ export default function SimuladorSimples() {
     try {
       const [, mes, dia] = hoje.split('-');
       // Desligada: guardar não muda o gráfico de Hoje e Fluxo sem aviso.
-      await repo.salvarCenario({ ...cenario, nome: `Simulação de ${dia}/${mes}`, ligado: false });
+      const { rascunho: _rascunho, ...guardada } = cenario;
+      await repo.salvarCenario({ ...guardada, nome: `Simulação de ${dia}/${mes}`, ligado: false });
       if (desmontadoRef.current) return;
       await recarregar();
       if (desmontadoRef.current) return;

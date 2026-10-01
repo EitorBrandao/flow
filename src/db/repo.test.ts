@@ -1981,20 +1981,23 @@ describe('modos de uso', () => {
   it('limparSimulacoesRapidas apaga só as simulações rápidas e seus itens', async () => {
     const { box, gasto } = await boxECategoria();
     const agora = agoraISO();
-    const rapida = { id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: true, criadoEm: agora, alteradoEm: agora };
+    const rapida = { id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: false, rascunho: true as const, criadoEm: agora, alteradoEm: agora };
     const outra = { id: novoId(), nome: 'Reforma', ligado: true, criadoEm: agora, alteradoEm: agora };
+    // do usuário, no Avançado, com o mesmo nome do rascunho: não pode ser apagado
+    const homonimo = { id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: true, criadoEm: agora, alteradoEm: agora };
     await repo.salvarCenario(rapida);
     await repo.salvarCenario(outra);
-    for (const c of [rapida, outra]) {
+    await repo.salvarCenario(homonimo);
+    for (const c of [rapida, outra, homonimo]) {
       await repo.salvarLancamento({
         boxId: box.id, categoriaId: gasto.id, data: '2027-01-10', valor: 5000,
         status: 'previsto', cenarioId: c.id,
       });
     }
     await repo.limparSimulacoesRapidas();
-    expect((await db.cenarios.toArray()).map((c) => c.id)).toEqual([outra.id]);
+    expect((await db.cenarios.toArray()).map((c) => c.id).sort()).toEqual([outra.id, homonimo.id].sort());
     const restantes = await db.lancamentos.toArray();
-    expect(restantes.map((l) => l.cenarioId)).toEqual([outra.id]);
+    expect(restantes.map((l) => l.cenarioId).sort()).toEqual([outra.id, homonimo.id].sort());
   });
 
   it('limparSimulacoesRapidas sem nenhuma simulação não faz nada', async () => {
@@ -2004,7 +2007,7 @@ describe('modos de uso', () => {
   it('limparSimulacoesRapidas não marca mudança desde backup', async () => {
     const { box, gasto } = await boxECategoria();
     const agora = agoraISO();
-    const rapida = { id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: true, criadoEm: agora, alteradoEm: agora };
+    const rapida = { id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: false, rascunho: true as const, criadoEm: agora, alteradoEm: agora };
     // Grava cenário diretamente no banco, sem marcar mudança
     await db.cenarios.add(rapida);
     await repo.salvarLancamento({

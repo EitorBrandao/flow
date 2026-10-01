@@ -196,11 +196,19 @@ it('abrirFluxo troca para a aba Fluxo e guarda a aba interna pedida, até ser li
 describe('iniciar e simulações rápidas', () => {
   it('apaga simulação rápida deixada por fechamento abrupto e mantém os outros cenários', async () => {
     const agora = agoraISO();
-    await repo.salvarCenario({ id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: true, criadoEm: agora, alteradoEm: agora });
+    await repo.salvarCenario({ id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: false, rascunho: true, criadoEm: agora, alteradoEm: agora });
     const outro = { id: novoId(), nome: 'Reforma', ligado: false, criadoEm: agora, alteradoEm: agora };
     await repo.salvarCenario(outro);
     await useApp.getState().iniciar();
     expect(useApp.getState().dados?.cenarios.map((c) => c.id)).toEqual([outro.id]);
+  });
+
+  it('mantém um cenário do usuário com o nome "Simulação rápida" (sem rascunho)', async () => {
+    const agora = agoraISO();
+    const dele = { id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: true, criadoEm: agora, alteradoEm: agora };
+    await repo.salvarCenario(dele);
+    await useApp.getState().iniciar();
+    expect(useApp.getState().dados?.cenarios.map((c) => c.id)).toEqual([dele.id]);
   });
 
   it('sem simulação rápida, iniciar não altera os cenários', async () => {
