@@ -85,8 +85,8 @@ O mesmo conceito aparece do mesmo jeito nos dois modos: mesmo texto, mesma cor, 
 - Cartão simples num mês que já tem compras detalhadas: o campo já vem com a soma das compras. Digitar outro valor marca "usar este valor" na conferência, como no Avançado. As compras não somem.
 - Cartão simples: mudar o valor duas vezes edita a mesma conferência (única por cartão e mês, `dedupConferencias`). Nunca cria duas.
 - Cartão simples num mês cujo vencimento já passou: o previsto não nasce (regra atual). O plano deve verificar como "Paguei tudo" e "Paguei outro valor" se comportam sem fatura calculada, e ajustar sem criar lançamento novo de origem.
-- Visão "casa": o Cartão simples empilha os cartões, como hoje.
-- Box "casa" e lançamento em box: o Simples usa a box padrão. Sem box padrão e com mais de uma box, o Lançar simples pede a box uma vez.
+- Visão "casa" ou mais de um cartão: o Cartão simples mostra um cartão por vez, com o mesmo seletor **Cartão** do Avançado (entrega "a casa mostra de onde vem", v0.58.0). Antes da v0.58.0 a tela empilhava os cartões.
+- Box "casa" e lançamento em box: o Simples usa a box padrão. Sem box padrão, vale a box escolhida no campo **Box**, depois a box do topo (se tiver saldo próprio), depois a única box com saldo próprio. Sem box padrão e com mais de uma box, aparece o campo **Box** — o mesmo `<select>` do Avançado na casa (v0.58.0), sem a box "casa". Sem resolução, "Escolha a box." e o botão Lançar desligado. Nunca grava na box "casa". Diferente do Avançado, o Simples não esconde o formulário enquanto a box não é escolhida.
 - Duplo toque em Salvar não duplica (mesma guarda dos lançamentos atuais).
 
 ## Testes

@@ -146,15 +146,31 @@ it('trocar de mês recarrega o valor do mês', async () => {
   expect(screen.getByLabelText('Valor da fatura')).toHaveValue(formatarBRL(187000));
 });
 
-it('visão casa empilha os cartões', async () => {
+it('visão casa mostra um cartão por vez, com o mesmo seletor do Avançado', async () => {
   const { box } = await montar();
-  await repo.salvarCartao({ boxId: box.id, nome: 'Cartão Delta', diaFechamento: 5, diaVencimento: 12 }, HORIZONTE);
+  const delta = await repo.salvarCartao({ boxId: box.id, nome: 'Cartão Delta', diaFechamento: 5, diaVencimento: 12 }, HORIZONTE);
   await useApp.getState().recarregar();
   useApp.setState({ boxSel: 'casa', hoje: '2026-10-01' });
   render(<TelaCartao />);
-  expect(screen.getAllByLabelText('Valor da fatura')).toHaveLength(2);
-  expect(screen.getByRole('heading', { name: 'Cartão Sigma' })).toBeInTheDocument();
+  // Ordem alfabética: Delta vem primeiro.
+  expect(screen.getAllByLabelText('Valor da fatura')).toHaveLength(1);
   expect(screen.getByRole('heading', { name: 'Cartão Delta' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Cartão Sigma' })).toBeNull();
+  const seletor = screen.getByLabelText('Cartão') as HTMLSelectElement;
+  expect(seletor.value).toBe(delta.id);
+  const sigma = Array.from(seletor.options).find((o) => o.textContent?.startsWith('Cartão Sigma'))!;
+  expect(sigma.textContent).toBe(`Cartão Sigma · ${box.nome}`);
+  await userEvent.selectOptions(seletor, sigma.value);
+  expect(screen.getAllByLabelText('Valor da fatura')).toHaveLength(1);
+  expect(screen.getByRole('heading', { name: 'Cartão Sigma' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Cartão Delta' })).toBeNull();
+});
+
+it('com um cartão só, não mostra o seletor de cartão', async () => {
+  await montar();
+  render(<TelaCartao />);
+  expect(screen.queryByLabelText('Cartão')).toBeNull();
+  expect(screen.getAllByLabelText('Valor da fatura')).toHaveLength(1);
 });
 
 it('sem cartão mostra o convite para cadastrar', async () => {

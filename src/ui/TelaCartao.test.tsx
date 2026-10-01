@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -580,19 +580,19 @@ describe('aviso de fatura fora do Fluxo', () => {
   });
 });
 
-it('com vários cartões, cada bloco abre com o nome do cartão antes do seu seletor de mês', async () => {
+it('com vários cartões, mostra um por vez e o nome dele abre o bloco antes do seletor de mês', async () => {
   const { box } = await montarCartao();
   await repo.salvarCartao({ boxId: box.id, nome: 'Inter', diaFechamento: 10, diaVencimento: 20 }, '2027-12-31');
   await useApp.getState().iniciar();
   useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
   render(<TelaCartao />);
 
+  // Um cartão por vez: só um título e um seletor de mês na tela.
   const titulos = screen.getAllByRole('heading', { level: 2 });
-  expect(titulos.map((t) => t.textContent).sort()).toEqual(['Inter', 'Nubank']);
-  // O seletor do segundo cartão vem depois do título dele — não entre os dois cards sem dono.
-  const anteriores = screen.getAllByRole('button', { name: 'Mês anterior' });
-  expect(titulos[1].compareDocumentPosition(anteriores[1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  expect(anteriores[0].compareDocumentPosition(titulos[1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(titulos).toHaveLength(1);
+  expect(['Inter', 'Nubank']).toContain(titulos[0].textContent);
+  const anterior = screen.getByRole('button', { name: 'Mês anterior' });
+  expect(titulos[0].compareDocumentPosition(anterior) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
 
 it('nome do cartão e seletor de mês ficam juntos na barra fixa', async () => {
@@ -604,4 +604,65 @@ it('nome do cartão e seletor de mês ficam juntos na barra fixa', async () => {
   const barra = nome.closest('.barra-fixa') as HTMLElement;
   expect(barra).not.toBeNull();
   expect(within(barra).getByRole('button', { name: 'Mês anterior' })).toBeInTheDocument();
+});
+
+describe('seletor de cartão', () => {
+  async function montarDoisCartoes(boxSel: 'casa' | 'ana') {
+    const agora = agoraISO();
+    const ana = { id: novoId(), nome: 'ana', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    const bruno = { id: novoId(), nome: 'bruno', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(ana);
+    await repo.salvarBox(bruno);
+    await repo.salvarCartao({ boxId: ana.id, nome: 'Cartão A', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+    await repo.salvarCartao({ boxId: bruno.id, nome: 'Cartão B', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: boxSel === 'casa' ? 'casa' : ana.id, hoje: '2026-07-01' });
+    return { ana, bruno };
+  }
+
+  it('na casa, com 2 cartões, mostra o seletor e só a fatura do escolhido', async () => {
+    await montarDoisCartoes('casa');
+    render(<TelaCartao />);
+    const seletor = screen.getByLabelText('Cartão') as HTMLSelectElement;
+    expect(within(seletor).getByRole('option', { name: 'Cartão A · ana' })).toBeInTheDocument();
+    expect(within(seletor).getByRole('option', { name: 'Cartão B · bruno' })).toBeInTheDocument();
+    // Os cartões vêm ordenados por nome: o primeiro é o que aparece de início.
+    const [primeiro, segundo] = Array.from(seletor.options).map((o) => o.textContent!.split(' · ')[0]);
+    expect([primeiro, segundo]).toEqual(['Cartão A', 'Cartão B']);
+    expect(screen.getByRole('heading', { name: primeiro })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: segundo })).not.toBeInTheDocument();
+
+    await userEvent.selectOptions(seletor, seletor.options[1].value);
+    expect(screen.getByRole('heading', { name: segundo })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: primeiro })).not.toBeInTheDocument();
+  });
+
+  it('com um cartão só, não mostra o seletor', async () => {
+    await montarDoisCartoes('ana');
+    render(<TelaCartao />);
+    expect(screen.queryByLabelText('Cartão')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Cartão A' })).toBeInTheDocument();
+  });
+
+  it('numa box com 2 cartões, o seletor aparece sem o nome da box', async () => {
+    const { ana } = await montarDoisCartoes('ana');
+    await repo.salvarCartao({ boxId: ana.id, nome: 'Cartão C', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+    await useApp.getState().recarregar();
+    render(<TelaCartao />);
+    const seletor = screen.getByLabelText('Cartão');
+    expect(within(seletor).getByRole('option', { name: 'Cartão A' })).toBeInTheDocument();
+    expect(within(seletor).getByRole('option', { name: 'Cartão C' })).toBeInTheDocument();
+  });
+
+  it('volta ao primeiro cartão quando o escolhido sai da seleção', async () => {
+    const { ana } = await montarDoisCartoes('casa');
+    render(<TelaCartao />);
+    const seletor = screen.getByLabelText('Cartão') as HTMLSelectElement;
+    // Escolhe sempre o cartão do bruno (Cartão B), que sai da seleção quando a box vira ana.
+    const opcaoB = Array.from(seletor.options).find((o) => o.textContent === 'Cartão B · bruno')!;
+    await userEvent.selectOptions(seletor, opcaoB.value);
+    expect(screen.getByRole('heading', { name: 'Cartão B' })).toBeInTheDocument();
+    act(() => useApp.setState({ boxSel: ana.id }));
+    expect(screen.getByRole('heading', { name: 'Cartão A' })).toBeInTheDocument();
+  });
 });

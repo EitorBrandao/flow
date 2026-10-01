@@ -149,6 +149,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   banco) e `onSelecionar`. Devolve `null` com menos de dois bancos: o campo some. O banco padrão
   vem marcado por quem usa (`bancoPadrao`, `domain/bancos.ts`). Usado em `TelaLancar.tsx`,
   `LancEditor.tsx` e `ajustes/Recorrencias.tsx`.
+- **`SeloBox.tsx`** — selo `.badge` com o nome da box de um lançamento. Aparece só na visão casa (`boxSel === 'casa'`), ao lado da categoria, em Hoje → Pendentes e Fluxo → Lista. Box inexistente mostra `?`.
 - **`SeletorFiltroBanco.tsx`** — filtro por banco: pílulas (`SeletorPills`) "Todos", cada banco da
   box e "Sem banco". Props `bancos`, `valor` (`FiltroBanco`, de `domain/bancos.ts`) e `onMudar`.
   Devolve `null` com menos de dois bancos. Usado no `TelaFluxo.tsx` (só a lista; o saldo do dia

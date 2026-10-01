@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -50,25 +50,129 @@ it('bloqueia o lançamento quando a data é limpa', async () => {
   expect(lancs).toHaveLength(0);
 });
 
-it('roteia para a box "casa" pelo nome, não pela primeira box', async () => {
-  const agora = agoraISO();
-  const eitor = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
-  const casa = { id: novoId(), nome: 'casa', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
-  await repo.salvarBox(eitor);
-  await repo.salvarBox(casa);
-  await repo.salvarCategoria({ boxId: casa.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
-  await useApp.getState().iniciar();
-  useApp.setState({ boxSel: 'casa', hoje: '2026-07-02' });
+describe('Lançar com "casa" no topo', () => {
+  async function montar() {
+    const agora = agoraISO();
+    const box = (nome: string, saldo: number | null) =>
+      ({ id: novoId(), nome, saldoInicial: saldo, dataSaldoInicial: saldo === null ? null : '2026-01-01', criadoEm: agora, alteradoEm: agora });
+    const ana = box('ana', 0);
+    const bruno = box('bruno', 0);
+    const casa = box('casa', null);
+    await repo.salvarBox(ana);
+    await repo.salvarBox(bruno);
+    await repo.salvarBox(casa);
+    await repo.salvarCategoria({ boxId: ana.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+    await repo.salvarCategoria({ boxId: bruno.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-02' });
+    return { ana, bruno, casa };
+  }
 
-  render(<TelaLancar />);
-  await userEvent.type(screen.getByLabelText('Valor'), '50,00');
-  await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+  it('pede a box antes de mostrar o resto do formulário', async () => {
+    await montar();
+    render(<TelaLancar />);
+    const seletor = screen.getByLabelText('Box');
+    expect(within(seletor).getByRole('option', { name: 'ana' })).toBeInTheDocument();
+    expect(within(seletor).getByRole('option', { name: 'bruno' })).toBeInTheDocument();
+    expect(within(seletor).queryByRole('option', { name: 'casa' })).not.toBeInTheDocument();
+    expect(screen.getByText('Escolha a box.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Valor')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Lançar' })).not.toBeInTheDocument();
+  });
 
-  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
-  const lancs = await db.lancamentos.toArray();
-  expect(lancs).toHaveLength(1);
-  expect(lancs[0]).toMatchObject({ boxId: casa.id, valor: 5000 });
+  it('grava na box escolhida, nunca na box "casa"', async () => {
+    const { bruno } = await montar();
+    render(<TelaLancar />);
+    await userEvent.selectOptions(screen.getByLabelText('Box'), bruno.id);
+    await userEvent.type(screen.getByLabelText('Valor'), '50,00');
+    await userEvent.click(screen.getByRole('button', { name: 'aluguel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    const lancs = await db.lancamentos.toArray();
+    expect(lancs).toHaveLength(1);
+    expect(lancs[0]).toMatchObject({ boxId: bruno.id, valor: 5000 });
+  });
+
+  it('as categorias seguem a box escolhida e trocar a box zera a categoria', async () => {
+    const { ana, bruno } = await montar();
+    render(<TelaLancar />);
+    await userEvent.selectOptions(screen.getByLabelText('Box'), ana.id);
+    await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+    expect(screen.queryByRole('button', { name: 'aluguel' })).not.toBeInTheDocument();
+    await userEvent.selectOptions(screen.getByLabelText('Box'), bruno.id);
+    expect(screen.queryByRole('button', { name: 'mercado' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'aluguel' })).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Valor'), '10,00');
+    expect(screen.getByRole('button', { name: 'Lançar' })).toBeDisabled();
+  });
+
+  it('a box continua escolhida depois de lançar', async () => {
+    const { ana } = await montar();
+    render(<TelaLancar />);
+    await userEvent.selectOptions(screen.getByLabelText('Box'), ana.id);
+    await userEvent.type(screen.getByLabelText('Valor'), '12,00');
+    await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect((screen.getByLabelText('Box') as HTMLSelectElement).value).toBe(ana.id);
+  });
+
+  it('rascunho com categoria da box "casa" não habilita o Lançar com outra box escolhida', async () => {
+    const { ana, casa } = await montar();
+    const catCasa = await repo.salvarCategoria({ boxId: casa.id, nome: 'luz', tipo: 'gasto', ordem: 0 });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    await userEvent.selectOptions(screen.getByLabelText('Box'), ana.id);
+    act(() => useApp.setState({ rascunhoLancar: { categoriaId: catCasa.id, valorCent: 3000 } }));
+    expect(await screen.findByRole('button', { name: 'Lançar' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await db.lancamentos.toArray()).toHaveLength(0);
+  });
+
+  it('box compartilhada sem saldo próprio não aparece no seletor Box', async () => {
+    await montar();
+    const agora = agoraISO();
+    await repo.salvarBox({ id: novoId(), nome: 'viagem em grupo', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    const seletor = screen.getByLabelText('Box');
+    expect(within(seletor).getByRole('option', { name: 'ana' })).toBeInTheDocument();
+    expect(within(seletor).queryByRole('option', { name: 'viagem em grupo' })).not.toBeInTheDocument();
+  });
+
+  it('trocar a box zera o banco escolhido e ao voltar o banco é o padrão', async () => {
+    const { ana, bruno } = await montar();
+    await repo.salvarBanco({ boxId: ana.id, nome: 'Banco Um', ordem: 0 });
+    await repo.salvarBanco({ boxId: ana.id, nome: 'Banco Dois', ordem: 1 });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    await userEvent.selectOptions(screen.getByLabelText('Box'), ana.id);
+    await userEvent.click(screen.getByRole('radio', { name: 'Banco Dois' }));
+    expect(screen.getByRole('radio', { name: 'Banco Dois' })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.selectOptions(screen.getByLabelText('Box'), bruno.id);
+    await userEvent.selectOptions(screen.getByLabelText('Box'), ana.id);
+    expect(screen.getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('sem nenhuma box real, avisa para criar uma', async () => {
+    await limparDb();
+    await useApp.getState().iniciar(); // só a box "casa", autocriada
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    expect(screen.getByText(/Nenhuma box — crie em Ajustes → Boxes\./)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Box')).not.toBeInTheDocument();
+  });
+
+  it('numa box concreta, o campo Box não aparece', async () => {
+    const { ana } = await montar();
+    useApp.setState({ boxSel: ana.id });
+    render(<TelaLancar />);
+    expect(screen.queryByLabelText('Box')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Valor')).toBeInTheDocument();
+  });
 });
 
 it('marca como previsto quando o toggle está ativo, mesmo com data de hoje', async () => {

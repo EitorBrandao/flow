@@ -27,9 +27,9 @@ Abra Ajustes (ícone ⚙️ no topo), depois Sobre o app, depois Modo de uso. A 
 ## O que o modo Simples muda
 
 : Hoje | Um só campo, "Saldo real no banco", com o botão "Salvar". Não há sinal ±, transferência entre bancos nem lista por banco. O Simples grava o saldo da box (ou da casa), separado dos saldos por banco do Avançado. Sem o sinal, o Simples não informa saldo negativo. O rodapé de backup só aparece no nível urgente.
-: Lançar | Valor, Gasto ou Ganho, e "Do que foi? (opcional)". A categoria é a do último lançamento com a mesma descrição. Sem histórico, vai para "A classificar" (no Ganho, "A classificar (entrada)"). A data é hoje e a box é a padrão. Sem box padrão e com várias boxes, o app pede "Escolha a box.".
+: Lançar | Valor, Gasto ou Ganho, e "Do que foi? (opcional)". A categoria é a do último lançamento com a mesma descrição. Sem histórico, vai para "A classificar" (no Ganho, "A classificar (entrada)"). A data é hoje e a box é a padrão. Sem box padrão e com várias boxes, aparece o campo **Box**, o mesmo do Avançado: já vem na box do topo; com casa no topo, o app pede "Escolha a box.". O Simples nunca grava na box casa.
 : Fluxo | A lista não tem filtro por banco nem saldo por dia. Em Simular, o formulário é leve: "E se eu gastar…", com Uma vez, Parcelado ou Todo mês. O resultado mostra o menor saldo sem e com o gasto, e avisa se o saldo fica negativo.
-: Cartão | Um campo "Valor da fatura", o vencimento só para leitura e o botão "Salvar fatura". "Remover valor" desfaz o valor informado. "Paguei tudo" e "Paguei outro valor" dão baixa na fatura. Num mês vencido sem lançamento, o app avisa e não deixa pagar.
+: Cartão | Um cartão por vez: com 2 ou mais cartões, o mesmo seletor **Cartão** do Avançado escolhe qual aparece. Um campo "Valor da fatura", o vencimento só para leitura e o botão "Salvar fatura". "Remover valor" desfaz o valor informado. "Paguei tudo" e "Paguei outro valor" dão baixa na fatura. Num mês vencido sem lançamento, o app avisa e não deixa pagar.
 : Análises | Só o período Mês, com resumo, gastos por categoria e evolução.
 
 ## Simular no modo Simples

@@ -3,6 +3,18 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.58.0] - 2026-10-01
+
+### Alterado
+
+- A aba Cartão mostra uma fatura por vez, com um seletor de cartão.
+  - Na visão casa, cada opção traz o nome da box.
+- Na visão casa, cada lançamento mostra a box de origem.
+  - Vale para os Pendentes da Hoje e para a lista do Fluxo; a busca do Fluxo acha pelo nome da box.
+- O card Saldo hoje da casa mostra o saldo de cada box.
+- Com casa no topo, o Lançar pede a box de quem pagou e grava nela.
+  - A box casa não recebe mais lançamento novo por essa tela; o que já estava nela, e as recorrências e os cenários criados com casa no topo, continuam contando.
+
 ## [0.57.0] - 2026-10-01
 
 ### Adicionado

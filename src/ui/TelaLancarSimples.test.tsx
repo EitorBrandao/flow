@@ -109,7 +109,7 @@ describe('Lançar no modo Simples', () => {
     const { box, outra } = await prepararSimples({ duasBoxes: true });
     useApp.setState({ boxSel: outra!.id });
     render(<TelaLancar />);
-    expect(screen.queryByRole('radiogroup', { name: 'Box' })).toBeNull();
+    expect(screen.queryByLabelText('Box')).toBeNull();
     await userEvent.type(screen.getByLabelText('Valor'), '7,00');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
     expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
@@ -119,8 +119,8 @@ describe('Lançar no modo Simples', () => {
   it('sem box padrão e com mais de uma box, mostra o seletor de Box uma vez', async () => {
     const { outra } = await prepararSimples({ duasBoxes: true, semPadrao: true });
     render(<TelaLancar />);
-    expect(screen.getAllByRole('radiogroup', { name: 'Box' })).toHaveLength(1);
-    await userEvent.click(screen.getByRole('radio', { name: 'maria' }));
+    expect(screen.getAllByLabelText('Box')).toHaveLength(1);
+    await userEvent.selectOptions(screen.getByLabelText('Box'), outra!.id);
     await userEvent.type(screen.getByLabelText('Valor'), '9,00');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
     expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
@@ -156,7 +156,7 @@ describe('Lançar no modo Simples', () => {
     await userEvent.type(screen.getByLabelText('Valor'), '6,00');
     expect(screen.getByRole('button', { name: 'Lançar' })).toBeDisabled();
     expect(screen.getByText('Escolha a box.')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('radio', { name: 'maria' }));
+    await userEvent.selectOptions(screen.getByLabelText('Box'), outra!.id);
     expect(screen.getByRole('button', { name: 'Lançar' })).toBeEnabled();
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
     expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
@@ -171,6 +171,40 @@ describe('Lançar no modo Simples', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
     expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
     expect((await db.lancamentos.toArray())[0].boxId).toBe(outra!.id);
+  });
+
+  it('o campo Box é o mesmo do Avançado e nunca oferece a box "casa"', async () => {
+    const { box, outra } = await prepararSimples({ duasBoxes: true, semPadrao: true });
+    useApp.setState({ boxSel: 'casa' });
+    render(<TelaLancar />);
+    const seletor = screen.getByLabelText('Box') as HTMLSelectElement;
+    const opcoes = Array.from(seletor.options).map((o) => o.value).filter((v) => v !== '');
+    expect(opcoes.sort()).toEqual([box.id, outra!.id].sort());
+    expect(screen.queryByRole('option', { name: 'casa' })).toBeNull();
+  });
+
+  it('com a box do topo própria, o campo Box já vem nela e trocar grava na nova', async () => {
+    const { box, outra } = await prepararSimples({ duasBoxes: true, semPadrao: true });
+    useApp.setState({ boxSel: box.id });
+    render(<TelaLancar />);
+    expect((screen.getByLabelText('Box') as HTMLSelectElement).value).toBe(box.id);
+    expect(screen.queryByText('Escolha a box.')).toBeNull();
+    await userEvent.selectOptions(screen.getByLabelText('Box'), outra!.id);
+    await userEvent.type(screen.getByLabelText('Valor'), '3,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect((await db.lancamentos.toArray())[0].boxId).toBe(outra!.id);
+  });
+
+  it('sem nenhuma box própria, avisa para criar uma e não lança', async () => {
+    await repo.salvarModo('lancar', 'simples');
+    await useApp.getState().iniciar(); // só a box "casa", autocriada
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    expect(screen.getByText(/Nenhuma box — crie em Ajustes → Boxes\./)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Box')).toBeNull();
+    await userEvent.type(screen.getByLabelText('Valor'), '2,00');
+    expect(screen.getByRole('button', { name: 'Lançar' })).toBeDisabled();
   });
 
   it('no modo Avançado todos os campos continuam presentes', async () => {

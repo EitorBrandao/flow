@@ -1124,3 +1124,70 @@ describe('Hoje no modo Simples', () => {
     expect(screen.getByDisplayValue(/700,00/)).toBeInTheDocument();
   });
 });
+
+describe('selo da box nos pendentes', () => {
+  async function montar(boxSel: 'casa' | 'ana') {
+    const agora = agoraISO();
+    const ana = { id: novoId(), nome: 'ana', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    const bruno = { id: novoId(), nome: 'bruno', saldoInicial: 50000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(ana);
+    await repo.salvarBox(bruno);
+    const catA = await repo.salvarCategoria({ boxId: ana.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+    const catB = await repo.salvarCategoria({ boxId: bruno.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({ boxId: ana.id, categoriaId: catA.id, data: '2026-07-01', valor: 15000, status: 'previsto' });
+    await repo.salvarLancamento({ boxId: bruno.id, categoriaId: catB.id, data: '2026-07-01', valor: 90000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: boxSel === 'casa' ? 'casa' : ana.id, hoje: '2026-07-02' });
+    render(<TelaHoje />);
+    await abrirAba(/Pendentes/);
+  }
+
+  it('na casa, cada pendente mostra a box de origem', async () => {
+    await montar('casa');
+    const mercado = screen.getByText(/mercado/).closest('.item') as HTMLElement;
+    const aluguel = screen.getByText(/aluguel/).closest('.item') as HTMLElement;
+    expect(within(mercado).getByText('ana')).toHaveClass('badge');
+    expect(within(aluguel).getByText('bruno')).toHaveClass('badge');
+  });
+
+  it('numa box só, nenhum pendente mostra selo de box', async () => {
+    await montar('ana');
+    const mercado = screen.getByText(/mercado/).closest('.item') as HTMLElement;
+    expect(within(mercado).queryByText('ana')).not.toBeInTheDocument();
+  });
+});
+
+describe('saldo por box na casa', () => {
+  async function montar(boxSel: 'casa' | 'ana') {
+    const agora = agoraISO();
+    const ana = { id: novoId(), nome: 'ana', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    const bruno = { id: novoId(), nome: 'bruno', saldoInicial: 50000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(ana);
+    await repo.salvarBox(bruno);
+    await repo.salvarCategoria({ boxId: ana.id, nome: 'mercado', tipo: 'gasto', ordem: 0 }); // sem categoria a tela mostra o primeiro uso
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: boxSel === 'casa' ? 'casa' : ana.id, hoje: '2026-07-02' });
+    render(<TelaHoje />);
+  }
+
+  it('na casa, o card mostra uma linha por box e o total', async () => {
+    await montar('casa');
+    expect(screen.getByText('ana')).toBeInTheDocument();
+    expect(screen.getByText('bruno')).toBeInTheDocument();
+    const linha = (nome: string) => screen.getByText(nome).closest('.linha-topo') as HTMLElement;
+    const semEspaco = (t: string | null) => (t ?? '').replace(/\s/g, ' ');
+    expect(semEspaco(linha('ana').textContent)).toContain(semEspaco(formatarSaldo(100000)));
+    expect(semEspaco(linha('bruno').textContent)).toContain(semEspaco(formatarSaldo(50000)));
+  });
+
+  it('na casa, a box "casa" sem lançamento não aparece entre as linhas de saldo', async () => {
+    await montar('casa');
+    expect(screen.getByText('ana')).toBeInTheDocument();
+    expect(screen.queryByText('casa')).not.toBeInTheDocument();
+  });
+
+  it('numa box só, o card não mostra linhas por box', async () => {
+    await montar('ana');
+    expect(screen.queryByText('bruno')).not.toBeInTheDocument();
+  });
+});
