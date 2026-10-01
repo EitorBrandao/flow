@@ -1,0 +1,1 @@
+- Análises: mais espaço entre a legenda das barras e a primeira categoria

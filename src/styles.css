@@ -4,7 +4,7 @@
   --ac: #3b9df8; --ac-dim: rgba(59, 157, 248, .14);
   --pos: #2ee6a8; --pos-bg: rgba(46, 230, 168, .14);
   --neg: #ff6b7a; --neg-bg: rgba(255, 107, 122, .13);
-  --total-pos: #008000; --total-neg: #ff4d4d;
+  --total-pos: #4ade80; --total-neg: #ff4d4d;
   --aviso-bg: #423306; --aviso-fg: #fcd34d;
   --hoje-bg: #0d4a32;
   --alca: #ffffff;
@@ -102,6 +102,7 @@ button { cursor: pointer; }
 }
 .botao-primario { background: var(--ac); color: #fff; }
 .botao-perigo { background: var(--surface2); color: var(--neg); }
+.botao:disabled { opacity: .45; cursor: default; }
 .botao-com-icone { display: inline-flex; align-items: center; gap: 8px; }
 .botao.ativo { background: var(--ac-dim); color: var(--ac); }
 /* Puxador de arrastar (Reorder + dragControls): sem touch-action: none o toque vira rolagem e o arrasto é cancelado no celular. */
@@ -193,6 +194,7 @@ table.tabela td.valor-ganho, table.tabela td.valor-gasto, table.tabela td.valor-
   padding: 12px 14px; border-radius: 12px; font-size: 14px;
 }
 .aviso-urgente { background: var(--neg-bg); color: var(--neg); }
+.aviso-sucesso { background: var(--pos-bg); color: var(--pos); }
 .cabecalho-dia {
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; padding: 10px 4px 4px;
@@ -566,6 +568,8 @@ table.tabela th:first-child, table.tabela td:first-child {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
 .conferencia-bancos .linha-banco > span { color: var(--muted); font-size: 14px; }
+.conferencia-bancos .linha-banco input { padding: 11px 12px; border: none; border-radius: 12px; background: var(--surface2); min-height: 44px; }
+.conferencia-bancos .linha-banco + .linha-banco { margin-top: 8px; }
 .conferencia-bancos .total,
 .conferencia-saldo .total {
   display: flex; align-items: baseline; justify-content: space-between;

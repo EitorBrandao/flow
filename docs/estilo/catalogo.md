@@ -17,7 +17,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.lista` / `.item` / `.item-coluna` / `.linha-topo` / `.linha-topo-2-1` | lista vertical de itens-card; `.item-coluna` quando o item precisa de uma segunda linha (ex.: ações abaixo); `.linha-topo` para a linha principal dentro de um item-coluna; `.linha-topo-2-1` (junto com `.linha-topo`) quando a linha principal precisa de proporção fixa 2:1 entre descrição e valor (evita word-wrap com valor/botões espremendo o texto); `.ativo` em `.item` marca o item selecionado com `--ac-dim`/`--ac`, mesmo padrão de `.botao.ativo` (ex.: categoria que filtra os lançamentos na aba Cartão) |
 | `.cresce` | filho flex que ocupa o espaço restante (`flex: 1; min-width: 0`) |
 | `.acoes` | linha de botões de ação dentro de um item (ex.: Confirmar/Descartar) |
-| `.botao`, `.botao-primario`, `.botao-perigo` | botão padrão / ação principal (azul) / ação destrutiva (texto vermelho) |
+| `.botao`, `.botao-primario`, `.botao-perigo` | botão padrão / ação principal (azul) / ação destrutiva (texto vermelho). `.botao:disabled` fica a 45% de opacidade, em toda tela |
 | `.botao-sinal` | modificador de `.botao` para o botão de alternar sinal (`+`/`−`) ao lado de um `CampoValor` — padding menor e largura mínima de alvo de toque. Usado nas duas conferências da `TelaHoje`, em Ajustes → Boxes e em Ajustes → Bancos |
 | `.botao-com-icone` | modificador de `.botao` pra ícone + texto lado a lado (`display: inline-flex; gap: 8px`) |
 | `.alca-arrastar` | modificador de `.botao` para o puxador de arrastar e reordenar; `touch-action: none` para o toque não virar rolagem no celular |
@@ -32,6 +32,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.badge` | pílula neutra pequena (contagem, status, rótulo "estorno" ao lado de um lançamento com valor negativo) |
 | `.aviso` | faixa âmbar de aviso; um `.botao-ver-mais` dentro dela herda a cor e o tamanho do texto e fica sublinhado (ação do próprio aviso, ex.: "Corrigir o valor pago" na aba Cartão) |
 | `.aviso-urgente` | variante vermelha da `.aviso`, usada junto dela (`aviso aviso-urgente`): `--neg-bg` e `--neg`. Classe solta, não modificador composto, para o verificador de catálogo enxergá-la |
+| `.aviso-sucesso` | variante verde da `.aviso`, usada junto dela (`aviso aviso-sucesso`): `--pos-bg` e `--pos`. Confirmação de ação concluída ("Lançado ✓", "Transferência feita ✓"). Classe solta, como `.aviso-urgente` |
 | `.rotulo` | rótulo maiúsculo pequeno acima de um valor/seção |
 | `.rotulo-grupo` | rótulo maiúsculo pequeno de subgrupo dentro de uma lista (ex.: "À vista"/"Parceladas" na fatura do cartão) |
 | `.cabecalho-dia` (+ `.dia-hoje`) | cabeçalho de dia na lista do Fluxo; `.dia-hoje` destaca o dia atual (fundo `--hoje-bg`) |

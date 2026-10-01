@@ -1,0 +1,4 @@
+- Hoje, Conferir: o botão "Transferir entre bancos" fica abaixo da lista e substitui o ↔ de cada linha
+- Hoje, Conferir: o formulário de transferência mostra o saldo calculado de cada banco
+- Hoje, Conferir: não deixa transferir de um banco para ele mesmo
+- Hoje, Conferir: depois de transferir, o resumo mostra o saldo de cada banco, antes e depois

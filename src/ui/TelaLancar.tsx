@@ -165,7 +165,7 @@ export default function TelaLancar() {
       {/* Botão desabilitado sem explicação deixa a pessoa sem saber o que falta — e quem
           acabou de instalar cai justamente no caso "não há categoria nenhuma". */}
       {!valido && !salvo && oQueFalta && <p className="sub">{oQueFalta}</p>}
-      {salvo && <p className="aviso">Lançado ✓</p>}
+      {salvo && <p className="aviso aviso-sucesso">Lançado ✓</p>}
     </div>
   );
 }

@@ -238,3 +238,40 @@ it('saldo inicial positivo aparece em verde', async () => {
   render(<Boxes />);
   expect(screen.getByText(/^R\$\s*250,00$/)).toHaveClass('total-dia', 'pos');
 });
+
+it('marca como padrão a box que o app abre, mesmo sem padrão gravado', async () => {
+  const agora = agoraISO();
+  for (const nome of ['ana', 'bruno']) {
+    await repo.salvarBox({
+      id: novoId(), nome, saldoInicial: 100000, dataSaldoInicial: '2026-01-01',
+      criadoEm: agora, alteradoEm: agora,
+    });
+  }
+  await useApp.getState().iniciar();
+
+  render(<Boxes />);
+
+  // Exatamente uma box é a padrão; a outra oferece "Tornar padrão".
+  expect(await screen.findAllByText('padrão')).toHaveLength(1);
+  expect(screen.getAllByRole('button', { name: 'Tornar padrão' })).toHaveLength(1);
+});
+
+it('com uma única box com saldo, não oferece "Tornar padrão"', async () => {
+  const agora = agoraISO();
+  await repo.salvarBox({
+    id: novoId(), nome: 'ana', saldoInicial: 100000, dataSaldoInicial: '2026-01-01',
+    criadoEm: agora, alteradoEm: agora,
+  });
+  await useApp.getState().iniciar();
+
+  render(<Boxes />);
+
+  await screen.findByText('ana');
+  expect(screen.queryByRole('button', { name: 'Tornar padrão' })).not.toBeInTheDocument();
+});
+
+it('o campo de nome da box não sugere nome de banco', async () => {
+  await useApp.getState().iniciar();
+  render(<Boxes />);
+  expect(screen.getByPlaceholderText('ex.: Pessoal')).toBeInTheDocument();
+});
