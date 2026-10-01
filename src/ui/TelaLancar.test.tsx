@@ -487,6 +487,22 @@ it('sem bancos, o lançamento sai sem banco', async () => {
   expect((await db.lancamentos.toArray())[0].bancoId).toBeUndefined();
 });
 
+it('confirmação "Lançado ✓" tem a classe aviso-sucesso', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  await userEvent.type(screen.getByLabelText('Valor'), '12,34');
+  await userEvent.click(screen.getByRole('button', { name: 'cartão' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+
+  expect(await screen.findByText('Lançado ✓')).toHaveClass('aviso', 'aviso-sucesso');
+});
+
 it('escolher banco e trocar de box volta ao banco padrão da nova box', async () => {
   const agora = agoraISO();
   // Primeira box com 2 bancos
