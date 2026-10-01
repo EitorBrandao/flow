@@ -1,4 +1,4 @@
-- Seletor de período no Simular: mês e ano inicial, mês e ano final, até 60 meses atrás e à frente.
-  - Setas para navegar um mês por vez.
-  - Conta exibe quantos meses estão selecionados e o máximo permitido.
-  - Aviso se o período vai além do horizonte de projeção do app (faturas de cartão podem não incluir tudo).
+- Fluxo › Simular tem seletor de período, de qualquer mês até 5 anos à frente.
+  - Escolha o mês e o ano do início e do fim, ou ande um mês por vez com as setas.
+  - O período vai de 1 a 60 meses. O início nunca fica antes do mês atual.
+  - Além do fim do ano que vem, a tabela repete as recorrências, mas não inclui faturas de cartão. A tela avisa quando isso acontece.
