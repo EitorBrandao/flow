@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.60.0] - 2026-10-01
+
+### Alterado
+
+- Com casa no topo, Categorias, Categorias do cartão, Cartões, Assinaturas e Recorrências pedem para escolher uma box.
+  - Antes, Recorrências dizia "Nenhuma recorrência nesta box" na casa, e as outras telas mostravam só o que está na box casa.
+- Na visão casa, Análises junta as categorias de mesmo nome e tipo numa linha só.
+  - A comparação ignora maiúsculas, acentos e espaços nas pontas.
+  - Ao tocar na linha, cada lançamento mostra a box de origem.
+
 ## [0.59.0] - 2026-10-01
 
 ### Adicionado
