@@ -8,7 +8,8 @@ import { notaExibivel } from '../../domain/notas';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../../domain/money';
 import { bancoPadrao, bancosDaBox } from '../../domain/bancos';
 import type { TipoCategoria } from '../../domain/types';
-import { boxIdEfetivo, useApp } from '../../state/store';
+import { boxIdConcreta, useApp } from '../../state/store';
+import AvisoEscolhaBox from './AvisoEscolhaBox';
 import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 import SeletorCategoria from '../SeletorCategoria';
@@ -54,7 +55,7 @@ function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar, usarPadra
   const [bancoEscolhido, setBancoEscolhido] = useState<string | null>(inicial.bancoId);
   const uid = useId();
 
-  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+  const boxId = boxIdConcreta(boxSel);
   const bancos = dados && boxId ? bancosDaBox(dados.bancos, [boxId]) : [];
   const bancoId = usarPadrao
     ? (bancoEscolhido ?? (dados && boxId ? bancoPadrao(dados.bancos, boxId)?.id : undefined))
@@ -144,7 +145,7 @@ export default function Recorrencias() {
   const [ultimosCampos, setUltimosCampos] = useState<{
     tipo: TipoCategoria; categoriaId: string | null; dataInicio: string; diaDoMes: string;
   }>({ tipo: 'gasto', categoriaId: null, dataInicio: hoje, diaDoMes: '1' });
-  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+  const boxId = boxIdConcreta(boxSel);
 
   useEffect(() => {
     setEditandoId(null);
@@ -157,7 +158,7 @@ export default function Recorrencias() {
     return (
       <div className="tela">
         <h2>Recorrências</h2>
-        <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+        <AvisoEscolhaBox assunto="As recorrências" />
       </div>
     );
   }

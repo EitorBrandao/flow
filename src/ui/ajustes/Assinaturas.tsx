@@ -3,7 +3,8 @@ import { useEffect, useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { formatarDataBR } from '../../domain/dates';
 import { formatarBRL } from '../../domain/money';
-import { boxIdEfetivo, useApp } from '../../state/store';
+import { boxIdConcreta, useApp } from '../../state/store';
+import AvisoEscolhaBox from './AvisoEscolhaBox';
 import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 import SeletorPills from '../SeletorPills';
@@ -99,7 +100,7 @@ export default function Assinaturas() {
   const [editandoId, setEditandoId] = useState<string | null>(null);
   // Muda a cada criação para o formulário do topo voltar vazio (remonta com `key`).
   const [versaoNova, setVersaoNova] = useState(0);
-  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+  const boxId = boxIdConcreta(boxSel);
 
   useEffect(() => {
     const primeiroCartao = dados?.cartoes.find((c) => c.boxId === boxId && c.ativo);
@@ -113,7 +114,7 @@ export default function Assinaturas() {
     return (
       <div className="tela">
         <h2>Assinaturas do cartão</h2>
-        <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+        <AvisoEscolhaBox assunto="As assinaturas" />
       </div>
     );
   }

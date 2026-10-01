@@ -173,14 +173,22 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
         <>
           <h2 style={{ marginTop: 0 }}>Nenhum cartão cadastrado</h2>
           <p className="sub">Cadastre um cartão em Ajustes antes de lançar uma compra parcelada.</p>
-          <button className="botao botao-primario" onClick={irParaAjustes}>Cadastrar cartão</button>
+          {boxSel === 'casa' ? (
+            <p className="sub">Escolha uma box no topo para cadastrar um cartão.</p>
+          ) : (
+            <button className="botao botao-primario" onClick={irParaAjustes}>Cadastrar cartão</button>
+          )}
         </>
       )}
       {passo === 'sem-cartao-liberado' && (
         <>
           <h2 style={{ marginTop: 0 }}>Nenhum cartão liberado para compra</h2>
           <p className="sub">Libere um cartão em Ajustes → Cartões antes de lançar uma compra parcelada.</p>
-          <button className="botao botao-primario" onClick={irParaAjustes}>Ir para Ajustes</button>
+          {boxSel === 'casa' ? (
+            <p className="sub">Escolha uma box no topo para liberar um cartão.</p>
+          ) : (
+            <button className="botao botao-primario" onClick={irParaAjustes}>Ir para Ajustes</button>
+          )}
         </>
       )}
       {passo === 'escolher-cartao' && (

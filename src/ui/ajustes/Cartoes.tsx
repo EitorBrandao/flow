@@ -2,7 +2,8 @@ import { Pencil } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import * as repo from '../../db/repo';
 import { bancosDaBox } from '../../domain/bancos';
-import { boxIdEfetivo, useApp } from '../../state/store';
+import { boxIdConcreta, useApp } from '../../state/store';
+import AvisoEscolhaBox from './AvisoEscolhaBox';
 
 interface CamposCartao { nome: string; bancoId: string; diaFechamento: string; diaVencimento: string }
 interface CamposCartaoSalvos { nome: string; bancoId: string | undefined; diaFechamento: number; diaVencimento: number }
@@ -26,7 +27,7 @@ function FormCartao({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
   const [aviso, setAviso] = useState('');
   const uid = useId();
 
-  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+  const boxId = boxIdConcreta(boxSel);
   const bancos = dados && boxId ? bancosDaBox(dados.bancos, [boxId]) : [];
 
   async function salvar() {
@@ -91,7 +92,7 @@ export default function Cartoes() {
   // O formulário antigo não zerava os dias depois de criar — só nome e banco. Guardado à
   // parte porque o remount por `versaoNova` reinicia TODO o estado local do FormCartao.
   const [ultimosDias, setUltimosDias] = useState({ diaFechamento: '28', diaVencimento: '5' });
-  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+  const boxId = boxIdConcreta(boxSel);
 
   useEffect(() => {
     setEditandoId(null);
@@ -103,7 +104,7 @@ export default function Cartoes() {
     return (
       <div className="tela">
         <h2>Cartões</h2>
-        <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+        <AvisoEscolhaBox assunto="Os cartões" />
       </div>
     );
   }

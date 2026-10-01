@@ -1,0 +1,3 @@
+- Na visão casa, Análises junta as categorias de mesmo nome e tipo numa linha só.
+  - A comparação ignora maiúsculas, acentos e espaços nas pontas.
+  - Ao tocar na linha, cada lançamento mostra a box de origem.

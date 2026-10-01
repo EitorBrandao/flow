@@ -220,6 +220,7 @@ export function serieMensalResumo(
 }
 
 export interface ItemLancamento {
+  boxId: ID;
   data: ISODate;
   valor: number;
 }
@@ -250,7 +251,7 @@ export function lancamentosDaCategoria(
       grupos.set(chave, grupo);
     }
     grupo.subtotal += l.valor;
-    grupo.itens.push({ data: l.data, valor: l.valor });
+    grupo.itens.push({ boxId: l.boxId, data: l.data, valor: l.valor });
   }
   for (const g of grupos.values()) {
     g.itens.sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0));

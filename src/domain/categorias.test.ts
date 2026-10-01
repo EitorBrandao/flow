@@ -1,5 +1,5 @@
-import type { Cartao, Categoria, CategoriaCartao } from './types';
-import { compararCategorias, compararCategoriasCartao, diffOrdem, proximaOrdem, categoriasCartaoReservadasIds } from './categorias';
+import type { Cartao, Categoria, CategoriaCartao, Lancamento } from './types';
+import { compararCategorias, compararCategoriasCartao, diffOrdem, proximaOrdem, categoriasCartaoReservadasIds, unificarCategoriasPorNome } from './categorias';
 
 const ts = { criadoEm: '2026-07-10T12:00:00.000Z', alteradoEm: '2026-07-10T12:00:00.000Z' };
 
@@ -90,5 +90,110 @@ describe('categoriasCartaoReservadasIds', () => {
 
   it('retorna conjunto vazio quando nenhum cartão tem categoria reservada', () => {
     expect(categoriasCartaoReservadasIds([cartao('k1')])).toEqual(new Set());
+  });
+});
+
+
+describe('unificarCategoriasPorNome', () => {
+  const c = (id: string, boxId: string, nome: string, tipo: 'ganho' | 'gasto' = 'gasto', extra: Partial<Categoria> = {}): Categoria =>
+    ({ id, boxId, nome, tipo, ordem: 0, arquivada: false, ...ts, ...extra });
+  const l = (id: string, boxId: string, categoriaId: string, valor = 10000): Lancamento =>
+    ({ id, boxId, categoriaId, data: '2026-07-10', valor, status: 'efetivo', origem: 'manual', ...ts });
+  const nenhuma = new Set<string>();
+
+  it('junta "mercado" e "Mercado" de boxes diferentes num grupo só', () => {
+    const cats = [c('c-ana', 'ana', 'mercado'), c('c-bruno', 'bruno', 'Mercado')];
+    const lancs = [l('l1', 'ana', 'c-ana'), l('l2', 'bruno', 'c-bruno')];
+    const r = unificarCategoriasPorNome(cats, lancs, nenhuma);
+    expect(r.categorias).toHaveLength(1);
+    expect(r.categorias[0].id).toBe('c-ana');
+    expect(r.categorias[0].nome).toBe('mercado');
+    expect(r.lancamentos.map((x) => x.categoriaId)).toEqual(['c-ana', 'c-ana']);
+  });
+
+  it('trata "Cafe", "Café" e "CAFÉ" como um grupo só', () => {
+    const cats = [c('a', 'ana', 'Cafe'), c('b', 'bruno', 'Café'), c('c', 'casa', 'CAFÉ')];
+    const r = unificarCategoriasPorNome(cats, [], nenhuma);
+    expect(r.categorias).toHaveLength(1);
+    expect(r.categorias[0].id).toBe('a');
+  });
+
+  it('mantém dois grupos quando o tipo é diferente', () => {
+    const cats = [c('g1', 'ana', 'mercado', 'gasto'), c('g2', 'bruno', 'mercado', 'ganho')];
+    const lancs = [l('l1', 'ana', 'g1'), l('l2', 'bruno', 'g2')];
+    const r = unificarCategoriasPorNome(cats, lancs, nenhuma);
+    expect(r.categorias).toHaveLength(2);
+    expect(r.lancamentos.map((x) => x.categoriaId)).toEqual(['g1', 'g2']);
+  });
+
+  it('ignora espaços nas pontas do nome', () => {
+    const cats = [c('a', 'ana', '  mercado '), c('b', 'bruno', 'mercado')];
+    const lancs = [l('l1', 'bruno', 'b')];
+    const r = unificarCategoriasPorNome(cats, lancs, nenhuma);
+    expect(r.categorias).toHaveLength(1);
+    expect(r.categorias[0].id).toBe('a');
+    expect(r.lancamentos[0].categoriaId).toBe('a');
+  });
+
+  it('não junta categoria oculta: ela fica no resultado e seus lançamentos não mudam', () => {
+    const cats = [c('a', 'ana', 'fatura'), c('b', 'bruno', 'fatura')];
+    const lancs = [l('l1', 'ana', 'a'), l('l2', 'bruno', 'b')];
+    const r = unificarCategoriasPorNome(cats, lancs, new Set(['b']));
+    expect(r.categorias.map((x) => x.id)).toEqual(['a', 'b']);
+    expect(r.lancamentos.map((x) => x.categoriaId)).toEqual(['a', 'b']);
+  });
+
+  it('escolhe a categoria ativa como representante quando há arquivada e ativa', () => {
+    const cats = [c('arq', 'ana', 'mercado', 'gasto', { arquivada: true }), c('ativa', 'bruno', 'mercado', 'gasto', { ordem: 5 })];
+    const lancs = [l('l1', 'ana', 'arq')];
+    const r = unificarCategoriasPorNome(cats, lancs, nenhuma);
+    expect(r.categorias.map((x) => x.id)).toEqual(['ativa']);
+    expect(r.lancamentos[0].categoriaId).toBe('ativa');
+  });
+
+  it('escolhe a primeira arquivada na ordem quando todas são arquivadas', () => {
+    const cats = [
+      c('arq2', 'ana', 'mercado', 'gasto', { arquivada: true, ordem: 3 }),
+      c('arq1', 'bruno', 'mercado', 'gasto', { arquivada: true, ordem: 1 }),
+    ];
+    const lancs = [l('l1', 'ana', 'arq2')];
+    const r = unificarCategoriasPorNome(cats, lancs, nenhuma);
+    expect(r.categorias.map((x) => x.id)).toEqual(['arq1']);
+    expect(r.lancamentos[0].categoriaId).toBe('arq1');
+  });
+
+  it('preserva boxId, valor, data e id dos lançamentos', () => {
+    const cats = [c('a', 'ana', 'mercado'), c('b', 'bruno', 'mercado')];
+    const original = l('l2', 'bruno', 'b', 25000);
+    const r = unificarCategoriasPorNome(cats, [original], nenhuma);
+    expect(r.lancamentos[0]).toEqual({ ...original, categoriaId: 'a' });
+    expect(r.lancamentos[0].boxId).toBe('bruno');
+    expect(r.lancamentos[0].valor).toBe(25000);
+    expect(r.lancamentos[0].data).toBe('2026-07-10');
+    expect(r.lancamentos[0].id).toBe('l2');
+  });
+
+  it('não altera as entradas', () => {
+    const cats = Object.freeze([c('a', 'ana', 'mercado'), c('b', 'bruno', 'mercado')].map((x) => Object.freeze(x))) as Categoria[];
+    const lancs = Object.freeze([l('l1', 'bruno', 'b')].map((x) => Object.freeze(x))) as Lancamento[];
+    const ocultas = new Set<string>();
+    expect(() => unificarCategoriasPorNome(cats, lancs, ocultas)).not.toThrow();
+    expect(lancs[0].categoriaId).toBe('b');
+    expect(cats).toHaveLength(2);
+  });
+
+  it('junta também a categoria sem lançamento', () => {
+    const cats = [c('a', 'ana', 'mercado'), c('b', 'bruno', 'mercado')];
+    const r = unificarCategoriasPorNome(cats, [], nenhuma);
+    expect(r.categorias.map((x) => x.id)).toEqual(['a']);
+    expect(r.lancamentos).toEqual([]);
+  });
+
+  it('devolve o mesmo conteúdo quando não há grupo repetido', () => {
+    const cats = [c('a', 'ana', 'mercado'), c('b', 'bruno', 'aluguel')];
+    const lancs = [l('l1', 'ana', 'a'), l('l2', 'bruno', 'b')];
+    const r = unificarCategoriasPorNome(cats, lancs, nenhuma);
+    expect(r.categorias).toEqual(cats);
+    expect(r.lancamentos).toEqual(lancs);
   });
 });

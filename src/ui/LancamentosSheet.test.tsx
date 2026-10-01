@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import type { Lancamento } from '../domain/types';
+import type { Box, Lancamento } from '../domain/types';
 import { formatarBRL } from '../domain/money';
 import LancamentosSheet from './LancamentosSheet';
 
@@ -188,5 +188,37 @@ describe('LancamentosSheet', () => {
   it('sem verFatura, não mostra o link da fatura', () => {
     abrirPix();
     expect(screen.queryByRole('button', { name: /Ver a fatura/ })).not.toBeInTheDocument();
+  });
+
+  describe('selo da box (visão casa)', () => {
+    const boxes: Box[] = [
+      { id: 'ba', nome: 'ana', saldoInicial: 0, dataSaldoInicial: '2026-01-01', ...ts },
+      { id: 'bb', nome: 'bruno', saldoInicial: 0, dataSaldoInicial: '2026-01-01', ...ts },
+    ];
+    const lancamentos: Lancamento[] = [
+      lanc({ id: '1', boxId: 'ba', data: '2026-07-05', valor: 30000, nota: 'Feira' }),
+      lanc({ id: '2', boxId: 'bb', data: '2026-07-08', valor: 15000, nota: 'Padaria' }),
+      lanc({ id: '3', boxId: 'bb', data: '2026-07-12', valor: 10000, nota: 'Padaria' }),
+    ];
+    function abrir(comBoxes: Box[] | undefined) {
+      render(
+        <LancamentosSheet
+          aberto categoriaId="pix" nome="Pix" tipo="gasto" mes="2026-07" boxIds={['ba', 'bb']}
+          lancamentos={lancamentos} incluirPrevistos={false} onFechar={() => {}} boxes={comBoxes}
+        />,
+      );
+    }
+
+    it('com boxes, mostra o selo no grupo de um lançamento e em cada item de grupo com vários', () => {
+      abrir(boxes);
+      expect(screen.getAllByText('ana')).toHaveLength(1);
+      expect(screen.getAllByText('bruno')).toHaveLength(2);
+    });
+
+    it('sem boxes, não mostra selo nenhum', () => {
+      abrir(undefined);
+      expect(screen.queryByText('ana')).not.toBeInTheDocument();
+      expect(screen.queryByText('bruno')).not.toBeInTheDocument();
+    });
   });
 });

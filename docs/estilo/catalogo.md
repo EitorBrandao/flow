@@ -141,8 +141,9 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   prop opcional `rotulo` nomeia o grupo. Exporta `OPCOES_TIPO` (Gasto/Ganho), o controle
   único de tipo em `TelaLancar.tsx`, `Recorrencias.tsx` e `Categorias.tsx`. Usado também em
   `CategoriasCartao.tsx`, `Assinaturas.tsx` (Cartão) e `PagamentoFaturaSheet.tsx` (destino
-  da sobra da fatura) — a box em si não tem mais seletor próprio nessas telas: todas as telas de
-  Ajustes seguem a box selecionada no chip do topo (`boxIdEfetivo`, `state/store.ts`),
+  da sobra da fatura) — a box em si não tem mais seletor próprio nessas telas: as telas de
+  Ajustes por box usam a box do chip do topo (`boxIdConcreta`, `state/store.ts`) e mostram
+  `AvisoEscolhaBox` quando a casa está no topo,
   reforçando a sensação de "perfil" (ver `docs/superpowers/specs/`).
 - **`SeletorBanco.tsx`** — pílulas (`SeletorPills`) para escolher o banco de um lançamento ou de
   uma recorrência. Props `bancos`, `selecionadaId` (`null` = nenhum marcado, lançamento antigo sem
@@ -268,3 +269,8 @@ desce a subpastas). `Importar.tsx` orquestra os três passos (arquivo, destino, 
 pílula, e a lista em ordem de data (só de exibição — quem confirma continua olhando tudo, em
 `Importar.tsx`); `LinhaConferencia.tsx` renderiza uma linha (etiqueta
 `.importar-ponto`/`.importar-estado`, detalhe, valor, botões de ação).
+
+- **`ajustes/AvisoEscolhaBox.tsx`** — aviso (`.sub`) das telas de Ajustes que pertencem a uma box
+  (Categorias, Categorias do cartão, Cartões, Assinaturas, Recorrências) quando "casa" está no topo:
+  "<assunto> são de cada box. Escolha uma box no topo para ver ou editar." Vive em `src/ui/ajustes/`,
+  fora da varredura do verificador, como `Importar.tsx` acima.

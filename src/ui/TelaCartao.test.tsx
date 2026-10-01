@@ -44,6 +44,18 @@ it('box sem cartão oferece cadastro', async () => {
   expect(useApp.getState().ajustesSecao).toBe('cartoes');
 });
 
+it('com a casa no topo e sem cartão, pede para escolher uma box e não oferece o cadastro', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: 'casa', hoje: '2026-07-01' });
+  render(<TelaCartao />);
+  expect(screen.getByText(/Nenhum cartão cadastrado/)).toBeInTheDocument();
+  expect(screen.getByText('Escolha uma box no topo para cadastrar um cartão.')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Cadastrar cartão' })).not.toBeInTheDocument();
+});
+
 it('editar uma compra existente abre o formulário num Sheet', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   let confirmSpy: any;

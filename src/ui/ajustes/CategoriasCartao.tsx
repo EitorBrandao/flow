@@ -4,7 +4,8 @@ import { GripVertical, Pencil } from 'lucide-react';
 import * as repo from '../../db/repo';
 import { categoriasCartaoReservadasIds, diffOrdem, proximaOrdem } from '../../domain/categorias';
 import type { CategoriaCartao } from '../../domain/types';
-import { boxIdEfetivo, useApp } from '../../state/store';
+import { boxIdConcreta, useApp } from '../../state/store';
+import AvisoEscolhaBox from './AvisoEscolhaBox';
 import SeletorPills from '../SeletorPills';
 
 interface ItemProps {
@@ -67,7 +68,7 @@ export default function CategoriasCartao() {
   const [avisoCriacao, setAvisoCriacao] = useState('');
   const [avisoEdicao, setAvisoEdicao] = useState('');
   const uid = useId();
-  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+  const boxId = boxIdConcreta(boxSel);
 
   useEffect(() => {
     const primeiroCartao = dados?.cartoes.find((c) => c.boxId === boxId);
@@ -85,7 +86,7 @@ export default function CategoriasCartao() {
     return (
       <div className="tela">
         <h2>Categorias do cartão</h2>
-        <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+        <AvisoEscolhaBox assunto="As categorias do cartão" />
       </div>
     );
   }

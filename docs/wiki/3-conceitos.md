@@ -6,7 +6,7 @@ Os conceitos por trás de tudo que o app guarda.
 
 Um fluxo de caixa com saldo próprio — nos exemplos desta documentação, {{boxA}} e {{boxB}}. O saldo inicial e a data de início ficam no cadastro da box (veja [A primeira box](#primeiros-passos/a-primeira-box)); o saldo que o banco mostra, informado de vez em quando para conferir, é um dado à parte.
 
-A [[box casa]] é especial: não tem saldo próprio e guarda os lançamentos compartilhados. A visão consolidada da casa soma {{boxA}} + {{boxB}} + os lançamentos da box casa, sempre na hora — nunca fica guardada pronta. O Lançar grava na box de quem pagou; recorrências e cenários criados com casa no topo continuam na box casa. Veja [Consolidação da casa](#motor/consolidacao-da-casa), no capítulo Motor por baixo dos panos.
+A [[box casa]] é especial: não tem saldo próprio e guarda os lançamentos compartilhados. A visão consolidada da casa soma {{boxA}} + {{boxB}} + os lançamentos da box casa, sempre na hora — nunca fica guardada pronta. O Lançar e as telas de configuração por box (Categorias, Categorias do cartão, Cartões, Assinaturas e Recorrências) não operam sobre a casa: pedem uma box. Só Bancos, Importar e Simular ainda gravam nela; cenários criados com casa no topo continuam na box casa. Veja [Consolidação da casa](#motor/consolidacao-da-casa), no capítulo Motor por baixo dos panos.
 
 ## Categoria
 

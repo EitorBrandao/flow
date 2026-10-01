@@ -129,14 +129,21 @@ export function boxIdsSelecionadas(dados: Dados, boxSel: BoxSelecionada): ID[] {
 }
 
 /**
- * Resolve a seleção atual pro id de uma única box concreta — usado nas telas de
- * Ajustes e no Simulador, que operam sobre uma box por vez (nunca consolidam).
+ * Resolve a seleção atual pro id de uma única box concreta — usado em Bancos, Importar,
+ * Simular e AdicionarSheet, que operam sobre uma box por vez (nunca consolidam). As telas por
+ * box (Categorias, Cartões etc.) usam `boxIdConcreta` e pedem uma box quando a casa está no topo.
  * O sentinela 'casa' vira o id da box de nome "casa" (autocriada em iniciar());
  * `null` só ocorre se essa box tiver sido renomeada/removida depois.
  */
 export function boxIdEfetivo(dados: Dados, boxSel: BoxSelecionada): ID | null {
   if (boxSel !== 'casa') return boxSel;
   return dados.boxes.find((b) => b.nome === 'casa')?.id ?? null;
+}
+
+/** Box concreta para as telas de configuração por box (Categorias, Cartões, Recorrências…): `null`
+ *  na visão casa, onde elas mostram só um aviso para escolher uma box. */
+export function boxIdConcreta(boxSel: BoxSelecionada): ID | null {
+  return boxSel === 'casa' ? null : boxSel;
 }
 
 /** Ids dos cenários ligados (mostrados na projeção). */

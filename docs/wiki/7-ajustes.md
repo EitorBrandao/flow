@@ -10,6 +10,8 @@ Atrás do ícone ⚙️ no topo. O menu tem cinco grupos; toque num grupo para v
 
 Nas seções de cadastro, o formulário no topo serve para criar; para editar, toque no lápis do próprio item.
 
+> Com **casa** no topo, Categorias, Categorias do cartão, Cartões, Assinaturas do cartão e Recorrências mostram só um aviso: esses cadastros são de cada box. Escolha uma box no topo para ver e editar.
+
 ## Categorias
 
 Por box selecionada: criar, renomear, reordenar (arraste pela alça ⋮⋮) e arquivar/restaurar. Ganhos aparecem antes dos gastos, cada grupo na ordem definida.
