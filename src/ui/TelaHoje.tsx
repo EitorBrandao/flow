@@ -2,6 +2,7 @@ import { Fragment, useId, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as repo from '../db/repo';
 import { bancosDaBox, saldoCalculadoBanco, totalDeclaradoCent } from '../domain/bancos';
+import { conferenciaDaCasa, type ConferenciaCasa as DadosConferenciaCasa } from '../domain/conferenciaPorBox';
 import { addDias, formatarDataBR } from '../domain/dates';
 import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../domain/estadoBackup';
 import { classeEfeito, classeSaldo, efeitoNoSaldo, formatarBRL, formatarSaldo } from '../domain/money';
@@ -351,6 +352,102 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
   );
 }
 
+interface ItemConferencia {
+  chave: string; tipo: 'banco' | 'box'; id: string; rotulo: string; aria: string; atual: number | null;
+}
+
+/** Conferência da visão casa: uma seção por box com saldo próprio. A box com bancos pede o saldo
+ *  de cada banco; a box sem bancos pede um saldo só ("Saldo da box"). Salva só o que mudou: no
+ *  banco, via `atualizarBanco`; na box, via `salvarBox`. A conferência de uma box concreta
+ *  continua em `ConferenciaSaldo`/`ConferenciaBancos`. */
+function ConferenciaCasa({ conferencia, boxes, hoje, onSalvar }: {
+  conferencia: DadosConferenciaCasa;
+  boxes: Box[];
+  hoje: ISODate;
+  onSalvar: (
+    mudancas: { tipo: 'banco' | 'box'; id: string; cents: number }[], data: ISODate,
+  ) => Promise<void>;
+}) {
+  const itens = conferencia.linhas.flatMap((l): ItemConferencia[] => l.bancos.length > 0
+    ? l.bancos.map((b) => ({ chave: `banco:${b.id}`, tipo: 'banco', id: b.id, rotulo: b.nome, aria: b.nome, atual: b.saldoDeclaradoCent }))
+    : [{ chave: `box:${l.boxId}`, tipo: 'box', id: l.boxId, rotulo: 'Saldo da box', aria: `Saldo da box ${l.nome}`, atual: boxes.find((b) => b.id === l.boxId)?.saldoDeclaradoCent ?? null }]);
+
+  const [magnitudes, setMagnitudes] = useState<Record<string, number>>(
+    () => Object.fromEntries(itens.map((i) => [i.chave, Math.abs(i.atual ?? 0)])),
+  );
+  const [negativos, setNegativos] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(itens.map((i) => [i.chave, (i.atual ?? 0) < 0])),
+  );
+  const editados = useRef<Set<string>>(new Set());
+
+  function mudarValor(chave: string, v: number) {
+    setMagnitudes((atual) => ({ ...atual, [chave]: v }));
+    editados.current.add(chave);
+  }
+
+  function alternarSinal(chave: string) {
+    setNegativos((atual) => ({ ...atual, [chave]: !atual[chave] }));
+    editados.current.add(chave);
+  }
+
+  async function salvar() {
+    const mudancas = itens
+      .filter((i) => editados.current.has(i.chave))
+      .map((i) => {
+        const magnitude = magnitudes[i.chave] ?? 0;
+        return { tipo: i.tipo, id: i.id, cents: negativos[i.chave] ? -magnitude : magnitude, atual: i.atual };
+      })
+      .filter((m) => m.atual !== m.cents)
+      .map(({ tipo, id, cents }) => ({ tipo, id, cents }));
+    if (mudancas.length === 0) return;
+    await onSalvar(mudancas, hoje);
+  }
+
+  const { totalInformadoCent, totalFlowCent, diffCent, faltam } = conferencia;
+
+  return (
+    <div className="conferencia-bancos">
+      <p className="rotulo-grupo">Saldo real em cada box</p>
+      {conferencia.linhas.map((l) => (
+        <div key={l.boxId}>
+          <p className="rotulo-grupo">{l.nome}</p>
+          {itens.filter((i) => i.chave === `box:${l.boxId}` || l.bancos.some((b) => i.chave === `banco:${b.id}`)).map((i) => (
+            <div key={i.chave} className="linha-banco recuo-1">
+              <span>{i.rotulo}</span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button
+                  type="button" className="botao botao-sinal" aria-label="Alternar sinal (positivo/negativo)"
+                  onClick={() => alternarSinal(i.chave)}
+                >
+                  {negativos[i.chave] ? '−' : '+'}
+                </button>
+                <CampoValor
+                  id={`conferencia-${i.chave}`} valorCentavos={magnitudes[i.chave] ?? 0}
+                  onChange={(v) => mudarValor(i.chave, v)}
+                  ariaLabel={i.aria} style={{ width: 110 }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+      <div className="total">
+        <span>Total informado</span>
+        <span className={totalInformadoCent != null ? classeSaldo(totalInformadoCent) : undefined}>
+          {totalInformadoCent != null ? formatarSaldo(totalInformadoCent) : '—'}
+        </span>
+      </div>
+      <TotalFlow saldoApp={totalFlowCent} />
+      {diffCent == null ? (
+        faltam.length > 0 && <p className="sub" style={{ margin: '4px 0 0' }}>Informe o saldo de {faltam.join(', ')} para conferir.</p>
+      ) : (
+        <p className="sub" style={{ margin: '4px 0 0' }}><Diferenca diff={diffCent} /></p>
+      )}
+      <button className="botao" style={{ alignSelf: 'flex-start' }} onClick={salvar}>Salvar conferência</button>
+    </div>
+  );
+}
+
 export default function TelaHoje() {
   const { dados, boxSel, hoje, recarregar, abrirAjustes, abrirFluxo } = useApp();
   const simples = useModo('hoje') === 'simples';
@@ -399,6 +496,7 @@ export default function TelaHoje() {
   const dataDeclarado = (boxSel === 'casa' ? dados.config.dataSaldoDeclarado : boxAtual?.dataSaldoDeclarado) ?? null;
   const bancos = bancosDaBox(dados.bancos, ids);
   const chaveBancos = bancos.map((b) => b.id).join(',');
+  const conferenciaCasa = conferenciaDaCasa(dados, ids, hoje, ligados);
 
   async function salvarSaldoReal(cents: number, data: string) {
     if (boxSel === 'casa') await repo.salvarConfig({ saldoDeclaradoCent: cents, dataSaldoDeclarado: data });
@@ -412,6 +510,26 @@ export default function TelaHoje() {
       await Promise.all(
         mudancas.map(({ id, cents }) => repo.atualizarBanco(id, { saldoDeclaradoCent: cents, dataSaldoDeclarado: data })),
       );
+    } catch {
+      setAvisoSalvarBancos('Nem tudo foi salvo — confira os valores e tente novamente.');
+    } finally {
+      await recarregar();
+    }
+  }
+
+  async function salvarConferenciaCasa(
+    mudancas: { tipo: 'banco' | 'box'; id: string; cents: number }[], data: string,
+  ) {
+    setAvisoSalvarBancos(null);
+    try {
+      await Promise.all(mudancas.map(async ({ tipo, id, cents }) => {
+        if (tipo === 'banco') {
+          await repo.atualizarBanco(id, { saldoDeclaradoCent: cents, dataSaldoDeclarado: data });
+          return;
+        }
+        const box = dados!.boxes.find((b) => b.id === id);
+        if (box) await repo.salvarBox({ ...box, saldoDeclaradoCent: cents, dataSaldoDeclarado: data });
+      }));
     } catch {
       setAvisoSalvarBancos('Nem tudo foi salvo — confira os valores e tente novamente.');
     } finally {
@@ -528,7 +646,11 @@ export default function TelaHoje() {
           <p className="sub" style={{ margin: '0 0 12px' }}>
             Digite o saldo que o app do banco mostra e toque em Salvar. O Flow compara com o total que ele calculou e diz se bate.
           </p>
-          {simples || bancos.length === 0 ? (
+          {boxSel === 'casa' && !simples ? (
+            <ConferenciaCasa
+              key={`casa-${conferenciaCasa.linhas.map((l) => `${l.boxId}:${l.bancos.map((b) => b.id).join('.')}`).join(',')}`}
+              conferencia={conferenciaCasa} boxes={dados.boxes} hoje={hoje} onSalvar={salvarConferenciaCasa} />
+          ) : simples || bancos.length === 0 ? (
             <ConferenciaSaldo key={boxSel} saldoApp={deHoje?.saldoEfetivo ?? 0} declaradoCent={declaradoCent}
               dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} simples={simples} />
           ) : (
