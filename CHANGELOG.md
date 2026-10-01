@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.54.1] - 2026-09-30
+
+### Alterado
+
+- Conferência da fatura do cartão não repete mais os campos ao trocar de mês.
+  - Acontecia em cartões que fecham no dia 1: cada troca de mês empilhava mais um campo "Valor no app do banco".
+
 ## [0.54.0] - 2026-09-30
 
 ### Alterado

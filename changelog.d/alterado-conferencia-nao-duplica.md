@@ -1,2 +1,0 @@
-- Conferência da fatura do cartão não repete mais os campos ao trocar de mês.
-  - Acontecia em cartões que fecham no dia 1: cada troca de mês empilhava mais um campo "Valor no app do banco".
