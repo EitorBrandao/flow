@@ -1,0 +1,1 @@
+- Ajustes, Cartões: o formulário avisa em qual box o cartão será criado, como já faz o de Bancos
