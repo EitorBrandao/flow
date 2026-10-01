@@ -1,1 +1,0 @@
-- Hoje, Conferir: os campos de saldo por banco têm o mesmo estilo dos outros campos

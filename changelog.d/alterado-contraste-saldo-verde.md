@@ -1,1 +1,0 @@
-- Saldo positivo em verde mais claro, com contraste melhor sobre o fundo escuro

@@ -3,6 +3,24 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.56.0] - 2026-10-01
+
+### Alterado
+
+- Análises: mais espaço entre a legenda das barras e a primeira categoria
+- Botões desabilitados agora parecem desabilitados, em todas as telas
+- Ajustes, Boxes: a box que o app abre ganha o selo "padrão", mesmo sem você ter escolhido uma
+- Ajustes, Boxes: o exemplo do campo de nome deixou de sugerir nome de banco
+- Ajustes, Cartões: o formulário avisa em qual box o cartão será criado, como já faz o de Bancos
+- Hoje, Conferir: os campos de saldo por banco têm o mesmo estilo dos outros campos
+- Saldo positivo em verde mais claro, com contraste melhor sobre o fundo escuro
+- Lançar: a confirmação "Lançado ✓" agora é verde, não âmbar
+- Fluxo, Hoje e Recorrências: a linha do lançamento não repete mais a categoria quando a nota tem o mesmo texto
+- Hoje, Conferir: o botão "Transferir entre bancos" fica abaixo da lista e substitui o ↔ de cada linha
+- Hoje, Conferir: o formulário de transferência mostra o saldo calculado de cada banco
+- Hoje, Conferir: não deixa transferir de um banco para ele mesmo
+- Hoje, Conferir: depois de transferir, o resumo mostra o saldo de cada banco, antes e depois
+
 ## [0.55.0] - 2026-10-01
 
 ### Adicionado
