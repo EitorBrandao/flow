@@ -176,6 +176,9 @@ it('Guardar renomeia para "Simulação de DD/MM" e o cenário sobrevive ao desmo
   await waitFor(async () => {
     expect((await db.cenarios.toArray()).map((c) => c.nome)).toEqual(['Simulação de 15/09']);
   });
+  // Guardada desligada: não muda o gráfico de Hoje e Fluxo sem aviso.
+  expect((await db.cenarios.toArray()).every((c) => c.ligado === false)).toBe(true);
+  expect(await screen.findByText('Guardada. Ela aparece em Simular, no modo Avançado, desligada.')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Guardar' })).not.toBeInTheDocument();
   unmount();
   await new Promise((r) => setTimeout(r, 50));
@@ -196,4 +199,70 @@ it('depois de Guardar, uma nova simulação não apaga a guardada', async () => 
   await screen.findByText('R$ 700,00');
   const nomes = (await db.cenarios.toArray()).map((c) => c.nome).sort();
   expect(nomes).toEqual(['Simulação de 15/09', repo.NOME_SIMULACAO_RAPIDA].sort());
+});
+
+it('Simular desativado diz o que falta, uma frase por vez', async () => {
+  await preparar();
+  render(<SimuladorSimples />);
+  // sem valor: nada
+  expect(screen.queryByText('Escolha uma data.')).not.toBeInTheDocument();
+  expect(screen.queryByText('Data anterior a hoje.')).not.toBeInTheDocument();
+  await userEvent.type(screen.getByLabelText('Valor'), '1500,00');
+  expect(screen.getByText('Escolha uma data.')).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Quando'), { target: { value: '2026-09-14' } });
+  expect(screen.getByText('Data anterior a hoje.')).toBeInTheDocument();
+  expect(screen.queryByText('Escolha uma data.')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Quando'), { target: { value: '2026-10-15' } });
+  expect(screen.queryByText('Data anterior a hoje.')).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('radio', { name: 'Parcelado' }));
+  const parcelas = screen.getByLabelText('Parcelas');
+  await userEvent.clear(parcelas);
+  await userEvent.type(parcelas, '1');
+  expect(screen.getByText('Parcelado precisa de 2 parcelas ou mais.')).toBeInTheDocument();
+  await userEvent.clear(parcelas);
+  await userEvent.type(parcelas, '3');
+  expect(screen.queryByText('Parcelado precisa de 2 parcelas ou mais.')).not.toBeInTheDocument();
+});
+
+it.each([0, 1, 5, 15, 40])('desmontar %i ms depois de Simular não deixa órfãos', async (ms) => {
+  await preparar();
+  const { unmount } = render(<SimuladorSimples />);
+  await preencher('1500,00', '2026-10-15');
+  fireEvent.click(screen.getByRole('button', { name: 'Simular' }));
+  if (ms) await new Promise((r) => setTimeout(r, ms));
+  unmount();
+  await new Promise((r) => setTimeout(r, 400));
+  expect(await db.cenarios.toArray()).toHaveLength(0);
+  expect(await db.lancamentos.toArray()).toHaveLength(0);
+  expect(await db.recorrencias.toArray()).toHaveLength(0);
+});
+
+it('desmontar logo depois de Guardar não apaga o cenário guardado', async () => {
+  await preparar();
+  const { unmount } = render(<SimuladorSimples />);
+  await preencher('1500,00', '2026-10-15');
+  await simular();
+  fireEvent.click(await screen.findByRole('button', { name: 'Guardar' }));
+  unmount();
+  await new Promise((r) => setTimeout(r, 400));
+  expect((await db.cenarios.toArray()).map((c) => c.nome)).toEqual(['Simulação de 15/09']);
+  expect((await db.lancamentos.toArray()).filter((l) => l.cenarioId)).toHaveLength(1);
+});
+
+it('editar um campo depois de simular limpa o resultado e some o Guardar', async () => {
+  await preparar();
+  render(<SimuladorSimples />);
+  await preencher('1500,00', '2026-10-15');
+  await simular();
+  expect(screen.getByRole('button', { name: 'Guardar' })).toBeEnabled();
+  await userEvent.clear(screen.getByLabelText('Valor'));
+  await userEvent.type(screen.getByLabelText('Valor'), '300,00');
+  expect(screen.queryByText('Menor saldo sem a compra')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Guardar' })).not.toBeInTheDocument();
+  await simular();
+  fireEvent.change(screen.getByLabelText('Quando'), { target: { value: '2026-10-16' } });
+  expect(screen.queryByText('Menor saldo sem a compra')).not.toBeInTheDocument();
+  await simular();
+  await userEvent.click(screen.getByRole('radio', { name: 'Todo mês' }));
+  expect(screen.queryByText('Menor saldo sem a compra')).not.toBeInTheDocument();
 });

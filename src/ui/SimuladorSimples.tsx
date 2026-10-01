@@ -26,8 +26,11 @@ export default function SimuladorSimples() {
   const [guardado, setGuardado] = useState(false);
   // O efeito de limpeza roda ao desmontar: lê o que vale naquele momento, não o do render.
   const rascunhoRef = useRef<ID | null>(null);
+  // Verdadeiro depois do desmonte: quem estava no meio de um `await` desfaz o que criou e para.
+  const desmontadoRef = useRef(false);
 
   useEffect(() => () => {
+    desmontadoRef.current = true;
     const id = rascunhoRef.current;
     if (!id) return;
     rascunhoRef.current = null;
@@ -38,6 +41,18 @@ export default function SimuladorSimples() {
   const parcelas = Number(parcelasTexto) || 0;
   const valido = boxId != null && valor > 0 && data !== '' && data >= hoje
     && (repeticao !== 'parcelado' || (parcelas >= 2 && Math.round(valor / parcelas) >= 1));
+
+  // Uma frase por vez, na ordem em que a pessoa preenche; sem valor, nada (como no Lançar).
+  const oQueFalta = valor === 0 ? ''
+    : data === '' ? 'Escolha uma data.'
+      : data < hoje ? 'Data anterior a hoje.'
+        : repeticao === 'parcelado' && parcelas < 2 ? 'Parcelado precisa de 2 parcelas ou mais.'
+          : repeticao === 'parcelado' && Math.round(valor / parcelas) < 1 ? 'O valor é pequeno demais para essas parcelas.'
+            : '';
+
+  // Mudar qualquer campo depois de simular esconde o resultado: o "Guardar" nunca guarda
+  // uma simulação diferente da mostrada. O rascunho no banco fica até a próxima simulação.
+  const editar = <T,>(set: (v: T) => void) => (v: T) => { set(v); setCenarioId(null); };
 
   // Projeção com o rascunho ligado: "sem" é o saldo projetado, "com" soma o rascunho.
   const resultado = useMemo(() => {
@@ -57,25 +72,43 @@ export default function SimuladorSimples() {
   async function simular() {
     if (!valido || ocupado || !dados || boxId == null || data === '') return;
     setOcupado(true);
+    let id: ID | null = null;
     try {
       // Recomeça: o rascunho anterior (e seus itens) sai. Um cenário já guardado fica.
-      if (rascunhoRef.current) {
-        await repo.excluirCenario(rascunhoRef.current);
+      const anterior = rascunhoRef.current;
+      if (anterior) {
         rascunhoRef.current = null;
+        await repo.excluirCenario(anterior);
+        if (desmontadoRef.current) return;
       }
       const agora = agoraISO();
-      const id = novoId();
+      id = novoId();
       await repo.salvarCenario({ id, nome: repo.NOME_SIMULACAO_RAPIDA, ligado: true, criadoEm: agora, alteradoEm: agora });
       rascunhoRef.current = id;
+      if (desmontadoRef.current) return;
       const categoriaId = await repo.categoriaAClassificarDe(boxId, 'gasto');
+      if (desmontadoRef.current) return;
       await gravarItemNovo(id, boxId, {
         valor, descricao: '', tipo: 'gasto', categoriaId, repeticao, data, parcelas,
       }, dados.config.horizonteProjecao);
+      if (desmontadoRef.current) return;
       await recarregar();
+      if (desmontadoRef.current) return;
+      const pronto = id;
+      id = null;
       setGuardado(false);
-      setCenarioId(id);
+      setCenarioId(pronto);
     } finally {
-      setOcupado(false);
+      // Desmontou no meio: apaga o que foi criado (cenário e itens), sem `setState`.
+      if (desmontadoRef.current) {
+        if (id) {
+          rascunhoRef.current = null;
+          await repo.excluirCenario(id).catch(() => {});
+          void useApp.getState().recarregar().catch(() => {});
+        }
+      } else {
+        setOcupado(false);
+      }
     }
   }
 
@@ -83,16 +116,22 @@ export default function SimuladorSimples() {
     const id = rascunhoRef.current;
     const cenario = id ? dados?.cenarios.find((c) => c.id === id) : undefined;
     if (!id || !cenario || ocupado) return;
+    // Zera já, de forma síncrona: um desmonte durante o `await` não apaga o que está sendo guardado.
+    rascunhoRef.current = null;
     setOcupado(true);
     try {
       const [, mes, dia] = hoje.split('-');
-      await repo.salvarCenario({ ...cenario, nome: `Simulação de ${dia}/${mes}` });
-      // Guardado: o cenário deixa de ser rascunho e não é apagado ao sair.
-      rascunhoRef.current = null;
+      // Desligada: guardar não muda o gráfico de Hoje e Fluxo sem aviso.
+      await repo.salvarCenario({ ...cenario, nome: `Simulação de ${dia}/${mes}`, ligado: false });
+      if (desmontadoRef.current) return;
       await recarregar();
+      if (desmontadoRef.current) return;
       setGuardado(true);
+    } catch (e) {
+      if (!desmontadoRef.current) rascunhoRef.current = id;
+      throw e;
     } finally {
-      setOcupado(false);
+      if (!desmontadoRef.current) setOcupado(false);
     }
   }
 
@@ -103,23 +142,23 @@ export default function SimuladorSimples() {
         <div className="form-linha">
           <div className="campo">
             <label htmlFor={`${uid}-valor`}>Valor</label>
-            <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} />
+            <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={editar(setValor)} />
           </div>
           <div className="campo">
             <label htmlFor={`${uid}-data`}>Quando</label>
-            <CampoData id={`${uid}-data`} value={data} onChange={setData} min={hoje} />
+            <CampoData id={`${uid}-data`} value={data} onChange={editar(setData)} min={hoje} />
           </div>
         </div>
         <SeletorPills
           rotulo="Repetição" opcoes={OPCOES_REPETICAO} selecionadaId={repeticao}
-          onSelecionar={(id) => setRepeticao(id as Repeticao)}
+          onSelecionar={(id) => editar(setRepeticao)(id as Repeticao)}
         />
         {repeticao === 'parcelado' && (
           <div className="campo">
             <label htmlFor={`${uid}-parcelas`}>Parcelas</label>
             <input
               id={`${uid}-parcelas`} inputMode="numeric" value={parcelasTexto}
-              onChange={(e) => setParcelasTexto(e.target.value.replace(/\D/g, ''))}
+              onChange={(e) => editar(setParcelasTexto)(e.target.value.replace(/\D/g, ''))}
             />
           </div>
         )}
@@ -129,6 +168,7 @@ export default function SimuladorSimples() {
           </p>
         )}
         <button className="botao botao-primario" disabled={!valido || ocupado} onClick={simular}>Simular</button>
+        {!valido && oQueFalta && <p className="sub" style={{ margin: 0 }}>{oQueFalta}</p>}
       </div>
 
       {resultado && (
@@ -147,7 +187,7 @@ export default function SimuladorSimples() {
             </p>
           )}
           {guardado ? (
-            <p className="sub" style={{ margin: 0 }}>Guardada. Ela aparece em Simular, no modo Avançado.</p>
+            <p className="sub" style={{ margin: 0 }}>Guardada. Ela aparece em Simular, no modo Avançado, desligada.</p>
           ) : (
             <button className="botao" disabled={ocupado} onClick={guardar}>Guardar</button>
           )}
