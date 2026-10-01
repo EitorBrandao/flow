@@ -1,6 +1,6 @@
 # Os primeiros passos
 
-O Flow começa **quase vazio**: sem categoria, sem cartão, sem nada lançado. Só vem pronta a [[box casa]], criada na primeira abertura para os gastos divididos — sem saldo próprio. Falta criar sua box, com o saldo da conta, e as categorias. Esta é a ordem que funciona.
+O Flow começa **quase vazio**: sem categoria, sem cartão, sem nada lançado. Só vem pronta a [[box casa]], criada na primeira abertura para consolidar as boxes — sem saldo próprio. Falta criar sua box, com o saldo da conta, e as categorias. Esta é a ordem que funciona.
 
 > Já usa o Flow em outro aparelho? Não refaça nada: em Ajustes, Backup, importe o arquivo `.json` exportado do aparelho antigo. Ele traz tudo — boxes, lançamentos, cartões e configurações.
 
@@ -10,7 +10,7 @@ Uma box é um fluxo de caixa com saldo próprio — normalmente uma conta de ban
 
 - **Saldo inicial:** o saldo que o app do seu banco mostra agora. Pode ser negativo.
 - **Data:** o dia do saldo — normalmente hoje. Lançamentos até essa data, ela inclusive, já estão dentro do saldo e não o mudam; a tela Lançar avisa quando você escolhe uma data assim. Só os lançamentos depois dela descontam ou somam.
-- **Box compartilhada:** a box "casa" já é assim — sem saldo próprio, só para os gastos divididos (energia, água). Para tornar outra box compartilhada, desmarque "Esta box tem saldo próprio" ao editá-la. Ela sai do seletor do topo e não pode mais ser box padrão.
+- **Box compartilhada:** a box "casa" já é assim — sem saldo próprio. Ao lançar com casa no topo, você escolhe a box de quem pagou. Para tornar outra box compartilhada, desmarque "Esta box tem saldo próprio" ao editá-la. Ela sai do seletor do topo e não pode mais ser box padrão.
 
 **Obrigatório:** nome. **Têm padrão:** saldo inicial (0), data (hoje). O formulário de nova box já pede o saldo e a data.
 
@@ -29,7 +29,7 @@ Sem categoria não dá para lançar: a tela Lançar fica vazia. Comece pelas sug
 O botão **+** no meio da barra de baixo. Valor → gasto ou ganho → categoria → Lançar. É o gesto que você repete todo dia, por isso ele é curto.
 
 - O teclado numérico já abre pronto: digite o valor sem tocar em mais nada.
-- No alto do formulário, "Lançando na box" diz em qual box o lançamento vai — a que está selecionada no topo.
+- No alto do formulário, "Lançando na box" diz em qual box o lançamento vai. Numa box só, é a que está selecionada no topo; com casa no topo, é a que você escolhe no campo Box.
 - **Data futura vira previsto automaticamente**, mesmo sem marcar a caixinha. É assim que se lança uma conta que ainda vai cair.
 - A **nota** é opcional, mas é ela que salva o pix: "para quem" fica registrado aí.
 

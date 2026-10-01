@@ -475,7 +475,7 @@ export default function TelaHoje() {
                   {saldosBoxes.map((s) => (
                     <div className="linha-topo" key={s.boxId}>
                       <span className="sub cresce">{s.nome}</span>
-                      <strong className={'total-dia ' + classeSaldo(s.saldoEfetivo)}>{formatarSaldo(s.saldoEfetivo)}</strong>
+                      <strong className={classeSaldo(s.saldoEfetivo)}>{formatarSaldo(s.saldoEfetivo)}</strong>
                     </div>
                   ))}
                 </div>

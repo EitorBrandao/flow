@@ -31,7 +31,7 @@ Com dois ou mais bancos na box, aparece o botão "Transferir entre bancos", abai
 
 O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 
-- Com **casa** no topo, o formulário pede primeiro a **Box** (quem pagou) e só mostra o resto depois que você escolhe uma; o lançamento é gravado nessa box, e ela continua escolhida depois de lançar. A lista traz só as boxes de verdade, nunca a box casa. Enquanto não escolher, aparece "Escolha a box."
+- Com **casa** no topo, o formulário pede primeiro a **Box** (quem pagou) e só mostra o resto depois que você escolhe uma; o lançamento é gravado nessa box, e ela continua escolhida depois de lançar. A lista traz só as boxes com saldo próprio, nunca a box casa. Enquanto não escolher, aparece "Escolha a box."
 - Teclado numérico decimal já abre pronto, sem precisar tocar em nada.
 - Alterna **Gasto**/**Ganho** — troca a lista de categorias mostrada (da box selecionada, não arquivadas, na ordem definida em Ajustes → Categorias).
 - Data padrão hoje; nota opcional; caixa "marcar como previsto".

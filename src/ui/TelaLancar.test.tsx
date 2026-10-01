@@ -117,6 +117,46 @@ describe('Lançar com "casa" no topo', () => {
     expect((screen.getByLabelText('Box') as HTMLSelectElement).value).toBe(ana.id);
   });
 
+  it('rascunho com categoria da box "casa" não habilita o Lançar com outra box escolhida', async () => {
+    const { ana, casa } = await montar();
+    const catCasa = await repo.salvarCategoria({ boxId: casa.id, nome: 'luz', tipo: 'gasto', ordem: 0 });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    await userEvent.selectOptions(screen.getByLabelText('Box'), ana.id);
+    act(() => useApp.setState({ rascunhoLancar: { categoriaId: catCasa.id, valorCent: 3000 } }));
+    expect(await screen.findByRole('button', { name: 'Lançar' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await db.lancamentos.toArray()).toHaveLength(0);
+  });
+
+  it('box compartilhada sem saldo próprio não aparece no seletor Box', async () => {
+    await montar();
+    const agora = agoraISO();
+    await repo.salvarBox({ id: novoId(), nome: 'viagem em grupo', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    const seletor = screen.getByLabelText('Box');
+    expect(within(seletor).getByRole('option', { name: 'ana' })).toBeInTheDocument();
+    expect(within(seletor).queryByRole('option', { name: 'viagem em grupo' })).not.toBeInTheDocument();
+  });
+
+  it('trocar a box zera o banco escolhido e ao voltar o banco é o padrão', async () => {
+    const { ana, bruno } = await montar();
+    await repo.salvarBanco({ boxId: ana.id, nome: 'Banco Um', ordem: 0 });
+    await repo.salvarBanco({ boxId: ana.id, nome: 'Banco Dois', ordem: 1 });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    await userEvent.selectOptions(screen.getByLabelText('Box'), ana.id);
+    await userEvent.click(screen.getByRole('radio', { name: 'Banco Dois' }));
+    expect(screen.getByRole('radio', { name: 'Banco Dois' })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.selectOptions(screen.getByLabelText('Box'), bruno.id);
+    await userEvent.selectOptions(screen.getByLabelText('Box'), ana.id);
+    expect(screen.getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'true');
+  });
+
   it('sem nenhuma box real, avisa para criar uma', async () => {
     await limparDb();
     await useApp.getState().iniciar(); // só a box "casa", autocriada

@@ -192,11 +192,9 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const mostrarGrupos = aVista.length > 0 && parceladas.length > 0;
 
   return (
-    // A TelaCartao mostra um cartão por vez; o nome dele abre o bloco, acima do seletor de mês.
     <div className="tela">
-      {/* O nome do cartão abre o bloco, acima do seletor de mês: na visão casa, com vários
-          cartões, o seletor do segundo ficava entre os dois cards e parecia do de cima. Os dois
-          grudam juntos sob o topo: o mês nunca aparece sem o nome do cartão. */}
+      {/* O nome do cartão abre o bloco, acima do seletor de mês. Os dois grudam juntos sob o topo:
+          o mês nunca aparece sem o nome do cartão. */}
       <div className="barra-fixa">
         <h2 style={{ margin: '2px 0 6px' }}>{cartao.nome}</h2>
         <SeletorMes mes={mes} onMudar={setMes} />
@@ -339,7 +337,9 @@ export default function TelaCartao() {
   const uid = useId();
   if (!dados) return null;
   const ids = boxIdsSelecionadas(dados, boxSel);
-  const cartoes = dados.cartoes.filter((c) => c.ativo && ids.includes(c.boxId));
+  const cartoes = dados.cartoes
+    .filter((c) => c.ativo && ids.includes(c.boxId))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   if (cartoes.length === 0) {
     return (
       <div className="tela">

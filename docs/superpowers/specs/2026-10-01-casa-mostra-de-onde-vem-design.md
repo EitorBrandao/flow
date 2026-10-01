@@ -65,7 +65,7 @@ cartões ativos**. Mostra só a fatura do cartão escolhido.
 ### 4. Lançar pede a box na casa (VB-25, VB-30)
 
 `TelaLancar.tsx`: com `boxSel === 'casa'`, aparece o campo **Box** (`<select>`, primeiro do
-formulário) com as boxes reais — todas menos a `"casa"` — e a opção vazia "Escolha a box…".
+formulário) com as boxes com saldo próprio — todas menos a `"casa"` e as sem saldo próprio — e a opção vazia "Escolha a box…".
 
 - Sem box escolhida, o resto do formulário fica fora de cena e `oQueFalta` diz "Escolha a
   box." O botão Lançar fica desabilitado.
@@ -109,7 +109,7 @@ por box com `.rotulo-grupo`; o saldo por box da Visão usa as mesmas cores e o m
 
 ## Testes
 
-- `SeloBox`: renderiza o nome; sem nome da box, não renderiza.
+- `SeloBox`: renderiza o nome; box inexistente mostra "?".
 - Fila de Hoje e lista do Fluxo: selo na casa, nenhum selo numa box só.
 - Busca do Fluxo casa pelo nome da box só na casa.
 - Saldo por box: soma das linhas = total; box `"casa"` sem lançamento não aparece; numa box só,

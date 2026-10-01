@@ -626,9 +626,9 @@ describe('seletor de cartão', () => {
     const seletor = screen.getByLabelText('Cartão') as HTMLSelectElement;
     expect(within(seletor).getByRole('option', { name: 'Cartão A · ana' })).toBeInTheDocument();
     expect(within(seletor).getByRole('option', { name: 'Cartão B · bruno' })).toBeInTheDocument();
-    // A ordem das opções segue o banco (ids aleatórios): o primeiro é o que aparece de início.
+    // Os cartões vêm ordenados por nome: o primeiro é o que aparece de início.
     const [primeiro, segundo] = Array.from(seletor.options).map((o) => o.textContent!.split(' · ')[0]);
-    expect(new Set([primeiro, segundo])).toEqual(new Set(['Cartão A', 'Cartão B']));
+    expect([primeiro, segundo]).toEqual(['Cartão A', 'Cartão B']);
     expect(screen.getByRole('heading', { name: primeiro })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: segundo })).not.toBeInTheDocument();
 
@@ -638,11 +638,10 @@ describe('seletor de cartão', () => {
   });
 
   it('com um cartão só, não mostra o seletor', async () => {
-    const { ana } = await montarDoisCartoes('ana');
+    await montarDoisCartoes('ana');
     render(<TelaCartao />);
     expect(screen.queryByLabelText('Cartão')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Cartão A' })).toBeInTheDocument();
-    expect(ana.nome).toBe('ana');
   });
 
   it('numa box com 2 cartões, o seletor aparece sem o nome da box', async () => {

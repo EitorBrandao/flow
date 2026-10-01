@@ -36,11 +36,22 @@ export default function TelaLancar() {
     setViagemMarcada(true);
   }, [viagemAtiva?.id ?? null]);
 
+  const naCasa = boxSel === 'casa';
+  // A box "casa" é a que não tem saldo próprio e guarda o histórico compartilhado: não recebe
+  // lançamento novo por aqui. Quem lança na casa escolhe a box de quem pagou.
+  const boxesReais = dados ? dados.boxes.filter((b) => b.nome !== 'casa' && b.saldoInicial !== null) : [];
+  const boxId: string | null = !dados ? null
+    : naCasa ? (boxesReais.some((b) => b.id === boxEscolhidaId) ? boxEscolhidaId : null)
+      : boxSel;
+
   // A sheet Adicionar não renderiza esta tela, então manda o atalho pelo store. A dependência
   // é o rascunho, não a montagem: o + pode ser aberto com a tela Lançar já visível.
   useEffect(() => {
     if (!rascunhoLancar || !dados) return;
-    const cat = dados.categorias.find((c) => c.id === rascunhoLancar.categoriaId);
+    const achada = dados.categorias.find((c) => c.id === rascunhoLancar.categoriaId);
+    // Com a box já definida, só vale categoria dela; na casa sem box escolhida, a categoria
+    // fica guardada e some se a box escolhida depois não for a dela.
+    const cat = achada && (boxId == null || achada.boxId === boxId) ? achada : undefined;
     if (cat) {
       setTipo(cat.tipo);
       setCategoriaId(cat.id);
@@ -53,19 +64,12 @@ export default function TelaLancar() {
       setBancoEscolhido(null);
     }
     setRascunhoLancar(null);
-  }, [rascunhoLancar, dados, hoje, setRascunhoLancar]);
+  }, [rascunhoLancar, dados, hoje, setRascunhoLancar, boxId]);
 
   useEffect(() => () => {
     if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
   }, []);
 
-  const naCasa = boxSel === 'casa';
-  // A box "casa" é a que não tem saldo próprio e guarda o histórico compartilhado: não recebe
-  // lançamento novo por aqui. Quem lança na casa escolhe a box de quem pagou.
-  const boxesReais = dados ? dados.boxes.filter((b) => b.nome !== 'casa') : [];
-  const boxId: string | null = !dados ? null
-    : naCasa ? (boxesReais.some((b) => b.id === boxEscolhidaId) ? boxEscolhidaId : null)
-      : boxSel;
 
   // Trocar de box zera o banco; a categoria só fica se for da box nova.
   useEffect(() => {
@@ -94,7 +98,8 @@ export default function TelaLancar() {
   const boxAtual = dados?.boxes.find((b) => b.id === boxId);
   const avisoSaldo = avisoDataNoSaldo(boxAtual, data);
 
-  const valido = boxId != null && cents > 0 && categoriaId != null && data !== '';
+  const valido = boxId != null && cents > 0 && categoriaId != null && data !== ''
+    && categorias.some((c) => c.id === categoriaId);
 
   // Uma frase por vez, na ordem em que a pessoa preenche — dizer tudo que falta de uma vez
   // vira ruído, e o campo seguinte já vai aparecer sozinho quando o anterior for resolvido.

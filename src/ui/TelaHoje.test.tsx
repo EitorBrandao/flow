@@ -1097,6 +1097,12 @@ describe('saldo por box na casa', () => {
     expect(semEspaco(linha('bruno').textContent)).toContain(semEspaco(formatarSaldo(50000)));
   });
 
+  it('na casa, a box "casa" sem lançamento não aparece entre as linhas de saldo', async () => {
+    await montar('casa');
+    expect(screen.getByText('ana')).toBeInTheDocument();
+    expect(screen.queryByText('casa')).not.toBeInTheDocument();
+  });
+
   it('numa box só, o card não mostra linhas por box', async () => {
     await montar('ana');
     expect(screen.queryByText('bruno')).not.toBeInTheDocument();

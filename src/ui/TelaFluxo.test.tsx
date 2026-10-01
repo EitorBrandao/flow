@@ -812,6 +812,17 @@ describe('selo da box na lista', () => {
     expect(within(aluguel).getByText('bruno')).toHaveClass('badge');
   });
 
+  it('na casa, lançamento antigo na box "casa" aparece com o selo "casa"', async () => {
+    await montar('casa');
+    const casa = useApp.getState().dados!.boxes.find((b) => b.nome === 'casa')!;
+    const catC = await repo.salvarCategoria({ boxId: casa.id, nome: 'condomínio', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({ boxId: casa.id, categoriaId: catC.id, data: '2026-07-02', valor: 30000, status: 'efetivo' });
+    await act(async () => { await useApp.getState().recarregar(); });
+    act(() => useApp.setState({ hoje: '2026-07-02' }));
+    const item = (await screen.findByText(/condomínio/)).closest('.item') as HTMLElement;
+    expect(within(item).getByText('casa')).toHaveClass('badge');
+  });
+
   it('numa box só, não mostra selo de box', async () => {
     await montar('ana');
     const mercado = (await screen.findByText(/mercado/)).closest('.item') as HTMLElement;
