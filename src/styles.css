@@ -193,6 +193,7 @@ table.tabela td.valor-ganho, table.tabela td.valor-gasto, table.tabela td.valor-
   padding: 12px 14px; border-radius: 12px; font-size: 14px;
 }
 .aviso-urgente { background: var(--neg-bg); color: var(--neg); }
+.aviso-sucesso { background: var(--pos-bg); color: var(--pos); }
 .cabecalho-dia {
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; padding: 10px 4px 4px;

@@ -1,0 +1,1 @@
+- Lançar: a confirmação "Lançado ✓" agora é verde, não âmbar
