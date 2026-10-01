@@ -285,7 +285,7 @@ export default function Importar() {
               onEscolher={(f) => void onArquivoEscolhido(f)}
             />
             <p className="sub">
-              Escolha o CSV do extrato do Nubank ou o PDF da fatura do Santander — outros
+              Escolha o CSV do extrato do Nubank, o CSV da fatura do cartão Nubank ou o PDF da fatura do Santander — outros
               bancos ainda não são lidos. Nada é gravado até você conferir e confirmar.
             </p>
           </>
@@ -299,8 +299,7 @@ export default function Importar() {
                     ? 'Lendo arquivo…'
                     : adapterAtual
                       ? `Reconhecido: ${adapterAtual.rotulo}`
-                      : 'Formato não reconhecido. Esperado: o CSV do extrato da conta Nubank '
-                        + 'ou o PDF da fatura do Santander.'}
+                      : 'Formato não reconhecido. Esperado: o CSV do extrato da conta Nubank, o CSV da fatura do cartão Nubank ou o PDF da fatura do Santander.'}
                 </div>
               </div>
               {adapterAtual && (

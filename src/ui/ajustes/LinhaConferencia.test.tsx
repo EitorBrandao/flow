@@ -140,10 +140,10 @@ describe('LinhaConferencia', () => {
   });
 
   it('mudar a data chama onCorrigirData; escolher a estimada apaga a correção', async () => {
-    const { onCorrigirData } = renderLinha(ITEM_ESTIMADO);
+    const { onCorrigirData } = renderLinha(ITEM_ESTIMADO, dadosVazios(), '2026-06-10');
     await userEvent.click(screen.getByRole('button', { name: 'Corrigir compra' }));
-    fireEvent.change(screen.getByLabelText('Data da compra'), { target: { value: '2026-06-10' } });
-    expect(onCorrigirData).toHaveBeenLastCalledWith('2026-06-10');
+    fireEvent.change(screen.getByLabelText('Data da compra'), { target: { value: '2026-05-30' } });
+    expect(onCorrigirData).toHaveBeenLastCalledWith(undefined);
   });
 
   it('com data corrigida: some "(estimada)" e aparece "Voltar para a data estimada"', async () => {

@@ -395,4 +395,28 @@ describe('ListaConferencia — aviso de datas estimadas (Nubank)', () => {
 
     expect(screen.queryByText(/datas? est(á|ão) estimadas?/)).not.toBeInTheDocument();
   });
+
+  it('item com data corrigida para uma data posterior aparece depois na lista ordenada', () => {
+    const dados = dadosVazios();
+    const leitura: LeituraAdapter = { brutos: [], linhasIgnoradas: 0, avisos: [] };
+
+    const { container } = render(
+      <ListaConferencia
+        leitura={leitura} itens={[ESTIMADO('a'), ESTIMADO('b')]} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{ a: { estado: 'novo', data: '2026-06-10' } }} onCorrigirData={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro={null} onFiltroChange={vi.fn()}
+      />,
+    );
+
+    const descricoes = Array.from(container.querySelectorAll('.item')).map((el) => el.textContent ?? '');
+    const indiceA = descricoes.findIndex((t) => t.includes('Loja a'));
+    const indiceB = descricoes.findIndex((t) => t.includes('Loja b'));
+    expect(indiceA).toBeGreaterThanOrEqual(0);
+    expect(indiceB).toBeGreaterThanOrEqual(0);
+    expect(indiceB).toBeLessThan(indiceA); // b (data estimada 30/05) antes de a (corrigida para 10/06)
+  });
 });

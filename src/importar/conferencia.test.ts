@@ -378,6 +378,11 @@ describe('conferir', () => {
       expect(conferir([brutoEstimado()], d, OPCOES)[0].estado).toBe('novo');
     });
 
+    it('parcela com data estimada casa na folga de 2 dias antes da mínima', () => {
+      const d = dadosCom([], [compraCartao({ id: 'folga', data: '2026-05-28', valorTotal: 100000, parcelas: 10 })]);
+      expect(conferir([brutoEstimado()], d, OPCOES)[0].estado).toBe('confere');
+    });
+
     it('parcela com data estimada não casa 3 dias antes da mínima', () => {
       const d = dadosCom([], [compraCartao({ id: 'antes', data: '2026-05-27', valorTotal: 100000, parcelas: 10 })]);
       expect(conferir([brutoEstimado()], d, OPCOES)[0].estado).toBe('novo');

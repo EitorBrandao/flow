@@ -85,8 +85,12 @@ export default function ListaConferencia({
   // `chave` já é a identidade estável do item (ver `ItemComContexto`), então basta ordenar uma
   // cópia por data — sem precisar remontar nenhum índice depois.
   const ordenados = useMemo(() => (
-    [...itensVisiveis].sort((a, b) => dataDoItem(a.item, dados).localeCompare(dataDoItem(b.item, dados)))
-  ), [itensVisiveis, dados]);
+    [...itensVisiveis].sort((a, b) => {
+      const dataA = dataCorrigidaValida(a.item, dataEfetiva(a.item, datasCorrigidas[a.chave])) ?? dataDoItem(a.item, dados);
+      const dataB = dataCorrigidaValida(b.item, dataEfetiva(b.item, datasCorrigidas[b.chave])) ?? dataDoItem(b.item, dados);
+      return dataA.localeCompare(dataB);
+    })
+  ), [itensVisiveis, dados, datasCorrigidas]);
 
   // Parcelas do Nubank com data ainda estimada que vão ser gravadas: o aviso pede ao usuário
   // para corrigir antes de confirmar. Conta a lista inteira, não só os visíveis no filtro.
