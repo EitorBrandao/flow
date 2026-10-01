@@ -1,3 +1,0 @@
-- Na visão casa, cada lançamento mostra a box de origem.
-  - Vale para os Pendentes da Hoje e para a lista do Fluxo; a busca do Fluxo acha pelo nome da box.
-- O card Saldo hoje da casa mostra o saldo de cada box.
