@@ -1,0 +1,2 @@
+- Ajustes, Boxes: a box que o app abre ganha o selo "padrão", mesmo sem você ter escolhido uma
+- Ajustes, Boxes: o exemplo do campo de nome deixou de sugerir nome de banco
