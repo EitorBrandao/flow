@@ -1,3 +1,0 @@
-- Cada cenário do Simular só existe na visão em que foi criado: a casa ou uma box.
-  - O gráfico e a projeção de cada visão somam só os cenários dela.
-  - Os cenários que já existiam passaram a ser da casa.

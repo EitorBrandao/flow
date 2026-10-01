@@ -3,6 +3,19 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.61.0] - 2026-10-01
+
+### Alterado
+
+- Com casa no topo, Bancos pede para escolher uma box.
+- Ao importar um extrato com casa no topo, nenhuma box vem marcada como destino.
+- Cada cenário do Simular só existe na visão em que foi criado: a casa ou uma box.
+  - O gráfico e a projeção de cada visão somam só os cenários dela.
+  - Os cenários que já existiam passaram a ser da casa.
+- Com casa no topo, Hoje → Conferir faz uma conferência por box.
+  - Box com bancos mostra os bancos; box sem bancos mostra o saldo da própria box.
+  - A diferença só aparece quando toda box tem saldo informado.
+
 ## [0.60.0] - 2026-10-01
 
 ### Alterado
