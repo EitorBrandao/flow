@@ -387,6 +387,15 @@ it('substituirTudo troca completamente os dados e reseta mudancasDesdeBackup', a
   expect(dados.config.mudancasDesdeBackup).toBe(false);
 });
 
+it('substituirTudo com backup que tem modos grava os modos do backup', async () => {
+  await boxECategoria();
+  const atuais = await repo.carregarTudo();
+  await repo.substituirTudo({ ...atuais, config: { ...atuais.config, modos: { hoje: 'simples', cartao: 'avancado' } } });
+  expect((await repo.carregarTudo()).config.modos).toEqual({ hoje: 'simples', cartao: 'avancado' });
+  await repo.substituirTudo({ ...atuais, config: { ...atuais.config, modos: undefined } });
+  expect((await repo.carregarTudo()).config.modos).toBeUndefined();
+});
+
 it('substituirTudo pode deixar o marcador de mudanças ligado, para o modo mesclar', async () => {
   await boxECategoria();
   const atuais = await repo.carregarTudo();
