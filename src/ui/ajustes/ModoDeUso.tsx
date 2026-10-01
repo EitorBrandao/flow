@@ -51,7 +51,7 @@ export default function ModoDeUso() {
         {TELAS_MODO.map((tela) => {
           const modo = dados ? modoDe(dados.config, tela) : 'avancado';
           return (
-            <div className="item item-coluna" key={tela} style={{ background: 'var(--surface2)' }}>
+            <div className="item item-coluna item-elevado" key={tela}>
               <div className="linha">
                 <strong>{NOMES[tela]}</strong>
                 <span className="badge">{ROTULO_MODO[modo]}</span>

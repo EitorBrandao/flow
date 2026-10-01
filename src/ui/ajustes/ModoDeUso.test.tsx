@@ -39,7 +39,7 @@ describe('ModoDeUso', () => {
     await useApp.getState().iniciar();
     render(<ModoDeUso />);
     for (const r of ROTULOS) {
-      expect(bloco(r).style.background).toBe('var(--surface2)');
+      expect(bloco(r).classList.contains('item-elevado')).toBe(true);
     }
   });
 
