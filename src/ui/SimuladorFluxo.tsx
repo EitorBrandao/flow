@@ -39,7 +39,7 @@ export default function SimuladorFluxo() {
       boxes: dados.boxes, categorias: dados.categorias, lancamentos: [...dados.lancamentos, ...extras],
       cenariosLigados: ligados, horizonte,
     }), hoje, p.ate);
-    const ligados = cenariosLigados(dados);
+    const ligados = cenariosLigados(dados, boxSel);
     const combinado = resumo(ligados);
     const porCenario = new Map<ID, LinhaMes[]>(dados.cenarios.map((c) => [c.id, resumo(new Set([c.id]))]));
     const sem = combinado.map((l) => l.sem);

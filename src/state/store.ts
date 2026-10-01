@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import * as repo from '../db/repo';
+import { cenarioDaVisao } from '../domain/cenarios';
 import { hojeISO } from '../domain/dates';
 import { categoriasFaturaIds } from '../domain/fatura';
 import { categoriasTransferenciaIds } from '../domain/transferencia';
@@ -146,9 +147,10 @@ export function boxIdConcreta(boxSel: BoxSelecionada): ID | null {
   return boxSel === 'casa' ? null : boxSel;
 }
 
-/** Ids dos cenários ligados (mostrados na projeção). */
-export function cenariosLigados(dados: Dados): Set<ID> {
-  return new Set(dados.cenarios.filter((c) => c.ligado).map((c) => c.id));
+/** Ids dos cenários ligados da visão atual (mostrados na projeção). Cada cenário só existe na
+ *  visão que o criou: a casa soma só os da casa, e cada box só os dela. */
+export function cenariosLigados(dados: Dados, boxSel: BoxSelecionada): Set<ID> {
+  return new Set(dados.cenarios.filter((c) => c.ligado && cenarioDaVisao(c, boxSel)).map((c) => c.id));
 }
 
 /** Estado do cartão de primeiro uso: se precisa e por quê. */

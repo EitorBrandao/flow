@@ -26,7 +26,7 @@ async function preparar() {
 
 async function cenarioCom(nome: string, ligado: boolean, lanc: { categoriaId: string; boxId: string; data: string; valor: number; nota?: string }) {
   const agora = agoraISO();
-  const c = { id: novoId(), nome, ligado, criadoEm: agora, alteradoEm: agora };
+  const c = { id: novoId(), nome, ligado, escopo: lanc.boxId, criadoEm: agora, alteradoEm: agora };
   await repo.salvarCenario(c);
   await repo.salvarLancamento({ ...lanc, status: 'previsto', cenarioId: c.id });
   await useApp.getState().recarregar();

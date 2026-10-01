@@ -3208,11 +3208,6 @@ Sem banco
 R$ 1.500,00
 qui. 15/10/2026 · hoje
 R$ 34.445,70
-transporte
-cenário
-Parcela hipotética de financiamento de carro
-Sem banco
-R$ 2.500,00
 qui. 05/11/2026
 R$ 39.405,80
 sigma

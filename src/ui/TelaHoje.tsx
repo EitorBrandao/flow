@@ -363,7 +363,7 @@ export default function TelaHoje() {
   const [valorCorrigido, setValorCorrigido] = useState(0);
   const [dataCorrigida, setDataCorrigida] = useState<ISODate>(hoje);
   const ids = dados ? boxIdsSelecionadas(dados, boxSel) : [];
-  const ligados = dados ? cenariosLigados(dados) : new Set<string>();
+  const ligados = dados ? cenariosLigados(dados, boxSel) : new Set<string>();
 
   const serie = useMemo(
     () => dados ? projetarBoxes(ids, {

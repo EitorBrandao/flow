@@ -156,6 +156,8 @@ export interface AjusteFechamento extends Entidade {
 export interface Cenario extends Entidade {
   nome: string;
   ligado: boolean;
+  /** Visão dona do cenário: o id de uma box ou 'casa'. Ausente vale 'casa' (cenários criados antes do campo). */
+  escopo?: string;
   /** Rascunho do Simular simples: some ao sair da tela e a cada `iniciar()`. "Guardar" remove o campo. */
   rascunho?: true;
 }
