@@ -566,6 +566,7 @@ table.tabela th:first-child, table.tabela td:first-child {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
 .conferencia-bancos .linha-banco > span { color: var(--muted); font-size: 14px; }
+.conferencia-bancos .linha-banco input { padding: 11px 12px; border: none; border-radius: 12px; background: var(--surface2); min-height: 44px; }
 .conferencia-bancos .total,
 .conferencia-saldo .total {
   display: flex; align-items: baseline; justify-content: space-between;
