@@ -296,8 +296,10 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
 
         {abaCartao === 'conferencia' && (
           <div style={{ marginTop: 12 }}>
-            <BlocoConferencia key={`${cartao.id}:${mes}`} cartao={cartao} mes={mes} totalCent={fatura.totalCent} />
-            <BlocoAjusteFechamento key={`${cartao.id}:${mesFechamento}`} cartao={cartao} mesFechamento={mesFechamento} />
+            {/* Prefixos distintos: com fechamento no dia 1, `mes` e `mesFechamento` coincidem, e
+                chaves iguais entre irmãos faziam o React duplicar os blocos a cada troca de mês. */}
+            <BlocoConferencia key={`conferencia:${cartao.id}:${mes}`} cartao={cartao} mes={mes} totalCent={fatura.totalCent} />
+            <BlocoAjusteFechamento key={`fechamento:${cartao.id}:${mesFechamento}`} cartao={cartao} mesFechamento={mesFechamento} />
           </div>
         )}
 

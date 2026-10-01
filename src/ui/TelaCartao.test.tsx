@@ -104,6 +104,33 @@ it('conferência mostra a diferença e a caixa troca o valor do previsto', async
   } finally { vi.useRealTimers(); }
 });
 
+it('cartão que fecha no dia 1 mantém um só bloco de conferência ao trocar de mês', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  const erro = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    // Fechamento no dia 1: o mês do fechamento é o mesmo do vencimento (mesma chave de mês).
+    await repo.salvarCartao({ boxId: box.id, nome: 'Santander', diaFechamento: 1, diaVencimento: 8 }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    render(<TelaCartao />);
+
+    await abrirAba(/Conferência/);
+    for (let i = 0; i < 3; i++) {
+      await userEvent.click(screen.getByRole('button', { name: 'Mês seguinte' }));
+      expect(screen.getAllByLabelText('Valor no app do banco')).toHaveLength(1);
+      expect(screen.getAllByLabelText('Fechou dia')).toHaveLength(1);
+    }
+    expect(erro.mock.calls.some((c) => String(c[0]).includes('same key'))).toBe(false);
+  } finally {
+    erro.mockRestore();
+    vi.useRealTimers();
+  }
+});
+
 it('conferência com itens acima do banco mostra a diferença positiva, em verde', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
