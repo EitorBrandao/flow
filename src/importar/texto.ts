@@ -1,6 +1,6 @@
 /** Sinal de UTF-8 decodificado duas vezes: "Ã" ou "Â" seguidos de um caractere de
  *  continuação (U+0080 a U+00BF). É como "é" vira "Ã©". */
-const UTF8_DUPLO = /[ÂÃ][\u0080-¿]/;
+const UTF8_DUPLO = /[\u00c2\u00c3][\u0080-\u00bf]/;
 
 /**
  * Desfaz o UTF-8 duplo: cada caractere vira um byte, e os bytes são lidos de novo como UTF-8.

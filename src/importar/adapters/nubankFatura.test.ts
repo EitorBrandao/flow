@@ -10,11 +10,11 @@ function ler(...linhas: string[]) {
 describe('nubankFatura.detectar', () => {
   it('reconhece o cabeçalho, com BOM, espaços e maiúsculas', () => {
     expect(nubankFatura.detectar('x.csv', CAB)).toBe(true);
-    expect(nubankFatura.detectar('x.csv', '﻿Date,Title,Amount  \n2026-08-01,A,"1,00"')).toBe(true);
+    expect(nubankFatura.detectar('x.csv', '\ufeffDate,Title,Amount  \n2026-08-01,A,"1,00"')).toBe(true);
   });
 
   it('recusa o extrato da conta e outro CSV', () => {
-    expect(nubankFatura.detectar('x.csv', 'Data,Valor,Identificador,Descrição')).toBe(false);
+    expect(nubankFatura.detectar('x.csv', 'Data,Valor,Identificador,Descri\u00e7\u00e3o')).toBe(false);
     expect(nubankFatura.detectar('x.csv', 'date,title,amount,extra')).toBe(false);
     expect(nubankFatura.detectar('x.pdf', '%PDF-1.4')).toBe(false);
   });
@@ -70,8 +70,8 @@ describe('lerNubankFatura', () => {
   });
 
   it('parcela no formato do Pix no Crédito ("- 2/5")', () => {
-    const r = ler('2026-07-30,Pix no Crédito - Fulano de Tal - 2/5,"35,00"');
-    expect(r.brutos[0].descricao).toBe('Pix no Crédito - Fulano de Tal');
+    const r = ler('2026-07-30,Pix no Cr\u00e9dito - Fulano de Tal - 2/5,"35,00"');
+    expect(r.brutos[0].descricao).toBe('Pix no Cr\u00e9dito - Fulano de Tal');
     expect(r.brutos[0].parcela).toEqual({ n: 2, total: 5 });
     expect(r.brutos[0].dataEstimada).toEqual({ min: '2026-06-30', max: '2026-07-29' });
   });
@@ -84,7 +84,7 @@ describe('lerNubankFatura', () => {
   });
 
   it('crédito de compra: estorno, com a descrição só o nome da loja', () => {
-    const r = ler('2026-09-18,"Crédito de ""Loja Gama""","- 20,00"');
+    const r = ler('2026-09-18,"Cr\u00e9dito de ""Loja Gama""","- 20,00"');
     expect(r.brutos[0]).toEqual({
       data: '2026-09-18', valorCent: 2000, descricao: 'Loja Gama', fonte: 'cartao',
       natureza: 'estornoCartao',
@@ -92,17 +92,17 @@ describe('lerNubankFatura', () => {
   });
 
   it('outro valor negativo é estorno; IOF positivo é gasto comum', () => {
-    const r = ler('2026-08-12,Ajuste a crédito,"- 5,00"', '2026-08-12,IOF de compra internacional,"1,10"');
+    const r = ler('2026-08-12,Ajuste a cr\u00e9dito,"- 5,00"', '2026-08-12,IOF de compra internacional,"1,10"');
     expect(r.brutos[0].natureza).toBe('estornoCartao');
     expect(r.brutos[1].natureza).toBeUndefined();
     expect(r.brutos[1].valorCent).toBe(-110);
   });
 
   it('corrige acentos em UTF-8 duplo', async () => {
-    const texto = [CAB, '2026-07-30,Pix no CrÃ©dito - Fulano - 2/2,"10,00"'].join('\n');
+    const texto = [CAB, '2026-07-30,Pix no Cr\u00c3\u00a9dito - Fulano - 2/2,"10,00"'].join('\n');
     const bytes = new TextEncoder().encode(texto);
     const r = await nubankFatura.ler(bytes.buffer);
-    expect(r.brutos[0].descricao).toBe('Pix no Crédito - Fulano');
+    expect(r.brutos[0].descricao).toBe('Pix no Cr\u00e9dito - Fulano');
   });
 
   it('linha ilegível vai para as não reconhecidas', () => {

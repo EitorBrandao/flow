@@ -11,10 +11,10 @@ const CABECALHO = 'date,title,amount';
 const PARCELA = /\s+-\s+(?:Parcela\s+)?(\d{1,2})\/(\d{1,2})$/i;
 
 /** Crédito de uma compra: `Crédito de "<loja>"`. "é" com escape. */
-const CREDITO_DE = /^Cr(?:é|e)dito de "(.+)"$/i;
+const CREDITO_DE = /^Cr(?:\u00e9|e)dito de "(.+)"$/i;
 
 function ehCabecalho(linha: string): boolean {
-  return linha.replace(/^﻿/, '').trim().toLowerCase() === CABECALHO;
+  return linha.replace(/^\ufeff/, '').trim().toLowerCase() === CABECALHO;
 }
 
 /**
@@ -101,7 +101,7 @@ export function lerNubankFatura(texto: string): LeituraAdapter {
 
 export const nubankFatura: Adapter = {
   id: 'nubank-fatura-csv',
-  rotulo: 'Nubank — fatura do cartão (CSV)',
+  rotulo: 'Nubank \u2014 fatura do cart\u00e3o (CSV)',
   detectar: (_nome, inicio) => ehCabecalho(inicio.split('\n')[0] ?? ''),
   ler: async (conteudo) => {
     const texto = corrigirUtf8Duplo(new TextDecoder('utf-8').decode(conteudo));
