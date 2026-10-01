@@ -1,3 +1,0 @@
-- Importar e conferir lê a fatura do cartão Nubank em CSV.
-  - A data da compra das parcelas antigas é estimada pelo número da parcela, e dá para corrigi-la antes de confirmar.
-  - A parcela casa com a compra já cadastrada mesmo sem a data exata.
