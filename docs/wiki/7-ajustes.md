@@ -28,7 +28,7 @@ CRUD das regras que geram previstos automaticamente (veja [Recorrência](#concei
 
 ## Boxes
 
-Toque no lápis de cada box para editar nome, saldo inicial e data; crie boxes novas pelo formulário no topo; escolha a box padrão que abre ao iniciar o app.
+Toque no lápis de cada box para editar nome, saldo inicial e data; crie boxes novas pelo formulário no topo; escolha a box padrão que abre ao iniciar o app. Com duas ou mais boxes com saldo próprio, a que abre ao iniciar leva o selo "padrão", mesmo que você nunca tenha escolhido uma.
 
 Saldo inicial negativo é aceito (digitar com "−" na frente). Uma box sem saldo próprio (como a casa) serve aos gastos divididos, e escolher "casa" no topo soma todas as suas boxes. Ela não pode virar padrão.
 

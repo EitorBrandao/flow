@@ -1,4 +1,4 @@
-- Hoje, Conferir: novo botão "Transferir entre bancos" para mover saldo entre bancos da mesma box
-- Hoje, Conferir: formulário de transferência mostra saldo calculado de cada banco
-- Hoje, Conferir: validação impede transferência para o mesmo banco
-- Hoje, Conferir: resumo da transferência mostra saldos antes e depois
+- Hoje, Conferir: o botão "Transferir entre bancos" fica abaixo da lista e substitui o ↔ de cada linha
+- Hoje, Conferir: o formulário de transferência mostra o saldo calculado de cada banco
+- Hoje, Conferir: não deixa transferir de um banco para ele mesmo
+- Hoje, Conferir: depois de transferir, o resumo mostra o saldo de cada banco, antes e depois

@@ -1,1 +1,1 @@
-- Fluxo: a linha do lançamento não repete mais a categoria quando a nota tem o mesmo texto
+- Fluxo, Hoje e Recorrências: a linha do lançamento não repete mais a categoria quando a nota tem o mesmo texto

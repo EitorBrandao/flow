@@ -21,7 +21,7 @@ Tela inicial. Foco em "onde estou agora" e no que precisa de atenção. Três ab
 
 Cada linha de banco tem um botão de sinal: informe negativa para contar no cheque especial. Salvar grava só os bancos cujo valor você realmente mudou — encostar num campo e desistir não mexe no que já estava lá.
 
-Com dois ou mais bancos na box, cada linha ganha também o botão ↔: abre um formulário curto para transferir saldo a outro banco da mesma box (destino, valor, data). Confirmar cria um lançamento de saída no banco de origem e um de entrada no destino, visíveis na aba Fluxo — sem contar como ganho ou gasto real em Análises, já que é só redistribuição do seu próprio dinheiro. O saldo calculado dos dois bancos, em Ajustes → Bancos, muda por eles. Excluir a transferência (pelo Fluxo) apaga os dois lançamentos. Numa transferência feita antes desta versão, o saldo informado dos bancos já tinha sido ajustado e não volta sozinho: corrija em Ajustes → Bancos.
+Com dois ou mais bancos na box, aparece o botão "Transferir entre bancos", abaixo da lista. Ele abre um formulário curto: você escolhe o banco de origem ("De") e o de destino ("Para"), e o app mostra o saldo calculado de cada um. Informe valor e data. Os dois bancos precisam ser diferentes: com o mesmo banco nos dois campos, o botão de confirmar fica desligado e o app avisa. Depois de confirmar, o app mostra o saldo de cada banco, antes e depois da transferência. Com "casa" selecionada não há transferência: escolha uma box. Confirmar cria um lançamento de saída no banco de origem e um de entrada no destino, visíveis na aba Fluxo — sem contar como ganho ou gasto real em Análises, já que é só redistribuição do seu próprio dinheiro. O saldo calculado dos dois bancos, em Ajustes → Bancos, muda por eles. Excluir a transferência (pelo Fluxo) apaga os dois lançamentos. Numa transferência feita antes desta versão, o saldo informado dos bancos já tinha sido ajustado e não volta sozinho: corrija em Ajustes → Bancos.
 
 **Transferência entre bancos — obrigatórios:** banco de destino, valor. **Tem padrão:** data (hoje).
 
@@ -36,7 +36,7 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 - Data padrão hoje; nota opcional; caixa "marcar como previsto".
 - Com dois ou mais bancos na box, aparece o campo **Banco**, já marcado no banco padrão. Toque em outro para trocar; depois de lançar, ele volta ao padrão.
 - Data futura vira previsto automaticamente mesmo sem marcar a caixa.
-- Ao salvar, mostra "Lançado ✓" por alguns segundos e limpa o formulário (mantendo a box e o tipo selecionados).
+- Ao salvar, mostra "Lançado ✓", em verde, por alguns segundos e limpa o formulário (mantendo a box e o tipo selecionados).
 - Tocar no (+) mostra antes uma faixa de atalhos para o que você mais lança; cada um já traz a categoria, o destino (box ou cartão) e o valor da última vez — você confere e confirma.
 - Atalho com ponto azul vai para cartão; sem ponto, é lançamento direto na box.
 - Só conta o que você digitou — lançamentos e compras no cartão — nos últimos dois meses; recorrência, fatura e assinatura não viram atalho porque já entram sozinhas.
