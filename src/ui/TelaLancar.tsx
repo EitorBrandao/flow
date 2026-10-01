@@ -68,8 +68,13 @@ export default function TelaLancar() {
     && boxesProprias.some((b) => b.id === dados.config.boxPadraoId)
     ? dados.config.boxPadraoId : null;
   const boxEscolhidaValida = boxesProprias.some((b) => b.id === boxEscolhida) ? boxEscolhida : null;
+  // No Simples nunca cai na box "casa" (sem saldo próprio): sem resolução, fica `null`.
+  const boxSelProprias = boxesProprias.some((b) => b.id === boxSel) ? boxSel : null;
+  const boxUnica = boxesProprias.length === 1 ? boxesProprias[0].id : null;
   const boxId = dados
-    ? (modo === 'simples' ? (boxPadraoId ?? boxEscolhidaValida) : null) ?? boxIdEfetivo(dados, boxSel)
+    ? modo === 'simples'
+      ? (boxPadraoId ?? boxEscolhidaValida ?? boxSelProprias ?? boxUnica)
+      : boxIdEfetivo(dados, boxSel)
     : null;
   const mostraSeletorBox = modo === 'simples' && boxPadraoId == null && boxesProprias.length > 1;
 
@@ -101,7 +106,7 @@ export default function TelaLancar() {
   // Uma frase por vez, na ordem em que a pessoa preenche — dizer tudo que falta de uma vez
   // vira ruído, e o campo seguinte já vai aparecer sozinho quando o anterior for resolvido.
   // Sem valor, nada: o campo Valor já abre em foco, e a frase aparecia antes de qualquer toque.
-  const oQueFalta = modo === 'simples' ? ''
+  const oQueFalta = modo === 'simples' ? (boxId == null && boxesProprias.length > 1 ? 'Escolha a box.' : '')
     : categorias.length === 0
     ? 'Nenhuma categoria nesta box — crie em Ajustes, Categorias.'
     : cents === 0 ? ''

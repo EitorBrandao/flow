@@ -127,6 +127,52 @@ describe('Lançar no modo Simples', () => {
     expect((await db.lancamentos.toArray())[0].boxId).toBe(outra!.id);
   });
 
+  it('padrão apontando para box inexistente, com uma só box própria, grava nela', async () => {
+    const { box } = await prepararSimples({ semPadrao: true });
+    await repo.salvarConfig({ boxPadraoId: novoId() });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    await userEvent.type(screen.getByLabelText('Valor'), '4,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect((await db.lancamentos.toArray())[0].boxId).toBe(box.id);
+  });
+
+  it('sem padrão, uma só box própria e "casa" selecionada, grava na box própria', async () => {
+    const { box } = await prepararSimples({ semPadrao: true });
+    useApp.setState({ boxSel: 'casa' });
+    render(<TelaLancar />);
+    await userEvent.type(screen.getByLabelText('Valor'), '5,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect((await db.lancamentos.toArray())[0].boxId).toBe(box.id);
+  });
+
+  it('sem padrão e com duas boxes, sem escolha: Lançar desabilitado até escolher a box', async () => {
+    const { outra } = await prepararSimples({ duasBoxes: true, semPadrao: true });
+    useApp.setState({ boxSel: 'casa' });
+    render(<TelaLancar />);
+    await userEvent.type(screen.getByLabelText('Valor'), '6,00');
+    expect(screen.getByRole('button', { name: 'Lançar' })).toBeDisabled();
+    expect(screen.getByText('Escolha a box.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('radio', { name: 'maria' }));
+    expect(screen.getByRole('button', { name: 'Lançar' })).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect((await db.lancamentos.toArray())[0].boxId).toBe(outra!.id);
+  });
+
+  it('sem padrão, com a box selecionada sendo própria, usa essa box', async () => {
+    const { outra } = await prepararSimples({ duasBoxes: true, semPadrao: true });
+    useApp.setState({ boxSel: outra!.id });
+    render(<TelaLancar />);
+    await userEvent.type(screen.getByLabelText('Valor'), '8,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect((await db.lancamentos.toArray())[0].boxId).toBe(outra!.id);
+  });
+
   it('no modo Avançado todos os campos continuam presentes', async () => {
     const agora = agoraISO();
     const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
