@@ -1,11 +1,11 @@
 import { Fragment, useId, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as repo from '../db/repo';
-import { bancosDaBox, totalDeclaradoCent } from '../domain/bancos';
+import { bancosDaBox, saldoCalculadoBanco, totalDeclaradoCent } from '../domain/bancos';
 import { addDias, formatarDataBR } from '../domain/dates';
 import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../domain/estadoBackup';
 import { classeEfeito, classeSaldo, efeitoNoSaldo, formatarBRL, formatarSaldo } from '../domain/money';
-import type { Banco, Box, ISODate, Lancamento } from '../domain/types';
+import type { Banco, Box, Dados, ISODate, Lancamento } from '../domain/types';
 import { ANTECEDENCIA_PENDENTE_DIAS, pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, estadoPrimeiroUso, useApp } from '../state/store';
 import BalanceChart from './BalanceChart';
@@ -106,31 +106,78 @@ interface GrupoBancos { box: Box | null; itens: Banco[] }
  *  criando os dois lançamentos ligados; o saldo calculado dos bancos muda por eles
  *  (`repo.transferirEntreBancos`). Só aparece quando a box tem 2+ bancos — com um banco só não
  *  há para onde transferir. */
-function FormTransferencia({ bancoOrigem, destinos, hoje, onFeito, onCancelar }: {
-  bancoOrigem: Banco;
-  destinos: Banco[];
+function FormTransferencia({ bancos, originemId, hoje, dados, onFeito, onCancelar, onSucesso }: {
+  bancos: Banco[];
+  originemId: string;
   hoje: ISODate;
+  dados: Dados;
   onFeito: () => Promise<void>;
   onCancelar: () => void;
+  onSucesso: (res: { bancoOrigemNome: string; bancoOrigemAntes: number; bancoOrigemDepois: number; bancoDestinoNome: string; bancoDestinoAntes: number; bancoDestinoDepois: number }) => void;
 }) {
-  const [destinoId, setDestinoId] = useState(destinos[0]?.id ?? '');
+  const { recarregar } = useApp();
+  const [originId, setOriginId] = useState(originemId);
+  const [destinoId, setDestinoId] = useState(
+    bancos.find((b) => b.id !== originId)?.id ?? ''
+  );
   const [valor, setValor] = useState(0);
   const [data, setData] = useState<ISODate>(hoje);
   const uid = useId();
 
+  const bancoOrigemObj = bancos.find((b) => b.id === originId);
+  const bancoDestinoObj = bancos.find((b) => b.id === destinoId);
+
+  const ehMesmoBanco = originId === destinoId || !destinoId;
+  const valorValido = valor > 0;
+  const podeConfirmar = valorValido && !ehMesmoBanco;
+
   async function confirmar() {
-    if (valor <= 0 || !destinoId) return;
-    await repo.transferirEntreBancos(bancoOrigem.id, destinoId, valor, data);
+    if (!podeConfirmar) return;
+    const bancoOrigemAntes = saldoCalculadoBanco(bancoOrigemObj!, dados);
+    const bancoDestinoAntes = saldoCalculadoBanco(bancoDestinoObj!, dados);
+
+    await repo.transferirEntreBancos(originId, destinoId, valor, data);
+    await recarregar();
+
+    const dadosAtualizados = useApp.getState().dados;
+    const bancoOrigemDepois = saldoCalculadoBanco(bancoOrigemObj!, dadosAtualizados);
+    const bancoDestinoDepois = saldoCalculadoBanco(bancoDestinoObj!, dadosAtualizados);
+
+    onSucesso({
+      bancoOrigemNome: bancoOrigemObj!.nome,
+      bancoOrigemAntes,
+      bancoOrigemDepois,
+      bancoDestinoNome: bancoDestinoObj!.nome,
+      bancoDestinoAntes,
+      bancoDestinoDepois
+    });
     await onFeito();
   }
 
   return (
     <div className="item item-coluna">
-      <div className="campo">
-        <label htmlFor={`${uid}-destino`}>Transferir de {bancoOrigem.nome} para</label>
-        <select id={`${uid}-destino`} value={destinoId} onChange={(e) => setDestinoId(e.target.value)}>
-          {destinos.map((d) => <option key={d.id} value={d.id}>{d.nome}</option>)}
-        </select>
+      <div className="linha">
+        <div className="campo cresce">
+          <label htmlFor={`${uid}-de`}>De</label>
+          <select id={`${uid}-de`} value={originId} onChange={(e) => setOriginId(e.target.value)}>
+            {bancos.map((b) => <option key={b.id} value={b.id}>{b.nome}</option>)}
+          </select>
+          {bancoOrigemObj && (
+            <p className="sub" style={{ margin: '4px 0 0' }}>{formatarSaldo(saldoCalculadoBanco(bancoOrigemObj, dados))}</p>
+          )}
+        </div>
+      </div>
+      <div className="linha">
+        <div className="campo cresce">
+          <label htmlFor={`${uid}-para`}>Para</label>
+          <select id={`${uid}-para`} value={destinoId} onChange={(e) => setDestinoId(e.target.value)}>
+            <option value="">Escolha um banco</option>
+            {bancos.map((b) => <option key={b.id} value={b.id}>{b.nome}</option>)}
+          </select>
+          {bancoDestinoObj && (
+            <p className="sub" style={{ margin: '4px 0 0' }}>{formatarSaldo(saldoCalculadoBanco(bancoDestinoObj, dados))}</p>
+          )}
+        </div>
       </div>
       <div className="linha">
         <div className="campo cresce">
@@ -143,14 +190,17 @@ function FormTransferencia({ bancoOrigem, destinos, hoje, onFeito, onCancelar }:
         </div>
       </div>
       <div className="acoes">
-        <button className="botao botao-primario" onClick={confirmar}>Confirmar transferência</button>
+        <button className="botao botao-primario" disabled={!podeConfirmar} onClick={confirmar}>Confirmar transferência</button>
         <button className="botao" onClick={onCancelar}>Cancelar</button>
       </div>
+      {ehMesmoBanco && (
+        <p className="aviso">Escolha dois bancos diferentes.</p>
+      )}
     </div>
   );
 }
 
-function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSalvarBancos, onTransferir }: {
+function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSalvarBancos, onTransferir, dados }: {
   bancos: Banco[];
   boxes: Box[];
   agruparPorBox: boolean;
@@ -158,6 +208,7 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
   hoje: ISODate;
   onSalvarBancos: (mudancas: { id: string; cents: number }[], data: ISODate) => Promise<void>;
   onTransferir: () => Promise<void>;
+  dados: Dados;
 }) {
   const [magnitudes, setMagnitudes] = useState<Record<string, number>>(
     () => Object.fromEntries(bancos.map((b) => [b.id, Math.abs(b.saldoDeclaradoCent ?? 0)])),
@@ -166,7 +217,8 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
     () => Object.fromEntries(bancos.map((b) => [b.id, (b.saldoDeclaradoCent ?? 0) < 0])),
   );
   const editados = useRef<Set<string>>(new Set());
-  const [transferindoDe, setTransferindoDe] = useState<string | null>(null);
+  const [formularioAberto, setFormularioAberto] = useState(false);
+  const [sucesso, setSucesso] = useState<{ bancoOrigemAntes: number; bancoOrigemDepois: number; bancoDestinoAntes: number; bancoDestinoDepois: number } | null>(null);
 
   function mudarValor(id: string, v: number) {
     setMagnitudes((atual) => ({ ...atual, [id]: v }));
@@ -206,42 +258,65 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
         <div key={g.box?.id ?? 'unico'}>
           {agruparPorBox && g.box && <p className="rotulo-grupo">{g.box.nome}</p>}
           {g.itens.map((b) => (
-            <Fragment key={b.id}>
-              <div className={`linha-banco${agruparPorBox ? ' recuo-1' : ''}`}>
-                <span>{b.nome}</span>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <button
-                    type="button" className="botao botao-sinal" aria-label="Alternar sinal (positivo/negativo)"
-                    onClick={() => alternarSinal(b.id)}
-                  >
-                    {negativos[b.id] ? '−' : '+'}
-                  </button>
-                  <CampoValor
-                    id={`banco-${b.id}`} valorCentavos={magnitudes[b.id] ?? 0}
-                    onChange={(v) => mudarValor(b.id, v)}
-                    ariaLabel={b.nome} style={{ width: 110 }}
-                  />
-                  {g.itens.length > 1 && (
-                    <button
-                      type="button" className="botao botao-sinal" aria-label={`Transferir de ${b.nome}`}
-                      onClick={() => setTransferindoDe((atual) => (atual === b.id ? null : b.id))}
-                    >
-                      ↔
-                    </button>
-                  )}
-                </div>
-              </div>
-              {transferindoDe === b.id && (
-                <FormTransferencia
-                  bancoOrigem={b} destinos={g.itens.filter((x) => x.id !== b.id)} hoje={hoje}
-                  onFeito={async () => { setTransferindoDe(null); await onTransferir(); }}
-                  onCancelar={() => setTransferindoDe(null)}
+            <div key={b.id} className={`linha-banco${agruparPorBox ? ' recuo-1' : ''}`}>
+              <span>{b.nome}</span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button
+                  type="button" className="botao botao-sinal" aria-label="Alternar sinal (positivo/negativo)"
+                  onClick={() => alternarSinal(b.id)}
+                >
+                  {negativos[b.id] ? '−' : '+'}
+                </button>
+                <CampoValor
+                  id={`banco-${b.id}`} valorCentavos={magnitudes[b.id] ?? 0}
+                  onChange={(v) => mudarValor(b.id, v)}
+                  ariaLabel={b.nome} style={{ width: 110 }}
                 />
-              )}
-            </Fragment>
+              </div>
+            </div>
           ))}
         </div>
       ))}
+      {!agruparPorBox && bancos.length > 1 && !formularioAberto && !sucesso && (
+        <button className="botao" style={{ alignSelf: 'flex-start', marginTop: 12 }} onClick={() => setFormularioAberto(true)}>
+          Transferir entre bancos
+        </button>
+      )}
+      {formularioAberto && (
+        <FormTransferencia
+          bancos={bancos}
+          originemId={bancos[0]?.id ?? ''}
+          hoje={hoje}
+          dados={dados}
+          onFeito={async () => { setFormularioAberto(false); await onTransferir(); }}
+          onCancelar={() => setFormularioAberto(false)}
+          onSucesso={setSucesso}
+        />
+      )}
+      {sucesso && (
+        <div className="item item-coluna">
+          <p className="aviso aviso-sucesso">Transferência feita ✓</p>
+          <div className="lista" style={{ marginTop: 8 }}>
+            <div className="item">
+              <div className="cresce">{sucesso.bancoOrigemNome} antes</div>
+              <span className={classeSaldo(sucesso.bancoOrigemAntes)}>{formatarSaldo(sucesso.bancoOrigemAntes)}</span>
+            </div>
+            <div className="item">
+              <div className="cresce">{sucesso.bancoOrigemNome} depois</div>
+              <span className={classeSaldo(sucesso.bancoOrigemDepois)}>{formatarSaldo(sucesso.bancoOrigemDepois)}</span>
+            </div>
+            <div className="item">
+              <div className="cresce">{sucesso.bancoDestinoNome} antes</div>
+              <span className={classeSaldo(sucesso.bancoDestinoAntes)}>{formatarSaldo(sucesso.bancoDestinoAntes)}</span>
+            </div>
+            <div className="item">
+              <div className="cresce">{sucesso.bancoDestinoNome} depois</div>
+              <span className={classeSaldo(sucesso.bancoDestinoDepois)}>{formatarSaldo(sucesso.bancoDestinoDepois)}</span>
+            </div>
+          </div>
+          <button className="botao" style={{ marginTop: 12, alignSelf: 'flex-start' }} onClick={() => setSucesso(null)}>Fechar</button>
+        </div>
+      )}
       <div className="total">
         <span>Total informado</span>
         <span className={totalCent != null ? classeSaldo(totalCent) : undefined}>{totalCent != null ? formatarSaldo(totalCent) : '—'}</span>
@@ -420,7 +495,7 @@ export default function TelaHoje() {
           ) : (
             <ConferenciaBancos key={`${boxSel}-${chaveBancos}`} bancos={bancos} boxes={dados.boxes}
               agruparPorBox={boxSel === 'casa'} saldoApp={deHoje?.saldoEfetivo ?? 0} hoje={hoje}
-              onSalvarBancos={salvarSaldosBancos} onTransferir={recarregar} />
+              onSalvarBancos={salvarSaldosBancos} onTransferir={recarregar} dados={dados} />
           )}
           {/* Embaixo, depois do Salvar — mesma posição de todo aviso de validação. */}
           {avisoSalvarBancos && <p className="aviso">{avisoSalvarBancos}</p>}
