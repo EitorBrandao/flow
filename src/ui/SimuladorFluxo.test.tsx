@@ -53,19 +53,25 @@ it('Criar fica desativado com o nome vazio', async () => {
 });
 
 it('resumo combinado: gasto de 300,00 em outubro tira 300,00 de outubro em diante', async () => {
-  const { box, casa } = await preparar();
-  await cenarioCom('Geladeira', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 30000 });
-  render(<SimuladorFluxo />);
-  const resumo = screen.getByRole('region', { name: 'Cenários ligados' });
-  const tabela = within(resumo).getByRole('table');
-  const set = within(linhaDoMes(tabela, 'set/26')).getAllByRole('cell');
-  expect(set[2]).toHaveTextContent('—');
-  const out = within(linhaDoMes(tabela, 'out/26')).getAllByRole('cell');
-  expect(out[1]).toHaveTextContent('700,00');     // com: 100000 − 30000
-  expect(out[2]).toHaveTextContent(/^300,00$/);   // diferença, sem sinal
-  expect(out[2].querySelector('strong')).toHaveClass('valor-gasto');
-  expect(out[3]).toHaveTextContent('1.000,00');   // sem
-  expect(within(resumo).getByText(/segue positivo/)).toBeInTheDocument();
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-09-15T10:00:00'));
+    const { box, casa } = await preparar();
+    await cenarioCom('Geladeira', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 30000 });
+    render(<SimuladorFluxo />);
+    const resumo = screen.getByRole('region', { name: 'Cenários ligados' });
+    const tabela = within(resumo).getByRole('table');
+    const set = within(linhaDoMes(tabela, 'set/26')).getAllByRole('cell');
+    expect(set[2]).toHaveTextContent('—');
+    const out = within(linhaDoMes(tabela, 'out/26')).getAllByRole('cell');
+    expect(out[1]).toHaveTextContent('700,00');     // com: 100000 − 30000
+    expect(out[2]).toHaveTextContent(/^300,00$/);   // diferença, sem sinal
+    expect(out[2].querySelector('strong')).toHaveClass('valor-gasto');
+    expect(out[3]).toHaveTextContent('1.000,00');   // sem
+    expect(within(resumo).getByText(/segue positivo/)).toBeInTheDocument();
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it('saldo negativo: aviso com o mês e o "−" na coluna Com', async () => {
@@ -277,4 +283,84 @@ it('abrir um cenário, minimizar sua tabela, fechar e reabrir mantém a tabela m
   await userEvent.click(botaoAbrir);
   const impacto2 = await screen.findByRole('region', { name: 'Impacto só deste cenário' });
   expect(within(impacto2).queryByRole('table')).not.toBeInTheDocument();
+});
+
+it('padrão mostra de set/2026 até dez/2027', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-09-15T10:00:00'));
+    const { box, casa } = await preparar();
+    await cenarioCom('Gasto', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });
+    render(<SimuladorFluxo />);
+    const tabela = within(screen.getByRole('region', { name: 'Cenários ligados' })).getByRole('table');
+    const trs = within(tabela).getAllByRole('row');
+    const primeiraMes = within(trs[1]).getAllByRole('cell')[0].textContent;
+    const ultimaMes = within(trs[trs.length - 1]).getAllByRole('cell')[0].textContent;
+    expect(primeiraMes).toContain('set/26');
+    expect(ultimaMes).toContain('dez/27');
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('mudar "Ano final" para 2030 acrescenta meses até dez/2030', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-09-15T10:00:00'));
+    const { box, casa } = await preparar();
+    await cenarioCom('Recurso', true, { boxId: box.id, categoriaId: casa.id, data: '2027-03-15', valor: 50000 });
+    render(<SimuladorFluxo />);
+    const selectAnoFinal = screen.getByLabelText('Ano final');
+    await userEvent.selectOptions(selectAnoFinal, '2030');
+    const tabela = within(screen.getByRole('region', { name: 'Cenários ligados' })).getByRole('table');
+    const trs = within(tabela).getAllByRole('row');
+    const ultimaMes = within(trs[trs.length - 1]).getAllByRole('cell')[0].textContent;
+    expect(ultimaMes).toContain('dez/30');
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('uma recorrência mensal de gasto criada por repo.salvarRecorrencia aparece em 2030', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-09-15T10:00:00'));
+    const { box, casa } = await preparar();
+    const rec = { id: novoId(), boxId: box.id, categoriaId: casa.id, valor: 10000, dataInicio: '2026-10-10', diaDoMes: 10, origem: 'manual' as const, ativa: true, parcelas: null, criadoEm: agoraISO(), alteradoEm: agoraISO() };
+    await repo.salvarRecorrencia(rec, '2027-12-31');
+    await useApp.getState().recarregar();
+    render(<SimuladorFluxo />);
+    const selectAnoFinal = screen.getByLabelText('Ano final');
+    await userEvent.selectOptions(selectAnoFinal, '2030');
+    const tabela = within(screen.getByRole('region', { name: 'Cenários ligados' })).getByRole('table');
+    const linhas = within(tabela).getAllByRole('row');
+    const linhaJan30 = linhas.find((tr) => {
+      const cells = within(tr).queryAllByRole('cell');
+      return cells[0]?.textContent?.includes('jan/30');
+    });
+    expect(linhaJan30).toBeDefined();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('mudar "Mês final" avança a tabela', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-09-15T10:00:00'));
+    const { box, casa } = await preparar();
+    await cenarioCom('Mudança', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });
+    render(<SimuladorFluxo />);
+    const tabelaAntes = within(screen.getByRole('region', { name: 'Cenários ligados' })).getByRole('table');
+    const trsAntes = within(tabelaAntes).getAllByRole('row');
+    const qtdAntes = trsAntes.length - 1; // menos header
+    const selectAnoFinal = screen.getByLabelText('Ano final');
+    await userEvent.selectOptions(selectAnoFinal, '2030');
+    const tabelaDepois = within(screen.getByRole('region', { name: 'Cenários ligados' })).getByRole('table');
+    const trsDepois = within(tabelaDepois).getAllByRole('row');
+    const qtdDepois = trsDepois.length - 1; // menos header
+    expect(qtdDepois).toBeGreaterThan(qtdAntes);
+  } finally {
+    vi.useRealTimers();
+  }
 });
