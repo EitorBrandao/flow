@@ -3,7 +3,7 @@
 : efetivo | Lançamento confirmado; entra no saldo real.
 : previsto | Ainda não aconteceu (ou não foi confirmado); entra só na projeção.
 : pendente | [Previsto](#glossario/previsto) cuja data já chegou/passou — espera confirmação na tela Hoje.
-: box casa | Visão consolidada das boxes pessoais + gastos compartilhados; sem saldo próprio, calculada na hora.
+: box casa | Visão consolidada das boxes pessoais + gastos compartilhados; sem saldo próprio, calculada na hora. O Lançar grava na box de quem pagou; recorrências e cenários criados com casa no topo continuam na box casa.
 : cenário | Conjunto de lançamentos hipotéticos, ligável/desligável, para simular "e se?" — veja [Simular](#telas/simular), no Fluxo.
 : fatura | Não fica pronta guardada em lugar nenhum: o app monta ela na hora, a partir das compras do cartão e do ciclo de fechamento.
 : ciclo de fechamento | Janela de datas de compra que cai numa mesma fatura, contada a partir do dia de fechamento do cartão.

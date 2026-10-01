@@ -1,0 +1,2 @@
+- A aba Cartão mostra uma fatura por vez, com um seletor de cartão.
+  - Na visão casa, cada opção traz o nome da box.

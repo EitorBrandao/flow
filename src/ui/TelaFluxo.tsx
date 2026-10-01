@@ -12,6 +12,7 @@ import BalanceChart from './BalanceChart';
 import CampoData from './CampoData';
 import FaturaResumo from './FaturaResumo';
 import LancEditor from './LancEditor';
+import SeloBox from './SeloBox';
 import SeletorFiltroBanco from './SeletorFiltroBanco';
 import SimuladorFluxo from './SimuladorFluxo';
 import TransferenciaSheet from './TransferenciaSheet';
@@ -67,6 +68,8 @@ export default function TelaFluxo() {
   const nomeCat = (id: string) => dados.categorias.find((c) => c.id === id)?.nome ?? '?';
   const tipoCat = (id: string) => dados.categorias.find((c) => c.id === id)?.tipo ?? 'gasto';
   const nomeCatCartao = (id: string) => dados.categoriasCartao.find((c) => c.id === id)?.nome ?? '?';
+  const naCasa = boxSel === 'casa';
+  const nomeBox = (id: string) => dados.boxes.find((b) => b.id === id)?.nome ?? '?';
   const q = busca.trim().toLowerCase();
   const buscaAtiva = q.length > 0;
   const dataAtiva = dataDe.length > 0;
@@ -103,6 +106,7 @@ export default function TelaFluxo() {
     if (nomeCat(l.categoriaId).toLowerCase().includes(q)) return true;
     if (dataBonita(l.data).toLowerCase().includes(q)) return true;
     if (formatarBRL(l.valor).toLowerCase().includes(q)) return true;
+    if (naCasa && nomeBox(l.boxId).toLowerCase().includes(q)) return true;
     return l.origem === 'cartao' && bateFaturaCartao(l);
   };
   const porDia = new Map<string, Lancamento[]>();
@@ -263,6 +267,7 @@ export default function TelaFluxo() {
                       >
                         <div className="cresce">
                           {nomeCat(l.categoriaId)}
+                          {naCasa && <SeloBox boxId={l.boxId} boxes={dados.boxes} />}
                           {l.status === 'previsto' && <span className="badge" style={{ marginLeft: 6 }}>{l.cenarioId ? 'cenário' : 'previsto'}</span>}
                           {l.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
                           {nota && <div className="sub">{nota}</div>}

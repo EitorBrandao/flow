@@ -1,0 +1,2 @@
+- Com casa no topo, o Lançar pede a box de quem pagou e grava nela.
+  - A box casa não recebe mais lançamento novo por essa tela; o que já estava nela, e as recorrências e os cenários criados com casa no topo, continuam contando.

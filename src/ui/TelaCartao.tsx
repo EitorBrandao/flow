@@ -192,12 +192,9 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
   const mostrarGrupos = aVista.length > 0 && parceladas.length > 0;
 
   return (
-    // Um bloco por cartão: a barra fixa só gruda dentro do próprio bloco, e na visão casa o
-    // bloco do cartão seguinte empurra o anterior para fora.
     <div className="tela">
-      {/* O nome do cartão abre o bloco, acima do seletor de mês: na visão casa, com vários
-          cartões, o seletor do segundo ficava entre os dois cards e parecia do de cima. Os dois
-          grudam juntos sob o topo: o mês nunca aparece sem o nome do cartão. */}
+      {/* O nome do cartão abre o bloco, acima do seletor de mês. Os dois grudam juntos sob o topo:
+          o mês nunca aparece sem o nome do cartão. */}
       <div className="barra-fixa">
         <h2 style={{ margin: '2px 0 6px' }}>{cartao.nome}</h2>
         <SeletorMes mes={mes} onMudar={setMes} />
@@ -336,9 +333,13 @@ function ItemFaturaBotao({ item, nomeCat, onClick }: {
 
 export default function TelaCartao() {
   const { dados, boxSel, abrirAjustes } = useApp();
+  const [cartaoSelId, setCartaoSelId] = useState<string | null>(null);
+  const uid = useId();
   if (!dados) return null;
   const ids = boxIdsSelecionadas(dados, boxSel);
-  const cartoes = dados.cartoes.filter((c) => c.ativo && ids.includes(c.boxId));
+  const cartoes = dados.cartoes
+    .filter((c) => c.ativo && ids.includes(c.boxId))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   if (cartoes.length === 0) {
     return (
       <div className="tela">
@@ -348,9 +349,23 @@ export default function TelaCartao() {
       </div>
     );
   }
+  // Um cartão por vez: na visão casa, a pilha de faturas escondia de quem era cada uma. Se o
+  // cartão escolhido saiu da seleção (troca de box no topo), vale o primeiro.
+  const cartao = cartoes.find((c) => c.id === cartaoSelId) ?? cartoes[0];
+  const nomeBox = (boxId: string) => dados.boxes.find((b) => b.id === boxId)?.nome ?? '?';
   return (
     <div className="tela">
-      {cartoes.map((c) => <CartaoFatura key={c.id} cartao={c} />)}
+      {cartoes.length >= 2 && (
+        <div className="campo">
+          <label htmlFor={`${uid}-cartao`}>Cartão</label>
+          <select id={`${uid}-cartao`} value={cartao.id} onChange={(e) => setCartaoSelId(e.target.value)}>
+            {cartoes.map((c) => (
+              <option key={c.id} value={c.id}>{boxSel === 'casa' ? `${c.nome} · ${nomeBox(c.boxId)}` : c.nome}</option>
+            ))}
+          </select>
+        </div>
+      )}
+      <CartaoFatura key={cartao.id} cartao={cartao} />
     </div>
   );
 }
