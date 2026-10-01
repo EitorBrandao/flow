@@ -787,3 +787,51 @@ it('não repete a categoria como nota na linha do lançamento', async () => {
   // O nome da categoria aparece uma vez por lançamento (dois), nunca três: a nota "salário" some.
   expect(screen.getAllByText('salário')).toHaveLength(2);
 });
+
+describe('Fluxo nos modos Simples e Avançado', () => {
+  async function montar(modo: 'simples' | 'avancado') {
+    const { box, catMercado } = await seedBoxComCategoria();
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco A', ordem: 0 });
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco B', ordem: 1 });
+    const hoje = '2026-07-05';
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: hoje, valor: 5000, status: 'efetivo', nota: 'padaria da esquina' });
+    await repo.salvarModo('fluxo', modo);
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje });
+    render(<TelaFluxo />);
+    return { hoje };
+  }
+
+  it('Simples: a lista não mostra o filtro por banco nem o saldo por dia', async () => {
+    const { hoje } = await montar('simples');
+    expect(await screen.findByText('padaria da esquina')).toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: /banco/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('Banco A')).not.toBeInTheDocument();
+    // saldo do dia: 1.000,00 - 50,00 = 950,00 - fica de fora; a data continua
+    expect(screen.queryByText('R$ 950,00')).not.toBeInTheDocument();
+    expect(screen.getByText(/hoje$/)).toHaveTextContent(formatarDataBR(hoje));
+  });
+
+  it('Avançado: a lista mantém o filtro por banco e o saldo por dia', async () => {
+    await montar('avancado');
+    expect(await screen.findByText('padaria da esquina')).toBeInTheDocument();
+    expect(screen.getByText('Banco A')).toBeInTheDocument();
+    expect(screen.getByText('R$ 950,00')).toBeInTheDocument();
+  });
+
+  it('Simples: o gráfico continua e a aba Simular mostra o simulador leve', async () => {
+    await montar('simples');
+    await abrirGrafico();
+    expect(screen.getByRole('button', { name: 'Expandir gráfico de saldo' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('tab', { name: 'Simular' }));
+    expect(screen.getByText('E se eu gastar…')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Novo cenário')).not.toBeInTheDocument();
+  });
+
+  it('Avançado: a aba Simular mostra o simulador completo', async () => {
+    await montar('avancado');
+    await userEvent.click(screen.getByRole('tab', { name: 'Simular' }));
+    expect(screen.getByLabelText('Novo cenário')).toBeInTheDocument();
+    expect(screen.queryByText('E se eu gastar…')).not.toBeInTheDocument();
+  });
+});

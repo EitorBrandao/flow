@@ -14,7 +14,9 @@ import FaturaResumo from './FaturaResumo';
 import LancEditor from './LancEditor';
 import SeletorFiltroBanco from './SeletorFiltroBanco';
 import SimuladorFluxo from './SimuladorFluxo';
+import SimuladorSimples from './SimuladorSimples';
 import TransferenciaSheet from './TransferenciaSheet';
+import { useModo } from './useModo';
 
 const FluxoChartModal = lazy(() => import('./FluxoChartModal'));
 
@@ -30,6 +32,8 @@ function dataBonita(d: string): string {
 
 export default function TelaFluxo() {
   const { dados, boxSel, hoje, fluxoAba, limparFluxoAba } = useApp();
+  const modo = useModo('fluxo');
+  const simples = modo === 'simples';
   const [editando, setEditando] = useState<Lancamento | null>(null);
   const [faturaSel, setFaturaSel] = useState<Lancamento | null>(null);
   const [transferenciaSel, setTransferenciaSel] = useState<Lancamento | null>(null);
@@ -167,8 +171,8 @@ export default function TelaFluxo() {
 
       {abaFluxo === 'lista' && (
         <>
-          <SeletorFiltroBanco bancos={bancosSel} valor={filtroBanco} onMudar={setFiltroBanco} />
-          {filtroBanco !== 'todos' && (
+          {!simples && <SeletorFiltroBanco bancos={bancosSel} valor={filtroBanco} onMudar={setFiltroBanco} />}
+          {!simples && filtroBanco !== 'todos' && (
             <p className="sub">O filtro vale só para a lista: o saldo de cada dia continua sendo o da box inteira.</p>
           )}
           <div className="linha" style={{ justifyContent: 'space-between' }}>
@@ -219,17 +223,19 @@ export default function TelaFluxo() {
                 <div key={dia}>
                   <div className={dia === hoje ? 'cabecalho-dia dia-hoje' : 'cabecalho-dia'}>
                     <strong>{dataBonita(dia)}{dia === hoje ? ' · hoje' : ''}</strong>
-                    <span className="sub">
-                      {saldo == null ? (
-                        <strong className="total-dia">—</strong>
-                      ) : (
-                        <strong className={`total-dia ${saldo >= 0 ? 'pos' : 'neg'}`}>
-                          {formatarSaldo(saldo)}
-                        </strong>
-                      )}
-                    </span>
+                    {!simples && (
+                      <span className="sub">
+                        {saldo == null ? (
+                          <strong className="total-dia">—</strong>
+                        ) : (
+                          <strong className={`total-dia ${saldo >= 0 ? 'pos' : 'neg'}`}>
+                            {formatarSaldo(saldo)}
+                          </strong>
+                        )}
+                      </span>
+                    )}
                   </div>
-                  {dataAtiva && dia > hoje && saldo != null && deHoje && (() => {
+                  {!simples && dataAtiva && dia > hoje && saldo != null && deHoje && (() => {
                     const delta = saldo - deHoje.saldoEfetivo;
                     if (delta === 0) return null;
                     return (
@@ -284,7 +290,7 @@ export default function TelaFluxo() {
         </>
       )}
 
-      {abaFluxo === 'simular' && <SimuladorFluxo />}
+      {abaFluxo === 'simular' && (simples ? <SimuladorSimples /> : <SimuladorFluxo />)}
 
       {graficoExpandido && (
         <Suspense fallback={null}>
