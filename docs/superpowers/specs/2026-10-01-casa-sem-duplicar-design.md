@@ -13,7 +13,7 @@ abaixo.
 
 ## Decisões
 
-- **Análises junta por nome e tipo, sem diferenciar maiúsculas.** Só leitura: nenhum dado muda.
+- **Análises junta por nome e tipo, sem diferenciar maiúsculas nem acentos.** Só leitura: nenhum dado muda.
 - **Telas de configuração por box não aparecem na casa.** Categorias, Categorias do cartão,
   Cartões, Assinaturas e Recorrências mostram só um aviso, porque a configuração é de cada box.
   Decisão do usuário: "as configurações são exclusivas das boxes".
@@ -34,8 +34,8 @@ export function unificarCategoriasPorNome(
 ): { categorias: Categoria[]; lancamentos: Lancamento[] }
 ```
 
-- Chave: `tipo` + nome com `trim` e minúsculas (`toLocaleLowerCase('pt-BR')`). Acento conta:
-  "Cafe" e "Café" são categorias diferentes.
+- Chave: `tipo` + nome com `trim`, minúsculas (`toLocaleLowerCase('pt-BR')`) e sem acento
+  (`normalize('NFD')` sem as marcas de combinação). "Cafe", "Café" e "CAFÉ" formam um grupo só.
 - O representante do grupo é a primeira categoria na ordem de `compararCategorias`; o nome
   exibido é o dele. Os lançamentos das outras categorias do grupo passam a apontar para o
   representante. Os campos `boxId` dos lançamentos não mudam.
@@ -110,7 +110,7 @@ assunto.
 ## Testes
 
 - `unificarCategoriasPorNome`: junta "mercado" e "Mercado" do mesmo tipo; não junta tipos
-  diferentes; não junta "Cafe" com "Café"; categoria oculta não entra; lançamentos apontam para o
+  diferentes; junta "Cafe", "Café" e "CAFÉ"; categoria oculta não entra; lançamentos apontam para o
   representante; `boxId` do lançamento não muda; entradas não mudam; arquivada junta com ativa e
   a ativa vira representante; nome com espaços nas pontas junta.
 - Análises: na casa, uma linha só com o total das boxes; numa box só, categorias intactas; a
