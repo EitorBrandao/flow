@@ -7,6 +7,7 @@ import * as repo from '../db/repo';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import TelaAjustes from './TelaAjustes';
+import { versaoAtual } from './ajustes/versaoAtual';
 
 beforeEach(async () => {
   await limparDb();
@@ -103,7 +104,8 @@ it('cada subtela de Ajustes está em exatamente um grupo', async () => {
   }
   expect([...itens].sort()).toEqual([
     'Assinaturas do cartão', 'Backup e restauração', 'Bancos', 'Boxes', 'Cartões', 'Categorias',
-    'Categorias do cartão', 'Importar e conferir', 'Recorrências', 'Versão', 'Viagens', 'Wiki',
+    'Categorias do cartão', 'Importar e conferir', 'Modo de usoSimples ou avançado, por tela', 'Recorrências',
+    `Versão${versaoAtual}`, 'Viagens', 'Wiki',
   ].sort());
 });
 
@@ -173,4 +175,42 @@ it('o caminho antigo setAba("ajustes") continua caindo no menu', async () => {
   // Verifica que não está em nenhuma subtela
   expect(screen.queryByText('Boxes', { selector: 'h2' })).not.toBeInTheDocument();
   expect(screen.queryByText('Categorias', { selector: 'h2' })).not.toBeInTheDocument();
+});
+
+describe('grupo Sobre o app', () => {
+  async function abrirSobre() {
+    await setup();
+    render(<TelaAjustes />);
+    await userEvent.click(screen.getByRole('button', { name: /Sobre o app/ }));
+  }
+
+  it('lista Modo de uso, Wiki e Versão, nessa ordem, e a Versão mostra o número atual', async () => {
+    await abrirSobre();
+    const itens = Array.from(document.querySelectorAll('.lista .item')).map((el) => el.textContent ?? '');
+    expect(itens).toHaveLength(3);
+    expect(itens[0]).toContain('Modo de uso');
+    expect(itens[0]).toContain('Simples ou avançado, por tela');
+    expect(itens[1]).toContain('Wiki');
+    expect(itens[2]).toContain('Versão');
+    expect(screen.getByText(versaoAtual)).toBeInTheDocument();
+  });
+
+  it('a tela-menu não tem botões Simples/Avançado', async () => {
+    await abrirSobre();
+    expect(screen.queryByRole('button', { name: 'Simples' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Avançado' })).not.toBeInTheDocument();
+  });
+
+  it('tocar em Versão abre o histórico', async () => {
+    await abrirSobre();
+    await userEvent.click(screen.getByRole('button', { name: /Versão/ }));
+    expect(screen.getByText(/Você está na versão/)).toBeInTheDocument();
+  });
+
+  it('tocar em Modo de uso abre a tela, com o botão "‹ Sobre o app"', async () => {
+    await abrirSobre();
+    await userEvent.click(screen.getByRole('button', { name: /Modo de uso/ }));
+    expect(screen.getByText('Modo de uso', { selector: 'h2' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '‹ Sobre o app' })).toBeInTheDocument();
+  });
 });
