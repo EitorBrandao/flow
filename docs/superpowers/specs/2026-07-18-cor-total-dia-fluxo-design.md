@@ -1,10 +1,11 @@
 # Cor própria pro totalizador do dia (Fluxo)
 
 **Data:** 2026-07-18
-Status: aprovada em 2026-07-18 — implementada
+Status: aprovada em 2026-07-18 — substituída
 Nota: decisão validada com o usuário via mockup interativo com sliders HSV (matiz,
 saturação, valor) — o `<input type="color">` nativo se mostrou pouco confiável no Android
-do usuário.
+do usuário. Substituída pela spec 2026-09-30-contraste-saldo-verde-design.md que muda o
+valor de `--total-pos` para melhor contraste.
 
 ## Objetivo
 
