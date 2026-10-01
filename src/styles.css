@@ -296,8 +296,8 @@ table.tabela th:first-child, table.tabela td:first-child {
 .rolavel { overflow-x: auto; min-width: 0; overflow-anchor: none; }
 /* Simular: a tabela mostra 12 meses de altura e rola na vertical. O cabeçalho fica fixo no topo
    da área que rola; o canto (1ª coluna do cabeçalho) fica acima da coluna do mês, que é
-   sticky à esquerda (z-index 2). A altura é de 13 linhas: o cabeçalho e 12 meses. */
-.rolavel-12 { max-height: calc(13 * 37px); overflow-y: auto; }
+   sticky à esquerda (z-index 2). A altura é o cabeçalho (33px) mais 12 linhas de 38px, medidas no Galaxy S25+. */
+.rolavel-12 { max-height: calc(33px + 12 * 38px); overflow-y: auto; }
 .rolavel-12 thead th { position: sticky; top: 0; z-index: 3; background: var(--surface); }
 .rolavel-12 thead th:first-child { z-index: 4; }
 

@@ -53,9 +53,9 @@ export default function SeletorPeriodoSimular({ periodo, mesHoje, horizonte, onM
         >
           ‹
         </button>
-        <span>
-          <span className="sub">de</span>{' '}
-          <span className="campo">
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+          <span className="sub">de</span>
+          <span className="campo" style={{ flex: 1, minWidth: 0 }}>
             <select
               aria-label="Mês inicial"
               value={mesInicial}
@@ -66,7 +66,7 @@ export default function SeletorPeriodoSimular({ periodo, mesHoje, horizonte, onM
               ))}
             </select>
           </span>
-          <span className="campo">
+          <span className="campo" style={{ flex: 1, minWidth: 0 }}>
             <select
               aria-label="Ano inicial"
               value={anoInicial}
@@ -95,9 +95,9 @@ export default function SeletorPeriodoSimular({ periodo, mesHoje, horizonte, onM
         >
           ‹
         </button>
-        <span>
-          <span className="sub">até</span>{' '}
-          <span className="campo">
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+          <span className="sub">até</span>
+          <span className="campo" style={{ flex: 1, minWidth: 0 }}>
             <select
               aria-label="Mês final"
               value={mesFinal}
@@ -108,7 +108,7 @@ export default function SeletorPeriodoSimular({ periodo, mesHoje, horizonte, onM
               ))}
             </select>
           </span>
-          <span className="campo">
+          <span className="campo" style={{ flex: 1, minWidth: 0 }}>
             <select
               aria-label="Ano final"
               value={anoFinal}
