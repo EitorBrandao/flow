@@ -25,6 +25,10 @@ Os dados são os mesmos nos dois modos. Trocar de modo só esconde ou mostra cam
    - "Modo de uso" é uma tela própria, com "‹" para voltar. Ela só tem os cinco botões.
    - Regra do projeto: botão que leva a um lugar nunca divide a tela com funcionalidade.
 6. As telas funcionais (Hoje, Fluxo, Cartão, Análises e Lançar) não têm botão de modo.
+7. **A versão aparece no próprio botão.** Em "Sobre o app", a linha "Versão" mostra o número da versão atual (por exemplo, `0.54.1`) à direita, sem precisar abrir. Tocar na linha continua abrindo o histórico de versões. A linha mantém o "›" das outras linhas do menu.
+   - O número vem do mesmo `parseChangelog` que `Versao.tsx` usa hoje. Um só lugar lê a versão, para as duas telas nunca discordarem.
+   - `Linha` (`TelaAjustes.tsx`) ganha uma propriedade `valor`, exibida à direita, antes do "›".
+   - A linha "Sobre o app" do menu principal continua com o detalhe "Wiki · Modo de uso · Versão". O número não entra ali.
 
 ## O que cada modo mostra
 
@@ -64,6 +68,7 @@ A regra de ouro: o Simples **reusa as entidades e funções existentes**. Ele n�
 - `src/db/repo.ts`: `salvarModo(tela, modo)` e a gravação do padrão na primeira instalação. Toda persistência continua no repo.
 - `src/state/store.ts`: depois de gravar, chama `recarregar()`, como as outras mutations.
 - `src/ui/ajustes/`: a tela "Modo de uso" e o item de menu em "Sobre o app".
+- `src/ui/TelaAjustes.tsx`: a ordem do grupo "Sobre o app" passa a ser Modo de uso, Wiki, Versão. A linha "Versão" mostra o número da versão.
 - Cada tela (`TelaHoje`, `TelaFluxo`, `TelaCartao`, `TelaAnalises`, sheet de Lançar) lê o seu modo e decide o que renderiza. Evite um segundo componente por modo: esconda blocos, não duplique a tela.
 
 ## Consistência entre telas
@@ -101,9 +106,14 @@ O mesmo conceito aparece do mesmo jeito nos dois modos: mesmo texto, mesma cor, 
 - Catálogo (`docs/estilo/catalogo.md`): toda classe ou componente novo entra.
 - Consultar `docs/estilo-visual.md` antes de editar a UI. A tela "Modo de uso" é uma nova tela (nível 5).
 
-## Decisões em aberto
+## Decisões
 
-1. **Usuários que já têm dados.** A spec propõe: campo ausente = Avançado, para ninguém perder telas ao atualizar. Isso difere de "o padrão é Simples" só para bases existentes. Confirmar.
-2. **Categoria automática do Lançar simples.** A spec propõe "mesma descrição → mesma categoria, senão A classificar". O mockup dizia "escolhida pela descrição". Confirmar que "A classificar" como fallback serve.
-3. **Cartão simples como compra à vista.** A spec reusa `CompraCartao`. O custo é uma compra "sintética" visível no Avançado. A alternativa seria uma entidade nova de fatura declarada, mais invasiva. Confirmar.
-4. **Rascunho do Simular simples.** A spec apaga o cenário não guardado ao sair. Confirmar.
+Confirmadas pelo usuário em 2026-10-01:
+
+1. **Usuários que já têm dados** ficam em Avançado (campo ausente = Avançado). Só instalações novas começam em Simples.
+2. **Categoria do Lançar simples:** mesma descrição → mesma categoria; sem correspondência → "A classificar".
+3. **Simular simples:** o cenário não guardado é apagado ao sair.
+
+Em aberto:
+
+4. **Cartão simples como compra à vista.** Ver "Como o modo Simples grava os dados". Aguardando confirmação do usuário.
