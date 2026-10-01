@@ -5,7 +5,9 @@ import {
   faturaExplicaOMes,
 } from '../domain/aggregations';
 import { addMeses, formatarDataBR, mesAbreviado, mesDe } from '../domain/dates';
-import { ajustesDoCartao, faturaDoMes, resumoAssinaturasDoPeriodo } from '../domain/fatura';
+import { ajustesDoCartao, categoriasFaturaIds, faturaDoMes, resumoAssinaturasDoPeriodo } from '../domain/fatura';
+import { unificarCategoriasPorNome } from '../domain/categorias';
+import { categoriasTransferenciaIds } from '../domain/transferencia';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
 import {
   semColunaAnoAnterior, estadoInicial, mesesDoPeriodo, notaComparacao, rotuloColunaPeriodo, rotuloIntervalo,
@@ -58,7 +60,17 @@ export default function TelaAnalises() {
   // compras de cartão do banco escolhido (`dadosDoBanco`).
   // O Simples ignora na hora o que o modo Avançado escolheu (sem esperar o efeito acima).
   const incluirPrevistos = simples || incluirPrevistosEscolha;
-  const dados = dadosDoBanco(dadosTodos, simples ? 'todos' : filtroBanco);
+  const dadosDoFiltro = dadosDoBanco(dadosTodos, simples ? 'todos' : filtroBanco);
+  // Na casa, cada box tem a sua "mercado": junta por nome e tipo para a categoria aparecer uma vez.
+  const dados = boxSel === 'casa'
+    ? {
+      ...dadosDoFiltro,
+      ...unificarCategoriasPorNome(
+        dadosDoFiltro.categorias, dadosDoFiltro.lancamentos,
+        new Set([...categoriasFaturaIds(dadosDoFiltro.cartoes), ...categoriasTransferenciaIds(dadosDoFiltro.boxes)]),
+      ),
+    }
+    : dadosDoFiltro;
   const periodoEfetivo: EstadoPeriodo = simples && periodo.modo !== 'mes' ? { ...periodo, modo: 'mes' } : periodo;
   const meses = mesesDoPeriodo(periodoEfetivo);
   const varios = meses.length > 1;
@@ -332,6 +344,7 @@ export default function TelaAnalises() {
           boxIds={ids}
           lancamentos={dados.lancamentos}
           incluirPrevistos={incluirPrevistos}
+          boxes={boxSel === 'casa' ? dados.boxes : undefined}
           onFechar={fecharDetalhe}
           onVoltar={voltarAoPeriodo}
           verFatura={cartaoDaCategoria && detalhe ? {

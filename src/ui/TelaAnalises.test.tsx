@@ -598,3 +598,47 @@ describe('modo Simples', () => {
     expect(screen.getByRole('heading', { name: 'Comparativo' })).toBeInTheDocument();
   });
 });
+
+describe('Análises na casa: categorias de mesmo nome', () => {
+  async function seedDuasBoxes() {
+    const agora = agoraISO();
+    const mk = (nome: string) => ({ id: novoId(), nome, saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora });
+    const ana = mk('ana');
+    const bruno = mk('bruno');
+    await repo.salvarBox(ana);
+    await repo.salvarBox(bruno);
+    const catAna = await repo.salvarCategoria({ boxId: ana.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+    const catBruno = await repo.salvarCategoria({ boxId: bruno.id, nome: 'Mercado', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({ boxId: ana.id, categoriaId: catAna.id, data: '2026-07-05', valor: 50000, status: 'efetivo', nota: 'feira' });
+    await repo.salvarLancamento({ boxId: bruno.id, categoriaId: catBruno.id, data: '2026-07-06', valor: 40000, status: 'efetivo', nota: 'atacado' });
+    await useApp.getState().iniciar();
+    return { ana, bruno };
+  }
+
+  it('na casa, mostra uma só linha "mercado" com a soma e a folha traz os selos das boxes', async () => {
+    await seedDuasBoxes();
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-15' });
+    render(<TelaAnalises />);
+    const linhas = screen.getAllByRole('button', { name: /mercado/i });
+    expect(linhas).toHaveLength(1);
+    expect(linhas[0].textContent).toContain(formatarBRL(90000));
+    await userEvent.click(linhas[0]);
+    const folha = await screen.findByRole('dialog', { name: /mercado/i });
+    expect(within(folha).getByText('feira')).toBeInTheDocument();
+    expect(within(folha).getByText('atacado')).toBeInTheDocument();
+    expect(within(folha).getByText('ana')).toBeInTheDocument();
+    expect(within(folha).getByText('bruno')).toBeInTheDocument();
+  });
+
+  it('numa box só, a linha mostra só o total da box e a folha não tem selo', async () => {
+    const { ana } = await seedDuasBoxes();
+    useApp.setState({ boxSel: ana.id, hoje: '2026-07-15' });
+    render(<TelaAnalises />);
+    const linha = screen.getByRole('button', { name: /mercado/i });
+    expect(linha.textContent).toContain(formatarBRL(50000));
+    expect(linha.textContent).not.toContain(formatarBRL(90000));
+    await userEvent.click(linha);
+    const folha = await screen.findByRole('dialog', { name: /mercado/i });
+    expect(within(folha).queryByText('ana')).not.toBeInTheDocument();
+  });
+});

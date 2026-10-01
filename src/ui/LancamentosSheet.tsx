@@ -1,7 +1,8 @@
 import { lancamentosDaCategoria } from '../domain/aggregations';
 import { mesAbreviado, nomeDoMes } from '../domain/dates';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
-import type { ID, Lancamento, TipoCategoria } from '../domain/types';
+import type { Box, ID, Lancamento, TipoCategoria } from '../domain/types';
+import SeloBox from './SeloBox';
 import Sheet from './Sheet';
 
 interface Props {
@@ -18,6 +19,8 @@ interface Props {
   onVoltar?: () => void;
   /** categoria de fatura cujo valor do mês não é a fatura: link para abrir a fatura do mês */
   verFatura?: { totalCent: number; onAbrir: () => void };
+  /** Na visão casa: mostra o selo da box de cada lançamento. */
+  boxes?: Box[];
 }
 
 function dataFormatada(iso: string): string {
@@ -25,7 +28,7 @@ function dataFormatada(iso: string): string {
 }
 
 export default function LancamentosSheet({
-  aberto, categoriaId, nome, tipo, mes, boxIds, lancamentos, incluirPrevistos, onFechar, onVoltar, verFatura,
+  aberto, categoriaId, nome, tipo, mes, boxIds, lancamentos, incluirPrevistos, onFechar, onVoltar, verFatura, boxes,
 }: Props) {
   const grupos = categoriaId
     ? lancamentosDaCategoria(mes, categoriaId, boxIds, lancamentos, incluirPrevistos)
@@ -47,6 +50,7 @@ export default function LancamentosSheet({
               <p className="rotulo-grupo">
                 {g.notaExibicao}
                 {g.itens.length === 1 && g.itens[0].valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
+                {boxes && g.itens.length === 1 && <SeloBox boxId={g.itens[0].boxId} boxes={boxes} />}
               </p>
               <span className={classe(g.subtotal)}>{formatarBRL(g.subtotal)}</span>
             </div>
@@ -57,6 +61,7 @@ export default function LancamentosSheet({
                     <div className="cresce">
                       {dataFormatada(it.data)}
                       {it.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
+                      {boxes && <SeloBox boxId={it.boxId} boxes={boxes} />}
                     </div>
                     <span className={classe(it.valor)}>{formatarBRL(it.valor)}</span>
                   </div>
