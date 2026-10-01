@@ -13,6 +13,7 @@ import BalanceChart from './BalanceChart';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import PrimeiroUso from './PrimeiroUso';
+import SeloBox from './SeloBox';
 import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
 
 // NOTA DE PATCH (nível 1 — docs/estilo/nivel-1-editar-tela.md): a tela ganhou 3 abas
@@ -527,6 +528,7 @@ export default function TelaHoje() {
                   <div className="cresce">
                     <div>
                       {nomeCat(l.categoriaId)}
+                      {boxSel === 'casa' && <SeloBox boxId={l.boxId} boxes={dados.boxes} />}
                       {l.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
                     </div>
                     {(() => {

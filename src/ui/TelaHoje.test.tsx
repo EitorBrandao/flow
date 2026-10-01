@@ -1041,3 +1041,35 @@ it('sem série para desenhar, não mostra o link do gráfico', async () => {
   expect(screen.getByText(/Saldo hoje/)).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Ver gráfico completo na aba Fluxo →' })).not.toBeInTheDocument();
 });
+
+describe('selo da box nos pendentes', () => {
+  async function montar(boxSel: 'casa' | 'ana') {
+    const agora = agoraISO();
+    const ana = { id: novoId(), nome: 'ana', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    const bruno = { id: novoId(), nome: 'bruno', saldoInicial: 50000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(ana);
+    await repo.salvarBox(bruno);
+    const catA = await repo.salvarCategoria({ boxId: ana.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+    const catB = await repo.salvarCategoria({ boxId: bruno.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({ boxId: ana.id, categoriaId: catA.id, data: '2026-07-01', valor: 15000, status: 'previsto' });
+    await repo.salvarLancamento({ boxId: bruno.id, categoriaId: catB.id, data: '2026-07-01', valor: 90000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: boxSel === 'casa' ? 'casa' : ana.id, hoje: '2026-07-02' });
+    render(<TelaHoje />);
+    await abrirAba(/Pendentes/);
+  }
+
+  it('na casa, cada pendente mostra a box de origem', async () => {
+    await montar('casa');
+    const mercado = screen.getByText(/mercado/).closest('.item') as HTMLElement;
+    const aluguel = screen.getByText(/aluguel/).closest('.item') as HTMLElement;
+    expect(within(mercado).getByText('ana')).toHaveClass('badge');
+    expect(within(aluguel).getByText('bruno')).toHaveClass('badge');
+  });
+
+  it('numa box só, nenhum pendente mostra selo de box', async () => {
+    await montar('ana');
+    const mercado = screen.getByText(/mercado/).closest('.item') as HTMLElement;
+    expect(within(mercado).queryByText('ana')).not.toBeInTheDocument();
+  });
+});

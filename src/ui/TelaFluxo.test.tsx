@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as repo from '../db/repo';
 import { addDias, formatarDataBR, nomeDoMes } from '../domain/dates';
@@ -786,4 +786,50 @@ it('não repete a categoria como nota na linha do lançamento', async () => {
   expect(await screen.findByText('adiantamento')).toBeInTheDocument();
   // O nome da categoria aparece uma vez por lançamento (dois), nunca três: a nota "salário" some.
   expect(screen.getAllByText('salário')).toHaveLength(2);
+});
+
+describe('selo da box na lista', () => {
+  async function montar(boxSel: 'casa' | 'ana') {
+    const agora = agoraISO();
+    const ana = { id: novoId(), nome: 'ana', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    const bruno = { id: novoId(), nome: 'bruno', saldoInicial: 50000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(ana);
+    await repo.salvarBox(bruno);
+    const catA = await repo.salvarCategoria({ boxId: ana.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+    const catB = await repo.salvarCategoria({ boxId: bruno.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({ boxId: ana.id, categoriaId: catA.id, data: '2026-07-02', valor: 15000, status: 'efetivo' });
+    await repo.salvarLancamento({ boxId: bruno.id, categoriaId: catB.id, data: '2026-07-02', valor: 90000, status: 'efetivo' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: boxSel === 'casa' ? 'casa' : ana.id, hoje: '2026-07-02' });
+    render(<TelaFluxo />);
+  }
+
+  it('na casa, cada lançamento mostra a box de origem', async () => {
+    await montar('casa');
+    const mercado = (await screen.findByText(/mercado/)).closest('.item') as HTMLElement;
+    const aluguel = screen.getByText(/aluguel/).closest('.item') as HTMLElement;
+    expect(within(mercado).getByText('ana')).toHaveClass('badge');
+    expect(within(aluguel).getByText('bruno')).toHaveClass('badge');
+  });
+
+  it('numa box só, não mostra selo de box', async () => {
+    await montar('ana');
+    const mercado = (await screen.findByText(/mercado/)).closest('.item') as HTMLElement;
+    expect(within(mercado).queryByText('ana')).not.toBeInTheDocument();
+  });
+
+  it('na casa, a busca também casa pelo nome da box', async () => {
+    await montar('casa');
+    await userEvent.click(await screen.findByRole('button', { name: 'Buscar e filtrar' }));
+    await userEvent.type(screen.getByPlaceholderText(/Buscar por/), 'bruno');
+    expect(screen.queryByText(/mercado/)).not.toBeInTheDocument();
+    expect(screen.getByText(/aluguel/)).toBeInTheDocument();
+  });
+
+  it('numa box só, a busca pelo nome da box não acha nada', async () => {
+    await montar('ana');
+    await userEvent.click(await screen.findByRole('button', { name: 'Buscar e filtrar' }));
+    await userEvent.type(screen.getByPlaceholderText(/Buscar por/), 'ana');
+    expect(screen.queryByText(/mercado/)).not.toBeInTheDocument();
+  });
 });
