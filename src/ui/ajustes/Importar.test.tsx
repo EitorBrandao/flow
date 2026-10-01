@@ -726,3 +726,41 @@ describe('Importar — diagnóstico com conferência parcial', () => {
     expect(await screen.findByRole('button', { name: 'Copiado' })).toBeInTheDocument();
   });
 });
+
+describe('fatura do Nubank em CSV', () => {
+  const CSV_FATURA_NUBANK = [
+    'date,title,amount',
+    '2026-08-18,Mercado Alfa,"50,00"',
+    '2026-07-30,Loja Delta - Parcela 3/10,"40,00"',
+  ].join('\n');
+
+  it('grava a parcela antiga com a data corrigida e o total reconstruído', async () => {
+    const box = await montarBox();
+    await repo.salvarCartao(
+      { boxId: box.id, nome: 'Cartão Nubank', diaFechamento: 29, diaVencimento: 6 }, '2027-12-31',
+    );
+    await useApp.getState().iniciar();
+    useApp.getState().setBoxSel(box.id);
+    render(<Importar />);
+
+    await userEvent.upload(
+      screen.getByLabelText('Escolher arquivo'),
+      new File([CSV_FATURA_NUBANK], 'Nubank_2026-09-06.csv', { type: 'text/csv' }),
+    );
+
+    await screen.findByText('Loja Delta');
+    expect(screen.getByText(/30\/05\/2026 \(estimada\)/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Corrigir compra' }));
+    fireEvent.change(screen.getByLabelText('Data da compra'), { target: { value: '2026-06-10' } });
+    expect(screen.queryByText(/\(estimada\)/)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Confirmar — 2 mudanças/ }));
+    await screen.findByText(/2 adicionados/);
+
+    const dados = await repo.carregarTudo();
+    const parcelada = dados.comprasCartao.find((c) => c.parcelas === 10);
+    expect(parcelada?.data).toBe('2026-06-10');
+    // 4000 por parcela × 10 parcelas = 40000.
+    expect(parcelada?.valorTotal).toBe(40000);
+  });
+});

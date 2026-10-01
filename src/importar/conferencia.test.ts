@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { CompraCartao, Dados, Lancamento } from '../domain/types';
 import {
-  acaoEfetiva, chaveDoItem, conferir, totalCorrigidoValido, totalEfetivo,
+  acaoEfetiva, chaveDoItem, conferir, dataCorrigidaValida, dataEfetiva,
+  totalCorrigidoValido, totalEfetivo,
 } from './conferencia';
 import type { ItemConferencia, LancamentoBruto, LeituraAdapter } from './tipos';
 
@@ -349,6 +350,55 @@ describe('conferir', () => {
       expect(itens[0].estado).toBe('confere');
       expect(itens[0].compraCartaoId).toBe('arredondada');
     });
+
+    // Parcela n > 1 do Nubank: a data do bruto é estimada; a compra real está em algum ponto do
+    // intervalo. Compra cadastrada: 100000 em 10 → parcela 3 vale 10000.
+    const ESTIMADA = { min: '2026-05-30', max: '2026-06-29' };
+    function brutoEstimado() {
+      return bruto({
+        data: '2026-05-30', valorCent: -10000, fonte: 'cartao',
+        parcela: { n: 3, total: 10 }, dataEstimada: ESTIMADA,
+      });
+    }
+
+    it('parcela com data estimada casa com compra no meio do intervalo', () => {
+      const d = dadosCom([], [compraCartao({ id: 'meio', data: '2026-06-20', valorTotal: 100000, parcelas: 10 })]);
+      const itens = conferir([brutoEstimado()], d, OPCOES);
+      expect(itens[0].estado).toBe('confere');
+      expect(itens[0].compraCartaoId).toBe('meio');
+    });
+
+    it('parcela com data estimada casa na folga de 2 dias depois da máxima', () => {
+      const d = dadosCom([], [compraCartao({ id: 'folga', data: '2026-07-01', valorTotal: 100000, parcelas: 10 })]);
+      expect(conferir([brutoEstimado()], d, OPCOES)[0].estado).toBe('confere');
+    });
+
+    it('parcela com data estimada não casa 3 dias depois da máxima', () => {
+      const d = dadosCom([], [compraCartao({ id: 'fora', data: '2026-07-02', valorTotal: 100000, parcelas: 10 })]);
+      expect(conferir([brutoEstimado()], d, OPCOES)[0].estado).toBe('novo');
+    });
+
+    it('parcela com data estimada casa na folga de 2 dias antes da mínima', () => {
+      const d = dadosCom([], [compraCartao({ id: 'folga', data: '2026-05-28', valorTotal: 100000, parcelas: 10 })]);
+      expect(conferir([brutoEstimado()], d, OPCOES)[0].estado).toBe('confere');
+    });
+
+    it('parcela com data estimada não casa 3 dias antes da mínima', () => {
+      const d = dadosCom([], [compraCartao({ id: 'antes', data: '2026-05-27', valorTotal: 100000, parcelas: 10 })]);
+      expect(conferir([brutoEstimado()], d, OPCOES)[0].estado).toBe('novo');
+    });
+
+    it('sem data estimada, a tolerância continua 3 dias (Santander)', () => {
+      const d = dadosCom([], [compraCartao({ id: 'x', data: '2026-06-20', valorTotal: 100000, parcelas: 10 })]);
+      const b = bruto({ data: '2026-05-30', valorCent: -10000, fonte: 'cartao', parcela: { n: 3, total: 10 } });
+      expect(conferir([b], d, OPCOES)[0].estado).toBe('novo');
+    });
+
+    it('novo com data estimada: a compra reconstruída usa a data estimada', () => {
+      const itens = conferir([brutoEstimado()], dadosCom([]), OPCOES);
+      expect(itens[0].estado).toBe('novo');
+      expect(itens[0].compraReconstruida?.data).toBe('2026-05-30');
+    });
   });
 
   it('reconstrói o total da compra parcelada, não o valor da parcela', () => {
@@ -591,5 +641,35 @@ describe('totalCorrigidoValido', () => {
       acao: { tipo: 'adicionarCompra', categoriaCartaoId: CAT_CARTAO },
     };
     expect(totalCorrigidoValido(item, undefined)).toBeUndefined();
+  });
+});
+
+describe('dataEfetiva e dataCorrigidaValida', () => {
+  const item: ItemConferencia = {
+    estado: 'novo',
+    bruto: {
+      data: '2026-05-30', valorCent: -10000, descricao: 'LOJA DELTA', fonte: 'cartao',
+      parcela: { n: 3, total: 10 }, dataEstimada: { min: '2026-05-30', max: '2026-06-29' },
+    },
+    acao: { tipo: 'adicionarCompra', categoriaCartaoId: CAT_CARTAO },
+  };
+
+  it('dataEfetiva só vale para o mesmo estado', () => {
+    expect(dataEfetiva(item, { estado: 'novo', data: '2026-06-10' })).toBe('2026-06-10');
+    expect(dataEfetiva(item, { estado: 'confere', data: '2026-06-10' })).toBeUndefined();
+    expect(dataEfetiva(item, undefined)).toBeUndefined();
+  });
+
+  it('dataCorrigidaValida aceita as pontas e recusa fora do intervalo', () => {
+    expect(dataCorrigidaValida(item, '2026-05-30')).toBe('2026-05-30');
+    expect(dataCorrigidaValida(item, '2026-06-29')).toBe('2026-06-29');
+    expect(dataCorrigidaValida(item, '2026-05-29')).toBeUndefined();
+    expect(dataCorrigidaValida(item, '2026-06-30')).toBeUndefined();
+    expect(dataCorrigidaValida(item, undefined)).toBeUndefined();
+  });
+
+  it('dataCorrigidaValida recusa item sem data estimada', () => {
+    const semEstimada: ItemConferencia = { ...item, bruto: { ...item.bruto!, dataEstimada: undefined } };
+    expect(dataCorrigidaValida(semEstimada, '2026-06-10')).toBeUndefined();
   });
 });

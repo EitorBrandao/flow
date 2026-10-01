@@ -2,7 +2,7 @@ import { useId, useMemo, useRef, useState } from 'react';
 import { ADAPTERS, detectarAdapter } from '../../importar/adapters';
 import { aplicar, type ContextoAplicar, type ResumoAplicacao } from '../../importar/aplicar';
 import {
-  CATEGORIA_A_CLASSIFICAR, acaoEfetiva, chaveDoItem, conferir, totalCorrigidoValido, totalEfetivo,
+  CATEGORIA_A_CLASSIFICAR, acaoEfetiva, chaveDoItem, conferir, dataCorrigidaValida, dataEfetiva, totalCorrigidoValido, totalEfetivo,
   type OpcoesConferencia,
 } from '../../importar/conferencia';
 import type {
@@ -19,7 +19,7 @@ export default function Importar() {
   const { dados, boxSel, recarregar, importacao, setImportacao, limparImportacao } = useApp();
   const {
     nomeArquivo, buf, adapterAtual, leitura, boxIdEscolhida, destinoBlocos, trocas,
-    totaisCorrigidos, filtro,
+    totaisCorrigidos, datasCorrigidas, filtro,
   } = importacao;
   const uid = useId();
   // Trava síncrona contra o duplo toque: `aplicando` (estado) só vale depois do re-render, e
@@ -134,7 +134,7 @@ export default function Importar() {
   }
 
   async function lerComAdapter(adapter: Adapter, conteudo: ArrayBuffer) {
-    setImportacao(() => ({ adapterAtual: adapter, trocas: {}, totaisCorrigidos: {}, filtro: null }));
+    setImportacao(() => ({ adapterAtual: adapter, trocas: {}, totaisCorrigidos: {}, datasCorrigidas: {}, filtro: null }));
     setEscolhendoFormato(false);
     setLendo(true);
     setErro('');
@@ -200,14 +200,19 @@ export default function Importar() {
     setAplicando(true);
     setErroAplicar('');
     try {
-      // Junta a ação final de cada item (default ou trocada) e, se houve correção do total
-      // de uma parcelada reconstruída, aplica ela antes de gravar — só quando válida.
+      // Junta a ação final de cada item (default ou trocada) e, se houve correção do total ou da
+      // data estimada de uma parcelada reconstruída, aplica antes de gravar — só quando válida.
       const finais: ItemConferencia[] = itensComContexto.map((ic) => {
         const acao = acaoEfetiva(ic.item, trocas[ic.chave]);
         const totalCorrigido = totalCorrigidoValido(ic.item, totalEfetivo(ic.item, totaisCorrigidos[ic.chave]));
-        const compraReconstruida = ic.item.compraReconstruida && totalCorrigido != null
-          ? { ...ic.item.compraReconstruida, valorTotalCent: totalCorrigido }
-          : ic.item.compraReconstruida;
+        const dataCorrigida = dataCorrigidaValida(ic.item, dataEfetiva(ic.item, datasCorrigidas[ic.chave]));
+        let compraReconstruida = ic.item.compraReconstruida;
+        if (compraReconstruida && totalCorrigido != null) {
+          compraReconstruida = { ...compraReconstruida, valorTotalCent: totalCorrigido };
+        }
+        if (compraReconstruida && dataCorrigida != null) {
+          compraReconstruida = { ...compraReconstruida, data: dataCorrigida };
+        }
         return { ...ic.item, acao, ...(compraReconstruida ? { compraReconstruida } : {}) };
       });
 
@@ -280,7 +285,7 @@ export default function Importar() {
               onEscolher={(f) => void onArquivoEscolhido(f)}
             />
             <p className="sub">
-              Escolha o CSV do extrato do Nubank ou o PDF da fatura do Santander — outros
+              Escolha o CSV do extrato do Nubank, o CSV da fatura do cartão Nubank ou o PDF da fatura do Santander — outros
               bancos ainda não são lidos. Nada é gravado até você conferir e confirmar.
             </p>
           </>
@@ -294,8 +299,7 @@ export default function Importar() {
                     ? 'Lendo arquivo…'
                     : adapterAtual
                       ? `Reconhecido: ${adapterAtual.rotulo}`
-                      : 'Formato não reconhecido. Esperado: o CSV do extrato da conta Nubank '
-                        + 'ou o PDF da fatura do Santander.'}
+                      : 'Formato não reconhecido. Esperado: o CSV do extrato da conta Nubank, o CSV da fatura do cartão Nubank ou o PDF da fatura do Santander.'}
                 </div>
               </div>
               {adapterAtual && (
@@ -427,6 +431,13 @@ export default function Importar() {
             onCorrigirTotal={(chave, estado, v) => setImportacao((im) => ({
               totaisCorrigidos: { ...im.totaisCorrigidos, [chave]: { estado, valorCent: v } },
             }))}
+            datasCorrigidas={datasCorrigidas}
+            onCorrigirData={(chave, estado, data) => setImportacao((im) => {
+              const novo = { ...im.datasCorrigidas };
+              if (data) novo[chave] = { estado, data };
+              else delete novo[chave];
+              return { datasCorrigidas: novo };
+            })}
             mostrarLinhasIgnoradas={mostrarLinhasIgnoradas}
             onToggleLinhasIgnoradas={() => setMostrarLinhasIgnoradas((v) => !v)}
             copiarEstado={copiarEstado}

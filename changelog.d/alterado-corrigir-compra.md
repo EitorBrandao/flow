@@ -1,0 +1,1 @@
+- Na conferência, "Corrigir total" passou a se chamar "Corrigir compra".

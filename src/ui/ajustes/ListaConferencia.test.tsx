@@ -1,4 +1,4 @@
-import { fireEvent, render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Dados } from '../../domain/types';
 import type { EstadoItem, ItemConferencia, LeituraAdapter } from '../../importar/tipos';
@@ -56,6 +56,7 @@ describe('ListaConferencia', () => {
         leitura={leitura} itens={itens} dados={dados}
         trocas={{}} onTrocar={vi.fn()}
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{}} onCorrigirData={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
         filtro={null} onFiltroChange={vi.fn()}
@@ -103,6 +104,7 @@ describe('ListaConferencia', () => {
         leitura={leitura} itens={[]} dados={dados}
         trocas={{}} onTrocar={vi.fn()}
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{}} onCorrigirData={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
         filtro={null} onFiltroChange={vi.fn()}
@@ -117,6 +119,7 @@ describe('ListaConferencia', () => {
         leitura={leitura} itens={[]} dados={dados}
         trocas={{}} onTrocar={vi.fn()}
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{}} onCorrigirData={vi.fn()}
         mostrarLinhasIgnoradas onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
         filtro={null} onFiltroChange={vi.fn()}
@@ -137,6 +140,7 @@ describe('ListaConferencia', () => {
         leitura={semTexto} itens={[]} dados={dados}
         trocas={{}} onTrocar={vi.fn()}
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{}} onCorrigirData={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
         filtro={null} onFiltroChange={vi.fn()}
@@ -151,6 +155,7 @@ describe('ListaConferencia', () => {
         leitura={zeroLancamentos} itens={[]} dados={dados}
         trocas={{}} onTrocar={vi.fn()}
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{}} onCorrigirData={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
         filtro={null} onFiltroChange={vi.fn()}
@@ -165,6 +170,7 @@ describe('ListaConferencia', () => {
         leitura={comIgnoradas} itens={[]} dados={dados}
         trocas={{}} onTrocar={vi.fn()}
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{}} onCorrigirData={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
         filtro={null} onFiltroChange={vi.fn()}
@@ -222,6 +228,7 @@ describe('ListaConferencia — filtro por pílula do resumo', () => {
         leitura={leitura} itens={itens} dados={dados}
         trocas={{}} onTrocar={vi.fn()}
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{}} onCorrigirData={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
         filtro={null} onFiltroChange={vi.fn()}
@@ -246,6 +253,7 @@ describe('ListaConferencia — filtro por pílula do resumo', () => {
         leitura={leitura} itens={itens} dados={dados}
         trocas={{}} onTrocar={vi.fn()}
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{}} onCorrigirData={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
         filtro={null} onFiltroChange={onFiltroChange}
@@ -263,6 +271,7 @@ describe('ListaConferencia — filtro por pílula do resumo', () => {
         leitura={leitura} itens={itens} dados={dados}
         trocas={{}} onTrocar={vi.fn()}
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{}} onCorrigirData={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
         filtro="novo" onFiltroChange={vi.fn()}
@@ -285,6 +294,7 @@ describe('ListaConferencia — filtro por pílula do resumo', () => {
         leitura={leitura} itens={itens} dados={dados}
         trocas={{}} onTrocar={vi.fn()}
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{}} onCorrigirData={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
         filtro="novo" onFiltroChange={onFiltroChange}
@@ -303,6 +313,7 @@ describe('ListaConferencia — filtro por pílula do resumo', () => {
         leitura={leitura} itens={itens} dados={dados}
         trocas={{}} onTrocar={vi.fn()}
         totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{}} onCorrigirData={vi.fn()}
         mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
         copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
         filtro="novo" onFiltroChange={onFiltroChange}
@@ -312,5 +323,100 @@ describe('ListaConferencia — filtro por pílula do resumo', () => {
     fireEvent.click(pilhaDoEstado(container, 'confere'));
     expect(onFiltroChange).toHaveBeenCalledTimes(1);
     expect(onFiltroChange).toHaveBeenCalledWith('confere' satisfies EstadoItem);
+  });
+});
+
+describe('ListaConferencia — aviso de datas estimadas (Nubank)', () => {
+  const ESTIMADO = (chave: string): ItemComContexto => ({
+    chave, boxId: 'b', cartaoId: 'k',
+    item: {
+      estado: 'novo',
+      bruto: {
+        data: '2026-05-30', valorCent: -4000, descricao: `Loja ${chave}`, fonte: 'cartao',
+        parcela: { n: 3, total: 10 }, dataEstimada: { min: '2026-05-30', max: '2026-06-29' },
+      },
+      compraReconstruida: { data: '2026-05-30', valorTotalCent: 40000, parcelas: 10, anoDeduzidoComAviso: false },
+      acao: { tipo: 'adicionarCompra', categoriaCartaoId: 'cc' },
+    },
+  });
+  const AVISO_2 = 'A fatura do Nubank não traz o dia da compra das parcelas antigas. 2 datas estão '
+    + 'estimadas: corrija em "Corrigir compra" antes de confirmar, se souber o dia.';
+  const AVISO_1 = 'A fatura do Nubank não traz o dia da compra das parcelas antigas. 1 data está '
+    + 'estimada: corrija em "Corrigir compra" antes de confirmar, se souber o dia.';
+
+  it('aviso conta as datas estimadas pendentes', () => {
+    const dados = dadosVazios();
+    const leitura: LeituraAdapter = { brutos: [], linhasIgnoradas: 0, avisos: [] };
+
+    render(
+      <ListaConferencia
+        leitura={leitura} itens={[ESTIMADO('a'), ESTIMADO('b')]} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{}} onCorrigirData={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro={null} onFiltroChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(AVISO_2)).toBeInTheDocument();
+  });
+
+  it('aviso não conta data corrigida nem item ignorado, e some no zero', () => {
+    const dados = dadosVazios();
+    const leitura: LeituraAdapter = { brutos: [], linhasIgnoradas: 0, avisos: [] };
+
+    const { rerender } = render(
+      <ListaConferencia
+        leitura={leitura} itens={[ESTIMADO('a'), ESTIMADO('b')]} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{ a: { estado: 'novo', data: '2026-06-10' } }} onCorrigirData={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro={null} onFiltroChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(AVISO_1)).toBeInTheDocument();
+
+    rerender(
+      <ListaConferencia
+        leitura={leitura} itens={[ESTIMADO('a'), ESTIMADO('b')]} dados={dados}
+        trocas={{ b: { estado: 'novo', acao: { tipo: 'ignorar' } } }} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{ a: { estado: 'novo', data: '2026-06-10' } }} onCorrigirData={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro={null} onFiltroChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText(/datas? est(á|ão) estimadas?/)).not.toBeInTheDocument();
+  });
+
+  it('item com data corrigida para uma data posterior aparece depois na lista ordenada', () => {
+    const dados = dadosVazios();
+    const leitura: LeituraAdapter = { brutos: [], linhasIgnoradas: 0, avisos: [] };
+
+    const { container } = render(
+      <ListaConferencia
+        leitura={leitura} itens={[ESTIMADO('a'), ESTIMADO('b')]} dados={dados}
+        trocas={{}} onTrocar={vi.fn()}
+        totaisCorrigidos={{}} onCorrigirTotal={vi.fn()}
+        datasCorrigidas={{ a: { estado: 'novo', data: '2026-06-10' } }} onCorrigirData={vi.fn()}
+        mostrarLinhasIgnoradas={false} onToggleLinhasIgnoradas={vi.fn()}
+        copiarEstado="ocioso" onCopiarTextoExtraido={vi.fn()}
+        filtro={null} onFiltroChange={vi.fn()}
+      />,
+    );
+
+    const descricoes = Array.from(container.querySelectorAll('.item')).map((el) => el.textContent ?? '');
+    const indiceA = descricoes.findIndex((t) => t.includes('Loja a'));
+    const indiceB = descricoes.findIndex((t) => t.includes('Loja b'));
+    expect(indiceA).toBeGreaterThanOrEqual(0);
+    expect(indiceB).toBeGreaterThanOrEqual(0);
+    expect(indiceB).toBeLessThan(indiceA); // b (data estimada 30/05) antes de a (corrigida para 10/06)
   });
 });

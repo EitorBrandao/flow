@@ -9,6 +9,11 @@ describe('detectarAdapter', () => {
     expect(adapter?.id).toBe('nubank-conta-csv');
   });
 
+  it('reconhece o CSV da fatura do Nubank pelo cabeçalho', () => {
+    expect(detectarAdapter('Nubank_2026-09-06.csv', 'date,title,amount\n2026-08-01,A,"1,00"')?.id)
+      .toBe('nubank-fatura-csv');
+  });
+
   it('reconhece o PDF pela assinatura %PDF', () => {
     const adapter = detectarAdapter('fatura.pdf', '%PDF-1.4\n...');
     expect(adapter?.id).toBe('santander-fatura-pdf');
