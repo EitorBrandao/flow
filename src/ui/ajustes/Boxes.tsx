@@ -4,7 +4,7 @@ import * as repo from '../../db/repo';
 import { formatarDataBR } from '../../domain/dates';
 import { classeSaldo, formatarSaldo } from '../../domain/money';
 import { agoraISO, novoId, type Box } from '../../domain/types';
-import { useApp } from '../../state/store';
+import { boxSelInicial, useApp } from '../../state/store';
 import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 
@@ -93,6 +93,11 @@ export default function Boxes() {
   const uid = useId();
   if (!dados) return null;
 
+  // A box que o app abre: a padrão gravada, ou a primeira com saldo próprio. Só há o que
+  // escolher quando existem duas ou mais — o mesmo critério do selo "padrão" em Bancos.
+  const comSaldo = dados.boxes.filter((b) => b.saldoInicial != null);
+  const padraoEfetivoId = comSaldo.length >= 2 ? boxSelInicial(dados) : null;
+
   async function criar() {
     // Antes isto era um `return` mudo: clicar em Criar sem nome não fazia nada e não
     // explicava nada — quem estava criando a primeira box ficava sem saber o que faltava.
@@ -138,7 +143,7 @@ export default function Boxes() {
           <div className="form-linha">
             <div className="campo">
               <label htmlFor={`${uid}-novabox`}>Nome</label>
-              <input id={`${uid}-novabox`} placeholder="ex.: Conta Nubank" value={nomeNova} onChange={(e) => setNomeNova(e.target.value)} />
+              <input id={`${uid}-novabox`} placeholder="ex.: Pessoal" value={nomeNova} onChange={(e) => setNomeNova(e.target.value)} />
             </div>
           </div>
           <div className="form-linha">
@@ -189,9 +194,9 @@ export default function Boxes() {
                   ) : 'Gastos divididos, sem saldo próprio. Escolher "casa" no topo soma todas as suas boxes.'}
                 </div>
               </div>
-              {dados.config.boxPadraoId === b.id ? (
+              {padraoEfetivoId === b.id ? (
                 <span className="badge">padrão</span>
-              ) : b.saldoInicial != null ? (
+              ) : b.saldoInicial != null && comSaldo.length >= 2 ? (
                 <button className="botao" onClick={() => definirPadrao(b.id)}>Tornar padrão</button>
               ) : null}
               <button className="botao" aria-label="Editar" onClick={() => setEditandoId(b.id)}><Pencil size={16} /></button>
