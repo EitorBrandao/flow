@@ -252,12 +252,12 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   (`useModo('fluxo')`): um formulário só ("E se eu gastar…": valor, "Quando", Uma vez, Parcelado
   ou Todo mês) e o botão "Simular". O resultado mostra o menor saldo sem e com o gasto
   (`menorSaldo`, `classeSaldo`) e, se o saldo fica negativo, um `aviso aviso-urgente`. Cria um
-  cenário "Simulação rápida" que some ao desmontar; "Guardar" o renomeia para "Simulação de
+  cenário de rascunho "Simulação rápida" (`rascunho: true`) que some ao desmontar; "Guardar" o renomeia para "Simulação de
   DD/MM", desligado. Só usa classes existentes (`.campo`, `.botao-primario`, `.aviso`).
 - **`CartaoSimples.tsx`** — fatura do mês no modo Simples (`useModo('cartao')`), no lugar de
   `CartaoFatura.tsx`: campo "Valor da fatura" (mesma `ConferenciaFatura` com `usarValorApp` da
   aba Conferência), vencimento em `.sub`, "Salvar fatura", "Remover valor" (`botao-perigo`) e
-  "Paguei tudo" / "Paguei outro valor". Mês vencido sem lançamento mostra aviso e não paga.
+  "Paguei tudo" / "Paguei outro valor". Mês vencido sem lançamento mostra o mesmo `AvisoFaturaForaDoFluxo` do Avançado e não paga.
   Só usa classes existentes.
 
 `Importar.tsx` (subtela "Importar e conferir" de Ajustes) e seus dois auxiliares só dela,
