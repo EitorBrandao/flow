@@ -2,7 +2,7 @@ import type { DiaSaldo } from './projection';
 import type { Dados, Lancamento, Recorrencia } from './types';
 import {
   ajustarAteSim, ajustarDeSim, estenderRecorrencias, extremosPossiveis, itensDoCenario,
-  larguraColunaValor, periodoPadrao, primeiroMesNegativo, resumoMensal,
+  larguraColunaValor, menorSaldo, periodoPadrao, primeiroDiaNegativo, primeiroMesNegativo, resumoMensal,
 } from './simulacao';
 
 const dia = (data: string, sem: number, com: number): DiaSaldo =>
@@ -345,5 +345,33 @@ describe('ajustarDeSim: o fim não acompanha o início', () => {
   });
   it('voltar o início um mês mantém o fim', () => {
     expect(ajustarDeSim({ de: '2026-11', ate: '2027-12' }, '2026-10', '2026-10')).toEqual({ de: '2026-10', ate: '2027-12' });
+  });
+});
+
+describe('menorSaldo e primeiroDiaNegativo', () => {
+  const serie = [dia('2026-09-14', 100, 90), dia('2026-09-15', -50, -70), dia('2026-09-16', 20, 10)];
+
+  it('menorSaldo devolve o menor valor do campo', () => {
+    expect(menorSaldo(serie, 'saldoProjetado', '2026-09-14')).toBe(-50);
+    expect(menorSaldo(serie, 'saldoComCenarios', '2026-09-14')).toBe(-70);
+  });
+
+  it('ignora dias anteriores a hoje', () => {
+    expect(menorSaldo(serie, 'saldoProjetado', '2026-09-16')).toBe(20);
+    expect(primeiroDiaNegativo(serie, 'saldoProjetado', '2026-09-16')).toBeNull();
+  });
+
+  it('primeiroDiaNegativo devolve a data do primeiro dia abaixo de zero', () => {
+    expect(primeiroDiaNegativo(serie, 'saldoProjetado', '2026-09-14')).toBe('2026-09-15');
+  });
+
+  it('série sem negativo devolve null', () => {
+    expect(primeiroDiaNegativo([dia('2026-09-14', 0, 5)], 'saldoComCenarios', '2026-09-14')).toBeNull();
+  });
+
+  it('série vazia (ou toda no passado) devolve 0 no menor saldo', () => {
+    expect(menorSaldo([], 'saldoProjetado', '2026-09-14')).toBe(0);
+    expect(menorSaldo(serie, 'saldoProjetado', '2026-10-01')).toBe(0);
+    expect(primeiroDiaNegativo([], 'saldoProjetado', '2026-09-14')).toBeNull();
   });
 });

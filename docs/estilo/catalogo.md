@@ -14,7 +14,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 |---|---|
 | `.tela` | wrapper de toda tela (`display: flex; flex-direction: column; gap: 14px`) |
 | `.card` | bloco de destaque (ex.: card herói do saldo) — `--surface`, raio 20px, padding 20px |
-| `.lista` / `.item` / `.item-coluna` / `.linha-topo` / `.linha-topo-2-1` | lista vertical de itens-card; `.item-coluna` quando o item precisa de uma segunda linha (ex.: ações abaixo); `.linha-topo` para a linha principal dentro de um item-coluna; `.linha-topo-2-1` (junto com `.linha-topo`) quando a linha principal precisa de proporção fixa 2:1 entre descrição e valor (evita word-wrap com valor/botões espremendo o texto); `.ativo` em `.item` marca o item selecionado com `--ac-dim`/`--ac`, mesmo padrão de `.botao.ativo` (ex.: categoria que filtra os lançamentos na aba Cartão) |
+| `.lista` / `.item` / `.item-coluna` / `.item-elevado` / `.linha-topo` / `.linha-topo-2-1` | lista vertical de itens-card; `.item-coluna` quando o item precisa de uma segunda linha (ex.: ações abaixo); `.linha-topo` para a linha principal dentro de um item-coluna; `.linha-topo-2-1` (junto com `.linha-topo`) quando a linha principal precisa de proporção fixa 2:1 entre descrição e valor (evita word-wrap com valor/botões espremendo o texto); `.item-elevado` (junto com `.item`) troca o fundo para `--surface2`, para o item sobre uma superfície já `--surface` (ex.: blocos de Modo de uso em Ajustes); `.ativo` em `.item` marca o item selecionado com `--ac-dim`/`--ac`, mesmo padrão de `.botao.ativo` (ex.: categoria que filtra os lançamentos na aba Cartão) |
 | `.cresce` | filho flex que ocupa o espaço restante (`flex: 1; min-width: 0`) |
 | `.acoes` | linha de botões de ação dentro de um item (ex.: Confirmar/Descartar) |
 | `.botao`, `.botao-primario`, `.botao-perigo` | botão padrão / ação principal (azul) / ação destrutiva (texto vermelho). `.botao:disabled` fica a 45% de opacidade, em toda tela |
@@ -248,6 +248,17 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   saldo fica negativo) e a lista de `CenarioCard`, um aberto por vez. A largura das colunas de
   valor (`larguraColunaValor`) é calculada sobre os extremos possíveis de todos os cenários, para
   ligar/desligar um não mudar a tabela.
+- **`SimuladorSimples.tsx`** — conteúdo da pílula "Simular" do Fluxo no modo Simples
+  (`useModo('fluxo')`): um formulário só ("E se eu gastar…": valor, "Quando", Uma vez, Parcelado
+  ou Todo mês) e o botão "Simular". O resultado mostra o menor saldo sem e com o gasto
+  (`menorSaldo`, `classeSaldo`) e, se o saldo fica negativo, um `aviso aviso-urgente`. Cria um
+  cenário de rascunho "Simulação rápida" (`rascunho: true`) que some ao desmontar; "Guardar" o renomeia para "Simulação de
+  DD/MM", desligado. Só usa classes existentes (`.campo`, `.botao-primario`, `.aviso`).
+- **`CartaoSimples.tsx`** — fatura do mês no modo Simples (`useModo('cartao')`), no lugar de
+  `CartaoFatura.tsx`: campo "Valor da fatura" (mesma `ConferenciaFatura` com `usarValorApp` da
+  aba Conferência), vencimento em `.sub`, "Salvar fatura", "Remover valor" (`botao-perigo`) e
+  "Paguei tudo" / "Paguei outro valor". Mês vencido sem lançamento mostra o mesmo `AvisoFaturaForaDoFluxo` do Avançado e não paga.
+  Só usa classes existentes.
 
 `Importar.tsx` (subtela "Importar e conferir" de Ajustes) e seus dois auxiliares só dela,
 `ListaConferencia.tsx` e `LinhaConferencia.tsx`, não entram nesta lista: os três vivem em

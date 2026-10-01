@@ -1,4 +1,5 @@
 import { dedupAjustesFechamento, dedupConferencias } from '../domain/fatura';
+import { modosValidos } from '../domain/modos';
 import type { Dados } from '../domain/types';
 
 export interface Backup {
@@ -38,6 +39,11 @@ export function validarBackup(json: unknown): Backup {
   // obscura (o import cai fora por rollback da transação, sem perder dados, mas sem explicar).
   if (!d.config || typeof d.config !== 'object' || Array.isArray(d.config)) {
     throw new Error('Backup corrompido: configuração ausente ou inválida.');
+  }
+  // modos de uso: opcional (ausente = Avançado), mas se vier tem que ser um objeto de telas conhecidas
+  // com 'simples' ou 'avancado'. null, array e texto também são inválidos.
+  if ('modos' in d.config && d.config.modos !== undefined && !modosValidos(d.config.modos)) {
+    throw new Error('Backup corrompido: modos de uso inválidos.');
   }
   if (b.schema >= 2 && TABELAS_CARTAO.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');

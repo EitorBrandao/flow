@@ -12,9 +12,12 @@ import { bancoPadrao, bancosDaBox } from '../domain/bancos';
 import type { TipoCategoria } from '../domain/types';
 import { avisoDataNoSaldo } from '../domain/projection';
 import { gastoDaViagem, viagemAtivaEm } from '../domain/viagem';
+import { categoriaPorDescricao } from '../domain/modos';
 import { useApp } from '../state/store';
+import { useModo } from './useModo';
 
 export default function TelaLancar() {
+  const modo = useModo('lancar');
   const { dados, boxSel, hoje, recarregar, rascunhoLancar, setRascunhoLancar } = useApp();
   const [cents, setCents] = useState(0);
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
@@ -26,9 +29,12 @@ export default function TelaLancar() {
   const [salvo, setSalvo] = useState(false);
   // `null` = "o banco padrão da box"; só vira ID quando a pessoa escolhe outro.
   const [bancoEscolhido, setBancoEscolhido] = useState<string | null>(null);
-  // Só vale com "casa" no topo: a box que pagou o gasto. Fica escolhida depois de lançar,
+  // A box que pagou, escolhida no campo Box: no Avançado só com "casa" no topo; no Simples
+  // quando não há box padrão e há mais de uma box. Fica escolhida depois de lançar,
   // porque a pessoa costuma lançar vários gastos seguidos da mesma box.
   const [boxEscolhidaId, setBoxEscolhidaId] = useState<string | null>(null);
+  // Trava o segundo toque até o fim do `await`: o estado só atualiza no próximo render.
+  const salvandoRef = useRef(false);
   const salvoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const viagemAtiva = viagemAtivaEm(dados?.viagens ?? [], data);
 
@@ -40,9 +46,18 @@ export default function TelaLancar() {
   // A box "casa" é a que não tem saldo próprio e guarda o histórico compartilhado: não recebe
   // lançamento novo por aqui. Quem lança na casa escolhe a box de quem pagou.
   const boxesReais = dados ? dados.boxes.filter((b) => b.nome !== 'casa' && b.saldoInicial !== null) : [];
+  const ehBoxReal = (id: string | null | undefined) => id != null && boxesReais.some((b) => b.id === id);
+  const boxEscolhida = ehBoxReal(boxEscolhidaId) ? boxEscolhidaId : null;
+  // No Simples: box padrão → box escolhida → box do topo → única box. Sem resolução, `null`.
+  const boxPadraoId = ehBoxReal(dados?.config.boxPadraoId) ? dados!.config.boxPadraoId! : null;
   const boxId: string | null = !dados ? null
-    : naCasa ? (boxesReais.some((b) => b.id === boxEscolhidaId) ? boxEscolhidaId : null)
-      : boxSel;
+    : modo === 'simples'
+      ? (boxPadraoId ?? boxEscolhida ?? (ehBoxReal(boxSel) ? boxSel : null)
+        ?? (boxesReais.length === 1 ? boxesReais[0].id : null))
+      : naCasa ? boxEscolhida : boxSel;
+  const mostraSeletorBox = boxesReais.length > 0 && (
+    modo === 'simples' ? boxPadraoId == null && boxesReais.length > 1 : naCasa
+  );
 
   // A sheet Adicionar não renderiza esta tela, então manda o atalho pelo store. A dependência
   // é o rascunho, não a montagem: o + pode ser aberto com a tela Lançar já visível.
@@ -98,8 +113,11 @@ export default function TelaLancar() {
   const boxAtual = dados?.boxes.find((b) => b.id === boxId);
   const avisoSaldo = avisoDataNoSaldo(boxAtual, data);
 
-  const valido = boxId != null && cents > 0 && categoriaId != null && data !== ''
-    && categorias.some((c) => c.id === categoriaId);
+  // O Simples não pede categoria nem data: a categoria vem da descrição, a data é hoje.
+  const valido = modo === 'simples'
+    ? boxId != null && cents > 0
+    : boxId != null && cents > 0 && categoriaId != null && data !== ''
+      && categorias.some((c) => c.id === categoriaId);
 
   // Uma frase por vez, na ordem em que a pessoa preenche — dizer tudo que falta de uma vez
   // vira ruído, e o campo seguinte já vai aparecer sozinho quando o anterior for resolvido.
@@ -110,6 +128,36 @@ export default function TelaLancar() {
       : categoriaId == null ? 'Escolha uma categoria.'
         : data === '' ? 'Escolha uma data.'
           : '';
+
+  async function lancarSimples() {
+    if (!valido || salvandoRef.current || !dados) return;
+    salvandoRef.current = true;
+    try {
+      const descricao = nota.trim();
+      // A categoria do atalho (chip dos Frequentes) vale mais, se ainda for da box e do tipo.
+      const doAtalho = categoriaId != null
+        && dados.categorias.some((c) => c.id === categoriaId && c.boxId === boxId && c.tipo === tipo && !c.arquivada);
+      const catId = (doAtalho ? categoriaId : null) ?? categoriaPorDescricao({
+        lancamentos: dados.lancamentos, categorias: dados.categorias, boxId: boxId!, tipo, descricao,
+      }) ?? await repo.categoriaAClassificarDe(boxId!, tipo);
+      // Como no Avançado: se há viagem ativa na data do lançamento, ele entra nela.
+      const viagemHoje = viagemAtivaEm(dados.viagens, hoje);
+      await repo.salvarLancamento({
+        boxId: boxId!, categoriaId: catId, data: hoje, valor: cents,
+        ...(descricao ? { nota: descricao } : {}),
+        status: 'efetivo',
+        ...(viagemHoje ? { viagemId: viagemHoje.id } : {}),
+        ...(bancoId ? { bancoId } : {}),
+      });
+      await recarregar();
+      // O atalho vale para um lançamento só: o seguinte volta à regra da descrição.
+      setCents(0); setNota(''); setCategoriaId(null); setSalvo(true);
+      if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
+      salvoTimeoutRef.current = setTimeout(() => setSalvo(false), 2500);
+    } finally {
+      salvandoRef.current = false;
+    }
+  }
 
   async function lancar() {
     if (!valido) return;
@@ -129,22 +177,40 @@ export default function TelaLancar() {
 
   return (
     <div className="tela">
-      {naCasa && (
-        boxesReais.length === 0 ? (
-          <p className="sub">Nenhuma box — crie em Ajustes → Boxes.</p>
-        ) : (
-          <div className="campo">
-            <label htmlFor="box">Box</label>
-            <select id="box" value={boxEscolhidaId ?? ''} onChange={(e) => setBoxEscolhidaId(e.target.value || null)}>
-              <option value="">Escolha a box…</option>
-              {boxesReais.map((b) => <option key={b.id} value={b.id}>{b.nome}</option>)}
-            </select>
-          </div>
-        )
+      {dados && boxId == null && boxesReais.length === 0 && (
+        <p className="sub">Nenhuma box — crie em Ajustes → Boxes.</p>
       )}
-      {naCasa && boxesReais.length > 0 && boxId == null && <p className="sub">Escolha a box.</p>}
+      {mostraSeletorBox && (
+        <div className="campo">
+          <label htmlFor="box">Box</label>
+          <select id="box" value={boxId ?? ''} onChange={(e) => setBoxEscolhidaId(e.target.value || null)}>
+            <option value="">Escolha a box…</option>
+            {boxesReais.map((b) => <option key={b.id} value={b.id}>{b.nome}</option>)}
+          </select>
+        </div>
+      )}
+      {mostraSeletorBox && boxId == null && <p className="sub">Escolha a box.</p>}
       {boxAtual && <p className="sub" style={{ margin: 0 }}>Lançando na box <strong>{boxAtual.nome}</strong></p>}
-      {boxId != null && (
+      {modo === 'simples' ? (
+        <>
+          <div className="campo">
+            <label htmlFor="valor">Valor</label>
+            <CampoValor id="valor" valorCentavos={cents} onChange={setCents} autoFocus style={{ fontSize: 28 }} />
+          </div>
+          <SeletorPills
+            rotulo="Tipo" opcoes={OPCOES_TIPO} selecionadaId={tipo}
+            onSelecionar={(id) => { setTipo(id as TipoCategoria); setCategoriaId(null); }}
+          />
+          <div className="campo">
+            <label htmlFor="nota">Do que foi? (opcional)</label>
+            <input id="nota" value={nota} onChange={(e) => setNota(e.target.value)} />
+          </div>
+          <button className="botao botao-primario" disabled={!valido} onClick={lancarSimples} style={{ padding: 14 }}>
+            Lançar
+          </button>
+          {salvo && <p className="aviso aviso-sucesso">Lançado ✓</p>}
+        </>
+      ) : boxId != null && (
         <>
           <div className="campo">
             <label htmlFor="valor">Valor</label>

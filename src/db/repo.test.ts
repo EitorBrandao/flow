@@ -387,6 +387,15 @@ it('substituirTudo troca completamente os dados e reseta mudancasDesdeBackup', a
   expect(dados.config.mudancasDesdeBackup).toBe(false);
 });
 
+it('substituirTudo com backup que tem modos grava os modos do backup', async () => {
+  await boxECategoria();
+  const atuais = await repo.carregarTudo();
+  await repo.substituirTudo({ ...atuais, config: { ...atuais.config, modos: { hoje: 'simples', cartao: 'avancado' } } });
+  expect((await repo.carregarTudo()).config.modos).toEqual({ hoje: 'simples', cartao: 'avancado' });
+  await repo.substituirTudo({ ...atuais, config: { ...atuais.config, modos: undefined } });
+  expect((await repo.carregarTudo()).config.modos).toBeUndefined();
+});
+
 it('substituirTudo pode deixar o marcador de mudanças ligado, para o modo mesclar', async () => {
   await boxECategoria();
   const atuais = await repo.carregarTudo();
@@ -1911,5 +1920,137 @@ describe('lançamento de cenário nunca é efetivo', () => {
     const comum = await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-10-10', valor: 1, status: 'previsto' });
     await repo.confirmarPendente(comum.id);
     expect((await db.lancamentos.get(comum.id))?.status).toBe('efetivo');
+  });
+});
+
+describe('modos de uso', () => {
+  const vazio = () => Promise.all(db.tables.map((t) => t.clear()));
+  const TELAS = ['hoje', 'fluxo', 'cartao', 'analises', 'lancar'] as const;
+
+  it('banco vazio: carregarTudo grava todos os modos como simples (instalação nova)', async () => {
+    await vazio();
+    const dados = await repo.carregarTudo();
+    expect(Object.keys(dados.config.modos ?? {}).sort()).toEqual([...TELAS].sort());
+    for (const t of TELAS) expect(dados.config.modos?.[t]).toBe('simples');
+  });
+
+  it('config existente sem modos: carregarTudo não grava modos', async () => {
+    await vazio();
+    await db.config.put({
+      id: 'config', boxPadraoId: null, ultimoBackupEm: null, mudancasDesdeBackup: false,
+      horizonteProjecao: '2099-12-31',
+    });
+    const dados = await repo.carregarTudo();
+    expect(dados.config.modos).toBeUndefined();
+    expect((await db.config.get('config'))?.modos).toBeUndefined();
+  });
+
+  it('salvarModo numa config sem modos completa as cinco chaves e não marca mudança', async () => {
+    await vazio();
+    await db.config.put({
+      id: 'config', boxPadraoId: null, ultimoBackupEm: null, mudancasDesdeBackup: false,
+      horizonteProjecao: '2099-12-31',
+    });
+    await repo.salvarModo('cartao', 'simples');
+    const cfg = await db.config.get('config');
+    expect(cfg?.modos).toEqual({
+      hoje: 'avancado', fluxo: 'avancado', cartao: 'simples', analises: 'avancado', lancar: 'avancado',
+    });
+    expect(cfg?.mudancasDesdeBackup).toBe(false);
+  });
+
+  it('salvarModo sem config existente cria a config', async () => {
+    await vazio();
+    await repo.salvarModo('hoje', 'simples');
+    const cfg = await db.config.get('config');
+    expect(cfg?.modos?.hoje).toBe('simples');
+    expect(cfg?.modos?.fluxo).toBe('avancado');
+  });
+
+  it('salvarModo duas vezes na mesma tela não muda as outras', async () => {
+    await repo.salvarModo('fluxo', 'simples');
+    await repo.salvarModo('fluxo', 'simples');
+    await repo.salvarModo('fluxo', 'avancado');
+    await repo.salvarModo('fluxo', 'simples');
+    const cfg = await db.config.get('config');
+    expect(cfg?.modos).toEqual({
+      hoje: 'avancado', fluxo: 'simples', cartao: 'avancado', analises: 'avancado', lancar: 'avancado',
+    });
+  });
+
+  it('limparSimulacoesRapidas apaga só as simulações rápidas e seus itens', async () => {
+    const { box, gasto } = await boxECategoria();
+    const agora = agoraISO();
+    const rapida = { id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: false, rascunho: true as const, criadoEm: agora, alteradoEm: agora };
+    const outra = { id: novoId(), nome: 'Reforma', ligado: true, criadoEm: agora, alteradoEm: agora };
+    // do usuário, no Avançado, com o mesmo nome do rascunho: não pode ser apagado
+    const homonimo = { id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: true, criadoEm: agora, alteradoEm: agora };
+    await repo.salvarCenario(rapida);
+    await repo.salvarCenario(outra);
+    await repo.salvarCenario(homonimo);
+    for (const c of [rapida, outra, homonimo]) {
+      await repo.salvarLancamento({
+        boxId: box.id, categoriaId: gasto.id, data: '2027-01-10', valor: 5000,
+        status: 'previsto', cenarioId: c.id,
+      });
+    }
+    await repo.limparSimulacoesRapidas();
+    expect((await db.cenarios.toArray()).map((c) => c.id).sort()).toEqual([outra.id, homonimo.id].sort());
+    const restantes = await db.lancamentos.toArray();
+    expect(restantes.map((l) => l.cenarioId).sort()).toEqual([outra.id, homonimo.id].sort());
+  });
+
+  it('limparSimulacoesRapidas sem nenhuma simulação não faz nada', async () => {
+    await expect(repo.limparSimulacoesRapidas()).resolves.toBeUndefined();
+  });
+
+  it('limparSimulacoesRapidas não marca mudança desde backup', async () => {
+    const { box, gasto } = await boxECategoria();
+    const agora = agoraISO();
+    const rapida = { id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: false, rascunho: true as const, criadoEm: agora, alteradoEm: agora };
+    // Grava cenário diretamente no banco, sem marcar mudança
+    await db.cenarios.add(rapida);
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2027-01-10', valor: 5000, status: 'previsto', cenarioId: rapida.id,
+    });
+    // Reseta o marcador de mudança após salvarLancamento
+    await db.config.update('config', { mudancasDesdeBackup: false });
+    let cfg = await db.config.get('config');
+    expect(cfg?.mudancasDesdeBackup).toBe(false);
+    await repo.limparSimulacoesRapidas();
+    cfg = await db.config.get('config');
+    expect(cfg?.mudancasDesdeBackup).toBe(false);
+  });
+
+  it('excluirCenario comum marca mudança desde backup', async () => {
+    const { box, gasto } = await boxECategoria();
+    const agora = agoraISO();
+    const cenario = { id: novoId(), nome: 'Teste', ligado: true, criadoEm: agora, alteradoEm: agora };
+    // Grava cenário diretamente no banco, sem marcar mudança
+    await db.cenarios.add(cenario);
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2027-01-10', valor: 5000, status: 'previsto', cenarioId: cenario.id,
+    });
+    // Reseta o marcador de mudança após salvarLancamento
+    await db.config.update('config', { mudancasDesdeBackup: false });
+    let cfg = await db.config.get('config');
+    expect(cfg?.mudancasDesdeBackup).toBe(false);
+    await repo.excluirCenario(cenario.id);
+    cfg = await db.config.get('config');
+    expect(cfg?.mudancasDesdeBackup).toBe(true);
+  });
+
+  it('salvarModo simultâneo em duas telas é atômico', async () => {
+    await vazio();
+    await Promise.all([
+      repo.salvarModo('hoje', 'simples'),
+      repo.salvarModo('fluxo', 'simples'),
+    ]);
+    const cfg = await db.config.get('config');
+    expect(cfg?.modos?.hoje).toBe('simples');
+    expect(cfg?.modos?.fluxo).toBe('simples');
+    expect(cfg?.modos?.cartao).toBe('avancado');
+    expect(cfg?.modos?.analises).toBe('avancado');
+    expect(cfg?.modos?.lancar).toBe('avancado');
   });
 });

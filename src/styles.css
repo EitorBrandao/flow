@@ -84,6 +84,7 @@ button { cursor: pointer; }
 .item .cresce { flex: 1; min-width: 0; }
 .item.ativo { background: var(--ac-dim); color: var(--ac); }
 .item-coluna { flex-direction: column; align-items: stretch; gap: 12px; }
+.item-elevado { background: var(--surface2); }
 .linha-topo { display: flex; align-items: center; gap: 12px; }
 .linha-topo .cresce { flex: 1; min-width: 0; }
 .linha-topo-2-1 { display: grid; grid-template-columns: 2fr 1fr; align-items: start; }

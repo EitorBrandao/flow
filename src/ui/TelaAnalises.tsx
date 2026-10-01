@@ -21,20 +21,31 @@ import CategoriasCartaoCard, { type LinhaCategoriaCartao } from './CategoriasCar
 import ComposicaoBarChart, { type LinhaComposicao } from './ComposicaoBarChart';
 import FaturaCategoriaSheet from './FaturaCategoriaSheet';
 import LancamentosSheet from './LancamentosSheet';
+import SeletorMes from './SeletorMes';
 import SeletorFiltroBanco from './SeletorFiltroBanco';
 import SeletorPeriodo from './SeletorPeriodo';
 import ViagemSheet from './ViagemSheet';
+import { useModo } from './useModo';
 
 const EvolucaoMensalChart = lazy(() => import('./EvolucaoMensalChart'));
 
 export default function TelaAnalises() {
   const { dados: dadosTodos, boxSel, hoje, setAba } = useApp();
   const [periodo, setPeriodo] = useState<EstadoPeriodo>(() => estadoInicial(mesDe(hoje)));
-  const [incluirPrevistos, setIncluirPrevistos] = useState(true);
+  const [incluirPrevistosEscolha, setIncluirPrevistos] = useState(true);
   const [filtroBanco, setFiltroBanco] = useState<FiltroBanco>('todos');
+  const simples = useModo('analises') === 'simples';
   useEffect(() => {
     setFiltroBanco('todos');
   }, [boxSel]);
+  // No Simples a tela não mostra período, previstos nem banco: volta tudo ao padrão, para nunca
+  // exibir um número filtrado por algo que o modo esconde.
+  useEffect(() => {
+    if (!simples) return;
+    setPeriodo((p) => (p.modo === 'mes' ? p : { ...p, modo: 'mes' }));
+    setIncluirPrevistos(true);
+    setFiltroBanco('todos');
+  }, [simples]);
   // folha de um mês (lançamentos ou fatura); `doPeriodo` = aberta pela folha do período
   const [detalhe, setDetalhe] = useState<{ categoriaId: ID; mes: string; doPeriodo: boolean; forcarFatura?: boolean } | null>(null);
   // folha do período (vários meses) de uma categoria
@@ -45,8 +56,11 @@ export default function TelaAnalises() {
   if (!dadosTodos) return null;
   // Todo o resto da tela lê `dados`: com o filtro ligado, ele já vem só com os lançamentos e as
   // compras de cartão do banco escolhido (`dadosDoBanco`).
-  const dados = dadosDoBanco(dadosTodos, filtroBanco);
-  const meses = mesesDoPeriodo(periodo);
+  // O Simples ignora na hora o que o modo Avançado escolheu (sem esperar o efeito acima).
+  const incluirPrevistos = simples || incluirPrevistosEscolha;
+  const dados = dadosDoBanco(dadosTodos, simples ? 'todos' : filtroBanco);
+  const periodoEfetivo: EstadoPeriodo = simples && periodo.modo !== 'mes' ? { ...periodo, modo: 'mes' } : periodo;
+  const meses = mesesDoPeriodo(periodoEfetivo);
   const varios = meses.length > 1;
   // no modo Mês, o próprio mês; nos outros, o último do período (base das folhas por mês)
   const mes = meses[meses.length - 1];
@@ -152,12 +166,20 @@ export default function TelaAnalises() {
 
   return (
     <div className="tela">
-      <SeletorPeriodo estado={periodo} mesHoje={mesDe(hoje)} onMudar={setPeriodo} />
-      <label className="linha">
-        <input type="checkbox" checked={incluirPrevistos} onChange={(e) => setIncluirPrevistos(e.target.checked)} />
-        incluir previstos
-      </label>
-      <SeletorFiltroBanco bancos={bancosSel} valor={filtroBanco} onMudar={setFiltroBanco} />
+      {simples ? (
+        <div className="barra-fixa">
+          <SeletorMes mes={periodoEfetivo.mes} onMudar={(m) => setPeriodo({ ...periodoEfetivo, mes: m })} />
+        </div>
+      ) : (
+        <>
+          <SeletorPeriodo estado={periodo} mesHoje={mesDe(hoje)} onMudar={setPeriodo} />
+          <label className="linha">
+            <input type="checkbox" checked={incluirPrevistos} onChange={(e) => setIncluirPrevistos(e.target.checked)} />
+            incluir previstos
+          </label>
+          <SeletorFiltroBanco bancos={bancosSel} valor={filtroBanco} onMudar={setFiltroBanco} />
+        </>
+      )}
 
       <div className="card">
         <div className="linha" style={{ justifyContent: 'space-between' }}>
@@ -198,90 +220,94 @@ export default function TelaAnalises() {
         </Suspense>
       </div>
 
-      <div className="card rolavel">
-        <h2>Viagens</h2>
-        <div className="lista">
-          {viagensComTotal.map(({ viagem, total }) => (
-            <button className="item" key={viagem.id} onClick={() => setViagemAberta(viagem)}>
-              <div className="cresce">
-                {viagem.nome}
-                <div className="sub">{formatarDataBR(viagem.dataInicio)} – {formatarDataBR(viagem.dataFim)}</div>
-              </div>
-              {/* sem gasto, sem pílula vermelha — mesma regra da fatura sem gasto; estorno maior
-                  que o gasto do mês vira efeito positivo no saldo, e fica verde */}
-              <span className={classeEfeito(-total)}>{formatarBRL(total)}</span>
-            </button>
-          ))}
-          {viagensComTotal.length === 0 && <p className="sub">Nenhuma viagem cadastrada — crie em Ajustes.</p>}
-        </div>
-      </div>
+      {!simples && (
+        <>
+          <div className="card rolavel">
+            <h2>Viagens</h2>
+            <div className="lista">
+              {viagensComTotal.map(({ viagem, total }) => (
+                <button className="item" key={viagem.id} onClick={() => setViagemAberta(viagem)}>
+                  <div className="cresce">
+                    {viagem.nome}
+                    <div className="sub">{formatarDataBR(viagem.dataInicio)} – {formatarDataBR(viagem.dataFim)}</div>
+                  </div>
+                  {/* sem gasto, sem pílula vermelha — mesma regra da fatura sem gasto; estorno maior
+                      que o gasto do mês vira efeito positivo no saldo, e fica verde */}
+                  <span className={classeEfeito(-total)}>{formatarBRL(total)}</span>
+                </button>
+              ))}
+              {viagensComTotal.length === 0 && <p className="sub">Nenhuma viagem cadastrada — crie em Ajustes.</p>}
+            </div>
+          </div>
 
-      <div className="card">
-        <h2>Comparativo</h2>
-        {varios && <p className="sub" style={{ margin: '2px 2px 0' }}>{notaComparacao(meses)}</p>}
-        <div className="rolavel">
-          <table className="tabela">
-            {varios ? (
-              <>
-                <thead>
-                  <tr>
-                    <th>Categoria</th><th>{rotuloColunaPeriodo(periodo.modo, meses)}</th><th>anterior</th>
-                    {!semAnoAnterior && <th>ano anterior</th>}<th>média/mês</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {comparativoPeriodo.map((c) => {
-                    const cor = (v: number) => classeEfeito(efeitoNoSaldo(v, c.tipo));
-                    return (
-                      <tr key={c.categoriaId}>
-                        <td>{c.nome}</td>
-                        <td className={cor(c.atual)}>{formatarBRL(c.atual)}</td>
-                        <td className={cor(c.anterior)}>{formatarBRL(c.anterior)}</td>
-                        {c.anoAnterior != null && <td className={cor(c.anoAnterior)}>{formatarBRL(c.anoAnterior)}</td>}
-                        <td className={cor(c.mediaMensal)}>{formatarBRL(c.mediaMensal)}</td>
+          <div className="card">
+            <h2>Comparativo</h2>
+            {varios && <p className="sub" style={{ margin: '2px 2px 0' }}>{notaComparacao(meses)}</p>}
+            <div className="rolavel">
+              <table className="tabela">
+                {varios ? (
+                  <>
+                    <thead>
+                      <tr>
+                        <th>Categoria</th><th>{rotuloColunaPeriodo(periodoEfetivo.modo, meses)}</th><th>anterior</th>
+                        {!semAnoAnterior && <th>ano anterior</th>}<th>média/mês</th>
                       </tr>
-                    );
-                  })}
-                  {comparativoPeriodo.length === 0 && <tr><td colSpan={semAnoAnterior ? 4 : 5}>Sem dados para comparar.</td></tr>}
-                </tbody>
-              </>
-            ) : (
-              <>
-                <thead>
-                  <tr><th>Categoria</th><th>{mesAbreviado(mes)}</th><th>mês anterior</th><th>ano passado</th><th>média 3m</th></tr>
-                </thead>
-                <tbody>
-                  {comparativo.map((c) => {
-                    const media = media3m(c.categoriaId);
-                    return (
-                      <tr key={c.categoriaId}>
-                        <td>{c.nome}</td>
-                        <td className={classeEfeito(efeitoNoSaldo(c.atual, c.tipo))}>{formatarBRL(c.atual)}</td>
-                        <td className={classeEfeito(efeitoNoSaldo(c.mesAnterior, c.tipo))}>{formatarBRL(c.mesAnterior)}</td>
-                        <td className={classeEfeito(efeitoNoSaldo(c.anoAnterior, c.tipo))}>{formatarBRL(c.anoAnterior)}</td>
-                        <td className={media == null ? 'valor-neutro' : classeEfeito(efeitoNoSaldo(media, c.tipo))}>{media == null ? '—' : formatarBRL(media)}</td>
-                      </tr>
-                    );
-                  })}
-                  {comparativo.length === 0 && <tr><td colSpan={5}>Sem dados para comparar.</td></tr>}
-                </tbody>
-              </>
-            )}
-          </table>
-        </div>
-      </div>
+                    </thead>
+                    <tbody>
+                      {comparativoPeriodo.map((c) => {
+                        const cor = (v: number) => classeEfeito(efeitoNoSaldo(v, c.tipo));
+                        return (
+                          <tr key={c.categoriaId}>
+                            <td>{c.nome}</td>
+                            <td className={cor(c.atual)}>{formatarBRL(c.atual)}</td>
+                            <td className={cor(c.anterior)}>{formatarBRL(c.anterior)}</td>
+                            {c.anoAnterior != null && <td className={cor(c.anoAnterior)}>{formatarBRL(c.anoAnterior)}</td>}
+                            <td className={cor(c.mediaMensal)}>{formatarBRL(c.mediaMensal)}</td>
+                          </tr>
+                        );
+                      })}
+                      {comparativoPeriodo.length === 0 && <tr><td colSpan={semAnoAnterior ? 4 : 5}>Sem dados para comparar.</td></tr>}
+                    </tbody>
+                  </>
+                ) : (
+                  <>
+                    <thead>
+                      <tr><th>Categoria</th><th>{mesAbreviado(mes)}</th><th>mês anterior</th><th>ano passado</th><th>média 3m</th></tr>
+                    </thead>
+                    <tbody>
+                      {comparativo.map((c) => {
+                        const media = media3m(c.categoriaId);
+                        return (
+                          <tr key={c.categoriaId}>
+                            <td>{c.nome}</td>
+                            <td className={classeEfeito(efeitoNoSaldo(c.atual, c.tipo))}>{formatarBRL(c.atual)}</td>
+                            <td className={classeEfeito(efeitoNoSaldo(c.mesAnterior, c.tipo))}>{formatarBRL(c.mesAnterior)}</td>
+                            <td className={classeEfeito(efeitoNoSaldo(c.anoAnterior, c.tipo))}>{formatarBRL(c.anoAnterior)}</td>
+                            <td className={media == null ? 'valor-neutro' : classeEfeito(efeitoNoSaldo(media, c.tipo))}>{media == null ? '—' : formatarBRL(media)}</td>
+                          </tr>
+                        );
+                      })}
+                      {comparativo.length === 0 && <tr><td colSpan={5}>Sem dados para comparar.</td></tr>}
+                    </tbody>
+                  </>
+                )}
+              </table>
+            </div>
+          </div>
 
-      <CategoriasCartaoCard
-        mes={mes}
-        periodo={varios ? meses : undefined}
-        rotuloPeriodo={rotuloColunaPeriodo(periodo.modo, meses)}
-        boxIds={ids}
-        cartoes={dados.cartoes}
-        categoriasCartao={dados.categoriasCartao}
-        comprasCartao={dados.comprasCartao}
-        ajustesFechamento={dados.ajustesFechamento}
-        onAbrir={setCategoriaCartaoAberta}
-      />
+          <CategoriasCartaoCard
+            mes={mes}
+            periodo={varios ? meses : undefined}
+            rotuloPeriodo={rotuloColunaPeriodo(periodoEfetivo.modo, meses)}
+            boxIds={ids}
+            cartoes={dados.cartoes}
+            categoriasCartao={dados.categoriasCartao}
+            comprasCartao={dados.comprasCartao}
+            ajustesFechamento={dados.ajustesFechamento}
+            onAbrir={setCategoriaCartaoAberta}
+          />
+        </>
+      )}
 
       {abrirFatura && cartaoDaCategoria ? (
         <FaturaCategoriaSheet

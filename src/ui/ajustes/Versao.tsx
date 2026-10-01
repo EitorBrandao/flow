@@ -1,5 +1,4 @@
-import changelogRaw from '../../../CHANGELOG.md?raw';
-import { parseChangelog } from './changelog';
+import { versoesDoApp } from './versaoAtual';
 
 function dataBonita(iso: string): string {
   const [ano, mes, dia] = iso.split('-');
@@ -7,7 +6,7 @@ function dataBonita(iso: string): string {
 }
 
 export default function Versao() {
-  const versoes = parseChangelog(changelogRaw);
+  const versoes = versoesDoApp;
   const atual = versoes[0];
 
   return (

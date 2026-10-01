@@ -18,6 +18,14 @@ it('round-trip: gerar → serializar → validar', () => {
   expect(volta.schema).toBe(6);
 });
 
+it('backup com cenário rascunho valida e mescla com o campo preservado', () => {
+  const d = dados();
+  d.cenarios = [{ id: 'c1', nome: 'Simulação rápida', ligado: false, rascunho: true, criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' }];
+  const volta = validarBackup(JSON.parse(JSON.stringify(gerarBackup(d))));
+  expect(volta.dados.cenarios[0].rascunho).toBe(true);
+  expect(mesclar(dados(), volta.dados).cenarios[0].rascunho).toBe(true);
+});
+
 it('validarBackup rejeita arquivo de outro app ou schema', () => {
   expect(() => validarBackup({ app: 'outro' })).toThrow(/não é um backup do Flow/);
   expect(() => validarBackup({ app: 'flow', schema: 99, dados: {} })).toThrow(/versão/);
@@ -498,4 +506,43 @@ it('mesclar: o banco padrão e o banco do lançamento seguem o registro mais rec
 
   expect(m.bancos[0].padrao).toBe(false);
   expect(m.lancamentos[0].bancoId).toBe('bk1');
+});
+
+// ---------- modos de uso ----------
+
+it('validarBackup: backup sem modos valida e a config volta sem modos', () => {
+  const v = validarBackup(backupCom({ horizonteProjecao: '2027-12-31' }));
+  expect('modos' in v.dados.config).toBe(false);
+  const comUndefined = validarBackup(backupCom({ horizonteProjecao: '2027-12-31', modos: undefined }));
+  expect(comUndefined.dados.config.modos).toBeUndefined();
+});
+
+it('validarBackup: modos válidos passam e são preservados', () => {
+  const modos = { hoje: 'simples', fluxo: 'avancado', cartao: 'simples' };
+  const v = validarBackup(backupCom({ horizonteProjecao: '2027-12-31', modos }));
+  expect(v.dados.config.modos).toEqual(modos);
+  expect(validarBackup(backupCom({ modos: {} })).dados.config.modos).toEqual({});
+});
+
+it('validarBackup: modos com valor inválido lança erro em português', () => {
+  expect(() => validarBackup(backupCom({ modos: { hoje: 'facil' } }))).toThrow(/modos de uso inválidos/);
+  expect(() => validarBackup(backupCom({ modos: { telaInexistente: 'simples' } }))).toThrow(/modos de uso inválidos/);
+  expect(() => validarBackup(backupCom({ modos: { hoje: null } }))).toThrow(/modos de uso inválidos/);
+});
+
+it('validarBackup: modos que não é objeto lança erro', () => {
+  expect(() => validarBackup(backupCom({ modos: [] }))).toThrow(/modos de uso inválidos/);
+  expect(() => validarBackup(backupCom({ modos: 'x' }))).toThrow(/modos de uso inválidos/);
+  expect(() => validarBackup(backupCom({ modos: null }))).toThrow(/modos de uso inválidos/);
+  expect(() => validarBackup(backupCom({ modos: 0 }))).toThrow(/modos de uso inválidos/);
+});
+
+it('mesclar mantém os modos da config local', () => {
+  const atual = dados();
+  atual.config.modos = { hoje: 'simples' };
+  const backup = dados();
+  backup.config.modos = { hoje: 'avancado', fluxo: 'simples' };
+  expect(mesclar(atual, backup).config.modos).toEqual({ hoje: 'simples' });
+  const semModos = dados();
+  expect(mesclar(semModos, backup).config.modos).toBeUndefined();
 });

@@ -16,7 +16,7 @@ export interface ValoresItem {
   repeticao: Repeticao; data: ISODate; parcelas: number;
 }
 
-const OPCOES_REPETICAO: { id: Repeticao; nome: string }[] = [
+export const OPCOES_REPETICAO: { id: Repeticao; nome: string }[] = [
   { id: 'unica', nome: 'Uma vez' },
   { id: 'parcelado', nome: 'Parcelado' },
   { id: 'mensal', nome: 'Todo mês' },

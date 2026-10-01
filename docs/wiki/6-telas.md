@@ -1,5 +1,7 @@
 # Telas
 
+Este capítulo descreve o modo Avançado de cada tela. O modo Simples mostra menos blocos: veja [Modo simples e avançado](#modos).
+
 Todas respeitam o seletor de box no topo (no exemplo: `{{boxA}}` / `{{boxB}}` / `casa`), exceto onde indicado.
 
 > **Sobre "obrigatório" nesta wiki:** a UI não marca campos com asterisco — isso é só documentação. "Obrigatório" quer dizer que salvar não grava nada com o campo vazio ou inválido: o app diz o que falta, uma coisa por vez, num aviso abaixo dos botões. Campos com valor padrão (ex.: data = hoje, parcelas = 1) contam como preenchidos, mesmo sem o usuário tocar neles.

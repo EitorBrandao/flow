@@ -163,6 +163,22 @@ export function larguraColunaValor(sem: number[], ext: { min: number[]; max: num
   return Math.max(4, ...textos.map((t) => t.length));
 }
 
+/** Menor saldo do campo entre os dias de `hoje` em diante. Série sem dias assim: `0`. */
+export function menorSaldo(
+  serie: DiaSaldo[], campo: 'saldoProjetado' | 'saldoComCenarios', hoje: ISODate,
+): number {
+  const futuros = serie.filter((d) => d.data >= hoje);
+  if (futuros.length === 0) return 0;
+  return Math.min(...futuros.map((d) => d[campo]));
+}
+
+/** Primeiro dia, de `hoje` em diante, em que o saldo do campo fica abaixo de zero. */
+export function primeiroDiaNegativo(
+  serie: DiaSaldo[], campo: 'saldoProjetado' | 'saldoComCenarios', hoje: ISODate,
+): ISODate | null {
+  return serie.find((d) => d.data >= hoje && d[campo] < 0)?.data ?? null;
+}
+
 export type Repeticao = 'unica' | 'parcelado' | 'mensal';
 
 /** Item de um cenário: um lançamento avulso ("uma vez") ou uma recorrência (parcelado ou

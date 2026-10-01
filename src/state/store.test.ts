@@ -192,3 +192,40 @@ it('abrirFluxo troca para a aba Fluxo e guarda a aba interna pedida, até ser li
   expect(useApp.getState().fluxoAba).toBeNull();
   expect(useApp.getState().aba).toBe('fluxo');
 });
+
+describe('iniciar e simulações rápidas', () => {
+  it('apaga simulação rápida deixada por fechamento abrupto e mantém os outros cenários', async () => {
+    const agora = agoraISO();
+    await repo.salvarCenario({ id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: false, rascunho: true, criadoEm: agora, alteradoEm: agora });
+    const outro = { id: novoId(), nome: 'Reforma', ligado: false, criadoEm: agora, alteradoEm: agora };
+    await repo.salvarCenario(outro);
+    await useApp.getState().iniciar();
+    expect(useApp.getState().dados?.cenarios.map((c) => c.id)).toEqual([outro.id]);
+  });
+
+  it('mantém um cenário do usuário com o nome "Simulação rápida" (sem rascunho)', async () => {
+    const agora = agoraISO();
+    const dele = { id: novoId(), nome: repo.NOME_SIMULACAO_RAPIDA, ligado: true, criadoEm: agora, alteradoEm: agora };
+    await repo.salvarCenario(dele);
+    await useApp.getState().iniciar();
+    expect(useApp.getState().dados?.cenarios.map((c) => c.id)).toEqual([dele.id]);
+  });
+
+  it('sem simulação rápida, iniciar não altera os cenários', async () => {
+    await useApp.getState().iniciar();
+    expect(useApp.getState().dados?.cenarios).toEqual([]);
+  });
+});
+
+it('iniciar num banco vazio deixa todos os cinco modos em simples', async () => {
+  await Promise.all(db.tables.map((t) => t.clear()));
+  await useApp.getState().iniciar();
+  const s = useApp.getState();
+  expect(s.dados?.config.modos).toEqual({
+    hoje: 'simples',
+    fluxo: 'simples',
+    cartao: 'simples',
+    analises: 'simples',
+    lancar: 'simples',
+  });
+});

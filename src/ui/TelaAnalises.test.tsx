@@ -511,3 +511,90 @@ it('filtro por banco reseta ao trocar de box nas Análises', async () => {
   expect(screen.getByRole('radio', { name: 'Todos' })).toHaveAttribute('aria-checked', 'true');
   expect(screen.queryByRole('radio', { name: 'Banco Dois' })).not.toHaveAttribute('aria-checked', 'true');
 });
+
+describe('modo Simples', () => {
+  // jul/2026, hoje = 15/07. Ganhos 5000,00; gastos 300,00 efetivo + 100,00 previsto = 400,00;
+  // sobra = 5000,00 - 400,00 = 4600,00.
+  async function seedJulho(modo: 'simples' | 'avancado') {
+    const { box, catPix } = await seedBoxComCategoria();
+    const catSalario = await repo.salvarCategoria({ boxId: box.id, nome: 'salário', tipo: 'ganho', ordem: 1 });
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-05', valor: 500000, status: 'efetivo', nota: 'Pagamento' });
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2026-07-05', valor: 30000, status: 'efetivo', nota: 'Padaria' });
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: catPix.id, data: '2026-07-20', valor: 10000, status: 'previsto', nota: 'Feira' });
+    await repo.salvarModo('analises', modo);
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-15' });
+    return { box, catPix };
+  }
+  const resumoDoCard = () => (screen.getByText(/^Ganhos/).closest('.card') as HTMLElement).textContent;
+
+  it('esconde períodos, previstos, banco, Viagens, Comparativo e categorias do cartão', async () => {
+    await seedJulho('simples');
+    render(<TelaAnalises />);
+    expect(screen.getByRole('button', { name: 'Mês anterior' })).toBeInTheDocument();
+    for (const nome of ['12 meses', 'Ano', 'Período']) {
+      expect(screen.queryByRole('radio', { name: nome })).not.toBeInTheDocument();
+    }
+    expect(screen.queryByLabelText('incluir previstos')).not.toBeInTheDocument();
+    expect(screen.queryByText(/incluir previstos/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/banco/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Viagens' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Comparativo' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/cartão/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/^Ganhos/)).toBeInTheDocument();
+    expect(screen.getByText(/^Gastos/)).toBeInTheDocument();
+    expect(screen.getByText(/^Sobra/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Por categoria' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Evolução mensal' })).toBeInTheDocument();
+  });
+
+  it('mostra no resumo os mesmos números do Avançado para o mesmo mês', async () => {
+    await seedJulho('simples');
+    const { unmount } = render(<TelaAnalises />);
+    const simples = resumoDoCard();
+    expect(simples).toContain(formatarBRL(500000));
+    expect(simples).toContain(formatarBRL(40000));
+    expect(simples).toContain(formatarBRL(460000));
+    unmount();
+    await act(async () => { await repo.salvarModo('analises', 'avancado'); await useApp.getState().recarregar(); useApp.setState({ hoje: '2026-07-15' }); });
+    render(<TelaAnalises />);
+    expect(resumoDoCard()).toBe(simples);
+  });
+
+  it('o drill-down de categoria continua abrindo a folha do mês', async () => {
+    await seedJulho('simples');
+    render(<TelaAnalises />);
+    await userEvent.click(screen.getByRole('button', { name: /pix/ }));
+    const folha = await screen.findByRole('dialog', { name: 'pix' });
+    expect(within(folha).getByText('Padaria')).toBeInTheDocument();
+  });
+
+  it('trocar de Avançado para Simples volta ao período Mês', async () => {
+    await seedJulho('avancado');
+    render(<TelaAnalises />);
+    await userEvent.click(screen.getByRole('radio', { name: 'Ano' }));
+    expect(screen.queryByRole('button', { name: 'Mês anterior' })).not.toBeInTheDocument();
+    await act(async () => { await repo.salvarModo('analises', 'simples'); await useApp.getState().recarregar(); useApp.setState({ hoje: '2026-07-15' }); });
+    expect(await screen.findByRole('button', { name: 'Mês anterior' })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'Ano' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/^média por mês:/)).not.toBeInTheDocument();
+  });
+
+  it('trocar para Simples restaura "incluir previstos" e o filtro por banco', async () => {
+    await seedJulho('avancado');
+    render(<TelaAnalises />);
+    await userEvent.click(screen.getByLabelText('incluir previstos'));
+    expect(resumoDoCard()).toContain(formatarBRL(30000));
+    await act(async () => { await repo.salvarModo('analises', 'simples'); await useApp.getState().recarregar(); useApp.setState({ hoje: '2026-07-15' }); });
+    await waitFor(() => expect(resumoDoCard()).toContain(formatarBRL(40000)));
+  });
+
+  it('Avançado mantém todos os blocos', async () => {
+    await seedJulho('avancado');
+    render(<TelaAnalises />);
+    expect(screen.getByRole('radio', { name: 'Ano' })).toBeInTheDocument();
+    expect(screen.getByLabelText('incluir previstos')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Viagens' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Comparativo' })).toBeInTheDocument();
+  });
+});

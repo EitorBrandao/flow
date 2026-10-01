@@ -11,7 +11,7 @@ import type {
 export type Aba = 'hoje' | 'fluxo' | 'lancar' | 'cartao' | 'analises' | 'ajustes';
 export type BoxSelecionada = ID | 'casa';
 export type SecaoAjustes = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'bancos' | 'cartoes'
-  | 'categoriasCartao' | 'assinaturas' | 'viagens' | 'backup' | 'importar' | 'wiki' | 'versao';
+  | 'categoriasCartao' | 'assinaturas' | 'viagens' | 'backup' | 'importar' | 'wiki' | 'versao' | 'modos';
 
 /** Aba interna do Fluxo; `abrirFluxo` escolhe qual abre na chegada. */
 export type AbaFluxo = 'lista' | 'grafico' | 'simular';
@@ -86,6 +86,7 @@ export const useApp = create<AppState>((set) => ({
         criadoEm: agora, alteradoEm: agora,
       });
     }
+    await repo.limparSimulacoesRapidas();
     await repo.materializarTodas(inicial.config.horizonteProjecao);
     await repo.sincronizarCartoes(inicial.config.horizonteProjecao);
     const dados = await repo.carregarTudo();

@@ -9,11 +9,13 @@ import { classeEfeito, formatarBRL } from '../domain/money';
 import type { Cartao, CompraCartao } from '../domain/types';
 import { boxIdsSelecionadas, useApp } from '../state/store';
 import CampoValor from './CampoValor';
+import CartaoSimples from './CartaoSimples';
 import FormCompra from './FormCompra';
 import AvisoFaturaForaDoFluxo from './AvisoFaturaForaDoFluxo';
 import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
 import SeletorMes from './SeletorMes';
 import Sheet from './Sheet';
+import { useModo } from './useModo';
 
 // NOTA DE PATCH (nível 1): o card de fatura ganhou 3 abas internas (Resumo/Lançamentos/
 // Conferência) via `.pills` — cabeçalho da fatura (mês, total, fecha/vence) continua sempre
@@ -333,6 +335,7 @@ function ItemFaturaBotao({ item, nomeCat, onClick }: {
 
 export default function TelaCartao() {
   const { dados, boxSel, abrirAjustes } = useApp();
+  const modo = useModo('cartao');
   const [cartaoSelId, setCartaoSelId] = useState<string | null>(null);
   const uid = useId();
   if (!dados) return null;
@@ -365,7 +368,9 @@ export default function TelaCartao() {
           </select>
         </div>
       )}
-      <CartaoFatura key={cartao.id} cartao={cartao} />
+      {modo === 'simples'
+        ? <CartaoSimples key={cartao.id} cartao={cartao} />
+        : <CartaoFatura key={cartao.id} cartao={cartao} />}
     </div>
   );
 }

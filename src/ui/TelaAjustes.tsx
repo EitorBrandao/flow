@@ -13,6 +13,8 @@ import Recorrencias from './ajustes/Recorrencias';
 import Viagens from './ajustes/Viagens';
 import Wiki from './ajustes/Wiki';
 import Versao from './ajustes/Versao';
+import ModoDeUso from './ajustes/ModoDeUso';
+import { versaoAtual } from './ajustes/versaoAtual';
 
 type GrupoId = 'contas' | 'planejamento' | 'cartao' | 'dados' | 'sobre';
 
@@ -36,6 +38,7 @@ const GRUPOS: { id: GrupoId; rotulo: string; itens: { id: SecaoAjustes; rotulo: 
     { id: 'backup', rotulo: 'Backup e restauração' },
   ] },
   { id: 'sobre', rotulo: 'Sobre o app', itens: [
+    { id: 'modos', rotulo: 'Modo de uso' },
     { id: 'wiki', rotulo: 'Wiki' },
     { id: 'versao', rotulo: 'Versão' },
   ] },
@@ -45,13 +48,14 @@ function grupoDaSecao(secao: SecaoAjustes): GrupoId | null {
   return GRUPOS.find((g) => g.itens.some((i) => i.id === secao))?.id ?? null;
 }
 
-function Linha({ rotulo, detalhe, onClick }: { rotulo: string; detalhe?: string; onClick: () => void }) {
+function Linha({ rotulo, detalhe, valor, onClick }: { rotulo: string; detalhe?: string; valor?: string; onClick: () => void }) {
   return (
     <button className="item" style={{ cursor: 'pointer' }} onClick={onClick}>
       <span className="cresce" style={{ textAlign: 'left' }}>
         {rotulo}
         {detalhe && <span className="sub" style={{ display: 'block' }}>{detalhe}</span>}
       </span>
+      {valor && <span className="sub">{valor}</span>}
       <ChevronRight size={18} color="var(--muted)" aria-hidden="true" />
     </button>
   );
@@ -96,7 +100,9 @@ export default function TelaAjustes() {
           {grupoAtual.itens.map((i) => (
             <Linha
               key={i.id} rotulo={i.rotulo} onClick={() => setSecao(i.id)}
-              detalhe={i.id === 'importar' && importacao.nomeArquivo ? 'Conferência em andamento' : undefined}
+              valor={i.id === 'versao' ? versaoAtual : undefined}
+              detalhe={i.id === 'modos' ? 'Simples ou avançado, por tela'
+                : i.id === 'importar' && importacao.nomeArquivo ? 'Conferência em andamento' : undefined}
             />
           ))}
         </div>
@@ -119,6 +125,7 @@ export default function TelaAjustes() {
       {secao === 'importar' && <Importar />}
       {secao === 'wiki' && <Wiki />}
       {secao === 'versao' && <Versao />}
+      {secao === 'modos' && <ModoDeUso />}
     </div>
   );
 }

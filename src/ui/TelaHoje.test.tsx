@@ -1042,6 +1042,128 @@ it('sem série para desenhar, não mostra o link do gráfico', async () => {
   expect(screen.queryByRole('button', { name: 'Ver gráfico completo na aba Fluxo →' })).not.toBeInTheDocument();
 });
 
+describe('Hoje no modo Simples', () => {
+  async function montarSimples(opcoes: { bancos?: boolean; mudancas?: boolean; backupEm?: string | null } = {}) {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-01', valor: 1000, status: 'efetivo' });
+    let bancoId = '';
+    if (opcoes.bancos) {
+      const b = await repo.salvarBanco({ boxId: box.id, nome: 'Banco A', ordem: 0 });
+      await repo.atualizarBanco(b.id, { saldoDeclaradoCent: 70000, dataSaldoDeclarado: '2026-07-01' });
+      bancoId = b.id;
+    }
+    await repo.salvarModo('hoje', 'simples');
+    await repo.salvarConfig({ mudancasDesdeBackup: opcoes.mudancas ?? false, ultimoBackupEm: opcoes.backupEm ?? null });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-26', aba: 'hoje', ajustesSecao: null });
+    render(<TelaHoje />);
+    return { box, bancoId };
+  }
+  const local = (dia: number) => new Date(2026, 6, dia, 12).toISOString();
+
+  it('Visão sem rodapé de backup quando está tudo bem', async () => {
+    await montarSimples({ mudancas: true, backupEm: local(23) });
+    expect(screen.getByText('Saldo hoje · eitor')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Último backup/ })).not.toBeInTheDocument();
+  });
+
+  it('Visão mantém o aviso só quando o backup passou do limite vermelho', async () => {
+    await montarSimples({ mudancas: true, backupEm: local(12) });
+    const rodape = screen.getByRole('button', { name: /Último backup: há 14 dias/ });
+    expect(rodape).toHaveClass('aviso-urgente');
+  });
+
+  it('Conferir tem um campo único, sem sinal, sem transferência e sem lista por banco', async () => {
+    await montarSimples({ bancos: true });
+    await abrirAba('Conferir');
+    expect(screen.getByLabelText('Saldo real no banco')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Alternar sinal/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/↔/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Banco A')).not.toBeInTheDocument();
+    expect(screen.getByText('Total calculado no Flow')).toBeInTheDocument();
+  });
+
+  it('saldo declarado negativo: o botão de sinal aparece e digitar 300 sem mexer no sinal grava −300', async () => {
+    const { box } = await montarSimples();
+    await db.boxes.update(box.id, { saldoDeclaradoCent: -50000, dataSaldoDeclarado: '2026-07-25' });
+    await act(async () => { await useApp.getState().recarregar(); });
+    useApp.setState({ hoje: '2026-07-26' });
+    await abrirAba('Conferir');
+    const sinal = screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' });
+    expect(sinal).toHaveTextContent('−');
+    await userEvent.clear(screen.getByLabelText('Saldo real no banco'));
+    await userEvent.type(screen.getByLabelText('Saldo real no banco'), '300,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await vi.waitFor(async () => expect((await db.boxes.get(box.id))?.saldoDeclaradoCent).toBe(-30000));
+    expect(screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' })).toHaveTextContent('−');
+  });
+
+  it('saldo declarado negativo: o sinal pode ser trocado para positivo no Simples', async () => {
+    const { box } = await montarSimples();
+    await db.boxes.update(box.id, { saldoDeclaradoCent: -50000, dataSaldoDeclarado: '2026-07-25' });
+    await act(async () => { await useApp.getState().recarregar(); });
+    useApp.setState({ hoje: '2026-07-26' });
+    await abrirAba('Conferir');
+    await userEvent.click(screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await vi.waitFor(async () => expect((await db.boxes.get(box.id))?.saldoDeclaradoCent).toBe(50000));
+  });
+
+  it('saldo declarado positivo ou ausente: sem botão de sinal e grava positivo', async () => {
+    const { box } = await montarSimples();
+    await db.boxes.update(box.id, { saldoDeclaradoCent: 50000, dataSaldoDeclarado: '2026-07-25' });
+    await act(async () => { await useApp.getState().recarregar(); });
+    useApp.setState({ hoje: '2026-07-26' });
+    await abrirAba('Conferir');
+    expect(screen.queryByRole('button', { name: /Alternar sinal/ })).not.toBeInTheDocument();
+    await userEvent.clear(screen.getByLabelText('Saldo real no banco'));
+    await userEvent.type(screen.getByLabelText('Saldo real no banco'), '300,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await vi.waitFor(async () => expect((await db.boxes.get(box.id))?.saldoDeclaradoCent).toBe(30000));
+  });
+
+  it('salvar grava o saldo declarado da box, sem criar lançamento nem mexer nos bancos', async () => {
+    const { box, bancoId } = await montarSimples({ bancos: true });
+    const antes = await db.lancamentos.count();
+    await abrirAba('Conferir');
+    await userEvent.type(screen.getByLabelText('Saldo real no banco'), '1050,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByText(/falta inserir/)).toBeInTheDocument();
+    expect((await db.boxes.get(box.id))?.saldoDeclaradoCent).toBe(105000);
+    expect(await db.lancamentos.count()).toBe(antes);
+    const banco = await db.bancos.get(bancoId);
+    expect(banco?.saldoDeclaradoCent).toBe(70000);
+    expect(banco?.dataSaldoDeclarado).toBe('2026-07-01');
+  });
+
+  it('na visão casa grava em config.saldoDeclaradoCent', async () => {
+    await montarSimples();
+    useApp.setState({ boxSel: 'casa' });
+    await abrirAba('Conferir');
+    await userEvent.type(screen.getByLabelText('Saldo real no banco'), '1010,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    expect(await screen.findByText(/conferido em/)).toBeInTheDocument();
+    expect((await db.config.toCollection().first())?.saldoDeclaradoCent).toBe(101000);
+  });
+
+  it('voltar ao Avançado mostra os saldos por banco intactos', async () => {
+    await montarSimples({ bancos: true });
+    await abrirAba('Conferir');
+    await userEvent.type(screen.getByLabelText('Saldo real no banco'), '900,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await screen.findByText(/falta inserir|sobra no app|Bate/);
+    await act(async () => {
+      await repo.salvarModo('hoje', 'avancado');
+      await useApp.getState().recarregar();
+    });
+    expect(await screen.findByText('Banco A')).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/700,00/)).toBeInTheDocument();
+  });
+});
+
 describe('selo da box nos pendentes', () => {
   async function montar(boxSel: 'casa' | 'ana') {
     const agora = agoraISO();

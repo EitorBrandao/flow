@@ -6,7 +6,7 @@ Atrás do ícone ⚙️ no topo. O menu tem cinco grupos; toque num grupo para v
 - **Planejamento:** Categorias, Recorrências e Viagens.
 - **Cartão:** Cartões, Categorias do cartão e Assinaturas do cartão.
 - **Dados:** Importar e conferir, e Backup e restauração.
-- **Sobre o app:** Wiki e Versão.
+- **Sobre o app:** Modo de uso, Wiki e Versão. Veja [Modo simples e avançado](#modos).
 
 Nas seções de cadastro, o formulário no topo serve para criar; para editar, toque no lápis do próprio item.
 

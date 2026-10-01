@@ -156,6 +156,8 @@ export interface AjusteFechamento extends Entidade {
 export interface Cenario extends Entidade {
   nome: string;
   ligado: boolean;
+  /** Rascunho do Simular simples: some ao sair da tela e a cada `iniciar()`. "Guardar" remove o campo. */
+  rascunho?: true;
 }
 
 /** Agrupa gastos (compras de cartão e lançamentos de débito) feitos num período de viagem. */
@@ -166,6 +168,11 @@ export interface Viagem extends Entidade {
   orcamentoCent?: number; // centavos; ausente ou 0 = sem orçamento
 }
 
+export const TELAS_MODO = ['hoje', 'fluxo', 'cartao', 'analises', 'lancar'] as const;
+export type TelaModo = (typeof TELAS_MODO)[number];
+export type ModoUso = 'simples' | 'avancado';
+export type ModosUso = Record<TelaModo, ModoUso>;
+
 export interface Config {
   id: 'config';
   boxPadraoId: ID | null;
@@ -174,6 +181,7 @@ export interface Config {
   horizonteProjecao: ISODate;
   saldoDeclaradoCent?: number | null; // último saldo real do banco informado (visão 'casa')
   dataSaldoDeclarado?: ISODate | null;
+  modos?: Partial<ModosUso>; // ausente = avançado; só instalação nova grava 'simples'
 }
 
 export interface Dados {
