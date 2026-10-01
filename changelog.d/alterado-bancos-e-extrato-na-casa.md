@@ -1,0 +1,2 @@
+- Com casa no topo, Bancos pede para escolher uma box.
+- Ao importar um extrato com casa no topo, nenhuma box vem marcada como destino.

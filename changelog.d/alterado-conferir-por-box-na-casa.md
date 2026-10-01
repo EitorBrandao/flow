@@ -1,0 +1,3 @@
+- Com casa no topo, Hoje → Conferir faz uma conferência por box.
+  - Box com bancos mostra os bancos; box sem bancos mostra o saldo da própria box.
+  - A diferença só aparece quando toda box tem saldo informado.

@@ -87,7 +87,16 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   invariantes.
 - **Cenário** — um grupo de lançamentos hipotéticos, ligável/desligável
   (`ligado`), que só entram no `saldoComCenarios` da projeção quando ligado. Nunca deveria
-  virar `efetivo` — ver a ressalva na matriz abaixo.
+  virar `efetivo` — ver a ressalva na matriz abaixo. Pertence a uma visão: `Cenario.escopo`
+  guarda `'casa'` ou o id de uma box, e o campo ausente (cenário antigo) vale `'casa'`
+  (`escopoDoCenario`, `cenarioDaVisao`, `src/domain/cenarios.ts`). O campo é opcional e não tem
+  índice: não há `version(n)` no Dexie. `cenariosLigados(dados, boxSel)` (`src/state/store.ts`)
+  devolve só os ligados da visão; Hoje, Fluxo e Simular usam esse conjunto. A regra de visão é
+  da interface e da projeção, **não** do repo: `repo.salvarCenario` grava qualquer `escopo`
+  (**expectativa não garantida**). O dossiê (`src/dossie/retrato.ts` e `invariantes.ts`) é um
+  retrato geral, não de uma visão: soma todos os cenários ligados, sem olhar o dono. Por isso o
+  retrato difere do que uma visão isolada mostra (**expectativa não garantida** de que os dois
+  coincidam).
 - **Viagem** — período `[dataInicio, dataFim]` que agrupa gastos (lançamentos de débito e
   compras de cartão) marcados com `viagemId`, para relatório consolidado
   (`itensDaViagem`, `totalViagemNoMes`, `src/domain/viagem.ts`). Viagens não se sobrepõem
@@ -111,6 +120,8 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   arquivo. O modo Simples só muda o que a tela mostra: reaproveita as entidades existentes.
   - **Hoje simples** grava o saldo declarado da box (ou `Config.saldoDeclaradoCent`, na casa),
     nunca `Banco.saldoDeclaradoCent`. Esse saldo é separado dos saldos por banco do Avançado.
+    Na casa, só o modo Simples ainda lê `Config.saldoDeclaradoCent`: a conferência do Avançado
+    com a casa no topo é por box (ver "Conferência de saldo").
   - **Cartão simples** (`CartaoSimples.tsx`) grava uma `ConferenciaFatura` com `usarValorApp`
     ligado: o valor da fatura do Simples é o mesmo campo da aba Conferência do Avançado.
     "Remover valor" apaga essa conferência.
@@ -150,10 +161,12 @@ nessa área:
    mostra só o seletor e o aviso "Escolha a box.". O Lançar e as cinco telas de configuração
    por box (Categorias, Categorias do cartão, Cartões, Assinaturas e Recorrências) não operam
    sobre a box `"casa"`: com a casa no topo, mostram só um aviso para escolher uma box, e
-   recorrências pedem uma box. Só as telas que ainda usam `boxIdEfetivo` (Bancos, Importar e
-   Simular) continuam gravando na box `"casa"` quando a casa está no topo, e cenários criados
-   assim ficam nela; esses lançamentos, como o histórico antigo, entram na consolidação
-   (`AdicionarSheet` só lê a box, em `frequentes`). O que já
+   recorrências pedem uma box. Bancos e Importar também deixaram de gravar na box `"casa"`
+   pela UI: Bancos pede uma box, e o destino do extrato de conta lista só boxes com saldo
+   próprio, sem nenhuma marcada na casa. Quem só tem a box `"casa"` precisa criar uma box
+   para importar um extrato. Só o item novo do Simular continua gravando na box `"casa"`
+   quando a casa está no topo; esses lançamentos, como o histórico antigo, entram na
+   consolidação (`AdicionarSheet` só lê a box, em `frequentes`). O que já
    existe na box `"casa"` segue contando nos totais e na projeção, mas não tem tela de edição.
    A regra é da interface, **não** do repo: `repo.salvarLancamento` continua
    aceitando `boxId` da box `"casa"` (**expectativa não garantida** no domínio).
@@ -163,8 +176,9 @@ nessa área:
      usado por telas que somam várias boxes (Fluxo, Cartão, Análises, Hoje) e pelo
      `AdicionarSheet`.
    - `boxIdEfetivo(dados, 'casa')` devolve o **id da única box chamada `"casa"`** — usado
-     por telas que operam sobre exatamente uma box (Bancos, Importar, Simular, `AdicionarSheet`). O Lançar não usa
-     mais essa função na visão casa: lá, o usuário escolhe uma box real. Se essa
+     por telas que operam sobre exatamente uma box (o item novo do Simular, o `CenarioCard`
+     e o `AdicionarSheet`). Bancos, Importar e Lançar não usam mais essa função na visão
+     casa: lá, o usuário escolhe uma box real. Se essa
      box tiver sido renomeada ou removida, `boxIdEfetivo` devolve `null`.
 
 ## A matriz `status` × `origem`
@@ -375,11 +389,17 @@ compras passadas ficam como histórico mesmo depois de a assinatura ser excluíd
 Conferir é comparar o que o Flow **projeta** com o que o banco **diz**. Existem dois modos,
 escolhidos pelo número de bancos da seleção — nunca os dois ao mesmo tempo:
 
-- **Box sem banco:** campo único, gravando em `Box.saldoDeclaradoCent` (ou em
-  `Config.saldoDeclaradoCent`, na visão `'casa'`). É o comportamento histórico, preservado
-  byte a byte.
+- **Box sem banco:** campo único, gravando em `Box.saldoDeclaradoCent`. É o comportamento
+  histórico, preservado byte a byte. Na visão `'casa'`, o modo Simples ainda grava em
+  `Config.saldoDeclaradoCent`.
 - **Box com bancos:** uma linha por banco, gravando em `Banco.saldoDeclaradoCent`. O total
   informado (`totalDeclaradoCent`, `src/domain/bancos.ts`) é que se compara com a projeção.
+
+**Visão casa (Avançado): `ConferenciaCasa` e `conferenciaDaCasa`
+(`src/domain/conferenciaPorBox.ts`).** Em vez de um campo único, a conferência é por box: só
+entram boxes com saldo próprio (a box `"casa"` não entra). Cada box segue o seu modo: com
+bancos, soma os bancos informados; sem bancos, usa `Box.saldoDeclaradoCent`. A diferença
+(`diffCent`) só existe quando nenhuma box falta (`faltam` vazio) e há ao menos uma linha.
 
 **O valor antigo da box não é apagado** quando passam a existir bancos: ele deixa de ser
 exibido e de entrar na conta, mas continua no banco de dados. Somar os dois níveis contaria o

@@ -41,7 +41,7 @@ Saldo inicial negativo é aceito (digitar com "−" na frente). Uma box sem sald
 
 Uma box representa a **pessoa**, e uma pessoa costuma ter mais de uma conta. Aqui você cadastra os [bancos](#glossario/banco) de cada box e informa quanto tem em cada um.
 
-Serve para conferir: a tela Hoje passa a mostrar uma linha por banco, e a diferença contra a projeção é calculada sobre a soma. Sem bancos cadastrados, a conferência usa um único campo de saldo.
+Serve para conferir: a tela Hoje passa a mostrar uma linha por banco, e a diferença contra a projeção é calculada sobre a soma. Sem bancos cadastrados, a conferência usa um único campo de saldo. Os bancos são de cada box: com a casa no topo, esta tela só pede para escolher uma box.
 
 > O saldo de cada banco é o último saldo **informado por você** mais os lançamentos efetivos desse banco depois da data informada. O que caiu no mesmo dia do saldo informado já está nele: só contam os lançamentos de depois dessa data. Informar um novo valor, na tela Hoje, recomeça a conta. Lançamento sem banco não entra na conta de nenhum banco.
 
@@ -103,7 +103,7 @@ e a fatura do cartão Santander, em PDF. Baixe o arquivo direto no site ou no ap
 A tela tem três passos, e nada é gravado antes do terceiro:
 
 - **Arquivo.** Escolher o CSV ou o PDF. O Flow reconhece o formato sozinho; se não reconhecer, você escolhe manualmente.
-- **Destino.** Para o extrato de conta: a box e, se ela tiver mais de um banco cadastrado, o banco. Para a fatura: o cartão de cada bloco — a fatura pode trazer mais de um cartão, e "Não importar" é resposta válida para um bloco. A lista de cartões mostra só os da box selecionada no momento; na visão consolidada de todas as boxes, aparecem os cartões de qualquer uma.
+- **Destino.** Para o extrato de conta: a box (a lista traz só as boxes com saldo próprio; com a casa no topo, nenhuma vem marcada, e quem só tem a box casa precisa criar uma box antes) e, se ela tiver mais de um banco cadastrado, o banco. Para a fatura: o cartão de cada bloco — a fatura pode trazer mais de um cartão, e "Não importar" é resposta válida para um bloco. A lista de cartões mostra só os da box selecionada no momento; na visão consolidada de todas as boxes, aparecem os cartões de qualquer uma.
 Se dois blocos vão para o mesmo cartão (por exemplo, titular e adicional), o Flow os confere juntos, como uma fatura só.
 - **Conferir.** A lista mostra cada linha do arquivo já comparada com o Flow. Só ao tocar em "Confirmar" algo é gravado.
 
