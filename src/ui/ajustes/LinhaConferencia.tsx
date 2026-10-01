@@ -2,9 +2,10 @@ import { useId, useState } from 'react';
 import { formatarDataBR } from '../../domain/dates';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../../domain/money';
 import type { Dados, ISODate } from '../../domain/types';
-import { CATEGORIA_A_CLASSIFICAR, totalCorrigidoValido } from '../../importar/conferencia';
+import { CATEGORIA_A_CLASSIFICAR, dataCorrigidaValida, totalCorrigidoValido } from '../../importar/conferencia';
 import { contraparteNubank } from '../../importar/descricao';
 import type { AcaoItem, EstadoItem, ItemConferencia } from '../../importar/tipos';
+import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
 
 export const ROTULOS_ESTADO: Record<EstadoItem, string> = {
@@ -97,16 +98,28 @@ interface Props {
   onTrocarAcao: (acao: AcaoItem) => void;
   totalCorrigidoCent?: number;
   onCorrigirTotal: (novoValorCent: number) => void;
+  /** Data corrigida pelo usuário para uma parcela com data estimada (fatura do Nubank). */
+  dataCorrigida?: ISODate;
+  /** `undefined` apaga a correção e volta à data estimada. */
+  onCorrigirData?: (data: ISODate | undefined) => void;
 }
 
 export default function LinhaConferencia({
   item, dados, acaoAtual, onTrocarAcao, totalCorrigidoCent, onCorrigirTotal,
+  dataCorrigida, onCorrigirData,
 }: Props) {
   const [corrigindo, setCorrigindo] = useState(false);
   const uid = useId();
 
   const descricao = descricaoDoItem(item, dados);
-  const data = dataDoItem(item, dados);
+  const estimada = item.bruto?.dataEstimada;
+  const dataCorrigidaOk = dataCorrigidaValida(item, dataCorrigida);
+  // Parcela de data estimada que casou: a data que vale é a da compra cadastrada no app.
+  const compraDoApp = item.estado === 'confere' && estimada && item.compraCartaoId
+    ? dados.comprasCartao.find((c) => c.id === item.compraCartaoId)
+    : undefined;
+  const data = compraDoApp?.data ?? dataCorrigidaOk ?? dataDoItem(item, dados);
+  const marcaEstimada = item.estado === 'novo' && estimada && dataCorrigidaOk == null ? ' (estimada)' : '';
   const valorCent = valorDoItem(item, dados, totalCorrigidoCent);
   const classeValor = classeValorDoItem(item, dados);
   const estorno = mostrarEstorno(item, dados);
@@ -130,7 +143,7 @@ export default function LinhaConferencia({
       <i className={`importar-ponto ${item.estado}`} aria-hidden="true" />
       {' '}
       <span className={`importar-estado ${item.estado}`}>{ROTULOS_ESTADO[item.estado]}</span>
-      {' · '}{formatarDataBR(data)}
+      {' · '}{formatarDataBR(data)}{marcaEstimada}
     </>
   );
 
@@ -168,7 +181,7 @@ export default function LinhaConferencia({
               onClick={() => onTrocarAcao(item.acao)}
             >Adicionar</button>
             {item.compraReconstruida && (
-              <button className="botao" onClick={() => setCorrigindo((v) => !v)}>Corrigir total</button>
+              <button className="botao" onClick={() => setCorrigindo((v) => !v)}>Corrigir compra</button>
             )}
             <button
               className={`botao ${acaoAtual.tipo === 'ignorar' ? 'ativo' : ''}`}
@@ -228,17 +241,41 @@ export default function LinhaConferencia({
         )}
       </div>
       {corrigindo && item.compraReconstruida && (
-        <div className="campo">
-          <label htmlFor={`${uid}-total`}>Total da compra</label>
-          <CampoValor
-            id={`${uid}-total`}
-            valorCentavos={totalCorrigidoCent ?? item.compraReconstruida.valorTotalCent}
-            onChange={onCorrigirTotal}
-          />
-          {totalCorrigidoCent != null && totalCorrigidoValido(item, totalCorrigidoCent) == null && (
-            <p className="sub">O total não pode ser menor que uma parcela.</p>
+        <>
+          {estimada && (
+            <div className="campo">
+              <label htmlFor={`${uid}-data`}>Data da compra</label>
+              <CampoData
+                id={`${uid}-data`}
+                value={dataCorrigidaOk ?? estimada.min}
+                min={estimada.min}
+                max={estimada.max}
+                // Escolher a própria estimada é o mesmo que não corrigir.
+                onChange={(v) => { if (v) onCorrigirData?.(v === estimada.min ? undefined : v); }}
+              />
+              <p className="sub">
+                Pela parcela, a compra foi entre {formatarDataBR(estimada.min)} e{' '}
+                {formatarDataBR(estimada.max)}. Estimada: {formatarDataBR(estimada.min)}.
+              </p>
+              {dataCorrigidaOk && (
+                <button type="button" className="botao-ver-mais" onClick={() => onCorrigirData?.(undefined)}>
+                  Voltar para a data estimada
+                </button>
+              )}
+            </div>
           )}
-        </div>
+          <div className="campo">
+            <label htmlFor={`${uid}-total`}>Total da compra</label>
+            <CampoValor
+              id={`${uid}-total`}
+              valorCentavos={totalCorrigidoCent ?? item.compraReconstruida.valorTotalCent}
+              onChange={onCorrigirTotal}
+            />
+            {totalCorrigidoCent != null && totalCorrigidoValido(item, totalCorrigidoCent) == null && (
+              <p className="sub">O total não pode ser menor que uma parcela.</p>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
