@@ -10,6 +10,8 @@ Atrás do ícone ⚙️ no topo. O menu tem cinco grupos; toque num grupo para v
 
 Nas seções de cadastro, o formulário no topo serve para criar; para editar, toque no lápis do próprio item.
 
+> Com **casa** no topo, Categorias, Categorias do cartão, Cartões, Assinaturas do cartão e Recorrências mostram só um aviso: esses cadastros são de cada box. Escolha uma box no topo para ver e editar.
+
 ## Categorias
 
 Por box selecionada: criar, renomear, reordenar (arraste pela alça ⋮⋮) e arquivar/restaurar. Ganhos aparecem antes dos gastos, cada grupo na ordem definida.
@@ -30,7 +32,7 @@ CRUD das regras que geram previstos automaticamente (veja [Recorrência](#concei
 
 Toque no lápis de cada box para editar nome, saldo inicial e data; crie boxes novas pelo formulário no topo; escolha a box padrão que abre ao iniciar o app. Com duas ou mais boxes com saldo próprio, a que abre ao iniciar leva o selo "padrão", mesmo que você nunca tenha escolhido uma.
 
-Saldo inicial negativo é aceito (digitar com "−" na frente). Uma box sem saldo próprio (como a casa) serve aos gastos divididos, e escolher "casa" no topo soma todas as suas boxes. Ela não pode virar padrão.
+Saldo inicial negativo é aceito (digitar com "−" na frente). Uma box sem saldo próprio (como a casa) é compartilhada, e escolher "casa" no topo soma todas as suas boxes. Ela não pode virar padrão.
 
 **Nova box — obrigatório:** nome. **Têm padrão:** saldo (0), data do saldo (hoje). Lançamentos até a data do saldo, ela inclusive, já estão dentro dele e não o mudam.
 **Ao editar — obrigatório:** nenhum; desmarcar "Esta box tem saldo próprio" torna a box compartilhada.

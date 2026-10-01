@@ -1,0 +1,2 @@
+- Com casa no topo, Categorias, Categorias do cartão, Cartões, Assinaturas e Recorrências pedem para escolher uma box.
+  - Antes, Recorrências dizia "Nenhuma recorrência nesta box" na casa, e as outras telas mostravam só o que está na box casa.

@@ -148,9 +148,13 @@ nessa área:
    grava lançamento novo nela: com `boxSel === 'casa'`, o formulário exige uma box com saldo
    próprio (a lista exclui a `"casa"` e as boxes sem saldo próprio) e, sem box escolhida,
    mostra só o seletor e o aviso "Escolha a box.". Só o Lançar tem essa regra: recorrências,
-   cenários e outras telas que ainda usam `boxIdEfetivo` (Recorrencias, SimuladorFluxo,
-   Importar, Ajustes) continuam gravando na box `"casa"` quando a casa está no topo, e esses
-   lançamentos, como o histórico antigo, entram na consolidação. A regra é da interface, **não** do repo: `repo.salvarLancamento` continua
+   cenários e outras telas que ainda usam `boxIdEfetivo` (Bancos, Importar, Simular,
+   `AdicionarSheet`) continuam gravando na box `"casa"` quando a casa está no topo, e esses
+   lançamentos, como o histórico antigo, entram na consolidação. As telas de configuração
+   (Categorias, Categorias do cartão, Cartões, Assinaturas e Recorrências) também não operam
+   sobre a box `"casa"`: com a casa no topo, mostram só um aviso para escolher uma box. O que já
+   existe na box `"casa"` segue contando nos totais e na projeção, mas não tem tela de edição.
+   A regra é da interface, **não** do repo: `repo.salvarLancamento` continua
    aceitando `boxId` da box `"casa"` (**expectativa não garantida** no domínio).
 2. **O sentinela `BoxSelecionada = ID | 'casa'`** (`src/state/store.ts`), usado no estado
    de seleção da UI. Esse sentinela tem **comportamento diferente conforme quem o lê**:
@@ -158,7 +162,7 @@ nessa área:
      usado por telas que somam várias boxes (Fluxo, Cartão, Análises, Hoje) e pelo
      `AdicionarSheet`.
    - `boxIdEfetivo(dados, 'casa')` devolve o **id da única box chamada `"casa"`** — usado
-     por telas que operam sobre exatamente uma box (Ajustes, Simulador). O Lançar não usa
+     por telas que operam sobre exatamente uma box (Bancos, Importar, Simular, `AdicionarSheet`). O Lançar não usa
      mais essa função na visão casa: lá, o usuário escolhe uma box real. Se essa
      box tiver sido renomeada ou removida, `boxIdEfetivo` devolve `null`.
 
