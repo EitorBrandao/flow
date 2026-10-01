@@ -4,6 +4,7 @@ import { addDias, formatarDataBR } from '../domain/dates';
 import { bancosDaBox, lancamentoNoFiltro, nomeBancoDoLancamento, type FiltroBanco } from '../domain/bancos';
 import { ajustesDoCartao, calcularFaturas, type Fatura } from '../domain/fatura';
 import { classeEfeito, efeitoNoSaldo, formatarBRL, formatarSaldo } from '../domain/money';
+import { notaExibivel } from '../domain/notas';
 import { projetarBoxes } from '../domain/projection';
 import type { Lancamento } from '../domain/types';
 import { boxIdsSelecionadas, cenariosLigados, useApp, type AbaFluxo } from '../state/store';
@@ -249,27 +250,30 @@ export default function TelaFluxo() {
                   {dataAtiva && lancsDia.length === 0 && dia <= horizonte && (
                     <p className="sub">Nenhum lançamento neste dia.</p>
                   )}
-                  {lancsDia.map((l) => (
-                    <button
-                      key={l.id} className="item" style={{ width: '100%', textAlign: 'left', cursor: 'pointer' }}
-                      onClick={() => (
-                        l.origem === 'cartao' ? setFaturaSel(l)
-                        : l.origem === 'transferencia' ? setTransferenciaSel(l)
-                        : setEditando(l)
-                      )}
-                    >
-                      <div className="cresce">
-                        {nomeCat(l.categoriaId)}
-                        {l.status === 'previsto' && <span className="badge" style={{ marginLeft: 6 }}>{l.cenarioId ? 'cenário' : 'previsto'}</span>}
-                        {l.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
-                        {l.nota && <div className="sub">{l.nota}</div>}
-                        {bancosSel.length >= 2 && <div className="sub">{nomeBancoDoLancamento(l, dados)}</div>}
-                      </div>
-                      <span className={classeEfeito(efeitoNoSaldo(l.valor, tipoCat(l.categoriaId)))}>
-                        {formatarBRL(l.valor)}
-                      </span>
-                    </button>
-                  ))}
+                  {lancsDia.map((l) => {
+                    const nota = notaExibivel(l.nota, nomeCat(l.categoriaId));
+                    return (
+                      <button
+                        key={l.id} className="item" style={{ width: '100%', textAlign: 'left', cursor: 'pointer' }}
+                        onClick={() => (
+                          l.origem === 'cartao' ? setFaturaSel(l)
+                          : l.origem === 'transferencia' ? setTransferenciaSel(l)
+                          : setEditando(l)
+                        )}
+                      >
+                        <div className="cresce">
+                          {nomeCat(l.categoriaId)}
+                          {l.status === 'previsto' && <span className="badge" style={{ marginLeft: 6 }}>{l.cenarioId ? 'cenário' : 'previsto'}</span>}
+                          {l.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
+                          {nota && <div className="sub">{nota}</div>}
+                          {bancosSel.length >= 2 && <div className="sub">{nomeBancoDoLancamento(l, dados)}</div>}
+                        </div>
+                        <span className={classeEfeito(efeitoNoSaldo(l.valor, tipoCat(l.categoriaId)))}>
+                          {formatarBRL(l.valor)}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               );
             })}

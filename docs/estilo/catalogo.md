@@ -17,7 +17,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.lista` / `.item` / `.item-coluna` / `.linha-topo` / `.linha-topo-2-1` | lista vertical de itens-card; `.item-coluna` quando o item precisa de uma segunda linha (ex.: ações abaixo); `.linha-topo` para a linha principal dentro de um item-coluna; `.linha-topo-2-1` (junto com `.linha-topo`) quando a linha principal precisa de proporção fixa 2:1 entre descrição e valor (evita word-wrap com valor/botões espremendo o texto); `.ativo` em `.item` marca o item selecionado com `--ac-dim`/`--ac`, mesmo padrão de `.botao.ativo` (ex.: categoria que filtra os lançamentos na aba Cartão) |
 | `.cresce` | filho flex que ocupa o espaço restante (`flex: 1; min-width: 0`) |
 | `.acoes` | linha de botões de ação dentro de um item (ex.: Confirmar/Descartar) |
-| `.botao`, `.botao-primario`, `.botao-perigo` | botão padrão / ação principal (azul) / ação destrutiva (texto vermelho) |
+| `.botao`, `.botao-primario`, `.botao-perigo` | botão padrão / ação principal (azul) / ação destrutiva (texto vermelho). `.botao:disabled` fica a 45% de opacidade, em toda tela |
 | `.botao-sinal` | modificador de `.botao` para o botão de alternar sinal (`+`/`−`) ao lado de um `CampoValor` — padding menor e largura mínima de alvo de toque. Usado nas duas conferências da `TelaHoje`, em Ajustes → Boxes e em Ajustes → Bancos |
 | `.botao-com-icone` | modificador de `.botao` pra ícone + texto lado a lado (`display: inline-flex; gap: 8px`) |
 | `.alca-arrastar` | modificador de `.botao` para o puxador de arrastar e reordenar; `touch-action: none` para o toque não virar rolagem no celular |
@@ -32,6 +32,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.badge` | pílula neutra pequena (contagem, status, rótulo "estorno" ao lado de um lançamento com valor negativo) |
 | `.aviso` | faixa âmbar de aviso; um `.botao-ver-mais` dentro dela herda a cor e o tamanho do texto e fica sublinhado (ação do próprio aviso, ex.: "Corrigir o valor pago" na aba Cartão) |
 | `.aviso-urgente` | variante vermelha da `.aviso`, usada junto dela (`aviso aviso-urgente`): `--neg-bg` e `--neg`. Classe solta, não modificador composto, para o verificador de catálogo enxergá-la |
+| `.aviso-sucesso` | variante verde da `.aviso`, usada junto dela (`aviso aviso-sucesso`): `--pos-bg` e `--pos`. Confirmação de ação concluída ("Lançado ✓", "Transferência feita ✓"). Classe solta, como `.aviso-urgente` |
 | `.rotulo` | rótulo maiúsculo pequeno acima de um valor/seção |
 | `.rotulo-grupo` | rótulo maiúsculo pequeno de subgrupo dentro de uma lista (ex.: "À vista"/"Parceladas" na fatura do cartão) |
 | `.cabecalho-dia` (+ `.dia-hoje`) | cabeçalho de dia na lista do Fluxo; `.dia-hoje` destaca o dia atual (fundo `--hoje-bg`) |
@@ -51,6 +52,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.tabela-fixa` | junto de `.tabela`: colunas de largura fixa (Simular, no Fluxo) — o conteúdo não muda as colunas; a 1ª coluna recebe largura pelo `<col>`; as demais dividem o resto por igual. A largura mínima vem do componente, para ligar ou desligar cenários não mexer nas colunas |
 | `.tabela-nome-tocavel` | `<button>` dentro de uma célula de `.tabela` que abre um detalhe (card "Categorias do cartão", Análises): mesmo tamanho e peso das células, só a cor de ação `--ac`; nunca `.botao-ver-mais` numa tabela |
 | `.rolavel` | wrapper com `overflow-x: auto` para conteúdo largo (tabelas) |
+| `.rolavel-12` | modificador de `.rolavel` para a tabela do Simular (12 meses de altura + cabeçalho) — `max-height: calc(13 * 37px)`, `overflow-y: auto`, cabeçalho sticky no topo com z-index 3, primeiro `th` com z-index 4 (sobre a coluna fixa) |
 | `.recuo-1` / `.recuo-2` | recuo horizontal (ambos os lados) pra indicar nível de hierarquia numa lista aninhada — ex.: grupo/data em `LancamentosSheet` |
 | `.sheet-backdrop` / `.sheet` / `.sheet-alca` / `.sheet-cabecalho` / `.sheet-conteudo` | bottom sheet (ver componente `Sheet`) |
 | `.navegacao` | tab bar mobile / sidebar desktop (breakpoint 900px) |
@@ -133,6 +135,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   `Recorrencias.tsx`, `FormCompra.tsx`, `LancEditor.tsx`, `FormItemCenario.tsx`.
 - **`SeletorMes.tsx`** — navegação de mês: `‹` e `›` em `.botao` (rótulos "Mês anterior" e "Mês seguinte") com o mês por nome no meio (`nomeDoMes`, "outubro de 2026"). Props `mes` (`AAAA-MM`) e `onMudar`. Usado nas Análises e no Cartão — qualquer tela nova que navegue por mês usa este componente. No Cartão, fica dentro de `.barra-fixa` junto com o nome do cartão; nas Análises, entra pelo `SeletorPeriodo` no modo Mês.
 - **`SeletorPeriodo.tsx`** — seletor de período das Análises: pílulas `Mês · 12 meses · Ano · Período` (`SeletorPills`), as linhas `de ‹ › ` e `até ‹ ›` com a nota "N meses · máximo de 24" (só no modo Período) e a linha `‹ período ›` dentro de `.barra-fixa` (no modo Mês, é o próprio `SeletorMes`). Props `estado` (`EstadoPeriodo`, de `domain/periodo.ts`), `mesHoje` e `onMudar`. Filho direto de `.tela`.
+- **`SeletorPeriodoSimular.tsx`** — seletor de período do Simular: duas linhas com `de`/`até`, cada uma com setas `‹ ›`, select de mês, select de ano, e um contador "N meses · máximo de 60" (singular "1 mês"). Aviso opcional se o período ultrapassa o horizonte do app: "Depois de MMMM/AAAA, a tabela não inclui faturas de cartão." Dentro de `.card`. Props `periodo` (`PeriodoSimulacao`, de `domain/simulacao.ts`), `mesHoje` (mês de hoje, como piso para o período inicial), `horizonte` (data ISO para o cálculo do aviso) e `onMudar`.
 - **`SeletorPills.tsx`** — pílulas em linha (`.pills`) pra escolher entre poucas opções sem
   abrir o picker nativo do `<select>`; cada pílula é `role="radio"` com `aria-checked`, e a
   prop opcional `rotulo` nomeia o grupo. Exporta `OPCOES_TIPO` (Gasto/Ganho), o controle

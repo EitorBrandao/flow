@@ -3,6 +3,52 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.57.0] - 2026-10-01
+
+### Adicionado
+
+- Fluxo › Simular tem seletor de período, de qualquer mês até 5 anos à frente.
+  - Escolha o mês e o ano do início e do fim, ou ande um mês por vez com as setas.
+  - O período vai de 1 a 60 meses. O início nunca fica antes do mês atual.
+  - Além do fim do ano que vem, a tabela repete as recorrências, mas não inclui faturas de cartão. A tela avisa quando isso acontece.
+
+### Alterado
+
+- Fluxo › Simular: as tabelas mostram 12 meses de altura e rolam para os demais.
+  - O cabeçalho e a coluna do mês ficam fixos ao rolar.
+  - Vale para a tabela de cenários ligados e para a de cada cenário.
+  - O botão "Tabela por mês" minimiza e reabre cada tabela. O resumo continua visível.
+
+## [0.56.0] - 2026-10-01
+
+### Alterado
+
+- Análises: mais espaço entre a legenda das barras e a primeira categoria
+- Botões desabilitados agora parecem desabilitados, em todas as telas
+- Ajustes, Boxes: a box que o app abre ganha o selo "padrão", mesmo sem você ter escolhido uma
+- Ajustes, Boxes: o exemplo do campo de nome deixou de sugerir nome de banco
+- Ajustes, Cartões: o formulário avisa em qual box o cartão será criado, como já faz o de Bancos
+- Hoje, Conferir: os campos de saldo por banco têm o mesmo estilo dos outros campos
+- Saldo positivo em verde mais claro, com contraste melhor sobre o fundo escuro
+- Lançar: a confirmação "Lançado ✓" agora é verde, não âmbar
+- Fluxo, Hoje e Recorrências: a linha do lançamento não repete mais a categoria quando a nota tem o mesmo texto
+- Hoje, Conferir: o botão "Transferir entre bancos" fica abaixo da lista e substitui o ↔ de cada linha
+- Hoje, Conferir: o formulário de transferência mostra o saldo calculado de cada banco
+- Hoje, Conferir: não deixa transferir de um banco para ele mesmo
+- Hoje, Conferir: depois de transferir, o resumo mostra o saldo de cada banco, antes e depois
+
+## [0.55.0] - 2026-10-01
+
+### Adicionado
+
+- Importar e conferir lê a fatura do cartão Nubank em CSV.
+  - A data da compra das parcelas antigas é estimada pelo número da parcela, e dá para corrigi-la antes de confirmar.
+  - A parcela casa com a compra já cadastrada mesmo sem a data exata.
+
+### Alterado
+
+- Na conferência, "Corrigir total" passou a se chamar "Corrigir compra".
+
 ## [0.54.1] - 2026-09-30
 
 ### Alterado

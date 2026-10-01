@@ -1,11 +1,248 @@
 import type { DiaSaldo } from './projection';
-import type { Lancamento, Recorrencia } from './types';
+import type { Dados, Lancamento, Recorrencia } from './types';
 import {
-  extremosPossiveis, itensDoCenario, larguraColunaValor, primeiroMesNegativo, resumoMensal,
+  ajustarAteSim, ajustarDeSim, estenderRecorrencias, extremosPossiveis, itensDoCenario,
+  larguraColunaValor, periodoPadrao, primeiroMesNegativo, resumoMensal,
 } from './simulacao';
 
 const dia = (data: string, sem: number, com: number): DiaSaldo =>
   ({ data, saldoEfetivo: 0, saldoProjetado: sem, saldoComCenarios: com });
+
+describe('periodoPadrao', () => {
+  it('retorna o mês de hoje até o mês do horizonte', () => {
+    expect(periodoPadrao('2026-09-15', '2027-12-31')).toEqual({
+      de: '2026-09',
+      ate: '2027-12',
+    });
+  });
+});
+
+describe('ajustarDeSim', () => {
+  it('novoDe antes de mesHoje fica como mesHoje', () => {
+    expect(ajustarDeSim({ de: '2026-09', ate: '2027-12' }, '2026-08', '2026-09')).toEqual({
+      de: '2026-09',
+      ate: '2027-12',
+    });
+  });
+
+  it('novoDe depois de ate arrasta ate', () => {
+    expect(ajustarDeSim({ de: '2026-09', ate: '2027-12' }, '2028-02', '2026-09')).toEqual({
+      de: '2028-02',
+      ate: '2028-02',
+    });
+  });
+
+  it('mover o início para frente num período de 60 meses encurta o período e mantém o fim', () => {
+    expect(ajustarDeSim({ de: '2026-09', ate: '2031-08' }, '2026-10', '2026-09')).toEqual({
+      de: '2026-10',
+      ate: '2031-08',
+    });
+  });
+});
+
+describe('ajustarAteSim', () => {
+  it('novoAte antes de mesHoje fica como mesHoje', () => {
+    expect(ajustarAteSim({ de: '2026-09', ate: '2027-12' }, '2026-07', '2026-09')).toEqual({
+      de: '2026-09',
+      ate: '2026-09',
+    });
+  });
+
+  it('novoAte antes de de: de vira novoAte, mas nunca antes de mesHoje', () => {
+    expect(ajustarAteSim({ de: '2026-09', ate: '2027-12' }, '2026-12', '2026-09')).toEqual({
+      de: '2026-09',
+      ate: '2026-12',
+    });
+  });
+
+  it('passa de 60 meses: de vira novoAte - 59 meses, respeitando mesHoje', () => {
+    expect(ajustarAteSim({ de: '2026-09', ate: '2027-12' }, '2032-01', '2026-09')).toEqual({
+      de: '2027-02',
+      ate: '2032-01',
+    });
+  });
+});
+
+describe('estenderRecorrencias', () => {
+  it('recorrência mensal ativa além do horizonte', () => {
+    const rec: Recorrencia = {
+      id: 'rec1',
+      boxId: 'box1',
+      categoriaId: 'cat1',
+      criadoEm: '2026-09-10',
+      alteradoEm: '2026-09-10',
+      valor: 1000,
+      dataInicio: '2026-09-10',
+      diaDoMes: 10,
+      parcelas: null,
+      ativa: true,
+      origem: 'manual',
+    };
+    const dados: Pick<Dados, 'recorrencias' | 'lancamentos' | 'config'> = {
+      recorrencias: [rec],
+      lancamentos: [],
+      config: { horizonteProjecao: '2026-12-31' } as any,
+    };
+    const result = estenderRecorrencias(dados, '2027-03-31');
+    expect(result.length).toBe(3);
+    expect(result.map((l) => l.data)).toEqual(['2027-01-10', '2027-02-10', '2027-03-10']);
+    expect(result[0].recorrenciaId).toBe('rec1');
+    expect(result[0].origem).toBe('recorrencia');
+    expect(result[0].status).toBe('previsto');
+  });
+
+  it('recorrência inativa não estende', () => {
+    const rec: Recorrencia = {
+      id: 'rec1',
+      boxId: 'box1',
+      categoriaId: 'cat1',
+      criadoEm: '2026-09-10',
+      alteradoEm: '2026-09-10',
+      valor: 1000,
+      dataInicio: '2026-09-10',
+      diaDoMes: 10,
+      parcelas: null,
+      ativa: false,
+      origem: 'manual',
+    };
+    const dados: Pick<Dados, 'recorrencias' | 'lancamentos' | 'config'> = {
+      recorrencias: [rec],
+      lancamentos: [],
+      config: { horizonteProjecao: '2026-12-31' } as any,
+    };
+    expect(estenderRecorrencias(dados, '2027-03-31')).toEqual([]);
+  });
+
+  it('parcelada que termina antes do horizonte não estende', () => {
+    const rec: Recorrencia = {
+      id: 'rec1',
+      boxId: 'box1',
+      categoriaId: 'cat1',
+      criadoEm: '2026-11-10',
+      alteradoEm: '2026-11-10',
+      valor: 1000,
+      dataInicio: '2026-11-10',
+      diaDoMes: 10,
+      parcelas: 3,
+      ativa: true,
+      origem: 'manual',
+    };
+    const dados: Pick<Dados, 'recorrencias' | 'lancamentos' | 'config'> = {
+      recorrencias: [rec],
+      lancamentos: [],
+      config: { horizonteProjecao: '2026-12-31' } as any,
+    };
+    const result = estenderRecorrencias(dados, '2027-03-31');
+    expect(result.length).toBe(1);
+    expect(result[0].data).toBe('2027-01-10');
+  });
+
+  it('parcelada que cruza o horizonte estende as parcelas além dele', () => {
+    const rec: Recorrencia = {
+      id: 'rec1',
+      boxId: 'box1',
+      categoriaId: 'cat1',
+      criadoEm: '2026-11-10',
+      alteradoEm: '2026-11-10',
+      valor: 1000,
+      dataInicio: '2026-11-10',
+      diaDoMes: 10,
+      parcelas: 5,
+      ativa: true,
+      origem: 'manual',
+    };
+    const dados: Pick<Dados, 'recorrencias' | 'lancamentos' | 'config'> = {
+      recorrencias: [rec],
+      lancamentos: [],
+      config: { horizonteProjecao: '2026-12-31' } as any,
+    };
+    const result = estenderRecorrencias(dados, '2027-05-31');
+    expect(result.length).toBe(3);
+    expect(result.map((l) => l.data)).toEqual(['2027-01-10', '2027-02-10', '2027-03-10']);
+  });
+
+  it('dia 31 em mês curto resulta em fim do mês', () => {
+    const rec: Recorrencia = {
+      id: 'rec1',
+      boxId: 'box1',
+      categoriaId: 'cat1',
+      criadoEm: '2026-12-31',
+      alteradoEm: '2026-12-31',
+      valor: 1000,
+      dataInicio: '2026-12-31',
+      diaDoMes: 31,
+      parcelas: null,
+      ativa: true,
+      origem: 'manual',
+    };
+    const dados: Pick<Dados, 'recorrencias' | 'lancamentos' | 'config'> = {
+      recorrencias: [rec],
+      lancamentos: [],
+      config: { horizonteProjecao: '2026-12-31' } as any,
+    };
+    const result = estenderRecorrencias(dados, '2027-03-31');
+    expect(result.map((l) => l.data)).toContain('2027-02-28');
+  });
+
+  it('recorrência de cenário mantém cenarioId', () => {
+    const rec: Recorrencia = {
+      id: 'rec1',
+      boxId: 'box1',
+      categoriaId: 'cat1',
+      criadoEm: '2026-09-10',
+      alteradoEm: '2026-09-10',
+      valor: 1000,
+      dataInicio: '2026-09-10',
+      diaDoMes: 10,
+      parcelas: null,
+      ativa: true,
+      origem: 'manual',
+      cenarioId: 'cen1',
+    };
+    const dados: Pick<Dados, 'recorrencias' | 'lancamentos' | 'config'> = {
+      recorrencias: [rec],
+      lancamentos: [],
+      config: { horizonteProjecao: '2026-12-31' } as any,
+    };
+    const result = estenderRecorrencias(dados, '2027-03-31');
+    expect(result[0].cenarioId).toBe('cen1');
+  });
+
+  it('não duplica lançamento real já existente com mesma recorrenciaId e data', () => {
+    const rec: Recorrencia = {
+      id: 'rec1',
+      boxId: 'box1',
+      categoriaId: 'cat1',
+      criadoEm: '2026-09-10',
+      alteradoEm: '2026-09-10',
+      valor: 1000,
+      dataInicio: '2026-09-10',
+      diaDoMes: 10,
+      parcelas: null,
+      ativa: true,
+      origem: 'manual',
+    };
+    const lancamento: Lancamento = {
+      id: 'l1',
+      boxId: 'box1',
+      categoriaId: 'cat1',
+      criadoEm: '2026-09-10',
+      alteradoEm: '2026-09-10',
+      valor: 1000,
+      data: '2027-01-10',
+      status: 'previsto',
+      origem: 'recorrencia',
+      recorrenciaId: 'rec1',
+    };
+    const dados: Pick<Dados, 'recorrencias' | 'lancamentos' | 'config'> = {
+      recorrencias: [rec],
+      lancamentos: [lancamento],
+      config: { horizonteProjecao: '2026-12-31' } as any,
+    };
+    const result = estenderRecorrencias(dados, '2027-03-31');
+    expect(result.map((l) => l.data)).toEqual(['2027-02-10', '2027-03-10']);
+  });
+});
 
 describe('resumoMensal', () => {
   it('pega o último dia de cada mês, do mês de hoje em diante', () => {
@@ -26,6 +263,18 @@ describe('resumoMensal', () => {
 
   it('série vazia dá lista vazia', () => {
     expect(resumoMensal([], '2026-09-29')).toEqual([]);
+  });
+
+  it('parâmetro ate corta meses depois dele', () => {
+    const serie = [
+      dia('2026-09-30', 1200, 1100),
+      dia('2026-10-31', 1500, 700),
+      dia('2026-11-15', 1600, 600),
+    ];
+    expect(resumoMensal(serie, '2026-09-29', '2026-10')).toEqual([
+      { mes: '2026-09', sem: 1200, com: 1100, dif: -100 },
+      { mes: '2026-10', sem: 1500, com: 700, dif: -800 },
+    ]);
   });
 });
 
@@ -87,5 +336,14 @@ describe('itensDoCenario', () => {
       ['r1', 'parcelado', '2026-10-10'],
       ['l1', 'unica', '2026-11-05'],
     ]);
+  });
+});
+
+describe('ajustarDeSim: o fim não acompanha o início', () => {
+  it('avançar o início um mês mantém o fim', () => {
+    expect(ajustarDeSim({ de: '2026-10', ate: '2027-12' }, '2026-11', '2026-10')).toEqual({ de: '2026-11', ate: '2027-12' });
+  });
+  it('voltar o início um mês mantém o fim', () => {
+    expect(ajustarDeSim({ de: '2026-11', ate: '2027-12' }, '2026-10', '2026-10')).toEqual({ de: '2026-10', ate: '2027-12' });
   });
 });

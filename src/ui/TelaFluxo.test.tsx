@@ -773,3 +773,17 @@ it('filtro por banco reseta ao trocar de box', async () => {
   expect(screen.getByRole('radio', { name: 'Todos' })).toHaveAttribute('aria-checked', 'true');
   expect(screen.queryByRole('radio', { name: 'Banco Um' })).not.toHaveAttribute('aria-checked', 'true');
 });
+
+it('não repete a categoria como nota na linha do lançamento', async () => {
+  const { box, catSalario } = await seedBoxComCategoria();
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-10', valor: 500000, status: 'previsto', nota: 'salário' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-11', valor: 20000, status: 'previsto', nota: 'adiantamento' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-05' });
+
+  render(<TelaFluxo />);
+
+  expect(await screen.findByText('adiantamento')).toBeInTheDocument();
+  // O nome da categoria aparece uma vez por lançamento (dois), nunca três: a nota "salário" some.
+  expect(screen.getAllByText('salário')).toHaveLength(2);
+});

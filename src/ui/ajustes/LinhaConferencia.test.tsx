@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { Dados } from '../../domain/types';
@@ -18,16 +18,18 @@ function dadosVazios(): Dados {
   };
 }
 
-function renderLinha(item: ItemConferencia, dados: Dados = dadosVazios()) {
+function renderLinha(item: ItemConferencia, dados: Dados = dadosVazios(), dataCorrigida?: string) {
   const onTrocarAcao = vi.fn();
   const onCorrigirTotal = vi.fn();
+  const onCorrigirData = vi.fn();
   render(
     <LinhaConferencia
       item={item} dados={dados} acaoAtual={item.acao}
       onTrocarAcao={onTrocarAcao} onCorrigirTotal={onCorrigirTotal}
+      dataCorrigida={dataCorrigida} onCorrigirData={onCorrigirData}
     />,
   );
-  return { onTrocarAcao, onCorrigirTotal };
+  return { onTrocarAcao, onCorrigirTotal, onCorrigirData };
 }
 
 describe('LinhaConferencia', () => {
@@ -44,7 +46,7 @@ describe('LinhaConferencia', () => {
     expect(onTrocarAcao).toHaveBeenCalledWith({ tipo: 'ignorar' });
   });
 
-  it('novo com compra reconstruída: mostra Corrigir total, que abre um campo de valor', async () => {
+  it('novo com compra reconstruída: mostra Corrigir compra, que abre um campo de valor', async () => {
     const item: ItemConferencia = {
       estado: 'novo',
       bruto: {
@@ -57,10 +59,11 @@ describe('LinhaConferencia', () => {
     const { onCorrigirTotal } = renderLinha(item);
 
     expect(screen.getByText(/parcela 3 de 10/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Corrigir total' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Corrigir compra' }));
     const campo = await screen.findByLabelText('Total da compra');
     await userEvent.type(campo, '5');
     expect(onCorrigirTotal).toHaveBeenCalledWith(5);
+    expect(screen.queryByLabelText('Data da compra')).not.toBeInTheDocument();
   });
 
   // IMPORTANTE 4: um total corrigido menor que o valor de uma parcela não faz sentido.
@@ -80,10 +83,11 @@ describe('LinhaConferencia', () => {
       <LinhaConferencia
         item={item} dados={dadosVazios()} acaoAtual={item.acao} totalCorrigidoCent={9999}
         onTrocarAcao={onTrocarAcao} onCorrigirTotal={onCorrigirTotal}
+        onCorrigirData={vi.fn()}
       />,
     );
 
-    await userEvent.click(screen.getByRole('button', { name: 'Corrigir total' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Corrigir compra' }));
     expect(screen.getByText('O total não pode ser menor que uma parcela.')).toBeInTheDocument();
   });
 
@@ -100,12 +104,71 @@ describe('LinhaConferencia', () => {
     render(
       <LinhaConferencia
         item={item} dados={dadosVazios()} acaoAtual={item.acao} totalCorrigidoCent={10000}
-        onTrocarAcao={vi.fn()} onCorrigirTotal={vi.fn()}
+        onTrocarAcao={vi.fn()} onCorrigirTotal={vi.fn()} onCorrigirData={vi.fn()}
       />,
     );
 
-    await userEvent.click(screen.getByRole('button', { name: 'Corrigir total' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Corrigir compra' }));
     expect(screen.queryByText('O total não pode ser menor que uma parcela.')).not.toBeInTheDocument();
+  });
+
+  const ITEM_ESTIMADO: ItemConferencia = {
+    estado: 'novo',
+    bruto: {
+      data: '2026-05-30', valorCent: -4000, descricao: 'Loja Delta', fonte: 'cartao',
+      parcela: { n: 3, total: 10 }, dataEstimada: { min: '2026-05-30', max: '2026-06-29' },
+    },
+    compraReconstruida: { data: '2026-05-30', valorTotalCent: 40000, parcelas: 10, anoDeduzidoComAviso: false },
+    acao: { tipo: 'adicionarCompra', categoriaCartaoId: 'cc-1' },
+  };
+
+  it('data estimada: a linha marca "(estimada)"', () => {
+    renderLinha(ITEM_ESTIMADO);
+    expect(screen.getByText(/30\/05\/2026 \(estimada\)/)).toBeInTheDocument();
+  });
+
+  it('data estimada: Corrigir compra mostra o campo de data com o intervalo e a dica', async () => {
+    renderLinha(ITEM_ESTIMADO);
+    await userEvent.click(screen.getByRole('button', { name: 'Corrigir compra' }));
+    const campo = screen.getByLabelText('Data da compra');
+    expect(campo).toHaveAttribute('min', '2026-05-30');
+    expect(campo).toHaveAttribute('max', '2026-06-29');
+    expect(screen.getByText('Pela parcela, a compra foi entre 30/05/2026 e 29/06/2026. Estimada: 30/05/2026.'))
+      .toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Voltar para a data estimada' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Total da compra')).toBeInTheDocument();
+  });
+
+  it('mudar a data chama onCorrigirData; escolher a estimada apaga a correção', async () => {
+    const { onCorrigirData } = renderLinha(ITEM_ESTIMADO, dadosVazios(), '2026-06-10');
+    await userEvent.click(screen.getByRole('button', { name: 'Corrigir compra' }));
+    fireEvent.change(screen.getByLabelText('Data da compra'), { target: { value: '2026-05-30' } });
+    expect(onCorrigirData).toHaveBeenLastCalledWith(undefined);
+  });
+
+  it('com data corrigida: some "(estimada)" e aparece "Voltar para a data estimada"', async () => {
+    const { onCorrigirData } = renderLinha(ITEM_ESTIMADO, dadosVazios(), '2026-06-10');
+    expect(screen.getByText(/10\/06\/2026/)).toBeInTheDocument();
+    expect(screen.queryByText(/\(estimada\)/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Corrigir compra' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Voltar para a data estimada' }));
+    expect(onCorrigirData).toHaveBeenLastCalledWith(undefined);
+  });
+
+  it('data corrigida fora do intervalo é ignorada: a linha mostra a estimada', () => {
+    renderLinha(ITEM_ESTIMADO, dadosVazios(), '2026-07-03');
+    expect(screen.getByText(/30\/05\/2026 \(estimada\)/)).toBeInTheDocument();
+  });
+
+  it('confere com data estimada mostra a data da compra cadastrada no app', () => {
+    const dados = dadosVazios();
+    dados.comprasCartao = [{
+      id: 'cc', cartaoId: 'k', categoriaCartaoId: 'c', data: '2026-06-12', valorTotal: 40000,
+      parcelas: 10, descricao: 'Loja Delta', criadoEm: '', alteradoEm: '',
+    } as Dados['comprasCartao'][number]];
+    renderLinha({ ...ITEM_ESTIMADO, estado: 'confere', compraCartaoId: 'cc', acao: { tipo: 'ignorar' } }, dados);
+    expect(screen.getByText(/12\/06\/2026/)).toBeInTheDocument();
+    expect(screen.queryByText(/30\/05\/2026/)).not.toBeInTheDocument();
   });
 
   it('previsto: mostra Confirmar e Descartar', () => {

@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import type { Dados, ID } from '../../domain/types';
-import { acaoEfetiva, totalEfetivo } from '../../importar/conferencia';
+import type { Dados, ID, ISODate } from '../../domain/types';
+import { acaoEfetiva, dataCorrigidaValida, dataEfetiva, totalEfetivo } from '../../importar/conferencia';
 import type {
-  AcaoItem, DecisaoTotal, DecisaoTroca, EstadoItem, ItemConferencia, LeituraAdapter,
+  AcaoItem, DecisaoData, DecisaoTotal, DecisaoTroca, EstadoItem, ItemConferencia, LeituraAdapter,
 } from '../../importar/tipos';
 import { formatarBRL } from '../../domain/money';
 import LinhaConferencia, { dataDoItem, valorDoItem } from './LinhaConferencia';
@@ -41,6 +41,8 @@ interface Props {
   onTrocar: (chave: string, estado: EstadoItem, acao: AcaoItem) => void;
   totaisCorrigidos: Record<string, DecisaoTotal>;
   onCorrigirTotal: (chave: string, estado: EstadoItem, valorCent: number) => void;
+  datasCorrigidas: Record<string, DecisaoData>;
+  onCorrigirData: (chave: string, estado: EstadoItem, data: ISODate | undefined) => void;
   mostrarLinhasIgnoradas: boolean;
   onToggleLinhasIgnoradas: () => void;
   copiarEstado: 'ocioso' | 'copiado' | 'erro';
@@ -53,6 +55,7 @@ interface Props {
 
 export default function ListaConferencia({
   leitura, itens, dados, trocas, onTrocar, totaisCorrigidos, onCorrigirTotal,
+  datasCorrigidas, onCorrigirData,
   mostrarLinhasIgnoradas, onToggleLinhasIgnoradas, copiarEstado, onCopiarTextoExtraido,
   filtro, onFiltroChange,
 }: Props) {
@@ -82,8 +85,20 @@ export default function ListaConferencia({
   // `chave` já é a identidade estável do item (ver `ItemComContexto`), então basta ordenar uma
   // cópia por data — sem precisar remontar nenhum índice depois.
   const ordenados = useMemo(() => (
-    [...itensVisiveis].sort((a, b) => dataDoItem(a.item, dados).localeCompare(dataDoItem(b.item, dados)))
-  ), [itensVisiveis, dados]);
+    [...itensVisiveis].sort((a, b) => {
+      const dataA = dataCorrigidaValida(a.item, dataEfetiva(a.item, datasCorrigidas[a.chave])) ?? dataDoItem(a.item, dados);
+      const dataB = dataCorrigidaValida(b.item, dataEfetiva(b.item, datasCorrigidas[b.chave])) ?? dataDoItem(b.item, dados);
+      return dataA.localeCompare(dataB);
+    })
+  ), [itensVisiveis, dados, datasCorrigidas]);
+
+  // Parcelas do Nubank com data ainda estimada que vão ser gravadas: o aviso pede ao usuário
+  // para corrigir antes de confirmar. Conta a lista inteira, não só os visíveis no filtro.
+  const estimadasPendentes = useMemo(() => itens.filter((ic) => ic.item.estado === 'novo'
+    && ic.item.bruto?.dataEstimada != null
+    && acaoEfetiva(ic.item, trocas[ic.chave]).tipo !== 'ignorar'
+    && dataCorrigidaValida(ic.item, dataEfetiva(ic.item, datasCorrigidas[ic.chave])) == null,
+  ).length, [itens, trocas, datasCorrigidas]);
 
   return (
     <>
@@ -153,6 +168,14 @@ export default function ListaConferencia({
         </p>
       )}
 
+      {estimadasPendentes > 0 && (
+        <p className="sub">
+          A fatura do Nubank não traz o dia da compra das parcelas antigas.{' '}
+          {estimadasPendentes === 1 ? '1 data está estimada' : `${estimadasPendentes} datas estão estimadas`}:
+          corrija em &quot;Corrigir compra&quot; antes de confirmar, se souber o dia.
+        </p>
+      )}
+
       <div className="lista">
         {ordenados.map((ic) => (
           <LinhaConferencia
@@ -163,6 +186,8 @@ export default function ListaConferencia({
             onTrocarAcao={(acao) => onTrocar(ic.chave, ic.item.estado, acao)}
             totalCorrigidoCent={totalEfetivo(ic.item, totaisCorrigidos[ic.chave])}
             onCorrigirTotal={(v) => onCorrigirTotal(ic.chave, ic.item.estado, v)}
+            dataCorrigida={dataEfetiva(ic.item, datasCorrigidas[ic.chave])}
+            onCorrigirData={(data) => onCorrigirData(ic.chave, ic.item.estado, data)}
           />
         ))}
       </div>

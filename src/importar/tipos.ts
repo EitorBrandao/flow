@@ -11,6 +11,9 @@ export interface LancamentoBruto {
   externalId?: string;
   parcela?: { n: number; total: number };
   natureza?: NaturezaBruto;
+  // Só a fatura do Nubank preenche: parcela n > 1 vem com a data de abertura do ciclo, não a
+  // da compra. `data` é então a mínima do intervalo em que a compra pode ter sido feita.
+  dataEstimada?: { min: ISODate; max: ISODate };
 }
 
 /** Linhas que não são gasto nem ganho comum, reconhecidas pelo adapter. */
@@ -44,7 +47,7 @@ export interface LeituraAdapter {
 }
 
 export interface Adapter {
-  id: 'nubank-conta-csv' | 'santander-fatura-pdf';
+  id: 'nubank-conta-csv' | 'nubank-fatura-csv' | 'santander-fatura-pdf';
   rotulo: string;
   detectar(nome: string, inicio: string): boolean;
   ler(conteudo: ArrayBuffer): Promise<LeituraAdapter>;
@@ -99,4 +102,10 @@ export interface DecisaoTroca {
 export interface DecisaoTotal {
   estado: EstadoItem;
   valorCent: number;
+}
+
+/** Mesmo tratamento de `DecisaoTotal`, para a correção da data estimada de uma parcela. */
+export interface DecisaoData {
+  estado: EstadoItem;
+  data: ISODate;
 }

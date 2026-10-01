@@ -5,7 +5,7 @@ import { categoriasFaturaIds } from '../domain/fatura';
 import { categoriasTransferenciaIds } from '../domain/transferencia';
 import { agoraISO, novoId, type Dados, type ID, type ISODate } from '../domain/types';
 import type {
-  Adapter, DecisaoTotal, DecisaoTroca, EstadoItem, LeituraAdapter,
+  Adapter, DecisaoData, DecisaoTotal, DecisaoTroca, EstadoItem, LeituraAdapter,
 } from '../importar/tipos';
 
 export type Aba = 'hoje' | 'fluxo' | 'lancar' | 'cartao' | 'analises' | 'ajustes';
@@ -34,12 +34,13 @@ export interface ImportacaoPendente {
   destinoBlocos: Record<number, DestinoBloco>;
   trocas: Record<string, DecisaoTroca>;
   totaisCorrigidos: Record<string, DecisaoTotal>;
+  datasCorrigidas: Record<string, DecisaoData>;
   filtro: EstadoItem | null;
 }
 
 export const IMPORTACAO_VAZIA: ImportacaoPendente = {
   nomeArquivo: '', buf: null, adapterAtual: undefined, leitura: null, boxIdEscolhida: null,
-  destinoBlocos: {}, trocas: {}, totaisCorrigidos: {}, filtro: null,
+  destinoBlocos: {}, trocas: {}, totaisCorrigidos: {}, datasCorrigidas: {}, filtro: null,
 };
 
 interface AppState {

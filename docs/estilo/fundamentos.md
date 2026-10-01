@@ -39,7 +39,7 @@ Token novo → `nivel-3-novo-token.md`. Mudar valor de token existente → níve
 | `--ac` / `--ac-dim` | `#3b9df8` / `rgba(59,157,248,.14)` | ação (única cor de ação do app) |
 | `--pos` / `--pos-bg` | `#2ee6a8` / `rgba(46,230,168,.14)` | ganho / saldo positivo |
 | `--neg` / `--neg-bg` | `#ff6b7a` / `rgba(255,107,122,.13)` | gasto / saldo negativo |
-| `--total-pos` / `--total-neg` | `#008000` / `#ff4d4d` | saldo (verde-escuro) — totalizador do dia no Fluxo (cabeçalho, fora da pílula de transação), e todo saldo pintado por `classeSaldo` |
+| `--total-pos` / `--total-neg` | `#4ade80` / `#ff4d4d` | saldo (verde-claro) — totalizador do dia no Fluxo (cabeçalho, fora da pílula de transação), e todo saldo pintado por `classeSaldo` |
 | `--aviso-bg` / `--aviso-fg` | `#423306` / `#fcd34d` | aviso âmbar (ex.: backup atrasado) |
 | `--hoje-bg` | `#0d4a32` | fundo de destaque da linha "hoje" na lista do Fluxo |
 | `--estado-novo` | `#a78bfa` | estado "novo" da conferência de importação (`Importar.tsx`) — item sem nada parecido no app ainda |

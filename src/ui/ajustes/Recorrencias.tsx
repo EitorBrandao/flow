@@ -4,6 +4,7 @@ import * as repo from '../../db/repo';
 import { categoriasFaturaIds } from '../../domain/fatura';
 import { categoriasTransferenciaIds } from '../../domain/transferencia';
 import { formatarDataBR } from '../../domain/dates';
+import { notaExibivel } from '../../domain/notas';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../../domain/money';
 import { bancoPadrao, bancosDaBox } from '../../domain/bancos';
 import type { TipoCategoria } from '../../domain/types';
@@ -239,7 +240,7 @@ export default function Recorrencias() {
               <div className="linha-topo linha-topo-2-1">
                 <div className="cresce">
                   <div>
-                    {nomeCat(r.categoriaId)}{r.nota ? ` · ${r.nota}` : ''}
+                    {nomeCat(r.categoriaId)}{notaExibivel(r.nota, nomeCat(r.categoriaId)) ? ` · ${notaExibivel(r.nota, nomeCat(r.categoriaId))}` : ''}
                     {r.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
                   </div>
                   <div className="sub">desde {formatarDataBR(r.dataInicio)}</div>

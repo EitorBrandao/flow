@@ -27,6 +27,7 @@ export default function CenarioCard({ cenario, linhas, larguraCh, aberto, onAlte
   const { dados, hoje, recarregar } = useApp();
   const [editando, setEditando] = useState<ItemCenario | null>(null);
   const [formKey, setFormKey] = useState(0);
+  const [tabelaAberta, setTabelaAberta] = useState(true);
   if (!dados) return null;
   const itens = itensDoCenario(dados, cenario.id);
   const efeitoFinal = linhas.at(-1)?.dif ?? 0;
@@ -133,7 +134,7 @@ export default function CenarioCard({ cenario, linhas, larguraCh, aberto, onAlte
           <section aria-label="Impacto só deste cenário">
             <p className="rotulo-grupo">Impacto só deste cenário</p>
             <div style={{ margin: '0 -16px' }}>
-              <TabelaSimulacao linhas={linhas} larguraCh={larguraCh} />
+              <TabelaSimulacao linhas={linhas} larguraCh={larguraCh} aberta={tabelaAberta} onAlternar={() => setTabelaAberta(!tabelaAberta)} />
             </div>
           </section>
 

@@ -148,6 +148,9 @@ export default function Cartoes() {
             inicial={{ nome: '', bancoId: '', ...ultimosDias }}
             rotuloSalvar="Criar" onSalvo={criar}
           />
+          {dados.boxes.find((b) => b.id === boxId) && (
+            <p className="sub">Será criado na box {dados.boxes.find((b) => b.id === boxId)!.nome}.</p>
+          )}
         </>
       )}
 
