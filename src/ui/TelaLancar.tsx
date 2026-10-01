@@ -134,17 +134,24 @@ export default function TelaLancar() {
     salvandoRef.current = true;
     try {
       const descricao = nota.trim();
-      const catId = categoriaPorDescricao({
+      // A categoria do atalho (chip dos Frequentes) vale mais, se ainda for da box e do tipo.
+      const doAtalho = categoriaId != null
+        && dados.categorias.some((c) => c.id === categoriaId && c.boxId === boxId && c.tipo === tipo && !c.arquivada);
+      const catId = (doAtalho ? categoriaId : null) ?? categoriaPorDescricao({
         lancamentos: dados.lancamentos, categorias: dados.categorias, boxId: boxId!, tipo, descricao,
       }) ?? await repo.categoriaAClassificarDe(boxId!, tipo);
+      // Como no Avançado: se há viagem ativa na data do lançamento, ele entra nela.
+      const viagemHoje = viagemAtivaEm(dados.viagens, hoje);
       await repo.salvarLancamento({
         boxId: boxId!, categoriaId: catId, data: hoje, valor: cents,
         ...(descricao ? { nota: descricao } : {}),
         status: 'efetivo',
+        ...(viagemHoje ? { viagemId: viagemHoje.id } : {}),
         ...(bancoId ? { bancoId } : {}),
       });
       await recarregar();
-      setCents(0); setNota(''); setSalvo(true);
+      // O atalho vale para um lançamento só: o seguinte volta à regra da descrição.
+      setCents(0); setNota(''); setCategoriaId(null); setSalvo(true);
       if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
       salvoTimeoutRef.current = setTimeout(() => setSalvo(false), 2500);
     } finally {

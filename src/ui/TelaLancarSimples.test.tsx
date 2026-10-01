@@ -67,6 +67,63 @@ describe('Lançar no modo Simples', () => {
     });
   });
 
+  it('chip dos Frequentes com categoria: o lançamento grava essa categoria', async () => {
+    const { box, mercado } = await prepararSimples();
+    const padaria = await repo.salvarCategoria({ boxId: box.id, nome: 'padaria', tipo: 'gasto', ordem: 1 });
+    // a descrição aponta para "mercado", mas a escolha do chip (padaria) vale mais
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: mercado.id, data: '2026-06-01', valor: 1000, nota: 'pão', status: 'efetivo',
+    });
+    await useApp.getState().recarregar();
+    useApp.setState({ hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    act(() => useApp.setState({ rascunhoLancar: { categoriaId: padaria.id, valorCent: 850 } }));
+    await screen.findByDisplayValue('R$ 8,50');
+    await userEvent.type(screen.getByLabelText('Do que foi? (opcional)'), 'pão');
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    const novo = (await db.lancamentos.toArray()).find((l) => l.valor === 850)!;
+    expect(novo.categoriaId).toBe(padaria.id);
+  });
+
+  it('depois de lançar com chip, o lançamento seguinte sem chip volta à regra da descrição', async () => {
+    const { box, mercado } = await prepararSimples();
+    const padaria = await repo.salvarCategoria({ boxId: box.id, nome: 'padaria', tipo: 'gasto', ordem: 1 });
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: mercado.id, data: '2026-06-01', valor: 1000, nota: 'pão', status: 'efetivo',
+    });
+    await useApp.getState().recarregar();
+    useApp.setState({ hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    act(() => useApp.setState({ rascunhoLancar: { categoriaId: padaria.id, valorCent: 850 } }));
+    await screen.findByDisplayValue('R$ 8,50');
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    await screen.findByText(/Lançado/);
+    await userEvent.type(screen.getByLabelText('Valor'), '9,00');
+    await userEvent.type(screen.getByLabelText('Do que foi? (opcional)'), 'pão');
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    await vi.waitFor(async () => expect((await db.lancamentos.toArray()).some((l) => l.valor === 900)).toBe(true));
+    expect((await db.lancamentos.toArray()).find((l) => l.valor === 900)!.categoriaId).toBe(mercado.id);
+  });
+
+  it('com viagem ativa na data, o lançamento grava o viagemId; sem viagem, não grava', async () => {
+    const { box } = await prepararSimples();
+    const viagem = await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-07-01', dataFim: '2026-07-05' });
+    await useApp.getState().recarregar();
+    useApp.setState({ hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    await userEvent.type(screen.getByLabelText('Valor'), '10,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    await screen.findByText(/Lançado/);
+    expect((await db.lancamentos.toArray()).find((l) => l.valor === 1000)).toMatchObject({ boxId: box.id, viagemId: viagem.id });
+    // fora do período da viagem
+    useApp.setState({ hoje: '2026-08-02' });
+    await userEvent.type(screen.getByLabelText('Valor'), '11,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    await vi.waitFor(async () => expect((await db.lancamentos.toArray()).some((l) => l.valor === 1100)).toBe(true));
+    expect((await db.lancamentos.toArray()).find((l) => l.valor === 1100)!.viagemId).toBeUndefined();
+  });
+
   it('descrição sem correspondência ou vazia cai em "A classificar", uma só categoria', async () => {
     const { box } = await prepararSimples();
     render(<TelaLancar />);
