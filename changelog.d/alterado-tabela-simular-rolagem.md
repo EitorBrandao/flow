@@ -1,4 +1,0 @@
-- Fluxo › Simular: as tabelas mostram 12 meses de altura e rolam para os demais.
-  - O cabeçalho e a coluna do mês ficam fixos ao rolar.
-  - Vale para a tabela de cenários ligados e para a de cada cenário.
-  - O botão "Tabela por mês" minimiza e reabre cada tabela. O resumo continua visível.

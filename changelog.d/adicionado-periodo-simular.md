@@ -1,4 +1,0 @@
-- Fluxo › Simular tem seletor de período, de qualquer mês até 5 anos à frente.
-  - Escolha o mês e o ano do início e do fim, ou ande um mês por vez com as setas.
-  - O período vai de 1 a 60 meses. O início nunca fica antes do mês atual.
-  - Além do fim do ano que vem, a tabela repete as recorrências, mas não inclui faturas de cartão. A tela avisa quando isso acontece.

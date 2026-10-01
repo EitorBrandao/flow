@@ -3,6 +3,22 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.57.0] - 2026-10-01
+
+### Adicionado
+
+- Fluxo › Simular tem seletor de período, de qualquer mês até 5 anos à frente.
+  - Escolha o mês e o ano do início e do fim, ou ande um mês por vez com as setas.
+  - O período vai de 1 a 60 meses. O início nunca fica antes do mês atual.
+  - Além do fim do ano que vem, a tabela repete as recorrências, mas não inclui faturas de cartão. A tela avisa quando isso acontece.
+
+### Alterado
+
+- Fluxo › Simular: as tabelas mostram 12 meses de altura e rolam para os demais.
+  - O cabeçalho e a coluna do mês ficam fixos ao rolar.
+  - Vale para a tabela de cenários ligados e para a de cada cenário.
+  - O botão "Tabela por mês" minimiza e reabre cada tabela. O resumo continua visível.
+
 ## [0.56.0] - 2026-10-01
 
 ### Alterado
