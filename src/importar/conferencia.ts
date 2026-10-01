@@ -1,9 +1,9 @@
-import { diasEntre } from '../domain/dates';
+import { addDias, diasEntre } from '../domain/dates';
 import { valorParcela } from '../domain/fatura';
 import type { CompraCartao, Dados, ID, ISODate, Lancamento } from '../domain/types';
 import { contraparteNubank, normalizarDescricao } from './descricao';
 import type {
-  AcaoItem, DecisaoTotal, DecisaoTroca, ItemConferencia, LancamentoBruto, LeituraAdapter,
+  AcaoItem, DecisaoData, DecisaoTotal, DecisaoTroca, ItemConferencia, LancamentoBruto, LeituraAdapter,
 } from './tipos';
 
 /**
@@ -85,6 +85,11 @@ function candidatosDoCartao(dados: Dados, cartaoId: ID | undefined): Candidato[]
     }));
 }
 
+/** Folga, em dias, nas duas pontas do intervalo de uma data estimada. Cobre um fechamento de
+ *  fatura que mude de dia num mês curto. A tela não usa esta folga: o calendário fica no
+ *  intervalo exato. */
+const FOLGA_INTERVALO_DIAS = 2;
+
 /**
  * Candidato de compra parcelada compatível com uma linha de parcela do bruto.
  *
@@ -99,18 +104,27 @@ function candidatosDoCartao(dados: Dados, cartaoId: ID | undefined): Candidato[]
  * no máximo `compra.parcelas - 1` centavos, porque o resto da divisão inteira (`valorTotal %
  * parcelas`) nunca chega a `compra.parcelas`. A descrição NÃO entra: o usuário digita a compra
  * com as palavras dele, e o banco escreve outra coisa.
+ *
+ * Com `dataEstimada` (fatura do Nubank), a data do bruto é só a mínima do intervalo da compra:
+ * o critério de data passa a ser estar dentro do intervalo, com `FOLGA_INTERVALO_DIAS` de folga.
  */
 function candidatoDeParcelaCompativel(
-  candidatos: Candidato[], parcela: { n: number; total: number }, valorBrutoAbsCent: number,
-  dataBruto: ISODate, tolerancia: number, usados: Set<ID>,
+  candidatos: Candidato[], b: LancamentoBruto, tolerancia: number, usados: Set<ID>,
 ): Candidato | undefined {
+  const parcela = b.parcela!;
+  const valorBrutoAbsCent = Math.abs(b.valorCent);
+  const est = b.dataEstimada;
+  const dataCompativel = est
+    ? (c: Candidato) => c.data >= addDias(est.min, -FOLGA_INTERVALO_DIAS)
+        && c.data <= addDias(est.max, FOLGA_INTERVALO_DIAS)
+    : (c: Candidato) => diferencaEmDias(c.data, b.data) <= tolerancia;
   return candidatos
     .filter((c) => !usados.has(c.id)
       && c.parcelas === parcela.total
-      && diferencaEmDias(c.data, dataBruto) <= tolerancia
+      && dataCompativel(c)
       && Math.abs(valorParcela(c.valorCent, c.parcelas as number, parcela.n) - valorBrutoAbsCent)
         <= (c.parcelas as number) - 1)
-    .sort((x, y) => diferencaEmDias(x.data, dataBruto) - diferencaEmDias(y.data, dataBruto))[0];
+    .sort((x, y) => diferencaEmDias(x.data, b.data) - diferencaEmDias(y.data, b.data))[0];
 }
 
 /**
@@ -204,9 +218,7 @@ export function conferir(
     // uma compra à vista qualquer, na mesma data. Vai direto para `novo`.
     const ehParcela = b.fonte === 'cartao' && b.parcela != null;
     if (ehParcela) {
-      const candidato = candidatoDeParcelaCompativel(
-        doCartao, b.parcela!, Math.abs(b.valorCent), b.data, tolerancia, usados,
-      );
+      const candidato = candidatoDeParcelaCompativel(doCartao, b, tolerancia, usados);
       if (candidato) {
         usados.add(candidato.id);
         itens.push({
@@ -383,4 +395,19 @@ export function totalCorrigidoValido(
   if (totalCorrigidoCent == null) return undefined;
   const minimoParcela = item.bruto ? Math.abs(item.bruto.valorCent) : 0;
   return totalCorrigidoCent >= minimoParcela ? totalCorrigidoCent : undefined;
+}
+
+/** Mesmo critério de `acaoEfetiva`, para a data corrigida de uma parcela com data estimada. */
+export function dataEfetiva(item: ItemConferencia, decisao: DecisaoData | undefined): ISODate | undefined {
+  return decisao && decisao.estado === item.estado ? decisao.data : undefined;
+}
+
+/** A data corrigida só vale para item com data estimada, e dentro do intervalo exato — sem a
+ *  folga do casamento. Fora disso, `aplicar` grava a data estimada. */
+export function dataCorrigidaValida(
+  item: ItemConferencia, data: ISODate | undefined,
+): ISODate | undefined {
+  const est = item.bruto?.dataEstimada;
+  if (data == null || est == null) return undefined;
+  return data >= est.min && data <= est.max ? data : undefined;
 }
