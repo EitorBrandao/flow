@@ -818,10 +818,30 @@ Os itens VB-01 a VB-06, VB-09 a VB-12, VB-14 e VB-16 saem do backlog. VB-07, VB-
 
 ---
 
-## Tarefa 11: VB-04 — transferir entre bancos num botão abaixo da lista (novo desenho)
+## Tarefa 11: VB-04 — transferir entre bancos num botão abaixo da lista
 
-**Pré-requisito:** mockup novo aprovado pelo usuário. Esta tarefa não tem passos até lá.
+**Mockup aprovado em 2026-10-01** (`mockup-transferir-bancos.html`), com duas decisões do usuário: **a casa não tem transferência entre bancos** (o estado 4 do mockup não vale) e **origem e destino não podem ser o mesmo banco** (verificação obrigatória).
 
-**Pedido do usuário (2026-10-01):** deixar a parte de transferir num botão abaixo; quando a pessoa escolher os bancos, trazer o saldo de cada um; depois da transferência, mostrar o saldo de cada um.
+**Arquivos:**
+- Modificar: `src/ui/TelaHoje.tsx` (`FormTransferencia`, `ConferenciaBancos`)
+- Modificar: `src/ui/TelaHoje.test.tsx`
+- Criar: `changelog.d/alterado-transferir-entre-bancos.md`
 
-**Pontos de partida no código:** `src/ui/TelaHoje.tsx` (`FormTransferencia`, `setTransferindoDe`, `onTransferir`), `repo.transferirEntreBancos(bancoOrigemId, bancoDestinoId, valorCent, data)` e `saldoCalculadoBanco` (`src/domain/bancos.ts`). Ao mexer em `FormTransferencia`, procure todas as telas que mostram o mesmo conceito (Fluxo mostra transferências, `transferenciaSel`).
+**Requisitos:**
+
+1. Sai o botão "↔" de cada linha de banco, junto com o estado `transferindoDe`.
+2. Entra **um** botão `Transferir entre bancos` (`className="botao"`, `alignSelf: 'flex-start'`), logo abaixo da lista de bancos e acima de "Total informado". Aparece só quando a box tem **dois ou mais bancos** e a seleção **não** é a casa (`agruparPorBox` falso). Na casa, nenhum botão de transferência.
+3. `FormTransferencia` fica como o estado 2 do mockup: seletores "De" e "Para" com os bancos da box. Padrão: De = primeiro, Para = segundo. Cada seletor mostra, abaixo, o `saldo` calculado do banco escolhido (`saldoCalculadoBanco(banco, dados)`, mostrado com `formatarSaldo` e a classe `total-dia` mais `classeSaldo`). O saldo muda ao trocar o banco. Campos Valor e Data como hoje.
+4. **Verificação:** se De e Para forem o mesmo banco, o botão "Confirmar transferência" fica desabilitado e aparece `<p className="aviso">Escolha dois bancos diferentes.</p>` **depois** dos botões. Valor zero também desabilita o botão. A guarda de `repo.transferirEntreBancos` (lança "Escolha dois bancos diferentes.") **continua** como segunda barreira, sem mudança.
+5. Depois de confirmar, o formulário **não fecha**: vira o resumo do estado 3 do mockup. Um `<p className="aviso aviso-sucesso">Transferência feita ✓</p>`, mais uma grade com o saldo de cada um dos dois bancos, antes e depois (o "depois" lê `useApp.getState().dados` depois do `recarregar`). Botão `Fechar` volta à lista.
+6. `.aviso-sucesso` vem da Tarefa 4 (ainda não mesclada neste branch): use a classe mesmo assim. Não crie CSS novo. Estilo inline só de layout.
+
+**Testes (em `TelaHoje.test.tsx`, dentro do `describe` da conferência por banco, com `comBoxESaldo`, `abrirAba('Conferir')` e dois bancos "Banco Um" e "Banco Dois"):**
+- O botão `Transferir entre bancos` existe com dois bancos e não existe com um.
+- Na casa (`boxSel: 'casa'`, duas boxes com bancos), nenhum botão `Transferir entre bancos`.
+- Escolher o mesmo banco em De e Para desabilita "Confirmar transferência" e mostra "Escolha dois bancos diferentes.".
+- O saldo de cada banco aparece ao abrir o formulário e muda ao trocar o banco.
+- Depois de confirmar uma transferência de valor conhecido, o resumo mostra o saldo de cada banco antes e depois, e o banco de origem perde exatamente o valor.
+- Ajuste os testes antigos que procuravam `Transferir de <banco>` ou `↔` (ache por grep).
+
+Fim: fragmento `changelog.d/alterado-transferir-entre-bancos.md` com um bullet por mudança, `npm test` completo, commit.
