@@ -176,19 +176,25 @@ por uma variável local acima do `return` da linha, para chamar a função uma v
 
 - [ ] **Passo 7: Teste de tela**
 
-Em `src/ui/TelaFluxo.test.tsx`, siga o setup do primeiro teste do arquivo e acrescente:
+Em `src/ui/TelaFluxo.test.tsx`, que já tem `seedBoxComCategoria` (box `eitor`, categorias `mercado` e `salário`):
 
 ```tsx
 it('não repete a categoria como nota na linha do lançamento', async () => {
-  // semear: box com saldo, categoria "Salário", dois lançamentos previstos futuros:
-  //   um com nota "Salário" e outro com nota "Adiantamento"
-  // render(<TelaFluxo />)
-  // expect: "Adiantamento" aparece; só há UMA ocorrência do texto "Salário" na lista
-  //         (o nome da categoria), não duas.
+  const { box, catSalario } = await seedBoxComCategoria();
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-10', valor: 500000, status: 'previsto', nota: 'salário' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catSalario.id, data: '2026-07-11', valor: 20000, status: 'previsto', nota: 'adiantamento' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-05' });
+
+  render(<TelaFluxo />);
+
+  expect(await screen.findByText('adiantamento')).toBeInTheDocument();
+  // O nome da categoria aparece uma vez por lançamento (dois), nunca três: a nota "salário" some.
+  expect(screen.getAllByText('salário')).toHaveLength(2);
 });
 ```
 
-Escreva o corpo completo com `repo.salvarBox`, `repo.salvarCategoria`, `repo.salvarLancamento`, `useApp.getState().iniciar()` e `useApp.setState({ hoje: '2026-07-01' })`, como nos testes vizinhos. Valores sintéticos.
+Rode antes da correção do Passo 6 para ver `toHaveLength(2)` falhar com 3.
 
 - [ ] **Passo 8: Fragmento de changelog**
 
@@ -466,18 +472,24 @@ git commit -m "fix(lancar): confirmação de lançamento em verde"
 
 - [ ] **Passo 1: Escrever o teste que falha**
 
-Em `TelaHoje.test.tsx`, siga o setup do teste da conferência por banco já existente (box com dois bancos). Acrescente:
+Em `TelaHoje.test.tsx`, dentro do `describe` que define `comBoxESaldo` e `abrirAba` (conferência por banco), ao lado do teste "com bancos, mostra uma linha por banco":
 
 ```tsx
-it('o botão de transferência por banco tem texto visível', async () => {
-  // semear: box "ana" com saldo, dois bancos "Alfa" e "Beta"; abrir Hoje › Conferir
-  // const botao = screen.getByRole('button', { name: 'Transferir de Alfa' });
-  // expect(botao).toHaveTextContent('Transferir');
-  // expect(botao).not.toHaveTextContent('↔');
-});
-```
+  it('o botão de transferir entre bancos tem texto visível', async () => {
+    const box = await comBoxESaldo();
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
 
-Escreva o corpo completo com o mesmo setup do teste vizinho.
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+
+    const botao = screen.getByRole('button', { name: 'Transferir de Banco Um' });
+    expect(botao).toHaveTextContent('Transferir');
+    expect(botao).not.toHaveTextContent('↔');
+  });
+```
 
 - [ ] **Passo 2: Rodar e ver falhar**
 
@@ -683,38 +695,39 @@ git commit -m "fix(estilo): saldo positivo com contraste legível (nível 6)"
 - Modificar: `src/ui/SimuladorFluxo.tsx` (onde `<TabelaSimulacao linhas={combinado} .../>` aparece, ~linha 82)
 - Modificar: `src/ui/CenarioCard.tsx` (a seção "Impacto só deste cenário", ~linhas 133-138)
 - Modificar: `src/ui/SimuladorFluxo.test.tsx`
-- Criar: `src/ui/CenarioCard.test.tsx` (não existe hoje)
 - Criar: `changelog.d/alterado-simular-sem-tabela-vazia.md`
 
 - [ ] **Passo 1: Escrever os testes que falham**
 
-Em `SimuladorFluxo.test.tsx`, com o setup dos testes vizinhos:
+Em `SimuladorFluxo.test.tsx`, que já tem `preparar()` (box com saldo, hoje 15/09/2026):
 
 ```tsx
-it('sem cenário ligado, não mostra a tabela com colunas COM, DIFERENÇA e SEM', async () => {
-  // semear: box "ana" com saldo e uma recorrência; nenhum cenário
-  // render(<SimuladorFluxo />)
-  // expect(screen.getByText(/Nenhum cenário ligado/)).toBeInTheDocument();
-  // expect(screen.queryByRole('columnheader', { name: 'DIFERENÇA' })).not.toBeInTheDocument();
+it('sem cenário ligado, não mostra a tabela de comparação', async () => {
+  await preparar();
+
+  render(<SimuladorFluxo />);
+
+  expect(await screen.findByText(/Nenhum cenário ligado/)).toBeInTheDocument();
+  expect(screen.queryByRole('columnheader', { name: /diferença/i })).not.toBeInTheDocument();
 });
-```
 
-Em `src/ui/CenarioCard.test.tsx` (novo), um cenário sem itens, aberto:
-
-```tsx
 it('cenário sem itens não mostra a tabela de impacto', async () => {
-  // semear: box com saldo e um cenário vazio (repo.salvarCenario)
-  // render do CenarioCard aberto, como o SimuladorFluxo o usa
-  // expect(screen.getByText('Nenhum item ainda.')).toBeInTheDocument();
-  // expect(screen.queryByText('Impacto só deste cenário')).not.toBeInTheDocument();
+  await preparar();
+  const agora = agoraISO();
+  await repo.salvarCenario({ id: novoId(), nome: 'Vazio', ligado: true, criadoEm: agora, alteradoEm: agora });
+  await useApp.getState().recarregar();
+
+  render(<SimuladorFluxo />);
+  await userEvent.click(await screen.findByRole('button', { name: /Vazio/ }));
+
+  expect(screen.getByText('Nenhum item ainda.')).toBeInTheDocument();
+  expect(screen.queryByText('Impacto só deste cenário')).not.toBeInTheDocument();
 });
 ```
-
-Escreva os corpos completos. Se `CenarioCard` pedir muitas props, teste pelo `SimuladorFluxo` com um cenário criado.
 
 - [ ] **Passo 2: Rodar e ver falhar**
 
-Run: `npx vitest run src/ui/SimuladorFluxo.test.tsx src/ui/CenarioCard.test.tsx`
+Run: `npx vitest run src/ui/SimuladorFluxo.test.tsx`
 Expected: FAIL nos dois.
 
 - [ ] **Passo 3: Implementar**
@@ -727,7 +740,7 @@ Mantenha o resumo "saldo segue positivo…" onde estiver.
 
 - [ ] **Passo 4: Rodar e ver passar**
 
-Run: `npx vitest run src/ui/SimuladorFluxo.test.tsx src/ui/CenarioCard.test.tsx`
+Run: `npx vitest run src/ui/SimuladorFluxo.test.tsx`
 Expected: PASS.
 
 - [ ] **Passo 5: Fragmento, suíte e commit**
