@@ -108,10 +108,6 @@ function Diferenca({ diff }: { diff: number }) {
   );
 }
 
-/** Um grupo de bancos: sem box quando a seleção é uma única box (lista plana), com box
- *  quando é 'casa' (agrupado, mesmo padrão do `LancamentosSheet`: `.rotulo-grupo` + `.recuo-1`). */
-interface GrupoBancos { box: Box | null; itens: Banco[] }
-
 /** Resumo da transferência: nome e saldo calculado (antes e depois) dos dois bancos. `null` é banco
  *  sem saldo informado. */
 interface ResumoTransferencia {
@@ -222,10 +218,8 @@ function FormTransferencia({ bancos, origemInicialId, hoje, dados, onFeito, onCa
   );
 }
 
-function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSalvarBancos, onTransferir, dados }: {
+function ConferenciaBancos({ bancos, saldoApp, hoje, onSalvarBancos, onTransferir, dados }: {
   bancos: Banco[];
-  boxes: Box[];
-  agruparPorBox: boolean;
   saldoApp: number;
   hoje: ISODate;
   onSalvarBancos: (mudancas: { id: string; cents: number }[], data: ISODate) => Promise<void>;
@@ -267,39 +261,28 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
   const totalCent = totalDeclaradoCent(bancos);
   const diff = totalCent != null ? totalCent - saldoApp : null;
 
-  const grupos: GrupoBancos[] = agruparPorBox
-    ? boxes
-      .map((box) => ({ box, itens: bancos.filter((b) => b.boxId === box.id) }))
-      .filter((g) => g.itens.length > 0)
-    : [{ box: null, itens: bancos }];
-
   return (
     <div className="conferencia-bancos">
       <p className="rotulo-grupo">Saldo real em cada banco</p>
-      {grupos.map((g) => (
-        <div key={g.box?.id ?? 'unico'}>
-          {agruparPorBox && g.box && <p className="rotulo-grupo">{g.box.nome}</p>}
-          {g.itens.map((b) => (
-            <div key={b.id} className={`linha-banco${agruparPorBox ? ' recuo-1' : ''}`}>
-              <span>{b.nome}</span>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button
-                  type="button" className="botao botao-sinal" aria-label="Alternar sinal (positivo/negativo)"
-                  onClick={() => alternarSinal(b.id)}
-                >
-                  {negativos[b.id] ? '−' : '+'}
-                </button>
-                <CampoValor
-                  id={`banco-${b.id}`} valorCentavos={magnitudes[b.id] ?? 0}
-                  onChange={(v) => mudarValor(b.id, v)}
-                  ariaLabel={b.nome} style={{ width: 110 }}
-                />
-              </div>
-            </div>
-          ))}
+      {bancos.map((b) => (
+        <div key={b.id} className="linha-banco">
+          <span>{b.nome}</span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              type="button" className="botao botao-sinal" aria-label="Alternar sinal (positivo/negativo)"
+              onClick={() => alternarSinal(b.id)}
+            >
+              {negativos[b.id] ? '−' : '+'}
+            </button>
+            <CampoValor
+              id={`banco-${b.id}`} valorCentavos={magnitudes[b.id] ?? 0}
+              onChange={(v) => mudarValor(b.id, v)}
+              ariaLabel={b.nome} style={{ width: 110 }}
+            />
+          </div>
         </div>
       ))}
-      {!agruparPorBox && bancos.length > 1 && !formularioAberto && !sucesso && (
+      {bancos.length > 1 && !formularioAberto && !sucesso && (
         <button className="botao" style={{ alignSelf: 'flex-start', marginTop: 12 }} onClick={() => setFormularioAberto(true)}>
           Transferir entre bancos
         </button>
@@ -496,7 +479,8 @@ export default function TelaHoje() {
   const dataDeclarado = (boxSel === 'casa' ? dados.config.dataSaldoDeclarado : boxAtual?.dataSaldoDeclarado) ?? null;
   const bancos = bancosDaBox(dados.bancos, ids);
   const chaveBancos = bancos.map((b) => b.id).join(',');
-  const conferenciaCasa = conferenciaDaCasa(dados, ids, hoje, ligados);
+  const conferenciaCasa = boxSel === 'casa' && !simples && abaHoje === 'conferir'
+    ? conferenciaDaCasa(dados, ids, hoje, ligados) : null;
 
   async function salvarSaldoReal(cents: number, data: string) {
     if (boxSel === 'casa') await repo.salvarConfig({ saldoDeclaradoCent: cents, dataSaldoDeclarado: data });
@@ -646,7 +630,7 @@ export default function TelaHoje() {
           <p className="sub" style={{ margin: '0 0 12px' }}>
             Digite o saldo que o app do banco mostra e toque em Salvar. O Flow compara com o total que ele calculou e diz se bate.
           </p>
-          {boxSel === 'casa' && !simples ? (
+          {conferenciaCasa ? (
             <ConferenciaCasa
               key={`casa-${conferenciaCasa.linhas.map((l) => `${l.boxId}:${l.bancos.map((b) => b.id).join('.')}`).join(',')}`}
               conferencia={conferenciaCasa} boxes={dados.boxes} hoje={hoje} onSalvar={salvarConferenciaCasa} />
@@ -654,8 +638,8 @@ export default function TelaHoje() {
             <ConferenciaSaldo key={boxSel} saldoApp={deHoje?.saldoEfetivo ?? 0} declaradoCent={declaradoCent}
               dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} simples={simples} />
           ) : (
-            <ConferenciaBancos key={`${boxSel}-${chaveBancos}`} bancos={bancos} boxes={dados.boxes}
-              agruparPorBox={boxSel === 'casa'} saldoApp={deHoje?.saldoEfetivo ?? 0} hoje={hoje}
+            <ConferenciaBancos key={`${boxSel}-${chaveBancos}`} bancos={bancos}
+              saldoApp={deHoje?.saldoEfetivo ?? 0} hoje={hoje}
               onSalvarBancos={salvarSaldosBancos} onTransferir={recarregar} dados={dados} />
           )}
           {/* Embaixo, depois do Salvar — mesma posição de todo aviso de validação. */}

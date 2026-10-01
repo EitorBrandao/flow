@@ -21,4 +21,4 @@ Resultado: o saldo efetivo nunca contém suposição, só o que de fato acontece
 
 ## Consolidação da casa
 
-Selecionar **casa** no topo não troca para uma box de verdade: soma {{boxA}} + {{boxB}} + os lançamentos próprios da box casa (energia, água, ajustes), sempre na hora. O Lançar e as telas de configuração por box (Categorias, Categorias do cartão, Cartões, Assinaturas e Recorrências) não operam sobre a casa: pedem uma box. Só Bancos, Importar e Simular ainda gravam nela; cenários criados com casa no topo continuam na box casa. Como o valor nunca fica guardado à parte, ele nunca destoa das boxes individuais.
+Selecionar **casa** no topo não troca para uma box de verdade: soma {{boxA}} + {{boxB}} + os lançamentos próprios da box casa (energia, água, ajustes), sempre na hora. O Lançar e as telas de configuração por box (Categorias, Categorias do cartão, Cartões, Assinaturas e Recorrências) não operam sobre a casa: pedem uma box. Bancos e Importar também pedem uma box; só o item novo de um cenário da casa ainda é gravado na box casa. Como o valor nunca fica guardado à parte, ele nunca destoa das boxes individuais.

@@ -387,7 +387,7 @@ compras passadas ficam como histórico mesmo depois de a assinatura ser excluíd
 ## Conferência de saldo (`ConferenciaSaldo` e `ConferenciaBancos`, `src/ui/TelaHoje.tsx`)
 
 Conferir é comparar o que o Flow **projeta** com o que o banco **diz**. Existem dois modos,
-escolhidos pelo número de bancos da seleção — nunca os dois ao mesmo tempo:
+escolhidos pelo número de bancos da seleção — numa box concreta, nunca os dois ao mesmo tempo (na visão casa, cada box usa o seu modo, como descrito adiante):
 
 - **Box sem banco:** campo único, gravando em `Box.saldoDeclaradoCent`. É o comportamento
   histórico, preservado byte a byte. Na visão `'casa'`, o modo Simples ainda grava em
@@ -400,6 +400,9 @@ escolhidos pelo número de bancos da seleção — nunca os dois ao mesmo tempo:
 entram boxes com saldo próprio (a box `"casa"` não entra). Cada box segue o seu modo: com
 bancos, soma os bancos informados; sem bancos, usa `Box.saldoDeclaradoCent`. A diferença
 (`diffCent`) só existe quando nenhuma box falta (`faltam` vazio) e há ao menos uma linha.
+
+O "Total calculado no Flow" dessa conferência soma só as boxes com saldo próprio. Por isso ele pode
+diferir do card "Saldo hoje · casa", que soma também os lançamentos da box casa.
 
 **O valor antigo da box não é apagado** quando passam a existir bancos: ele deixa de ser
 exibido e de entrar na conta, mas continua no banco de dados. Somar os dois níveis contaria o

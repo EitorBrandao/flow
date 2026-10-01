@@ -549,24 +549,6 @@ describe('conferência por banco', () => {
     expect((await db.bancos.get(bancoA.id))?.saldoDeclaradoCent).toBe(77700);
   });
 
-  it('na visão casa os bancos aparecem agrupados por box', async () => {
-    const box = await comBoxESaldo();
-    const agora = agoraISO();
-    const outra = { id: novoId(), nome: 'ju', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
-    await repo.salvarBox(outra);
-    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
-    await repo.salvarBanco({ boxId: outra.id, nome: 'Banco Dois', ordem: 0 });
-    await useApp.getState().recarregar();
-    useApp.setState({ boxSel: 'casa' });
-
-    render(<TelaHoje />);
-    await abrirAba('Conferir');
-    expect(screen.getByLabelText('Banco Um')).toBeInTheDocument();
-    expect(screen.getByLabelText('Banco Dois')).toBeInTheDocument();
-    expect(screen.getByText('ju')).toBeInTheDocument();
-    expect(screen.getByText('eitor')).toBeInTheDocument();
-  });
-
   it('excluir todos os bancos devolve a conferência antiga, com o valor preservado', async () => {
     const box = await comBoxESaldo();
     await repo.salvarBox({ ...box, saldoDeclaradoCent: 12300, dataSaldoDeclarado: '2026-07-01' });

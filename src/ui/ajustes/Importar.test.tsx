@@ -541,9 +541,6 @@ describe('Importar', () => {
   });
 });
 
-// Texto que reproduz o formato que a extração do PDF entrega quando o cabeçalho do cartão e o
-// detalhamento caem numa linha só (o defeito original de `textoPdf.ts`): nenhuma transação é
-// reconhecida como pertencendo a um cartão, e a única transação da linha conta como ignorada.
 describe('Importar — extrato da conta com a casa no topo', () => {
   async function duasBoxes() {
     const agora = agoraISO();
@@ -596,6 +593,24 @@ describe('Importar — extrato da conta com a casa no topo', () => {
     expect(await screen.findByRole('button', { name: /Confirmar — 2 mudanças/ })).toBeEnabled();
   });
 
+  it('só com a box casa: explica que falta uma box com saldo próprio, sem botões de destino', async () => {
+    const agora = agoraISO();
+    await repo.salvarBox({
+      id: novoId(), nome: 'casa', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora,
+    });
+    await useApp.getState().iniciar();
+    useApp.getState().setBoxSel('casa');
+    render(<Importar />);
+    await userEvent.upload(
+      screen.getByLabelText('Escolher arquivo'),
+      new File([CSV_DUAS_LINHAS], 'extrato-nubank.csv', { type: 'text/csv' }),
+    );
+    expect(await screen.findByText(
+      'Crie uma box com saldo próprio em Ajustes → Boxes para importar o extrato.',
+    )).toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: 'Box de destino' })).not.toBeInTheDocument();
+  });
+
   it('com a box ana no topo: ana já vem marcada', async () => {
     const { ana } = await duasBoxes();
     useApp.getState().setBoxSel(ana.id);
@@ -631,6 +646,9 @@ describe('Importar — extrato da conta com a casa no topo', () => {
   });
 });
 
+// Texto que reproduz o formato que a extração do PDF entrega quando o cabeçalho do cartão e o
+// detalhamento caem numa linha só (o defeito original de `textoPdf.ts`): nenhuma transação é
+// reconhecida como pertencendo a um cartão, e a única transação da linha conta como ignorada.
 const TEXTO_FATURA_SEM_RECONHECIMENTO = [
   'Vencimento 05/09/2026',
   'Detalhamento da Fatura FULANO DE TAL - 0000 XXXX XXXX 0000 Despesas Compra Data '

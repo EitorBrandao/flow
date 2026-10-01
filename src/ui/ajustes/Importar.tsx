@@ -367,16 +367,20 @@ export default function Importar() {
       {temConferencia && !leitura!.blocos && (
         <section className="card">
           <div className="secao"><h3>2. Destino</h3></div>
-          <div className="pills" role="radiogroup" aria-label="Box de destino">
-            {dados.boxes.filter((b) => b.saldoInicial !== null).map((b) => (
-              <button
-                key={b.id}
-                role="radio" aria-checked={boxIdEscolhida === b.id}
-                className={boxIdEscolhida === b.id ? 'ativo' : ''}
-                onClick={() => setImportacao(() => ({ boxIdEscolhida: b.id, filtro: null }))}
-              >{b.nome}</button>
-            ))}
-          </div>
+          {dados.boxes.some((b) => b.saldoInicial !== null) ? (
+            <div className="pills" role="radiogroup" aria-label="Box de destino">
+              {dados.boxes.filter((b) => b.saldoInicial !== null).map((b) => (
+                <button
+                  key={b.id}
+                  role="radio" aria-checked={boxIdEscolhida === b.id}
+                  className={boxIdEscolhida === b.id ? 'ativo' : ''}
+                  onClick={() => setImportacao(() => ({ boxIdEscolhida: b.id, filtro: null }))}
+                >{b.nome}</button>
+              ))}
+            </div>
+          ) : (
+            <p className="sub">Crie uma box com saldo próprio em Ajustes → Boxes para importar o extrato.</p>
+          )}
           <p className="sub">Nada é gravado até você confirmar no passo 3.</p>
         </section>
       )}
