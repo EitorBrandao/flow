@@ -113,8 +113,8 @@ it('vencimento já passado sem lançamento: mostra o aviso e nenhum botão de pa
   render(<TelaCartao />);
   await userEvent.click(screen.getByRole('button', { name: 'Mês anterior' })); // outubro: venceu em 12/10
   expect(screen.getByText('Vencimento: 12/10/2026')).toBeInTheDocument();
-  expect(screen.getByText('O vencimento desta fatura já passou. O valor fica registrado na Conferência, mas não entra no Fluxo.')).toBeInTheDocument();
   await userEvent.type(screen.getByLabelText('Valor da fatura'), '187000');
+  expect(screen.getByText('O vencimento desta fatura já passou. O valor fica registrado na Conferência, mas não entra no Fluxo.')).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Salvar fatura' }));
   await waitFor(async () => expect(await db.conferenciasFatura.count()).toBe(1));
   expect(await faturas()).toHaveLength(0);
@@ -184,4 +184,104 @@ it('voltar ao Avançado mostra a mesma conferência marcada', async () => {
   await userEvent.click(screen.getByRole('tab', { name: /Conferência/ }));
   expect(screen.getByLabelText('Valor no app do banco')).toHaveValue(formatarBRL(187000));
   expect(screen.getByLabelText(/usar este valor no Flow/)).toBeChecked();
+});
+
+const AVISO_VENCIDA = 'O vencimento desta fatura já passou. O valor fica registrado na Conferência, mas não entra no Fluxo.';
+
+it('mês vencido com valor zero: sem aviso de vencimento', async () => {
+  await montar('2026-10-20');
+  render(<TelaCartao />);
+  await userEvent.click(screen.getByRole('button', { name: 'Mês anterior' }));
+  expect(screen.getByLabelText('Valor da fatura')).toHaveValue(formatarBRL(0));
+  expect(screen.queryByText(AVISO_VENCIDA)).not.toBeInTheDocument();
+});
+
+it('Salvar fatura fica desabilitado sem edição e não sobrescreve conferência do Avançado', async () => {
+  const { cartao } = await montar();
+  const cat = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  await repo.salvarCompraCartao({
+    cartaoId: cartao.id, categoriaCartaoId: cat.id, data: '2026-10-01', valorTotal: 8000, parcelas: 1,
+  }, HORIZONTE);
+  await repo.salvarConferenciaFatura(cartao.id, '2026-10', 150000, false, HORIZONTE);
+  await useApp.getState().recarregar();
+  useApp.setState({ hoje: '2026-10-01' });
+  render(<TelaCartao />);
+  const botao = screen.getByRole('button', { name: 'Salvar fatura' });
+  expect(screen.getByLabelText('Valor da fatura')).toHaveValue(formatarBRL(8000));
+  expect(botao).toBeDisabled();
+  await userEvent.click(botao);
+  expect(await db.conferenciasFatura.toArray()).toMatchObject([{ valorAppCent: 150000, usarValorApp: false }]);
+  await userEvent.type(screen.getByLabelText('Valor da fatura'), '9000');
+  expect(botao).toBeEnabled();
+  await userEvent.click(botao);
+  await waitFor(async () =>
+    expect(await db.conferenciasFatura.toArray()).toMatchObject([{ valorAppCent: 9000, usarValorApp: true }]));
+});
+
+it('Remover valor só aparece com conferência marcada; sem compras, a fatura some do Fluxo', async () => {
+  await montar();
+  render(<TelaCartao />);
+  expect(screen.queryByRole('button', { name: 'Remover valor' })).not.toBeInTheDocument();
+  await userEvent.type(screen.getByLabelText('Valor da fatura'), '187000');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar fatura' }));
+  await waitFor(async () => expect(await faturas()).toHaveLength(1));
+  await userEvent.click(await screen.findByRole('button', { name: 'Remover valor' }));
+  await waitFor(async () => expect(await db.conferenciasFatura.count()).toBe(0));
+  await waitFor(async () => expect(await faturas()).toHaveLength(0));
+  await waitFor(() => expect(screen.queryByRole('button', { name: 'Remover valor' })).not.toBeInTheDocument());
+  expect(screen.getByLabelText('Valor da fatura')).toHaveValue(formatarBRL(0));
+});
+
+it('Remover valor com compras: a fatura volta à soma e as compras continuam', async () => {
+  const { cartao } = await montar();
+  const cat = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+  await repo.salvarCompraCartao({
+    cartaoId: cartao.id, categoriaCartaoId: cat.id, data: '2026-10-01', valorTotal: 8000, parcelas: 1,
+  }, HORIZONTE);
+  await useApp.getState().recarregar();
+  useApp.setState({ hoje: '2026-10-01' });
+  render(<TelaCartao />);
+  await userEvent.type(screen.getByLabelText('Valor da fatura'), '10000');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar fatura' }));
+  await waitFor(async () => expect((await faturas())[0]?.valor).toBe(10000));
+  await userEvent.click(await screen.findByRole('button', { name: 'Remover valor' }));
+  await waitFor(async () => expect((await faturas())[0]?.valor).toBe(8000));
+  expect(await db.conferenciasFatura.count()).toBe(0);
+  expect(await db.comprasCartao.count()).toBe(1);
+  expect(screen.getByLabelText('Valor da fatura')).toHaveValue(formatarBRL(8000));
+});
+
+it('pago a menor: mostra o aviso e Corrigir o valor pago grava o valor novo', async () => {
+  await montar();
+  render(<TelaCartao />);
+  await userEvent.type(screen.getByLabelText('Valor da fatura'), '187000');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar fatura' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Paguei tudo' }));
+  await waitFor(async () => expect((await faturas())[0].status).toBe('efetivo'));
+  expect(screen.queryByText(/não chegaram no Fluxo/)).not.toBeInTheDocument();
+  await userEvent.type(screen.getByLabelText('Valor da fatura'), '1870000'); // o 1º dígito substitui: 18.700,00
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar fatura' }));
+  expect(await screen.findByText(/Tem R\$\s*16\.830,00 nessa fatura que não chegaram no Fluxo/)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir o valor pago' }));
+  await screen.findByRole('dialog', { name: 'Pagamento da fatura' });
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar pagamento' }));
+  await waitFor(async () => expect((await faturas())[0]).toMatchObject({ status: 'efetivo', valor: 1870000 }));
+});
+
+it('Paguei outro valor: confirmar grava o lançamento efetivo com o valor pago', async () => {
+  await montar();
+  render(<TelaCartao />);
+  await userEvent.type(screen.getByLabelText('Valor da fatura'), '187000');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar fatura' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Paguei outro valor' }));
+  await screen.findByRole('dialog', { name: 'Pagamento da fatura' });
+  const campo = screen.getByLabelText('Quanto você pagou');
+  await userEvent.clear(campo);
+  await userEvent.type(campo, '100000');
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar pagamento' }));
+  await waitFor(async () => {
+    const f = (await faturas()).filter((l) => l.faturaMes === '2026-10' && l.status === 'efetivo');
+    expect(f).toHaveLength(1);
+    expect(f[0].valor).toBe(100000);
+  });
 });

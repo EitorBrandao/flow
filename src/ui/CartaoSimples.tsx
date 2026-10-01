@@ -53,12 +53,22 @@ function FaturaDoMes({ cartao, mes }: { cartao: Cartao; mes: string }) {
   const foraDoFluxo = faturaForaDoFluxo({ cartao, fatura, compras, lancFatura, conferencia: conf, hoje });
 
   // Sem edição ainda: o campo mostra o que a fatura já leva ao Flow (soma das compras ou valor do app).
-  const valor = cents ?? valorSincronizado(fatura, conf);
-  const vencida = !lancFatura && fatura.dataVencimento <= hoje;
+  const atual = valorSincronizado(fatura, conf);
+  const valor = cents ?? atual;
+  // Nada a salvar: campo intocado ou igual ao que já vale. Evita um toque sem editar sobrescrever
+  // uma conferência do Avançado (valor do banco, `usarValorApp: false`) com a soma das compras.
+  const nadaASalvar = cents === null || valor === atual;
+  const vencida = !lancFatura && fatura.dataVencimento <= hoje && valor > 0;
 
   async function salvar() {
-    if (valor <= 0) return;
+    if (valor <= 0 || nadaASalvar) return;
     await repo.salvarConferenciaFatura(cartao.id, mes, valor, true, horizonte);
+    await recarregar();
+  }
+
+  async function removerValor() {
+    await repo.removerConferenciaFatura(cartao.id, mes, horizonte);
+    setCents(null);
     await recarregar();
   }
 
@@ -78,7 +88,12 @@ function FaturaDoMes({ cartao, mes }: { cartao: Cartao; mes: string }) {
         <p className="sub" style={{ margin: 0 }}>Vencimento: {formatarDataBR(fatura.dataVencimento)}</p>
         {/* Sem frase de pista: o único requisito é o valor, e sem valor, nada (padrão de `oQueFalta`
             em TelaLancar — o campo já está à vista). */}
-        <button className="botao botao-primario" disabled={valor <= 0} onClick={salvar}>Salvar fatura</button>
+        <button className="botao botao-primario" disabled={valor <= 0 || nadaASalvar} onClick={salvar}>
+          Salvar fatura
+        </button>
+        {conf?.usarValorApp && (
+          <button className="botao botao-perigo" onClick={removerValor}>Remover valor</button>
+        )}
         <p className="sub" style={{ margin: 0 }}>
           Entra no Fluxo como um gasto único no vencimento. Quer detalhar compra a compra? Troque para Avançado.
         </p>
