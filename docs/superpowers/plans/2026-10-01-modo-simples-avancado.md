@@ -331,7 +331,7 @@ export const versaoAtual: string;                 // versoesDoApp[0]?.versao ?? 
 
 - [ ] **Passo 1: testes que falham** (modo Simples via `repo.salvarModo('lancar','simples')` antes de `iniciar()`):
   - só aparecem: valor, Gasto/Ganho, descrição (rótulo "Do que foi? (opcional)"), botão "Lançar"; **não** aparecem categoria, banco, data, "Marcar como previsto", viagem;
-  - lança `R$ 48,00` Gasto com descrição "mercado" repetida de um lançamento anterior: grava com a **categoria anterior**, `data === hoje`, `status 'efetivo'`, `origem 'manual'`, `nota 'mercado'`, `bancoId` = banco padrão da box (se houver);
+  - lança um Gasto de 48 reais com descrição "mercado" repetida de um lançamento anterior: grava com a **categoria anterior**, `data === hoje`, `status 'efetivo'`, `origem 'manual'`, `nota 'mercado'`, `bancoId` = banco padrão da box (se houver);
   - descrição sem correspondência: usa a categoria "A classificar" do tipo (criada por `categoriaAClassificarDe`, **uma só**, mesmo em dois lançamentos seguidos);
   - sem descrição: "A classificar";
   - duplo clique rápido em "Lançar": um único lançamento;
@@ -399,7 +399,7 @@ Ambas olham só dias `>= hoje`. Série vazia: `menorSaldo` devolve `0`.
 
 - [ ] **Passo 1: testes que falham** (Simples = `salvarModo('cartao','simples')`; cartão sintético com fechamento dia 5 e vencimento dia 12; `hoje` fixo; mês de vencimento no futuro):
   - mostra, por cartão, o seletor de mês, o campo "Valor da fatura", o campo "Vencimento" (somente leitura, calculado de `datasFaturaDoMes`) e o botão "Salvar fatura";
-  - salvar `1.870,00` grava uma `ConferenciaFatura` com `usarValorApp: true` e `valorAppCent: 187000`, **não** cria `CompraCartao`, e depois de `sincronizarCartoes` existe **um** lançamento previsto de fatura no vencimento com esse valor;
+  - salvar um valor de fatura grava uma `ConferenciaFatura` com `usarValorApp: true` e `valorAppCent` igual ao valor digitado, em centavos, **não** cria `CompraCartao`, e depois de `sincronizarCartoes` existe **um** lançamento previsto de fatura no vencimento com esse valor;
   - salvar de novo com outro valor atualiza a **mesma** conferência (`db.conferenciasFatura` com um registro só) e o previsto;
   - mês com compras detalhadas: o campo já vem com a soma das compras; salvar outro valor marca `usarValorApp` e **não apaga** as compras;
   - com o lançamento previsto existente: aparecem "Paguei tudo" (chama `repo.confirmarPendente(lancFatura.id)` → o lançamento vira `efetivo`) e "Paguei outro valor" (abre `PagamentoFaturaSheetModal`);
