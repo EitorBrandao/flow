@@ -52,7 +52,7 @@ export function categoriasCartaoReservadasIds(cartoes: Cartao[]): Set<ID> {
 }
 
 function chaveCategoria(c: Categoria): string {
-  const nome = c.nome.trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const nome = c.nome.trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[0300-036f]/g, '');
   return `${c.tipo}|${nome}`;
 }
 
