@@ -151,7 +151,7 @@ Segue o mockup aprovado. Nenhuma classe nova: usa `.campo`, `CampoData`, `.sub`,
   - Para todo item com `compraReconstruida`: o campo "Total da compra", como hoje.
   - No Santander a data da compra é real, por isso o painel mostra só o total.
 - Na linha "Novo", a data exibida é a efetiva. Enquanto ela for a estimada, segue o texto
-  " (estimada)": "Novo · 30/05/2026 (estimada) · parcela 3 de 10 · compra de R$ 400,00".
+  " (estimada)": "Novo · 30/05/2026 (estimada) · parcela 3 de 10 · compra de {total}".
 - Na linha "Confere" de uma parcela com `dataEstimada`, a data exibida é a da compra cadastrada
   no app (`compraCartaoId`), não a estimada.
 - `ListaConferencia`: acima da lista, depois do aviso de filtro, um `.sub` aparece quando há
