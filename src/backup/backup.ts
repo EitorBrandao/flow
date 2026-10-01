@@ -80,10 +80,14 @@ export function validarBackup(json: unknown): Backup {
   if (d.notasFiscais !== undefined && TABELAS_NOTA.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
-  // escopo do cenário: opcional (ausente = casa), mas se vier tem que ser texto não vazio.
+  // escopo do cenário: opcional (ausente = casa), mas se vier tem que ser 'casa' ou o id de uma
+  // box do próprio backup — senão o cenário ficaria órfão: invisível e sem como apagar.
+  const idsBoxes = new Set(
+    (d.boxes as Array<Record<string, unknown> | null>).map((x) => x && typeof x === 'object' ? x.id : undefined),
+  );
   for (const c of d.cenarios as Array<Record<string, unknown> | null>) {
     if (c && typeof c === 'object' && 'escopo' in c && c.escopo !== undefined
-      && (typeof c.escopo !== 'string' || c.escopo === '')) {
+      && (typeof c.escopo !== 'string' || (c.escopo !== 'casa' && !idsBoxes.has(c.escopo)))) {
       throw new Error('Backup corrompido: escopo de cenário inválido.');
     }
   }

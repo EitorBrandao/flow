@@ -577,6 +577,31 @@ describe('escopo do cenário no backup', () => {
     expect(() => validarBackup(b)).toThrow(/escopo de cenário inválido/);
   });
 
+  it('rejeita escopo de box que não existe no backup (cenário órfão)', () => {
+    expect(() => validarBackup(comCenario({ escopo: 'box-fantasma' })))
+      .toThrow('Backup corrompido: escopo de cenário inválido.');
+  });
+
+  it('rejeita escopo que só difere de casa na caixa ou nos espaços', () => {
+    expect(() => validarBackup(comCenario({ escopo: 'Casa' }))).toThrow(/escopo de cenário inválido/);
+    expect(() => validarBackup(comCenario({ escopo: ' casa' }))).toThrow(/escopo de cenário inválido/);
+  });
+
+  it('rejeita escopo de box quando o backup não traz nenhuma box', () => {
+    const b = comCenario({ escopo: 'b1' });
+    b.dados.boxes = [];
+    expect(() => validarBackup(b)).toThrow(/escopo de cenário inválido/);
+  });
+
+  it('mesclar aceita cenário de escopo válido com alteradoEm no futuro', () => {
+    const atual = dados();
+    atual.cenarios = [cenario({ escopo: 'b1' }) as unknown as Dados['cenarios'][number]];
+    const backup = validarBackup(comCenario({ escopo: 'casa', alteradoEm: '2999-01-01T00:00:00Z' })).dados;
+    const m = mesclar(atual, backup);
+    expect(m.cenarios).toHaveLength(1);
+    expect(m.cenarios[0].escopo).toBe('casa');
+  });
+
   it('elemento nulo na tabela de cenários não lança erro de tipo no validador', () => {
     const b = comCenario();
     b.dados.cenarios.push(null);
