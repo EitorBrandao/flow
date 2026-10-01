@@ -3,6 +3,18 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.55.0] - 2026-10-01
+
+### Adicionado
+
+- Importar e conferir lê a fatura do cartão Nubank em CSV.
+  - A data da compra das parcelas antigas é estimada pelo número da parcela, e dá para corrigi-la antes de confirmar.
+  - A parcela casa com a compra já cadastrada mesmo sem a data exata.
+
+### Alterado
+
+- Na conferência, "Corrigir total" passou a se chamar "Corrigir compra".
+
 ## [0.54.1] - 2026-09-30
 
 ### Alterado

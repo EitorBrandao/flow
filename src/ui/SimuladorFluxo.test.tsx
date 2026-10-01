@@ -30,6 +30,8 @@ async function cenarioCom(nome: string, ligado: boolean, lanc: { categoriaId: st
   await repo.salvarCenario(c);
   await repo.salvarLancamento({ ...lanc, status: 'previsto', cenarioId: c.id });
   await useApp.getState().recarregar();
+  // `recarregar` troca `hoje` pela data real; sem refixar, o teste depende do dia em que roda.
+  useApp.setState({ hoje: '2026-09-15' });
   return c;
 }
 

@@ -95,8 +95,8 @@ Excluir tira só a marcação de viagem; os lançamentos e as compras continuam 
 
 Serve para dois casos: você passou uns dias sem lançar, ou quer conferir o Flow contra o banco. Em vez de digitar tudo de novo, entregue o arquivo do banco: o Flow compara cada linha com o que já está lançado.
 
-A tela avisa que outros bancos ainda não são lidos. Hoje o Flow lê dois arquivos: o extrato da conta Nubank, em CSV, e a fatura do cartão
-Santander, em PDF. Baixe o arquivo direto no site ou no aplicativo do banco.
+A tela avisa que outros bancos ainda não são lidos. Hoje o Flow lê três arquivos: o extrato da conta Nubank e a fatura do cartão Nubank, os dois em CSV,
+e a fatura do cartão Santander, em PDF. Baixe o arquivo direto no site ou no aplicativo do banco.
 
 A tela tem três passos, e nada é gravado antes do terceiro:
 
@@ -107,7 +107,7 @@ Se dois blocos vão para o mesmo cartão (por exemplo, titular e adicional), o F
 
 > Você pode sair da tela no meio da conferência: o arquivo, os destinos e as decisões ficam guardados enquanto o app estiver aberto, e o menu de Ajustes mostra "Conferência em andamento" em Importar e conferir. Só "Confirmar" ou "Escolher outro arquivo" apagam o que foi guardado.
 
-> Quando alguma linha do arquivo não é reconhecida, "Ver linhas não reconhecidas" mostra o texto de cada uma — para diagnóstico. Na fatura em PDF, "Copiar texto extraído" também aparece nesse caso, com o texto bruto que o Flow leu do arquivo. Os dois contêm os dados da sua fatura ou do seu extrato.
+> Quando alguma linha do arquivo não é reconhecida, "Ver linhas não reconhecidas" mostra o texto de cada uma — para diagnóstico. Nas faturas, "Copiar texto extraído" também aparece nesse caso, com o texto bruto que o Flow leu do arquivo. Os dois contêm os dados da sua fatura ou do seu extrato.
 
 Cada item da lista chega classificado num destes seis estados:
 
@@ -124,7 +124,9 @@ Cada item da lista chega classificado num destes seis estados:
 
 **A aplicação na caixinha do Nubank** aparece como Interno, com um botão a mais: "É saída de verdade". O Flow não sabe se você só guardou o dinheiro — que continua seu, é movimento interno — ou mandou para uma reserva que não entra mais no saldo, uma saída de verdade. Por isso ele pergunta, em vez de decidir sozinho. O resgate da caixinha, ao contrário, é sempre interno, sem pergunta: o dinheiro sai dela para ser gasto, e esse gasto já aparece como outra linha do extrato.
 
-**Uma compra parcelada** da fatura volta a ser a compra original: o Flow lê a data da compra e o total de parcelas, remonta o valor cheio e passa a projetar sozinho as parcelas futuras — como se você tivesse lançado a compra inteira no dia em que ela aconteceu. Se o total remontado não bater com a fatura por arredondamento, "Corrigir total" deixa ajustar o valor antes de confirmar.
+**Uma compra parcelada** da fatura volta a ser a compra original: o Flow lê a data da compra e o total de parcelas, remonta o valor cheio e passa a projetar sozinho as parcelas futuras — como se você tivesse lançado a compra inteira no dia em que ela aconteceu. Se o total remontado não bater com a fatura por arredondamento, "Corrigir compra" deixa ajustar o valor antes de confirmar.
+
+**A fatura do Nubank não traz o dia da compra das parcelas antigas.** Da segunda parcela em diante, o arquivo traz a data em que o ciclo da fatura abriu. O Flow estima a data da compra pelo número da parcela e marca a linha com "(estimada)". Em "Corrigir compra", o calendário só aceita o ciclo em que a primeira parcela caiu; "Voltar para a data estimada" desfaz a correção. Se a compra já estiver cadastrada no app, a parcela aparece como Confere, com a data do app.
 
 **Um lançamento novo** entra na categoria ["A classificar"](#glossario/a-classificar) — ou "A classificar (entrada)", quando é uma entrada de dinheiro na box. É uma categoria comum e visível, igual a qualquer outra: reclassifique quando quiser, em Categorias ou em Categorias do cartão.
 
