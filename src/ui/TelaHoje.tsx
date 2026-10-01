@@ -10,6 +10,7 @@ import type { Banco, Box, Dados, ISODate, Lancamento } from '../domain/types';
 import { ANTECEDENCIA_PENDENTE_DIAS, pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, estadoPrimeiroUso, useApp } from '../state/store';
 import BalanceChart from './BalanceChart';
+import { useModo } from './useModo';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import PrimeiroUso from './PrimeiroUso';
@@ -27,12 +28,14 @@ function ehFatura(l: Lancamento): boolean {
   return l.origem === 'cartao' && l.cartaoId != null && l.faturaMes != null;
 }
 
-function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalvar }: {
+function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalvar, simples = false }: {
   saldoApp: number;
   declaradoCent: number | null;
   dataDeclarado: ISODate | null;
   hoje: ISODate;
   onSalvar: (cents: number, data: ISODate) => Promise<void>;
+  /** Modo Simples: sem o botão de sinal (cheque especial). */
+  simples?: boolean;
 }) {
   const [magnitude, setMagnitude] = useState(Math.abs(declaradoCent ?? 0));
   const [negativo, setNegativo] = useState((declaradoCent ?? 0) < 0);
@@ -52,9 +55,11 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
         <div className="campo">
           <label htmlFor={`${uid}-saldo`}>Saldo real no banco</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-            <button type="button" className="botao botao-sinal" aria-label="Alternar sinal (positivo/negativo)" onClick={() => setNegativo(n => !n)}>
-              {negativo ? '−' : '+'}
-            </button>
+            {!simples && (
+              <button type="button" className="botao botao-sinal" aria-label="Alternar sinal (positivo/negativo)" onClick={() => setNegativo(n => !n)}>
+                {negativo ? '−' : '+'}
+              </button>
+            )}
             <CampoValor id={`${uid}-saldo`} valorCentavos={magnitude} onChange={setMagnitude} style={{ width: 110 }} />
           </div>
         </div>
@@ -345,6 +350,7 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
 
 export default function TelaHoje() {
   const { dados, boxSel, hoje, recarregar, abrirAjustes, abrirFluxo } = useApp();
+  const simples = useModo('hoje') === 'simples';
   const [pagando, setPagando] = useState<Lancamento | null>(null);
   const [avisoSalvarBancos, setAvisoSalvarBancos] = useState<string | null>(null);
   const [abaHoje, setAbaHoje] = useState<AbaHoje>('visao');
@@ -486,7 +492,8 @@ export default function TelaHoje() {
               )}
             </div>
             {/* Sem nenhum lançamento não há o que salvar: o rodapé só assustaria quem chegou agora. */}
-            {dados.lancamentos.length > 0 && (
+            {/* No Simples o rodapé só aparece quando o backup passou do limite vermelho. */}
+            {dados.lancamentos.length > 0 && (!simples || backup.nivel === 'urgente') && (
               <button type="button" className={classeBackup} onClick={() => abrirAjustes('backup')}>
                 Último backup: {backup.idade}{dados.config.mudancasDesdeBackup && SUFIXO_MUDANCAS_BACKUP}
               </button>
@@ -500,9 +507,9 @@ export default function TelaHoje() {
           <p className="sub" style={{ margin: '0 0 12px' }}>
             Digite o saldo que o app do banco mostra e toque em Salvar. O Flow compara com o total que ele calculou e diz se bate.
           </p>
-          {bancos.length === 0 ? (
+          {simples || bancos.length === 0 ? (
             <ConferenciaSaldo key={boxSel} saldoApp={deHoje?.saldoEfetivo ?? 0} declaradoCent={declaradoCent}
-              dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} />
+              dataDeclarado={dataDeclarado} hoje={hoje} onSalvar={salvarSaldoReal} simples={simples} />
           ) : (
             <ConferenciaBancos key={`${boxSel}-${chaveBancos}`} bancos={bancos} boxes={dados.boxes}
               agruparPorBox={boxSel === 'casa'} saldoApp={deHoje?.saldoEfetivo ?? 0} hoje={hoje}
