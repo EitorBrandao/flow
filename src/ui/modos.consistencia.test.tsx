@@ -269,5 +269,6 @@ it('Cartão simples e avançado mostram o mesmo valor de fatura do mês (150,00 
   await usarModo('avancado', box.id);
   const { container } = render(<TelaCartao />);
   await waitFor(() => expect(container.textContent).toMatch(/R\$\s*150,00/));
-  expect(container.textContent).not.toMatch(/R\$\s*180,00 /);
+  // o 180,00 da conferência (sem usar o valor no Flow) não aparece no resumo da fatura
+  expect(container.textContent).not.toMatch(/180,00/);
 });

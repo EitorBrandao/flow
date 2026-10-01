@@ -108,15 +108,20 @@ it('Paguei outro valor abre a folha de pagamento da fatura', async () => {
   expect(await screen.findByRole('dialog', { name: 'Pagamento da fatura' })).toBeInTheDocument();
 });
 
+// Mesma frase do Avançado (`AvisoFaturaForaDoFluxo`): mesmo conceito, mesmo texto.
+const AVISO_VENCIDA = /Essa fatura ficou de fora do Fluxo/;
+
 it('vencimento já passado sem lançamento: mostra o aviso e nenhum botão de pagamento', async () => {
   await montar('2026-10-20');
   render(<TelaCartao />);
   await userEvent.click(screen.getByRole('button', { name: 'Mês anterior' })); // outubro: venceu em 12/10
   expect(screen.getByText('Vencimento: 12/10/2026')).toBeInTheDocument();
   await userEvent.type(screen.getByLabelText('Valor da fatura'), '187000');
-  expect(screen.getByText('O vencimento desta fatura já passou. O valor fica registrado na Conferência, mas não entra no Fluxo.')).toBeInTheDocument();
+  expect(screen.getByText(AVISO_VENCIDA)).toHaveClass('aviso');
   await userEvent.click(screen.getByRole('button', { name: 'Salvar fatura' }));
   await waitFor(async () => expect(await db.conferenciasFatura.count()).toBe(1));
+  // a fatura só com conferência (sem compras) continua com o aviso depois de salva
+  expect(screen.getByText(AVISO_VENCIDA)).toBeInTheDocument();
   expect(await faturas()).toHaveLength(0);
   expect(screen.queryByRole('button', { name: 'Paguei tudo' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Paguei outro valor' })).not.toBeInTheDocument();
@@ -202,7 +207,6 @@ it('voltar ao Avançado mostra a mesma conferência marcada', async () => {
   expect(screen.getByLabelText(/usar este valor no Flow/)).toBeChecked();
 });
 
-const AVISO_VENCIDA = 'O vencimento desta fatura já passou. O valor fica registrado na Conferência, mas não entra no Fluxo.';
 
 it('mês vencido com valor zero: sem aviso de vencimento', async () => {
   await montar('2026-10-20');

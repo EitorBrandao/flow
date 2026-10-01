@@ -6,7 +6,7 @@ import {
   type Fatura,
 } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
-import type { Cartao } from '../domain/types';
+import type { Cartao, ConferenciaFatura } from '../domain/types';
 import { useApp } from '../state/store';
 import AvisoFaturaForaDoFluxo from './AvisoFaturaForaDoFluxo';
 import CampoValor from './CampoValor';
@@ -50,15 +50,19 @@ function FaturaDoMes({ cartao, mes }: { cartao: Cartao; mes: string }) {
   const fatura: Fatura = calcularFaturas(cartao, compras, ate, ajustes).find((f) => f.mes === mes)
     ?? { mes, dataFechamento, dataVencimento, itens: [], totalCent: 0 };
   const lancFatura = dados.lancamentos.find((l) => l.cartaoId === cartao.id && l.faturaMes === mes);
-  const foraDoFluxo = faturaForaDoFluxo({ cartao, fatura, compras, lancFatura, conferencia: conf, hoje });
 
   // Sem edição ainda: o campo mostra o que a fatura já leva ao Flow (soma das compras ou valor do app).
   const atual = valorSincronizado(fatura, conf);
   const valor = cents ?? atual;
+  // Com o campo editado, o aviso já considera o valor digitado, antes de salvar.
+  const confVigente: ConferenciaFatura | undefined = cents === null ? conf : {
+    ...(conf ?? { id: '', criadoEm: '', alteradoEm: '', cartaoId: cartao.id, mes }),
+    valorAppCent: valor, usarValorApp: true,
+  };
+  const foraDoFluxo = faturaForaDoFluxo({ cartao, fatura, compras, lancFatura, conferencia: confVigente, hoje });
   // Nada a salvar: campo intocado ou igual ao que já vale. Evita um toque sem editar sobrescrever
   // uma conferência do Avançado (valor do banco, `usarValorApp: false`) com a soma das compras.
   const nadaASalvar = cents === null || valor === atual;
-  const vencida = !lancFatura && fatura.dataVencimento <= hoje && valor > 0;
 
   async function salvar() {
     if (valor <= 0 || nadaASalvar) return;
@@ -97,12 +101,7 @@ function FaturaDoMes({ cartao, mes }: { cartao: Cartao; mes: string }) {
         <p className="sub" style={{ margin: 0 }}>
           Entra no Fluxo como um gasto único no vencimento. Quer detalhar compra a compra? Troque para Avançado.
         </p>
-        {vencida && (
-          <p className="aviso" style={{ margin: 0 }}>
-            O vencimento desta fatura já passou. O valor fica registrado na Conferência, mas não entra no Fluxo.
-          </p>
-        )}
-        {foraDoFluxo?.tipo === 'paga-a-menor' && (
+        {foraDoFluxo && (
           <AvisoFaturaForaDoFluxo
             situacao={foraDoFluxo}
             onCorrigir={(v) => { setValorInicialPagamento(v); setPagando(true); }}
