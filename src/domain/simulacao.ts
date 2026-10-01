@@ -1,20 +1,138 @@
-import { mesDe } from './dates';
+import { addMeses, mesDe } from './dates';
 import { formatarSaldoSemSimbolo, formatarSemSimbolo } from './money';
+import { mesesEntre } from './periodo';
+import { ocorrencias } from './recurrence';
 import type { DiaSaldo } from './projection';
 import type { Dados, ID, ISODate, Lancamento, Recorrencia } from './types';
+
+export const MAX_MESES_SIMULACAO = 60;
+
+/** Período da tabela do Simular, em meses (AAAA-MM), inclusivos nas duas extremidades. */
+export interface PeriodoSimulacao { de: string; ate: string }
 
 /** Um mês da tabela do Simular: saldo no último dia do mês sem e com os cenários. */
 export interface LinhaMes { mes: string; sem: number; com: number; dif: number }
 
+/** Período padrão: do mês de hoje até o mês do horizonte. */
+export function periodoPadrao(hoje: ISODate, horizonte: ISODate): PeriodoSimulacao {
+  return {
+    de: mesDe(hoje),
+    ate: mesDe(horizonte),
+  };
+}
+
+/** Ajusta o início do período. `novoDe` nunca antes de `mesHoje`. Se passar de 60 meses,
+ *  `ate` é arrastado. */
+export function ajustarDeSim(
+  p: PeriodoSimulacao,
+  novoDe: string,
+  mesHoje: string,
+): PeriodoSimulacao {
+  const de = novoDe < mesHoje ? mesHoje : novoDe;
+
+  // Desliza a janela: se de mudou, ate também muda proporcionalmente
+  const diferencaMeses = mesesEntre(p.de, de).length - 1;
+  let ate = addMeses(p.ate, diferencaMeses);
+
+  // Se novoDe passou do ate anterior, expande
+  if (de > p.ate) {
+    ate = de;
+  }
+
+  const meses = mesesEntre(de, ate).length;
+  if (meses > MAX_MESES_SIMULACAO) {
+    ate = addMeses(de, MAX_MESES_SIMULACAO - 1);
+  }
+  return { de, ate };
+}
+
+/** Ajusta o fim do período. Se passar de 60 meses, `de` é arrastado. `de` nunca fica antes de
+ *  `mesHoje`. */
+export function ajustarAteSim(
+  p: PeriodoSimulacao,
+  novoAte: string,
+  mesHoje: string,
+): PeriodoSimulacao {
+  let ate = novoAte;
+  let de = p.de;
+
+  // Se novoAte < mesHoje, clamp para mesHoje
+  if (ate < mesHoje) {
+    ate = mesHoje;
+  }
+
+  if (ate < de) {
+    de = ate;
+  }
+  if (de < mesHoje) {
+    de = mesHoje;
+  }
+
+  const meses = mesesEntre(de, ate).length;
+  if (meses > MAX_MESES_SIMULACAO) {
+    de = addMeses(ate, -(MAX_MESES_SIMULACAO - 1));
+    if (de < mesHoje) {
+      de = mesHoje;
+      ate = addMeses(mesHoje, MAX_MESES_SIMULACAO - 1);
+    }
+  }
+  return { de, ate };
+}
+
+/** Cria lançamentos sintéticos para as ocorrências de recorrências ativas que passam de
+ *  `config.horizonteProjecao` até `ate`. Os ids são estáveis (`ext-<recId>-<data>`). Não
+ *  duplica datas que já existem. */
+export function estenderRecorrencias(
+  dados: Pick<Dados, 'recorrencias' | 'lancamentos' | 'config'>,
+  ate: ISODate,
+): Lancamento[] {
+  const result: Lancamento[] = [];
+  const existentes = new Set(
+    dados.lancamentos
+      .filter((l) => l.recorrenciaId)
+      .map((l) => `${l.recorrenciaId}:${l.data}`),
+  );
+
+  for (const rec of dados.recorrencias) {
+    if (!rec.ativa) continue;
+    const ocorrs = ocorrencias(rec, ate);
+    for (const data of ocorrs) {
+      if (data <= dados.config.horizonteProjecao) continue;
+      const chave = `${rec.id}:${data}`;
+      if (existentes.has(chave)) continue;
+
+      result.push({
+        id: `ext-${rec.id}-${data}`,
+        boxId: rec.boxId,
+        categoriaId: rec.categoriaId,
+        valor: rec.valor,
+        data,
+        status: 'previsto',
+        origem: 'recorrencia',
+        recorrenciaId: rec.id,
+        criadoEm: rec.criadoEm,
+        alteradoEm: rec.alteradoEm,
+        ...(rec.nota && { nota: rec.nota }),
+        ...(rec.bancoId && { bancoId: rec.bancoId }),
+        ...(rec.cenarioId && { cenarioId: rec.cenarioId }),
+      });
+    }
+  }
+
+  return result;
+}
+
 /** Resume a série de `projetarBoxes` por mês, do mês de `hoje` em diante. Usa o último dia de
  *  cada mês presente na série. `sem` é o saldo projetado (efetivo + previsto, sem cenário);
- *  `com` soma os cenários ligados na projeção. */
-export function resumoMensal(serie: DiaSaldo[], hoje: ISODate): LinhaMes[] {
+ *  `com` soma os cenários ligados na projeção. Opcional `ate` (mês AAAA-MM) corta meses
+ *  depois dele. */
+export function resumoMensal(serie: DiaSaldo[], hoje: ISODate, ate?: string): LinhaMes[] {
   const mesHoje = mesDe(hoje);
   const ultimoDoMes = new Map<string, DiaSaldo>();
   for (const d of serie) {
     const mes = mesDe(d.data);
     if (mes < mesHoje) continue;
+    if (ate && mes > ate) continue;
     ultimoDoMes.set(mes, d); // a série vem em ordem: o último que entra é o último dia
   }
   return [...ultimoDoMes.entries()].map(([mes, d]) => ({
