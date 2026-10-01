@@ -1086,6 +1086,45 @@ describe('Hoje no modo Simples', () => {
     expect(screen.getByText('Total calculado no Flow')).toBeInTheDocument();
   });
 
+  it('saldo declarado negativo: o botão de sinal aparece e digitar 300 sem mexer no sinal grava −300', async () => {
+    const { box } = await montarSimples();
+    await db.boxes.update(box.id, { saldoDeclaradoCent: -50000, dataSaldoDeclarado: '2026-07-25' });
+    await act(async () => { await useApp.getState().recarregar(); });
+    useApp.setState({ hoje: '2026-07-26' });
+    await abrirAba('Conferir');
+    const sinal = screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' });
+    expect(sinal).toHaveTextContent('−');
+    await userEvent.clear(screen.getByLabelText('Saldo real no banco'));
+    await userEvent.type(screen.getByLabelText('Saldo real no banco'), '300,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await vi.waitFor(async () => expect((await db.boxes.get(box.id))?.saldoDeclaradoCent).toBe(-30000));
+    expect(screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' })).toHaveTextContent('−');
+  });
+
+  it('saldo declarado negativo: o sinal pode ser trocado para positivo no Simples', async () => {
+    const { box } = await montarSimples();
+    await db.boxes.update(box.id, { saldoDeclaradoCent: -50000, dataSaldoDeclarado: '2026-07-25' });
+    await act(async () => { await useApp.getState().recarregar(); });
+    useApp.setState({ hoje: '2026-07-26' });
+    await abrirAba('Conferir');
+    await userEvent.click(screen.getByRole('button', { name: 'Alternar sinal (positivo/negativo)' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await vi.waitFor(async () => expect((await db.boxes.get(box.id))?.saldoDeclaradoCent).toBe(50000));
+  });
+
+  it('saldo declarado positivo ou ausente: sem botão de sinal e grava positivo', async () => {
+    const { box } = await montarSimples();
+    await db.boxes.update(box.id, { saldoDeclaradoCent: 50000, dataSaldoDeclarado: '2026-07-25' });
+    await act(async () => { await useApp.getState().recarregar(); });
+    useApp.setState({ hoje: '2026-07-26' });
+    await abrirAba('Conferir');
+    expect(screen.queryByRole('button', { name: /Alternar sinal/ })).not.toBeInTheDocument();
+    await userEvent.clear(screen.getByLabelText('Saldo real no banco'));
+    await userEvent.type(screen.getByLabelText('Saldo real no banco'), '300,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await vi.waitFor(async () => expect((await db.boxes.get(box.id))?.saldoDeclaradoCent).toBe(30000));
+  });
+
   it('salvar grava o saldo declarado da box, sem criar lançamento nem mexer nos bancos', async () => {
     const { box, bancoId } = await montarSimples({ bancos: true });
     const antes = await db.lancamentos.count();

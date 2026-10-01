@@ -36,7 +36,8 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
   dataDeclarado: ISODate | null;
   hoje: ISODate;
   onSalvar: (cents: number, data: ISODate) => Promise<void>;
-  /** Modo Simples: sem o botão de sinal (cheque especial). */
+  /** Modo Simples: o botão de sinal só aparece quando o saldo declarado já é negativo
+   *  (cheque especial); com declarado não-negativo, grava sempre positivo. */
   simples?: boolean;
 }) {
   const [magnitude, setMagnitude] = useState(Math.abs(declaradoCent ?? 0));
@@ -57,7 +58,7 @@ function ConferenciaSaldo({ saldoApp, declaradoCent, dataDeclarado, hoje, onSalv
         <div className="campo">
           <label htmlFor={`${uid}-saldo`}>Saldo real no banco</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-            {!simples && (
+            {(!simples || (declaradoCent ?? 0) < 0) && (
               <button type="button" className="botao botao-sinal" aria-label="Alternar sinal (positivo/negativo)" onClick={() => setNegativo(n => !n)}>
                 {negativo ? '−' : '+'}
               </button>
