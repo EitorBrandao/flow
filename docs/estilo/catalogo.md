@@ -51,6 +51,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.tabela-fixa` | junto de `.tabela`: colunas de largura fixa (Simular, no Fluxo) — o conteúdo não muda as colunas; a 1ª coluna recebe largura pelo `<col>`; as demais dividem o resto por igual. A largura mínima vem do componente, para ligar ou desligar cenários não mexer nas colunas |
 | `.tabela-nome-tocavel` | `<button>` dentro de uma célula de `.tabela` que abre um detalhe (card "Categorias do cartão", Análises): mesmo tamanho e peso das células, só a cor de ação `--ac`; nunca `.botao-ver-mais` numa tabela |
 | `.rolavel` | wrapper com `overflow-x: auto` para conteúdo largo (tabelas) |
+| `.rolavel-12` | modificador de `.rolavel` para a tabela do Simular (12 meses de altura + cabeçalho) — `max-height: calc(13 * 37px)`, `overflow-y: auto`, cabeçalho sticky no topo com z-index 3, primeiro `th` com z-index 4 (sobre a coluna fixa) |
 | `.recuo-1` / `.recuo-2` | recuo horizontal (ambos os lados) pra indicar nível de hierarquia numa lista aninhada — ex.: grupo/data em `LancamentosSheet` |
 | `.sheet-backdrop` / `.sheet` / `.sheet-alca` / `.sheet-cabecalho` / `.sheet-conteudo` | bottom sheet (ver componente `Sheet`) |
 | `.navegacao` | tab bar mobile / sidebar desktop (breakpoint 900px) |

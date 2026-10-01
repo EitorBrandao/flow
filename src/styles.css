@@ -294,6 +294,12 @@ table.tabela th:first-child, table.tabela td:first-child {
    overflow-anchor:none evita que o navegador ajuste sozinho a rolagem quando a altura de
    uma célula muda (nome de categoria quebrando em linhas) depois do layout inicial. */
 .rolavel { overflow-x: auto; min-width: 0; overflow-anchor: none; }
+/* Simular: a tabela mostra 12 meses de altura e rola na vertical. O cabeçalho fica fixo no topo
+   da área que rola; o canto (1ª coluna do cabeçalho) fica acima da coluna do mês, que é
+   sticky à esquerda (z-index 2). A altura é de 13 linhas: o cabeçalho e 12 meses. */
+.rolavel-12 { max-height: calc(13 * 37px); overflow-y: auto; }
+.rolavel-12 thead th { position: sticky; top: 0; z-index: 3; background: var(--surface); }
+.rolavel-12 thead th:first-child { z-index: 4; }
 
 .sheet-backdrop {
   position: fixed; inset: 0; background: rgba(0, 0, 0, .55); z-index: 50;

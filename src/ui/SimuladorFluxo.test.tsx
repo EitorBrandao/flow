@@ -248,3 +248,33 @@ it('Tornar real não avisa sobre Pendentes quando todos os itens do cenário sã
   expect(confirmar).toHaveBeenCalledWith('Converter "Z" em lançamentos reais?');
   confirmar.mockRestore();
 });
+
+it('minimizar a tabela combinada esconde a tabela mas mantém visível a frase de resumo', async () => {
+  const { box, casa } = await preparar();
+  await cenarioCom('Gasto', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 30000 });
+  render(<SimuladorFluxo />);
+  const resumo = screen.getByRole('region', { name: 'Cenários ligados' });
+  const tabelaAntes = within(resumo).queryByRole('table');
+  expect(tabelaAntes).toBeInTheDocument();
+  const botao = within(resumo).getByRole('button', { name: /Tabela por mês/ });
+  await userEvent.click(botao);
+  expect(within(resumo).queryByRole('table')).not.toBeInTheDocument();
+  expect(within(resumo).getByText(/segue positivo/)).toBeInTheDocument();
+});
+
+it('abrir um cenário, minimizar sua tabela, fechar e reabrir mantém a tabela minimizada', async () => {
+  const { box, casa } = await preparar();
+  await cenarioCom('A', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });
+  render(<SimuladorFluxo />);
+  const botaoAbrir = screen.getByRole('button', { name: /^A/ });
+  await userEvent.click(botaoAbrir);
+  const impacto = await screen.findByRole('region', { name: 'Impacto só deste cenário' });
+  const botaoTabela = within(impacto).getByRole('button', { name: /Tabela por mês/ });
+  await userEvent.click(botaoTabela);
+  expect(within(impacto).queryByRole('table')).not.toBeInTheDocument();
+  await userEvent.click(botaoAbrir);
+  expect(screen.queryByRole('region', { name: 'Impacto só deste cenário' })).not.toBeInTheDocument();
+  await userEvent.click(botaoAbrir);
+  const impacto2 = await screen.findByRole('region', { name: 'Impacto só deste cenário' });
+  expect(within(impacto2).queryByRole('table')).not.toBeInTheDocument();
+});

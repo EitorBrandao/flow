@@ -13,6 +13,7 @@ export default function SimuladorFluxo() {
   const { dados, boxSel, hoje, recarregar } = useApp();
   const [nomeNovo, setNomeNovo] = useState('');
   const [aberto, setAberto] = useState<ID | null>(null);
+  const [tabelaAberta, setTabelaAberta] = useState(true);
   const uid = useId();
 
   // Memoizado: `projetarBoxes` roda uma vez por cenário (+ uma vez combinado) — sem isto,
@@ -79,7 +80,7 @@ export default function SimuladorFluxo() {
               </p>
             )}
           </div>
-          <TabelaSimulacao linhas={combinado} larguraCh={larguraCh} />
+          <TabelaSimulacao linhas={combinado} larguraCh={larguraCh} aberta={tabelaAberta} onAlternar={() => setTabelaAberta(!tabelaAberta)} />
         </div>
       </section>
 
