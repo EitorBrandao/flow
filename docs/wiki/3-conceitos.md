@@ -6,7 +6,7 @@ Os conceitos por trás de tudo que o app guarda.
 
 Um fluxo de caixa com saldo próprio — nos exemplos desta documentação, {{boxA}} e {{boxB}}. O saldo inicial e a data de início ficam no cadastro da box (veja [A primeira box](#primeiros-passos/a-primeira-box)); o saldo que o banco mostra, informado de vez em quando para conferir, é um dado à parte.
 
-A [[box casa]] é especial: não tem saldo próprio, só guarda os lançamentos compartilhados. A visão consolidada da casa soma {{boxA}} + {{boxB}} + os lançamentos da box casa, sempre na hora — nunca fica guardada pronta. Veja [Consolidação da casa](#motor/consolidacao-da-casa), no capítulo Motor por baixo dos panos.
+A [[box casa]] é especial: não tem saldo próprio, só guarda os lançamentos compartilhados. A visão consolidada da casa soma {{boxA}} + {{boxB}} + os lançamentos da box casa, sempre na hora — nunca fica guardada pronta. Lançamento novo vai para a box de quem pagou; os que já estão na box casa continuam contando. Veja [Consolidação da casa](#motor/consolidacao-da-casa), no capítulo Motor por baixo dos panos.
 
 ## Categoria
 

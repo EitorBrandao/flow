@@ -21,4 +21,4 @@ Resultado: o saldo efetivo nunca contém suposição, só o que de fato acontece
 
 ## Consolidação da casa
 
-Selecionar **casa** no topo não troca para uma box de verdade: soma {{boxA}} + {{boxB}} + os lançamentos próprios da box casa (energia, água, ajustes), sempre na hora. Como o valor nunca fica guardado à parte, ele nunca destoa das boxes individuais.
+Selecionar **casa** no topo não troca para uma box de verdade: soma {{boxA}} + {{boxB}} + os lançamentos próprios da box casa (energia, água, ajustes), sempre na hora. Lançamento novo vai para a box de quem pagou; os que já estão na box casa continuam contando. Como o valor nunca fica guardado à parte, ele nunca destoa das boxes individuais.

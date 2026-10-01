@@ -18,7 +18,8 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   saldo próprio": é o caso da box especial de nome `"casa"`, autocriada por
   `iniciar()` (`src/state/store.ts`) se não existir nenhuma box chamada `"casa"`. Ver
   seção própria abaixo — `'casa'` é ao mesmo tempo o nome dessa box e um sentinela de
-  seleção com dois significados diferentes. Uma `Box` também guarda duas **categorias
+  seleção com dois significados diferentes. A UI não grava lançamento novo nessa box (ver
+  seção abaixo). Uma `Box` também guarda duas **categorias
   ocultas de transferência** (`categoriaTransferenciaSaidaId`, de gasto, e
   `categoriaTransferenciaEntradaId`, de ganho) que recebem as duas pernas de uma
   transferência entre bancos da própria box. Elas nascem sob demanda, na primeira
@@ -123,14 +124,20 @@ nessa área:
 
 1. **Uma `Box` real**, de nome literal `"casa"`, `saldoInicial: null`, autocriada em
    `iniciar()` (`src/state/store.ts`) se não existir nenhuma box com esse nome. É a box
-   para lançamentos que não pertencem a nenhuma conta específica.
+   para lançamentos que não pertencem a nenhuma conta específica. A UI (`TelaLancar`) não
+   grava lançamento novo nela: com `boxSel === 'casa'`, o formulário exige uma box real
+   (lista só boxes reais) e, sem box escolhida, mostra só o seletor e o aviso "Escolha a
+   box.". Essa box só guarda lançamentos que já existiam, e eles continuam entrando na
+   consolidação. A regra é da interface, **não** do repo: `repo.salvarLancamento` continua
+   aceitando `boxId` da box `"casa"` (**expectativa não garantida** no domínio).
 2. **O sentinela `BoxSelecionada = ID | 'casa'`** (`src/state/store.ts`), usado no estado
    de seleção da UI. Esse sentinela tem **comportamento diferente conforme quem o lê**:
    - `boxIdsSelecionadas(dados, 'casa')` devolve **todas as boxes** (visão consolidada) —
      usado por telas que somam várias boxes (Fluxo, Cartão, Análises, Hoje) e pelo
      `AdicionarSheet`.
    - `boxIdEfetivo(dados, 'casa')` devolve o **id da única box chamada `"casa"`** — usado
-     por telas que operam sobre exatamente uma box (Ajustes, Lançar, Simulador). Se essa
+     por telas que operam sobre exatamente uma box (Ajustes, Simulador). O Lançar não usa
+     mais essa função na visão casa: lá, o usuário escolhe uma box real. Se essa
      box tiver sido renomeada ou removida, `boxIdEfetivo` devolve `null`.
 
 ## A matriz `status` × `origem`
