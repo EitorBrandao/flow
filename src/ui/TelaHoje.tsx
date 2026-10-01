@@ -174,7 +174,7 @@ function FormTransferencia({ bancos, origemInicialId, hoje, dados, onFeito, onCa
   }
 
   return (
-    <div className="item item-coluna">
+    <div className="item item-coluna" style={{ background: 'transparent', padding: 0 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 8, alignItems: 'end' }}>
         <div className="campo">
           <label htmlFor={`${uid}-de`}>De</label>
@@ -307,7 +307,7 @@ function ConferenciaBancos({ bancos, boxes, agruparPorBox, saldoApp, hoje, onSal
         />
       )}
       {sucesso && (
-        <div className="item item-coluna">
+        <div className="item item-coluna" style={{ background: 'transparent', padding: 0 }}>
           <p className="aviso aviso-sucesso">Transferência feita ✓</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '6px 10px', alignItems: 'baseline' }}>
             <span />
