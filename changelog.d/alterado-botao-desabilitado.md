@@ -1,0 +1,1 @@
+- Botões desabilitados agora parecem desabilitados, em todas as telas
