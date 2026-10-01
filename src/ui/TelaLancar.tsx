@@ -12,9 +12,12 @@ import { bancoPadrao, bancosDaBox } from '../domain/bancos';
 import type { TipoCategoria } from '../domain/types';
 import { avisoDataNoSaldo } from '../domain/projection';
 import { gastoDaViagem, viagemAtivaEm } from '../domain/viagem';
+import { categoriaPorDescricao } from '../domain/modos';
 import { boxIdEfetivo, useApp } from '../state/store';
+import { useModo } from './useModo';
 
 export default function TelaLancar() {
+  const modo = useModo('lancar');
   const { dados, boxSel, hoje, recarregar, rascunhoLancar, setRascunhoLancar } = useApp();
   const [cents, setCents] = useState(0);
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
@@ -26,6 +29,9 @@ export default function TelaLancar() {
   const [salvo, setSalvo] = useState(false);
   // `null` = "o banco padrão da box"; só vira ID quando a pessoa escolhe outro.
   const [bancoEscolhido, setBancoEscolhido] = useState<string | null>(null);
+  const [boxEscolhida, setBoxEscolhida] = useState<string | null>(null);
+  // Trava o segundo toque até o fim do `await`: o estado só atualiza no próximo render.
+  const salvandoRef = useRef(false);
   const salvoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const viagemAtiva = viagemAtivaEm(dados?.viagens ?? [], data);
 
@@ -56,7 +62,16 @@ export default function TelaLancar() {
     if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
   }, []);
 
-  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+  // No Simples a box é a padrão (se válida); sem padrão, a pessoa escolhe quando há mais de uma.
+  const boxesProprias = (dados?.boxes ?? []).filter((b) => b.saldoInicial != null);
+  const boxPadraoId = dados?.config.boxPadraoId != null
+    && boxesProprias.some((b) => b.id === dados.config.boxPadraoId)
+    ? dados.config.boxPadraoId : null;
+  const boxEscolhidaValida = boxesProprias.some((b) => b.id === boxEscolhida) ? boxEscolhida : null;
+  const boxId = dados
+    ? (modo === 'simples' ? (boxPadraoId ?? boxEscolhidaValida) : null) ?? boxIdEfetivo(dados, boxSel)
+    : null;
+  const mostraSeletorBox = modo === 'simples' && boxPadraoId == null && boxesProprias.length > 1;
 
   useEffect(() => {
     setBancoEscolhido(null);
@@ -80,17 +95,42 @@ export default function TelaLancar() {
   const boxAtual = dados?.boxes.find((b) => b.id === boxId);
   const avisoSaldo = avisoDataNoSaldo(boxAtual, data);
 
-  const valido = boxId != null && cents > 0 && categoriaId != null && data !== '';
+  const valido = boxId != null && cents > 0
+    && (modo === 'simples' || (categoriaId != null && data !== ''));
 
   // Uma frase por vez, na ordem em que a pessoa preenche — dizer tudo que falta de uma vez
   // vira ruído, e o campo seguinte já vai aparecer sozinho quando o anterior for resolvido.
   // Sem valor, nada: o campo Valor já abre em foco, e a frase aparecia antes de qualquer toque.
-  const oQueFalta = categorias.length === 0
+  const oQueFalta = modo === 'simples' ? ''
+    : categorias.length === 0
     ? 'Nenhuma categoria nesta box — crie em Ajustes, Categorias.'
     : cents === 0 ? ''
       : categoriaId == null ? 'Escolha uma categoria.'
         : data === '' ? 'Escolha uma data.'
           : '';
+
+  async function lancarSimples() {
+    if (!valido || salvandoRef.current || !dados) return;
+    salvandoRef.current = true;
+    try {
+      const descricao = nota.trim();
+      const catId = categoriaPorDescricao({
+        lancamentos: dados.lancamentos, categorias: dados.categorias, boxId: boxId!, tipo, descricao,
+      }) ?? await repo.categoriaAClassificarDe(boxId!, tipo);
+      await repo.salvarLancamento({
+        boxId: boxId!, categoriaId: catId, data: hoje, valor: cents,
+        ...(descricao ? { nota: descricao } : {}),
+        status: 'efetivo',
+        ...(bancoId ? { bancoId } : {}),
+      });
+      await recarregar();
+      setCents(0); setNota(''); setSalvo(true);
+      if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
+      salvoTimeoutRef.current = setTimeout(() => setSalvo(false), 2500);
+    } finally {
+      salvandoRef.current = false;
+    }
+  }
 
   async function lancar() {
     if (!valido) return;
@@ -119,47 +159,63 @@ export default function TelaLancar() {
         rotulo="Tipo" opcoes={OPCOES_TIPO} selecionadaId={tipo}
         onSelecionar={(id) => { setTipo(id as TipoCategoria); setCategoriaId(null); }}
       />
-      <SeletorCategoria categorias={categorias} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
-      <SeletorBanco bancos={bancos} selecionadaId={bancoId ?? null} onSelecionar={setBancoEscolhido} />
-      <div className="linha">
+      {mostraSeletorBox && (
+        <SeletorPills
+          rotulo="Box" opcoes={boxesProprias.map((b) => ({ id: b.id, nome: b.nome }))}
+          selecionadaId={boxId ?? ''} onSelecionar={setBoxEscolhida}
+        />
+      )}
+      {modo === 'simples' && (
         <div className="campo">
-          <label htmlFor="data">Data</label>
-          <CampoData id="data" value={data} onChange={setData} />
-        </div>
-        <div className="campo" style={{ flex: 1 }}>
-          <label htmlFor="nota">Nota (opcional)</label>
+          <label htmlFor="nota">Do que foi? (opcional)</label>
           <input id="nota" value={nota} onChange={(e) => setNota(e.target.value)} />
         </div>
-      </div>
-      {avisoSaldo && <p className="aviso">{avisoSaldo}</p>}
-      <label htmlFor="previsto">
-        <input
-          id="previsto" type="checkbox"
-          checked={previsto} onChange={(e) => setPrevisto(e.target.checked)}
-        />
-        {' '}Marcar como previsto
-      </label>
-      {viagemAtiva && (
-        <label htmlFor="viagem">
-          <input
-            id="viagem" type="checkbox"
-            checked={viagemMarcada} onChange={(e) => setViagemMarcada(e.target.checked)}
-          />
-          {' '}Viagem: {viagemAtiva.nome}
-        </label>
       )}
-      {dados && viagemAtiva && viagemMarcada && (viagemAtiva.orcamentoCent ?? 0) > 0 && (() => {
-        const gastoAtual = gastoDaViagem(viagemAtiva, dados.lancamentos, dados.comprasCartao, dados.categorias);
-        const conta = cents > 0 && tipo === 'gasto' && !previsto && data <= hoje;
-        return conta
-          ? (
-            <LinhaOrcamentoViagem
-              orcamentoCent={viagemAtiva.orcamentoCent!} gastoCent={gastoAtual + cents} comEsteGasto
+      {modo === 'avancado' && (
+        <>
+        <SeletorCategoria categorias={categorias} selecionadaId={categoriaId} onSelecionar={setCategoriaId} />
+        <SeletorBanco bancos={bancos} selecionadaId={bancoId ?? null} onSelecionar={setBancoEscolhido} />
+        <div className="linha">
+          <div className="campo">
+            <label htmlFor="data">Data</label>
+            <CampoData id="data" value={data} onChange={setData} />
+          </div>
+          <div className="campo" style={{ flex: 1 }}>
+            <label htmlFor="nota">Nota (opcional)</label>
+            <input id="nota" value={nota} onChange={(e) => setNota(e.target.value)} />
+          </div>
+        </div>
+        {avisoSaldo && <p className="aviso">{avisoSaldo}</p>}
+        <label htmlFor="previsto">
+          <input
+            id="previsto" type="checkbox"
+            checked={previsto} onChange={(e) => setPrevisto(e.target.checked)}
+          />
+          {' '}Marcar como previsto
+        </label>
+        {viagemAtiva && (
+          <label htmlFor="viagem">
+            <input
+              id="viagem" type="checkbox"
+              checked={viagemMarcada} onChange={(e) => setViagemMarcada(e.target.checked)}
             />
-          )
-          : <LinhaOrcamentoViagem orcamentoCent={viagemAtiva.orcamentoCent!} gastoCent={gastoAtual} />;
-      })()}
-      <button className="botao botao-primario" disabled={!valido} onClick={lancar} style={{ padding: 14 }}>
+            {' '}Viagem: {viagemAtiva.nome}
+          </label>
+        )}
+        {dados && viagemAtiva && viagemMarcada && (viagemAtiva.orcamentoCent ?? 0) > 0 && (() => {
+          const gastoAtual = gastoDaViagem(viagemAtiva, dados.lancamentos, dados.comprasCartao, dados.categorias);
+          const conta = cents > 0 && tipo === 'gasto' && !previsto && data <= hoje;
+          return conta
+            ? (
+              <LinhaOrcamentoViagem
+                orcamentoCent={viagemAtiva.orcamentoCent!} gastoCent={gastoAtual + cents} comEsteGasto
+              />
+            )
+            : <LinhaOrcamentoViagem orcamentoCent={viagemAtiva.orcamentoCent!} gastoCent={gastoAtual} />;
+        })()}
+        </>
+      )}
+      <button className="botao botao-primario" disabled={!valido} onClick={modo === 'simples' ? lancarSimples : lancar} style={{ padding: 14 }}>
         Lançar
       </button>
       {/* Botão desabilitado sem explicação deixa a pessoa sem saber o que falta — e quem
