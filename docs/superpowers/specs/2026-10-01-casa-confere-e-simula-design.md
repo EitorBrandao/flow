@@ -24,8 +24,8 @@ trocado pela decisão abaixo.
   escolhe box para simular: o cenário usa o fluxo de caixa da visão. A casa mostra e soma só os
   cenários da casa; cada box, só os dela. Decisão do usuário.
 - **Cenários que já existem passam a ser da casa.** Decisão do usuário. Somem das boxes.
-- **Importar o extrato da conta na casa pede a box.** Fatura de cartão não muda: o cartão já
-  define a box.
+- **Importar o extrato da conta na casa pede a box**, sem marcar nenhuma. Fatura de cartão não
+  muda: o cartão já define a box.
 
 ## Mudanças
 
@@ -84,10 +84,8 @@ export function cenarioDaVisao(c: Cenario, boxSel: string): boolean
 - Item novo: `boxIdNovo` continua `boxIdEfetivo(dados, boxSel)`: numa box, a box do topo; na casa, a
   box `"casa"`. Ninguém escolhe box no Simular. O item da casa conta na casa porque a visão casa
   soma todas as boxes, inclusive a `"casa"`.
-- `excluirBox` (`src/db/repo.ts`): apaga também os cenários com `escopo` igual ao id da box e os
-  itens deles, para não ficar cenário órfão. O repositório lista **todos** os pontos que tocam
-  cenário: confira `excluirBox`, `apagarCenario`, `converterCenarioEmReal` e a limpeza de
-  rascunhos.
+- O app não tem exclusão de box, então nenhum cenário fica órfão por causa do `escopo`. Se um dia
+  houver, ela terá de apagar os cenários da box e os itens deles.
 - Backup: `validarBackup` aceita `escopo` ausente ou texto; outro tipo é rejeitado (só mais
   rígido, nunca mais frouxo). Backup antigo, sem `escopo`, importa como cenário da casa.
 - **Converter em real** (`converterCenarioEmReal`) não muda: o cenário da casa vira lançamento
@@ -95,16 +93,21 @@ export function cenarioDaVisao(c: Cenario, boxSel: string): boolean
 
 ### 4. Importar o extrato da conta na casa
 
-`src/ui/ajustes/Importar.tsx`: com `boxSel === 'casa'`, antes de ler o arquivo de **extrato de
-conta**, mostra um seletor "Box do extrato" (`<select>`, só boxes com saldo próprio, com a opção
-"Escolha a box…"). Sem box escolhida, o botão de escolher arquivo do extrato fica desabilitado, com
-a frase "Escolha a box." A box escolhida vira `boxIdEscolhida` (hoje `boxIdEfetivo`). Fatura de
-cartão não muda: o cartão escolhido define a box, e na casa qualquer cartão ativo entra. Numa box
-só, nada muda.
+`src/ui/ajustes/Importar.tsx` já tem o passo "2. Destino", com um grupo de botões "Box de destino"
+para o extrato da conta. Hoje esse passo lista **todas** as boxes e já vem marcado com
+`boxIdEfetivo(dados, boxSel)`, que na casa é a box `"casa"`. Muda:
+
+- Os botões listam só as boxes com saldo próprio (`saldoInicial !== null`).
+- A marcação inicial é a box do topo quando ela é concreta; com `boxSel === 'casa'`, nenhuma box vem
+  marcada (`boxIdEscolhida: null`). Sem box marcada, o passo 3 (confirmar) continua bloqueado,
+  como já é com `destinoCompleto` falso.
+- Fatura de cartão não muda: o cartão escolhido define a box, e na casa qualquer cartão ativo
+  entra.
 
 ## Pontos de chamada
 
-- `boxIdEfetivo` sai de `Bancos` e `Importar` (extrato). Permanece em `SimuladorFluxo` (item novo),
+- `boxIdEfetivo` sai de `Bancos` e deixa de dar a marcação inicial do extrato em `Importar` (fica só
+  em `cartoesAtivos`, que já trata a casa à parte). Permanece em `SimuladorFluxo` (item novo),
   `SimuladorSimples`, `CenarioCard` (mensagem de box ausente continua) e `AdicionarSheet`.
 - `cenariosLigados`: `TelaHoje`, `TelaFluxo`, `SimuladorFluxo` e testes. Confira também
   `src/dossie/`.
@@ -136,14 +139,14 @@ vale igual no gráfico de Hoje, no gráfico do Fluxo e no Simular.
   não muda o de ana.
 - Simular: lista só os cenários da visão; criar na casa grava `escopo: 'casa'`; criar em ana grava o
   id de ana; item novo na casa vai para a box `"casa"`; backup antigo sem `escopo` aparece na casa.
-- `excluirBox` apaga os cenários e os itens da box; cenários da casa e de outras boxes ficam.
 - Backup (testes adversariais): `escopo` numérico é rejeitado; `escopo` ausente é aceito;
   `alteradoEm` no futuro; JSON malformado; `config` nulo; mesclar preserva `escopo`.
 - Conferir na casa: seção por box; box com bancos mostra bancos; box sem bancos mostra "Saldo da
   box"; box `"casa"` fora; total e diferença só com todas as boxes informadas; frase com os nomes
   que faltam; salvar grava banco e box; numa box só, igual a hoje.
 - Bancos na casa: título e aviso, sem formulário nem lista.
-- Importar na casa: extrato pede a box e fica desabilitado sem ela; fatura de cartão sem mudança.
+- Importar na casa: nenhuma box marcada por padrão, só boxes com saldo próprio nos botões, confirmar
+  bloqueado sem box; numa box só, a box do topo vem marcada; fatura de cartão sem mudança.
 - Varredura com Playwright (Galaxy S25+), duas boxes e a casa, dados sintéticos.
 
 ## Fora desta entrega
