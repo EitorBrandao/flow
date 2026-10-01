@@ -5,6 +5,7 @@ import { bancosDaBox, totalDeclaradoCent } from '../domain/bancos';
 import { addDias, formatarDataBR } from '../domain/dates';
 import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../domain/estadoBackup';
 import { classeEfeito, classeSaldo, efeitoNoSaldo, formatarBRL, formatarSaldo } from '../domain/money';
+import { notaExibivel } from '../domain/notas';
 import type { Banco, Box, ISODate, Lancamento } from '../domain/types';
 import { ANTECEDENCIA_PENDENTE_DIAS, pendentes, projetarBoxes } from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, estadoPrimeiroUso, useApp } from '../state/store';
@@ -443,7 +444,10 @@ export default function TelaHoje() {
                       {nomeCat(l.categoriaId)}
                       {l.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
                     </div>
-                    <div className="sub">{l.data.split('-').reverse().join('/')}{l.nota ? ` · ${l.nota}` : ''}</div>
+                    {(() => {
+                      const nota = notaExibivel(l.nota, nomeCat(l.categoriaId));
+                      return <div className="sub">{l.data.split('-').reverse().join('/')}{nota ? ` · ${nota}` : ''}</div>;
+                    })()}
                   </div>
                   {ehFatura(l) ? (
                     <span className={classeEfeito(efeitoNoSaldo(l.valor, tipoCat(l.categoriaId)))}>
