@@ -4,6 +4,9 @@ import '@testing-library/jest-dom/vitest';
 import { configure } from '@testing-library/react';
 import { MotionGlobalConfig } from 'framer-motion';
 import { db } from './db/database';
+import * as repo from './db/repo';
+import { modosEfetivos } from './domain/modos';
+import type { Config } from './domain/types';
 
 // `findBy*`/`waitFor` têm um relógio próprio, separado do `testTimeout` do Vitest: subir só o
 // do Vitest não resolve um `findBy*` que estoura. O padrão de 1 s não cobre uma tela que faz
@@ -16,6 +19,8 @@ configure({ asyncUtilTimeout: 10_000 });
 // handlers de clique ainda em voo (onClick assíncrono não aguardado) com DatabaseClosedError.
 export async function limparDb(): Promise<void> {
   await Promise.all(db.tables.map((t) => t.clear()));
+  // semeia o Avançado: a suíte existente continua vendo todas as telas completas
+  await repo.salvarConfig({ modos: modosEfetivos({ id: 'config' } as Config) });
 }
 
 // framer-motion: animações instantâneas nos testes (sem esperas nem elementos presos em exit)

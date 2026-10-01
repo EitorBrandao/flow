@@ -85,6 +85,7 @@ export const useApp = create<AppState>((set) => ({
         criadoEm: agora, alteradoEm: agora,
       });
     }
+    await repo.limparSimulacoesRapidas();
     await repo.materializarTodas(inicial.config.horizonteProjecao);
     await repo.sincronizarCartoes(inicial.config.horizonteProjecao);
     const dados = await repo.carregarTudo();

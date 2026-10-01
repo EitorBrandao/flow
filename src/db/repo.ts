@@ -1,6 +1,7 @@
 import { compararCategorias, compararCategoriasCartao, proximaOrdem } from '../domain/categorias';
 import { bancoIdDoCartao } from '../domain/bancos';
 import { hojeISO } from '../domain/dates';
+import { modosEfetivos, modosInstalacaoNova } from '../domain/modos';
 import {
   ajustesDoCartao, calcularFaturas, datasFaturaDoMes, dedupAjustesFechamento, dedupConferencias,
   diffSincronizacao, type PlanoParcelamento,
@@ -10,8 +11,8 @@ import {
   agoraISO, novoId,
   type Banco, type Box, type Cartao, type Categoria, type CategoriaCartao,
   type Cenario, type CompraCartao, type Config, type Dados, type ID, type ISODate, type ItemNota,
-  type Lancamento, type NotaFiscalSalva, type Recorrencia, type RecorrenciaCartao,
-  type StatusLancamento, type TipoCategoria, type Viagem,
+  type Lancamento, type ModoUso, type NotaFiscalSalva, type Recorrencia, type RecorrenciaCartao,
+  type StatusLancamento, type TelaModo, type TipoCategoria, type Viagem,
 } from '../domain/types';
 import { db } from './database';
 
@@ -21,6 +22,12 @@ function configPadrao(): Config {
     mudancasDesdeBackup: false,
     horizonteProjecao: `${new Date().getFullYear() + 1}-12-31`,
   };
+}
+
+/** Instalação nova (banco sem config) começa no modo Simples. Config já existente sem `modos`
+ *  continua Avançado: ver `modoDe`. */
+function configInstalacaoNova(): Config {
+  return { ...configPadrao(), modos: modosInstalacaoNova() };
 }
 
 /** Cenário é hipotético: um lançamento dele nunca é `efetivo` (docs/dominio.md). Para trazer
@@ -43,7 +50,7 @@ export async function carregarTudo(): Promise<Dados> {
   const horizonteMinimo = `${new Date().getFullYear() + 1}-12-31`;
   let config = await db.config.get('config');
   if (!config) {
-    config = configPadrao();
+    config = configInstalacaoNova();
     await db.config.put(config);
   } else if (config.horizonteProjecao < horizonteMinimo) {
     // virada de ano automática: o horizonte acompanha o calendário para sempre
@@ -256,6 +263,20 @@ export async function salvarConfig(patch: Partial<Config>): Promise<void> {
     // primeira escrita antes de qualquer carregarTudo(): garante que a config exista
     await db.config.put({ ...configPadrao(), ...patch });
   }
+}
+
+/** Grava o modo de uma tela. Não chama `marcarMudanca`: trocar de modo não é dado a salvar em backup. */
+export async function salvarModo(tela: TelaModo, modo: ModoUso): Promise<void> {
+  const atual = (await db.config.get('config')) ?? configPadrao();
+  await salvarConfig({ modos: { ...modosEfetivos(atual), [tela]: modo } });
+}
+
+export const NOME_SIMULACAO_RAPIDA = 'Simulação rápida';
+
+/** Apaga rascunhos de simulação rápida (e seus itens) deixados por um fechamento abrupto. */
+export async function limparSimulacoesRapidas(): Promise<void> {
+  const rascunhos = await db.cenarios.filter((c) => c.nome === NOME_SIMULACAO_RAPIDA).toArray();
+  for (const c of rascunhos) await excluirCenario(c.id);
 }
 
 /**
