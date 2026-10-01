@@ -51,6 +51,7 @@ export function categoriasCartaoReservadasIds(cartoes: Cartao[]): Set<ID> {
   );
 }
 
+// O intervalo da expressão regular vai de U+0300 a U+036F (marcas de acento depois do NFD).
 function chaveCategoria(c: Categoria): string {
   const nome = c.nome.trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[̀-ͯ]/g, '');
   return `${c.tipo}|${nome}`;
