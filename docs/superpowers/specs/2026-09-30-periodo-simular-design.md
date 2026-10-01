@@ -45,6 +45,14 @@ Data: 2026-09-30. Mockup aprovado pelo usuário no chat (v2).
 - O resumo "saldo fica negativo em…" e "segue positivo até…" usa o período escolhido, não só os 12 meses visíveis.
 - A altura da linha é medida no navegador durante a implementação. O valor usado no mockup (37 px) é uma estimativa.
 
+### Tabela minimizável
+
+- As duas tabelas (a combinada e a de cada cenário) têm um botão no cabeçalho da seção, no mesmo desenho do cabeçalho do `CenarioCard`: título à esquerda e `▲`/`▼` à direita, com `aria-expanded`.
+- Minimizada, a seção esconde só a tabela e a legenda. O título e o resumo ("saldo fica negativo em…", "segue positivo até…") continuam visíveis.
+- Padrão: as duas começam abertas, como hoje.
+- O estado é local e independente por tabela. Não é gravado. Fechar o card do cenário e abri-lo de novo mantém o estado da sua tabela enquanto a tela estiver aberta.
+- Classes: usa as existentes. Nenhuma classe nova além de `.rolavel-12`.
+
 ### Cálculo por período
 
 - `resumoMensal(serie, hoje)` passa a receber o mês inicial e o final: `resumoMensal(serie, de, ate)`. Quem chama hoje: `SimuladorFluxo.tsx`. Confirmar por grep antes de mudar a assinatura.
@@ -73,7 +81,7 @@ Data: 2026-09-30. Mockup aprovado pelo usuário no chat (v2).
 - `estenderRecorrencias`: recorrência mensal sem fim; parcelada que termina antes do horizonte (não cria nada); parcelada que cruza o horizonte; recorrência inativa; recorrência de cenário; dia 31 em mês curto; `ate` menor que o horizonte (não cria nada); sem duplicar datas que já existem.
 - `resumoMensal` com período: início depois de hoje; fim antes do fim da série; período de um mês.
 - Ajuste do período: início além do fim; fim antes do início; teto de 60 meses; piso no mês de hoje.
-- UI: setas, seletores, contador, aviso das faturas, rolagem presente só acima de 12 meses, as duas tabelas com a classe.
+- UI: minimizar e reabrir cada tabela (combinada e de cenário), com o resumo sempre visível; setas, seletores, contador, aviso das faturas, rolagem presente só acima de 12 meses, as duas tabelas com a classe.
 - Varredura com Playwright no Galaxy S25+ (411 × 744), dados sintéticos, só em `localhost`.
 
 ## Fora do escopo
