@@ -630,6 +630,39 @@ describe('Análises na casa: categorias de mesmo nome', () => {
     expect(within(folha).getByText('bruno')).toBeInTheDocument();
   });
 
+  it('na casa, a categoria de fatura de um cartão segue abrindo a folha da fatura, mesmo com categoria comum homônima em outra box', async () => {
+    // mesma razão dos testes de fatura acima: `sincronizarCartoes` usa a data real do sistema
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { ana, bruno } = await seedDuasBoxes();
+      const cartao = await repo.salvarCartao({
+        boxId: ana.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
+      }, '2027-12-31');
+      const catMercado = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'Mercado', ordem: 0 });
+      await repo.salvarCompraCartao({
+        cartaoId: cartao.id, categoriaCartaoId: catMercado.id, data: '2026-07-10', valorTotal: 62000, parcelas: 1,
+      }, '2027-12-31');
+      // categoria comum de gasto, em outra box, com o mesmo nome da categoria de fatura
+      const catHomonima = await repo.salvarCategoria({ boxId: bruno.id, nome: 'Nubank', tipo: 'gasto', ordem: 1 });
+      await repo.salvarLancamento({ boxId: bruno.id, categoriaId: catHomonima.id, data: '2026-08-02', valor: 7000, status: 'efetivo', nota: 'taxa avulsa' });
+      await useApp.getState().iniciar();
+      useApp.setState({ boxSel: 'casa', hoje: '2026-08-15' });
+
+      render(<TelaAnalises />);
+      // duas linhas "Nubank": a da fatura (R$ 620,00) e a categoria comum (R$ 70,00), separadas
+      const linhas = screen.getAllByRole('button', { name: /Nubank/ });
+      expect(linhas).toHaveLength(2);
+      const linhaFatura = linhas.find((l) => l.textContent?.includes(formatarBRL(62000)));
+      expect(linhaFatura).toBeDefined();
+      await userEvent.click(linhaFatura!);
+
+      const dialog = await screen.findByRole('dialog', { name: `Nubank · fatura de ${nomeDoMes('2026-08')}` });
+      expect(within(dialog).getByText('Mercado')).toBeInTheDocument();
+      expect(within(dialog).queryByText('taxa avulsa')).not.toBeInTheDocument();
+    } finally { vi.useRealTimers(); }
+  });
+
   it('numa box só, a linha mostra só o total da box e a folha não tem selo', async () => {
     const { ana } = await seedDuasBoxes();
     useApp.setState({ boxSel: ana.id, hoje: '2026-07-15' });

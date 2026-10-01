@@ -347,8 +347,12 @@ export default function TelaCartao() {
     return (
       <div className="tela">
         <p className="sub">Nenhum cartão cadastrado para esta seleção.</p>
-        <button className="botao botao-primario" style={{ alignSelf: 'flex-start' }}
-          onClick={() => abrirAjustes('cartoes')}>Cadastrar cartão</button>
+        {boxSel === 'casa' ? (
+          <p className="sub">Escolha uma box no topo para cadastrar um cartão.</p>
+        ) : (
+          <button className="botao botao-primario" style={{ alignSelf: 'flex-start' }}
+            onClick={() => abrirAjustes('cartoes')}>Cadastrar cartão</button>
+        )}
       </div>
     );
   }

@@ -67,6 +67,34 @@ it('cartão único bloqueado para compra mostra aviso específico, não "nenhum 
   expect(useApp.getState().aba).toBe('ajustes');
 });
 
+it('com a casa no topo e sem cartão, pede uma box e não leva a Ajustes', async () => {
+  await montarBox();
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: 'casa' });
+  render(<AdicionarSheet aberto onFechar={() => {}} />);
+
+  await userEvent.click(screen.getByText('Compra no cartão'));
+  expect(await screen.findByRole('heading', { name: 'Nenhum cartão cadastrado' })).toBeInTheDocument();
+  expect(screen.getByText('Escolha uma box no topo para cadastrar um cartão.')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Cadastrar cartão' })).not.toBeInTheDocument();
+});
+
+it('com a casa no topo e cartão bloqueado para compra, pede uma box e não leva a Ajustes', async () => {
+  const box = await montarBox();
+  const nubank = await repo.salvarCartao({
+    boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5,
+  }, '2027-12-31');
+  await repo.salvarCartao({ ...nubank, permiteCompra: false }, '2027-12-31');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: 'casa' });
+  render(<AdicionarSheet aberto onFechar={() => {}} />);
+
+  await userEvent.click(screen.getByText('Compra no cartão'));
+  expect(await screen.findByRole('heading', { name: 'Nenhum cartão liberado para compra' })).toBeInTheDocument();
+  expect(screen.getByText('Escolha uma box no topo para liberar um cartão.')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Ir para Ajustes' })).not.toBeInTheDocument();
+});
+
 it('1 cartão ativo: "Compra no cartão" pula direto para o formulário', async () => {
   const box = await montarBox();
   await repo.salvarCartao({
