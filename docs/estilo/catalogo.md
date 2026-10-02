@@ -77,6 +77,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.wiki-resultado` | modificador de `.wiki-item`: resultado da busca da wiki, em coluna; `mark` destaca o termo com `--ac-dim`/`--ac` |
 | `.wiki-resultado-onde` | `Capítulo · Seção` do resultado, 13px `--muted` |
 | `.wiki-resultado-trecho` | trecho em volta do termo, 14px |
+| `.erro-app` / `.erro-app-detalhe` | tela de erro (`ErroApp.tsx`): `.erro-app` ocupa a altura toda, centraliza um `.card` em coluna (gap 14px) com título, texto, botão `.botao-primario` em largura cheia e o `.erro-app-detalhe` (12px, `--muted`, quebra palavra longa) com a mensagem técnica |
 | `.primeiro-uso` | cartão de onboarding (`PrimeiroUso.tsx`): flex container com gap 14px, botões em largura cheia, espaçamento entre elementos |
 | `.pagamento-fatura-*` | bloco de contas do parcelamento de fatura (`PagamentoFaturaSheet.tsx`). `.pagamento-fatura-resumo` é o bloco: `--surface2`, raio 12px, `tabular-nums`; dentro dele cada `.linha-conta` (aninhada, sem existência própria) é rótulo à esquerda e valor à direita. Os modificadores dão a cor do juros no valor — `.pagamento-fatura-juros` âmbar (`--aviso-fg`) quando há juros, `.pagamento-fatura-semjuros` verde (`--pos`) quando não há, `.pagamento-fatura-erro` vermelho (`--neg`) quando as parcelas somam menos que o restante |
 | `.sugestoes` / `.sugestao` | contêiner de pílulas de categoria sugerida (quebra linha, gap 8px) e cada pílula (`SeletorCategoria`-like); `.sugestao` é alvo de toque (44px altura), `.marcada` indica seleção com `--ac-dim` fundo e `--ac` cor |
@@ -214,6 +215,10 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   anterior · ano anterior (some com 12 meses) · média/mês, e a nota de intervalos no subtítulo.
 - **`ViagemSheet.tsx`** — sheet somente leitura com os lançamentos/compras de uma viagem,
   agrupados (`itensDaViagem`); mesmo padrão visual do `LancamentosSheet`.
+- **`ErroApp.tsx`** — limite de erro (error boundary) que envolve o `App` em `main.tsx`. Troca
+  a tela preta de um erro de renderização por uma tela com o botão "Recarregar". Quando o erro
+  é um trecho do app que não carrega (versão antiga, depois de um deploy), recarrega sozinho
+  uma vez por minuto e mostra "Atualizando o Flow…" nesse meio-tempo.
 - **`PrimeiroUso.tsx`** — cartão de onboarding renderizado em `TelaHoje` quando o app está sem
   box com saldo próprio ou sem categorias. Guia o usuário pelos primeiros passos: criar box,
   importar backup ou escolher categorias. Desaparece automaticamente quando os dados

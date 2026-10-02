@@ -1,0 +1,3 @@
+- Tela de erro com saída
+  - Quando o app deixado aberto em segundo plano pede uma parte que uma atualização já trocou (por exemplo o gráfico do Fluxo), o Flow recarrega sozinho em vez de ficar com a tela preta
+  - Se o erro continuar, aparece "Algo deu errado" com o botão Recarregar; os dados continuam salvos
