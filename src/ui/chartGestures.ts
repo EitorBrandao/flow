@@ -52,3 +52,34 @@ export function zoomJanela(
   const inicioIdx = ancoraIdx - f * newLen;
   return clampJanela({ inicioIdx, fimIdx: inicioIdx + newLen }, tamanhoSerie, larguraMin);
 }
+
+/** Atalhos de período do modal. `null` = a série inteira. */
+export const PERIODOS_ATALHO: { rotulo: string; dias: number | null }[] = [
+  { rotulo: '30 dias', dias: 30 },
+  { rotulo: '90 dias', dias: 90 },
+  { rotulo: '1 ano', dias: 365 },
+  { rotulo: 'Tudo', dias: null },
+];
+
+/** Janela de `dias` dias com um quarto do período antes de hoje e o resto à frente
+ *  (o futuro é o que se quer olhar). `dias` nulo abre a série inteira. */
+export function janelaDoPeriodo(
+  hojeIdx: number, tamanhoSerie: number, dias: number | null,
+): Janela {
+  if (dias == null) return { inicioIdx: 0, fimIdx: Math.max(0, tamanhoSerie - 1) };
+  const inicioIdx = hojeIdx - Math.round(dias / 4);
+  return clampJanela({ inicioIdx, fimIdx: inicioIdx + dias - 1 }, tamanhoSerie);
+}
+
+/** O atalho em que a janela se encaixa, ou -1 se ela foi mexida à mão (zoom). */
+export function atalhoAtivo(janela: Janela, tamanhoSerie: number): number {
+  const largura = janela.fimIdx - janela.inicioIdx + 1;
+  const todaSerie = janela.inicioIdx === 0 && janela.fimIdx === tamanhoSerie - 1;
+  return PERIODOS_ATALHO.findIndex((p) => (p.dias == null ? todaSerie : largura === Math.min(p.dias, tamanhoSerie) && !todaSerie));
+}
+
+/** Move a janela, sem mudar a largura, para que `idx` fique no meio dela. */
+export function centralizarJanela(janela: Janela, idx: number, tamanhoSerie: number): Janela {
+  const meio = (janela.inicioIdx + janela.fimIdx) / 2;
+  return panJanela(janela, idx - meio, tamanhoSerie);
+}

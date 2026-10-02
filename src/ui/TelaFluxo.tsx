@@ -12,6 +12,7 @@ import BalanceChart from './BalanceChart';
 import CampoData from './CampoData';
 import FaturaResumo from './FaturaResumo';
 import LancEditor from './LancEditor';
+import type { ItemDia } from './FluxoChartModal';
 import SeloBox from './SeloBox';
 import SeletorFiltroBanco from './SeletorFiltroBanco';
 import SimuladorFluxo from './SimuladorFluxo';
@@ -141,6 +142,21 @@ export default function TelaFluxo() {
   }
   const dias = [...diasSet].sort();
 
+  // Lançamentos de cada dia para o cartão do dia no gráfico expandido: a mesma visão do
+  // saldo (box e banco selecionados, cenários ligados), sem os filtros de busca da lista.
+  const itensDoGrafico = new Map<string, ItemDia[]>();
+  if (graficoExpandido) {
+    for (const l of dados.lancamentos) {
+      if (!ids.includes(l.boxId)) continue;
+      if (!lancamentoNoFiltro(l, filtroBanco, dados.cartoes, dados.bancos)) continue;
+      if (l.cenarioId && !ligados.has(l.cenarioId)) continue;
+      const item = { id: l.id, rotulo: nomeCat(l.categoriaId), efeito: efeitoNoSaldo(l.valor, tipoCat(l.categoriaId)) };
+      const arr = itensDoGrafico.get(l.data);
+      if (arr) arr.push(item);
+      else itensDoGrafico.set(l.data, [item]);
+    }
+  }
+
   // Mesma base da pílula da Hoje: saldo efetivo do último dia até hoje.
   const deHoje = serie.filter((s) => s.data <= hoje).at(-1);
 
@@ -159,7 +175,15 @@ export default function TelaFluxo() {
             onClick={() => setGraficoExpandido(true)}
           >
             <Maximize2 size={18} className="grafico-expandido-icone" aria-hidden="true" />
-            <BalanceChart serie={serie} hoje={hoje} altura={320} mostrarCenarios={ligados.size > 0} />
+            {deHoje && (
+              <div className="grafico-previa-saldo">
+                <span className="sub">Saldo hoje</span>
+                <span className={`saldo-grande ${deHoje.saldoEfetivo < 0 ? 'negativo' : 'positivo'}`}>
+                  {formatarSaldo(deHoje.saldoEfetivo)}
+                </span>
+              </div>
+            )}
+            <BalanceChart serie={serie} hoje={hoje} altura={320} mostrarCenarios={ligados.size > 0} rotuloMinMax="no período" />
           </button>
         ) : (
           <div className="card">
@@ -169,7 +193,7 @@ export default function TelaFluxo() {
       )}
       {abaFluxo === 'grafico' && serie.length >= 2 && (
         <p className="sub">
-          A linha pontilhada vertical é hoje. Toque no gráfico para ampliar: arraste para ver o saldo de cada dia e use dois dedos para aproximar.
+          A linha pontilhada vertical é hoje. Toque no gráfico para ampliar: arraste para mover o período, segure e arraste para ver o saldo de cada dia e use dois dedos para aproximar.
         </p>
       )}
 
@@ -301,6 +325,7 @@ export default function TelaFluxo() {
         <Suspense fallback={null}>
           <FluxoChartModal
             serie={serie} hoje={hoje} mostrarCenarios={ligados.size > 0}
+            itensPorDia={itensDoGrafico}
             onFechar={() => setGraficoExpandido(false)}
           />
         </Suspense>

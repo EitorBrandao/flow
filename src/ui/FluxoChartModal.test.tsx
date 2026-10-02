@@ -1,9 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { addDias } from '../domain/dates';
+import { addDias, formatarDataBR } from '../domain/dates';
 import { formatarBRL, formatarSaldo } from '../domain/money';
 import type { DiaSaldo } from '../domain/projection';
-import FluxoChartModal from './FluxoChartModal';
+import FluxoChartModal, { type ItemDia } from './FluxoChartModal';
 
 // jsdom (25.x, usado pelo ambiente de teste) não implementa o construtor global `PointerEvent`.
 // Sem ele, @testing-library/dom cai para o construtor genérico `Event` ao criar os eventos de
@@ -56,7 +56,7 @@ const hoje = serie[HOJE_IDX].data;
 describe('FluxoChartModal', () => {
   it('abre com o rótulo de período cobrindo 30 dias antes e depois de hoje', () => {
     render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} onFechar={() => {}} />);
-    const esperado = `${ddmm(serie[HOJE_IDX - 30].data)} – ${ddmm(serie[HOJE_IDX + 30].data)}`;
+    const esperado = `${formatarDataBR(serie[HOJE_IDX - 30].data)} – ${formatarDataBR(serie[HOJE_IDX + 30].data)}`;
     expect(screen.getByTestId('grafico-expandido-periodo')).toHaveTextContent(esperado);
   });
 
@@ -74,7 +74,7 @@ describe('FluxoChartModal', () => {
     // rodapé se divide em nós de texto + <b>; toHaveTextContent recursa no textContent
     // completo do elemento, diferente de getByText (que só concatena texto direto).
     expect(container.querySelector('.grafico-expandido-rodape'))
-      .toHaveTextContent(semNbsp(`mín ${formatarBRL(min)} · máx ${formatarBRL(max)}`));
+      .toHaveTextContent(semNbsp(`na janela: mín ${formatarBRL(min)} · máx ${formatarBRL(max)}`));
   });
 
   it('clicar no X chama onFechar', () => {
@@ -160,34 +160,87 @@ describe('FluxoChartModal — gestos', () => {
     vi.restoreAllMocks();
   });
 
-  it('clicar e arrastar (scrub) seleciona o dia mais próximo do ponteiro, ao vivo', () => {
+  it('segurar e arrastar (scrub) seleciona o dia mais próximo do ponteiro, ao vivo', () => {
+    vi.useFakeTimers();
     mockRect(400);
     render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} onFechar={() => {}} />);
     const area = screen.getByTestId('grafico-expandido-area');
 
-    fireEvent.pointerDown(area, { pointerId: 1, clientX: 0, timeStamp: 1000 });
-    fireEvent.pointerMove(area, { pointerId: 1, clientX: 400, timeStamp: 1050 });
-    fireEvent.pointerUp(area, { pointerId: 1, clientX: 400, timeStamp: 1060 });
+    fireEvent.pointerDown(area, { pointerId: 1, clientX: 0 });
+    act(() => { vi.advanceTimersByTime(350); });
+    fireEvent.pointerMove(area, { pointerId: 1, clientX: 400 });
+    fireEvent.pointerUp(area, { pointerId: 1, clientX: 400 });
 
     expect(screen.getByTestId('grafico-expandido-leitura-data'))
       .toHaveTextContent(ddmm(serie[HOJE_IDX + 30].data));
+    vi.useRealTimers();
   });
 
-  it('clique-duplo e arraste faz pan, sem mudar o dia selecionado', () => {
+  it('arrastar com um dedo, sem segurar, move a janela e não muda o dia selecionado', () => {
     mockRect(400);
     render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} onFechar={() => {}} />);
     const area = screen.getByTestId('grafico-expandido-area');
 
-    // 1º clique: rápido, no meio do gráfico (posição de "hoje", não muda a seleção)
-    fireEvent.pointerDown(area, { pointerId: 1, clientX: 200, timeStamp: 1000 });
-    fireEvent.pointerUp(area, { pointerId: 1, clientX: 200, timeStamp: 1010 });
-    // 2º clique logo em seguida, perto do mesmo ponto: entra em modo pan
-    fireEvent.pointerDown(area, { pointerId: 1, clientX: 202, timeStamp: 1100 });
-    fireEvent.pointerMove(area, { pointerId: 1, clientX: 302, timeStamp: 1150 });
-    fireEvent.pointerUp(area, { pointerId: 1, clientX: 302, timeStamp: 1160 });
+    fireEvent.pointerDown(area, { pointerId: 1, clientX: 200 });
+    fireEvent.pointerMove(area, { pointerId: 1, clientX: 300 });
+    fireEvent.pointerUp(area, { pointerId: 1, clientX: 300 });
 
-    const esperado = `${ddmm(serie[HOJE_IDX - 45].data)} – ${ddmm(serie[HOJE_IDX + 15].data)}`;
+    const esperado = `${formatarDataBR(serie[HOJE_IDX - 45].data)} – ${formatarDataBR(serie[HOJE_IDX + 15].data)}`;
     expect(screen.getByTestId('grafico-expandido-periodo')).toHaveTextContent(esperado);
+    expect(screen.getByTestId('grafico-expandido-leitura-data')).toHaveTextContent('· hoje');
+  });
+
+  it('um toque rápido seleciona o dia tocado', () => {
+    mockRect(400);
+    render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} onFechar={() => {}} />);
+    const area = screen.getByTestId('grafico-expandido-area');
+
+    fireEvent.pointerDown(area, { pointerId: 1, clientX: 400 });
+    fireEvent.pointerUp(area, { pointerId: 1, clientX: 400 });
+
+    const leitura = screen.getByTestId('grafico-expandido-leitura-data');
+    expect(leitura).toHaveTextContent(ddmm(serie[HOJE_IDX + 30].data));
+    expect(leitura).toHaveTextContent('daqui a 30 dias');
+  });
+
+  it('um tremor de poucos pixels não vira pan', () => {
+    mockRect(400);
+    render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} onFechar={() => {}} />);
+    const area = screen.getByTestId('grafico-expandido-area');
+    const antes = screen.getByTestId('grafico-expandido-periodo').textContent;
+
+    fireEvent.pointerDown(area, { pointerId: 1, clientX: 200 });
+    fireEvent.pointerMove(area, { pointerId: 1, clientX: 204 });
+    fireEvent.pointerUp(area, { pointerId: 1, clientX: 204 });
+
+    expect(screen.getByTestId('grafico-expandido-periodo').textContent).toBe(antes);
+  });
+
+  it('um dia passado diz "há N dias" na leitura', () => {
+    mockRect(400);
+    render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} onFechar={() => {}} />);
+    const area = screen.getByTestId('grafico-expandido-area');
+
+    fireEvent.pointerDown(area, { pointerId: 1, clientX: 0 });
+    fireEvent.pointerUp(area, { pointerId: 1, clientX: 0 });
+
+    expect(screen.getByTestId('grafico-expandido-leitura-data')).toHaveTextContent('há 30 dias');
+  });
+
+  it('"Hoje" recentra a janela e volta a seleção para hoje', () => {
+    mockRect(400);
+    render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} onFechar={() => {}} />);
+    const area = screen.getByTestId('grafico-expandido-area');
+    fireEvent.pointerDown(area, { pointerId: 1, clientX: 200 });
+    fireEvent.pointerMove(area, { pointerId: 1, clientX: 300 });
+    fireEvent.pointerUp(area, { pointerId: 1, clientX: 300 });
+    fireEvent.pointerDown(area, { pointerId: 1, clientX: 0 });
+    fireEvent.pointerUp(area, { pointerId: 1, clientX: 0 });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hoje' }));
+
+    expect(screen.getByTestId('grafico-expandido-periodo'))
+      .toHaveTextContent(`${formatarDataBR(serie[HOJE_IDX - 30].data)} – ${formatarDataBR(serie[HOJE_IDX + 30].data)}`);
     expect(screen.getByTestId('grafico-expandido-leitura-data')).toHaveTextContent('· hoje');
   });
 
@@ -210,8 +263,8 @@ describe('FluxoChartModal — gestos', () => {
     for (let i = 0; i < 30; i++) fireEvent.wheel(area, { clientX: 200, deltaY: -100 });
 
     const [de, ate] = screen.getByTestId('grafico-expandido-periodo').textContent!.split(' – ');
-    const idxDe = serie.findIndex((s) => ddmm(s.data) === de);
-    const idxAte = serie.findIndex((s) => ddmm(s.data) === ate);
+    const idxDe = serie.findIndex((s) => formatarDataBR(s.data) === de);
+    const idxAte = serie.findIndex((s) => formatarDataBR(s.data) === ate);
     expect(idxAte - idxDe).toBe(13); // 14 dias = 13 de diferença de índice
   });
 
@@ -227,5 +280,48 @@ describe('FluxoChartModal — gestos', () => {
     fireEvent.pointerMove(area, { pointerId: 2, clientX: 300 });
 
     expect(screen.getByTestId('grafico-expandido-periodo').textContent).not.toBe(periodoAntes);
+  });
+});
+
+describe('FluxoChartModal — atalhos e cartão do dia', () => {
+  it('"90 dias" abre 90 dias com um quarto antes de hoje e marca o atalho', () => {
+    render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} onFechar={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: '90 dias' }));
+    // hoje (60) - round(90 / 4) = 37; 37 + 89 passa do fim (119), então a janela encosta no fim
+    const de = N - 90;
+    expect(screen.getByTestId('grafico-expandido-periodo'))
+      .toHaveTextContent(`${formatarDataBR(serie[de].data)} – ${formatarDataBR(serie[de + 89].data)}`);
+    expect(screen.getByRole('button', { name: '90 dias' })).toHaveClass('ativo');
+  });
+
+  it('"Tudo" abre a série inteira', () => {
+    render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} onFechar={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Tudo' }));
+    expect(screen.getByTestId('grafico-expandido-periodo'))
+      .toHaveTextContent(`${formatarDataBR(serie[0].data)} – ${formatarDataBR(serie[N - 1].data)}`);
+  });
+
+  it('o cartão do dia mostra a variação e os dois maiores lançamentos, com "e mais N"', () => {
+    const itens = new Map<string, ItemDia[]>([[serie[HOJE_IDX].data, [
+      { id: 'a', rotulo: 'Mercado', efeito: -9000 },
+      { id: 'b', rotulo: 'Salário', efeito: 600000 },
+      { id: 'c', rotulo: 'Aluguel', efeito: -250000 },
+      { id: 'd', rotulo: 'Café', efeito: -500 },
+      { id: 'e', rotulo: 'Padaria', efeito: -800 },
+    ]]]);
+    render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} itensPorDia={itens} onFechar={() => {}} />);
+    const cartao = screen.getByTestId('grafico-expandido-dia');
+    expect(cartao).toHaveTextContent('Variação no dia');
+    expect(cartao).toHaveTextContent('Salário');
+    expect(cartao).toHaveTextContent('Aluguel');
+    expect(cartao).not.toHaveTextContent('Mercado');
+    expect(cartao).not.toHaveTextContent('Café');
+    expect(cartao).toHaveTextContent('e mais 3');
+  });
+
+  it('dia sem movimento mantém o cartão, com aviso', () => {
+    const plana: DiaSaldo[] = serie.map((s) => ({ ...s, saldoEfetivo: 1000, saldoProjetado: 1000, saldoComCenarios: 1000 }));
+    render(<FluxoChartModal serie={plana} hoje={hoje} mostrarCenarios={false} onFechar={() => {}} />);
+    expect(screen.getByTestId('grafico-expandido-dia')).toHaveTextContent('Nenhum lançamento neste dia.');
   });
 });
