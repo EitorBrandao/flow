@@ -82,3 +82,10 @@ Fazer isso uma vez por semana é o que mantém a projeção confiável.
 - No celular, o botão abre o menu de compartilhamento: dá para salvar direto no Drive, no OneDrive ou mandar para você mesmo.
 - Para levar tudo a outro aparelho, é o mesmo arquivo: importe do outro lado.
 - A tela Hoje mostra, embaixo do saldo, há quanto tempo foi o último backup. Quando ele ficar vermelho, está falando sério. O aviso só aparece depois do primeiro lançamento: sem nada lançado, não há o que salvar.
+
+## Se a tela ficar preta
+
+Depois de uma atualização do Flow, o app que você deixou aberto em segundo plano pode pedir uma parte que já foi trocada, como o gráfico do Fluxo. Antes, a tela inteira ficava preta e só reabrir o app resolvia. Agora o Flow se recupera sozinho.
+
+- Ele recarrega uma vez, mostrando "Atualizando o Flow…". Você não precisa tocar em nada.
+- Se o erro continuar, aparece "Algo deu errado" com o botão Recarregar. Seus dados continuam salvos no aparelho.
