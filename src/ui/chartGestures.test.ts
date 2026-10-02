@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  JANELA_DIAS_MIN, clampJanela, janelaInicial, panJanela, zoomJanela,
+  JANELA_DIAS_MIN, atalhoAtivo, centralizarJanela, clampJanela, janelaDoPeriodo, janelaInicial,
+  panJanela, zoomJanela,
 } from './chartGestures';
 
 describe('clampJanela', () => {
@@ -61,5 +62,47 @@ describe('zoomJanela', () => {
   it('não deixa o zoom out passar do tamanho da série inteira', () => {
     const janela = zoomJanela({ inicioIdx: 40, fimIdx: 60 }, 100, 50, 80);
     expect(janela).toEqual({ inicioIdx: 0, fimIdx: 79 });
+  });
+});
+
+describe('janelaDoPeriodo', () => {
+  it('abre N dias com um quarto antes de hoje', () => {
+    expect(janelaDoPeriodo(100, 400, 30)).toEqual({ inicioIdx: 92, fimIdx: 121 });
+  });
+
+  it('colado no começo da série, empurra a janela para dentro', () => {
+    expect(janelaDoPeriodo(3, 400, 90)).toEqual({ inicioIdx: 0, fimIdx: 89 });
+  });
+
+  it('dias nulo abre a série inteira', () => {
+    expect(janelaDoPeriodo(10, 50, null)).toEqual({ inicioIdx: 0, fimIdx: 49 });
+  });
+
+  it('série mais curta que o período abre inteira', () => {
+    expect(janelaDoPeriodo(10, 50, 365)).toEqual({ inicioIdx: 0, fimIdx: 49 });
+  });
+});
+
+describe('atalhoAtivo', () => {
+  it('reconhece o atalho pela largura da janela', () => {
+    expect(atalhoAtivo(janelaDoPeriodo(100, 400, 90), 400)).toBe(1);
+  });
+
+  it('janela mexida à mão não marca nenhum atalho', () => {
+    expect(atalhoAtivo({ inicioIdx: 10, fimIdx: 55 }, 400)).toBe(-1);
+  });
+
+  it('a série inteira marca "Tudo", mesmo com a largura de outro atalho', () => {
+    expect(atalhoAtivo({ inicioIdx: 0, fimIdx: 89 }, 90)).toBe(3);
+  });
+});
+
+describe('centralizarJanela', () => {
+  it('põe o índice no meio sem mudar a largura', () => {
+    expect(centralizarJanela({ inicioIdx: 0, fimIdx: 60 }, 100, 300)).toEqual({ inicioIdx: 70, fimIdx: 130 });
+  });
+
+  it('respeita o fim da série', () => {
+    expect(centralizarJanela({ inicioIdx: 0, fimIdx: 60 }, 295, 300)).toEqual({ inicioIdx: 239, fimIdx: 299 });
   });
 });

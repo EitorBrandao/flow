@@ -8,9 +8,11 @@ interface Props {
   hoje: ISODate;
   altura?: number;
   mostrarCenarios?: boolean;
+  /** Diz o que o mín/máx cobre (ex.: "no período"). Sem ele, o rodapé fica só com os valores. */
+  rotuloMinMax?: string;
 }
 
-export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenarios = false }: Props) {
+export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenarios = false, rotuloMinMax }: Props) {
   if (serie.length < 2) return null;
   const valores = serie.flatMap((s) => {
     const v = mostrarCenarios ? [s.saldoProjetado, s.saldoComCenarios] : [s.saldoProjetado];
@@ -42,7 +44,7 @@ export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenario
     `${d.slice(8, 10)}/${d.slice(5, 7)}${cruzaAno ? `/${d.slice(0, 4)}` : ''}`;
   const minMax = (
     <>
-      mín <b className={min >= 0 ? 'pos' : 'neg'}>{formatarSaldo(min)}</b>
+      {rotuloMinMax ? `${rotuloMinMax}: ` : ''}mín <b className={min >= 0 ? 'pos' : 'neg'}>{formatarSaldo(min)}</b>
       {' · máx '}
       <b className={max >= 0 ? 'pos' : 'neg'}>{formatarSaldo(max)}</b>
     </>
@@ -62,11 +64,20 @@ export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenario
             <stop offset="1" stopColor="var(--pos)" stopOpacity="0" />
           </linearGradient>
         </defs>
+        {/* área entre a linha e o zero: verde acima dele, vermelha abaixo (como no modal expandido) */}
+        <clipPath id={`${uid}-acima`}><rect x="0" y="0" width="100" height={y(0)} /></clipPath>
+        <clipPath id={`${uid}-abaixo`}><rect x="0" y={y(0)} width="100" height="40" /></clipPath>
         {linhaCheia.length > 1 && (
-          <polygon
-            points={`${pontos(linhaCheia)} ${x(linhaCheia.at(-1)!.i).toFixed(2)},40 ${x(linhaCheia[0].i).toFixed(2)},40`}
-            fill={`url(#${uid}-g)`}
-          />
+          <>
+            <polygon
+              points={`${pontos(linhaCheia)} ${x(linhaCheia.at(-1)!.i).toFixed(2)},${y(0).toFixed(2)} ${x(linhaCheia[0].i).toFixed(2)},${y(0).toFixed(2)}`}
+              fill={`url(#${uid}-g)`} clipPath={`url(#${uid}-acima)`}
+            />
+            <polygon
+              points={`${pontos(linhaCheia)} ${x(linhaCheia.at(-1)!.i).toFixed(2)},${y(0).toFixed(2)} ${x(linhaCheia[0].i).toFixed(2)},${y(0).toFixed(2)}`}
+              fill="var(--neg)" fillOpacity=".16" clipPath={`url(#${uid}-abaixo)`}
+            />
+          </>
         )}
         {/* linha do zero: hairline recessiva, sempre sólida (referência, não dado) */}
         <line

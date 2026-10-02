@@ -57,7 +57,8 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.sheet-backdrop` / `.sheet` / `.sheet-alca` / `.sheet-cabecalho` / `.sheet-conteudo` | bottom sheet (ver componente `Sheet`) |
 | `.navegacao` | tab bar mobile / sidebar desktop (breakpoint 900px) |
 | `.shell` / `.shell-corpo` / `.topo` / `.conteudo` | casco do app (ver componente `Shell`) |
-| `.grafico-expandido` / `.grafico-expandido-*` | modal expandido do `FluxoChartModal` (exemplo do padrão de prefixo por componente) |
+| `.grafico-expandido` / `.grafico-expandido-*` | modal expandido do `FluxoChartModal` (exemplo do padrão de prefixo por componente). Inclui o cartão do dia selecionado (`-dia`, `-dia-linha`), os atalhos de período com o botão Hoje (`-atalhos`, `-hoje`; as pílulas são `.pills`) e a dica de gestos (`-dica`) |
+| `.grafico-previa-saldo` | "Saldo hoje" sobre a prévia do gráfico no card do Fluxo (`TelaFluxo.tsx`): rótulo `.sub` + valor `.saldo-grande` |
 | `.resumo-barras` / `.resumo-barra-trilho` / `.resumo-barra-preenchimento` | barras de composição ganho/gasto do card resumo em `TelaAnalises.tsx` |
 | `.composicao-*` | classes internas do `ComposicaoBarChart.tsx` (mesmo padrão de prefixo por componente) |
 | `.evolucao-*` | classes internas do `EvolucaoMensalChart.tsx` (mesmo padrão de prefixo por componente) |
@@ -123,7 +124,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   central + transição de aba via `motion.div` (fade + leve deslize).
 - **`BalanceChart.tsx`** — linha verde com gradiente, marcador "hoje", cenários em azul
   tracejado.
-- **`FluxoChartModal.tsx`** — versão em tela cheia do `BalanceChart`, com pan/zoom, via
+- **`FluxoChartModal.tsx`** — versão em tela cheia do `BalanceChart`, com pan (um dedo), leitura por dia (segurar e arrastar), zoom, atalhos de período e cartão do dia, via
   `recharts` carregado sob demanda (`React.lazy`). Ver
   `docs/superpowers/specs/2026-07-08-grafico-fluxo-pan-zoom-design.md`.
 - **`FaturaResumo.tsx`** — resumo somente leitura de uma fatura de cartão.
