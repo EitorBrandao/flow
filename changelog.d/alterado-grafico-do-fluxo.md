@@ -1,8 +1,0 @@
-- Gráfico do Fluxo mais fácil de usar
-  - Em tela cheia, arrastar com um dedo move o período; tocar escolhe um dia; segurar e arrastar mostra o saldo de cada dia
-  - Uma linha azul marca o dia escolhido, e um cartão mostra quanto o saldo mudou nesse dia e os maiores lançamentos
-  - Atalhos de período (30 dias, 90 dias, 1 ano, Tudo) e botão Hoje
-  - A área abaixo de zero fica em vermelho, no card e em tela cheia
-  - Valores de referência no gráfico e marca no maior degrau, com o nome do lançamento
-  - O card do Fluxo mostra o saldo de hoje; o menor e o maior saldo dizem se valem para o período inteiro ou só para o trecho visível
-  - As datas de tela cheia mostram o ano
