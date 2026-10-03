@@ -179,6 +179,75 @@ describe('FluxoChartModal — mín/máx com cenário ligado', () => {
   });
 });
 
+describe('FluxoChartModal — leitura do dia com cenário', () => {
+  const diaFuturo = serie[HOJE_IDX + 5].data;
+  const itens = new Map<string, ItemDia[]>([[diaFuturo, [
+    { id: 'r1', rotulo: 'Salário', efeito: 300000 },
+    { id: 'c1', rotulo: 'Dinheiro guardado', efeito: -150000, cenario: 'Carro' },
+    { id: 'c2', rotulo: 'Viagem', efeito: -90000, cenario: 'Eurotrip' },
+  ]]]);
+
+  // toque rápido no dia futuro: a janela padrão é hoje-30..hoje+30, o gráfico ocupa 400px
+  function tocarNoDiaFuturo() {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 400, height: 340, left: 0, top: 0, right: 400, bottom: 340, x: 0, y: 0,
+      toJSON() { return {}; },
+    } as DOMRect);
+    const area = screen.getByTestId('grafico-expandido-area');
+    const x = ((HOJE_IDX + 5 - (HOJE_IDX - 30)) / 60) * 400;
+    fireEvent.pointerDown(area, { pointerId: 1, clientX: x });
+    fireEvent.pointerUp(area, { pointerId: 1, clientX: x });
+  }
+
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('o saldo grande é o real, e o saldo com cenário vem numa linha à parte', () => {
+    render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios itensPorDia={itens} onFechar={() => {}} />);
+    tocarNoDiaFuturo();
+    const idx = HOJE_IDX + 5;
+    expect(document.querySelector('.saldo-grande')).toHaveTextContent(semNbsp(formatarSaldo(serie[idx].saldoProjetado)));
+    expect(screen.getByTestId('grafico-expandido-cenario-leitura'))
+      .toHaveTextContent(semNbsp(`com cenário ${formatarSaldo(serie[idx].saldoComCenarios)}`));
+  });
+
+  it('o cartão lista só o real; os itens de cenário vão para a seção própria, com o nome do cenário', () => {
+    render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios itensPorDia={itens} onFechar={() => {}} />);
+    tocarNoDiaFuturo();
+    const cartao = screen.getByTestId('grafico-expandido-dia');
+    const secao = screen.getByTestId('grafico-expandido-cenarios');
+    expect(cartao).toHaveTextContent('Salário');
+    expect(secao).not.toHaveTextContent('Salário');
+    expect(secao).toHaveTextContent('Dinheiro guardado · Carro');
+    // só o item mais pesado cabe; o resto vira "e mais N" no título
+    expect(secao).not.toHaveTextContent('Viagem · Eurotrip');
+    expect(secao).toHaveTextContent(semNbsp(`Cenários neste dia · ${formatarSaldo(-240000)} · e mais 1`));
+  });
+
+  it('dia sem lançamento de cenário avisa, e a seção mantém o lugar', () => {
+    render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios itensPorDia={itens} onFechar={() => {}} />);
+    expect(screen.getByTestId('grafico-expandido-cenarios')).toHaveTextContent('Nenhum lançamento de cenário neste dia.');
+  });
+
+  it('dia passado: a linha "com cenário" fica oculta mas ocupa o lugar, e a seção explica', () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 400, height: 340, left: 0, top: 0, right: 400, bottom: 340, x: 0, y: 0,
+      toJSON() { return {}; },
+    } as DOMRect);
+    render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios itensPorDia={itens} onFechar={() => {}} />);
+    const area = screen.getByTestId('grafico-expandido-area');
+    fireEvent.pointerDown(area, { pointerId: 1, clientX: 0 });
+    fireEvent.pointerUp(area, { pointerId: 1, clientX: 0 });
+    expect(screen.getByTestId('grafico-expandido-cenario-leitura')).toHaveClass('vazio');
+    expect(screen.getByTestId('grafico-expandido-cenarios')).toHaveTextContent('Os cenários valem de hoje em diante.');
+  });
+
+  it('sem cenário ligado, não há linha nem seção de cenário', () => {
+    render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} itensPorDia={itens} onFechar={() => {}} />);
+    expect(screen.queryByTestId('grafico-expandido-cenario-leitura')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('grafico-expandido-cenarios')).not.toBeInTheDocument();
+  });
+});
+
 describe('FluxoChartModal — gestos', () => {
   function mockRect(largura = 400) {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({

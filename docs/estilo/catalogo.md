@@ -58,7 +58,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.sheet-backdrop` / `.sheet` / `.sheet-alca` / `.sheet-cabecalho` / `.sheet-conteudo` | bottom sheet (ver componente `Sheet`) |
 | `.navegacao` | tab bar mobile / sidebar desktop (breakpoint 900px) |
 | `.shell` / `.shell-corpo` / `.topo` / `.conteudo` | casco do app (ver componente `Shell`) |
-| `.grafico-expandido` / `.grafico-expandido-*` | modal expandido do `FluxoChartModal` (exemplo do padrão de prefixo por componente). Inclui o cartão do dia selecionado (`-dia`, `-dia-linha`), os atalhos de período com o botão Hoje (`-atalhos`, `-hoje`; as pílulas são `.pills`) e a dica de gestos (`-dica`) |
+| `.grafico-expandido` / `.grafico-expandido-*` | modal expandido do `FluxoChartModal` (exemplo do padrão de prefixo por componente). Inclui o cartão do dia selecionado (`-dia`, `-dia-linha`), os atalhos de período com o botão Hoje (`-atalhos`, `-hoje`; as pílulas são `.pills`) e a dica de gestos (`-dica`). Com cenário ligado: a linha azul "com cenário" sob a data (`-cenario-leitura`, `.vazio` reserva o espaço em dia passado) e a seção "Cenários neste dia" no fim do cartão (`-cenarios`, `-cenarios-titulo`), com altura mínima fixa para o gráfico não pular |
 | `.grafico-previa-saldo` | "Saldo hoje" sobre a prévia do gráfico no card do Fluxo (`TelaFluxo.tsx`): rótulo `.sub` + valor `.saldo-grande` |
 | `.resumo-barras` / `.resumo-barra-trilho` / `.resumo-barra-preenchimento` | barras de composição ganho/gasto do card resumo em `TelaAnalises.tsx` |
 | `.composicao-*` | classes internas do `ComposicaoBarChart.tsx` (mesmo padrão de prefixo por componente) |

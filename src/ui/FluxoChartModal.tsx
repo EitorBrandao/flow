@@ -21,6 +21,8 @@ export interface ItemDia {
   id: string;
   rotulo: string;
   efeito: number;
+  /** Nome do cenário dono do lançamento. Ausente: o lançamento é do real. */
+  cenario?: string;
 }
 
 interface Props {
@@ -37,6 +39,8 @@ const SEGURAR_MS = 300;
 /** Quanto o dedo anda antes de o gesto virar "mover a janela". */
 const MOVER_PX = 8;
 const ITENS_NO_CARTAO = 2;
+/** O cartão reserva espaço fixo para o cenário: mais de um item tiraria altura do gráfico. */
+const ITENS_CENARIO_NO_CARTAO = 1;
 
 function ddmm(d: ISODate): string {
   return `${d.slice(8, 10)}/${d.slice(5, 7)}`;
@@ -49,6 +53,8 @@ function semana(d: ISODate): string {
 function maisPesados(itens: ItemDia[] | undefined): ItemDia[] {
   return [...(itens ?? [])].sort((a, b) => Math.abs(b.efeito) - Math.abs(a.efeito));
 }
+
+const doReal = (i: ItemDia) => i.cenario === undefined;
 
 export default function FluxoChartModal({
   serie, hoje, mostrarCenarios, itensPorDia, onFechar,
@@ -186,11 +192,10 @@ export default function FluxoChartModal({
   }, [onFechar]);
 
   const serieVisivel = serie.slice(janela.inicioIdx, janela.fimIdx + 1);
-  // O saldo que o dia mostra: efetivo até hoje; depois, o projetado (com cenários, se ligados).
+  // O saldo real que o dia mostra: efetivo até hoje; depois, o projetado. O cenário vai à parte.
   const valorDoDia = (idx: number): number => {
     const d = serie[idx];
-    if (idx <= hojeIdx) return d.saldoEfetivo;
-    return mostrarCenarios ? d.saldoComCenarios : d.saldoProjetado;
+    return idx <= hojeIdx ? d.saldoEfetivo : d.saldoProjetado;
   };
   const valoresReal: number[] = [];
   const valoresCenario: number[] = [];
@@ -228,7 +233,12 @@ export default function FluxoChartModal({
   const idxSel = selecionadoIdx === -1 ? hojeIdx : selecionadoIdx;
   const valorSelecionado = valorDoDia(idxSel);
   const variacaoSel = idxSel > 0 ? valorSelecionado - valorDoDia(idxSel - 1) : 0;
-  const itensSel = maisPesados(itensPorDia?.get(serie[idxSel].data));
+  const itensDoDia = itensPorDia?.get(serie[idxSel].data);
+  const itensSel = maisPesados(itensDoDia?.filter(doReal));
+  const itensCenario = maisPesados(itensDoDia?.filter((i) => !doReal(i)));
+  const totalCenario = itensCenario.reduce((soma, i) => soma + i.efeito, 0);
+  // O cenário só vale de hoje em diante (a linha dele começa em hoje).
+  const cenarioNoDia = mostrarCenarios && idxSel >= hojeIdx ? serie[idxSel].saldoComCenarios : null;
   const distHoje = idxSel - hojeIdx;
   const quando = distHoje === 0 ? ' · hoje'
     : distHoje > 0 ? ` · daqui a ${distHoje} ${distHoje === 1 ? 'dia' : 'dias'}`
@@ -247,7 +257,7 @@ export default function FluxoChartModal({
       data: serie[degrauIdx].data,
       valor: valorDoDia(degrauIdx),
       sobe: valorDoDia(degrauIdx) > valorDoDia(degrauIdx - 1),
-      rotulo: maisPesados(itensPorDia?.get(serie[degrauIdx].data))[0]?.rotulo,
+      rotulo: maisPesados(itensPorDia?.get(serie[degrauIdx].data)?.filter(doReal))[0]?.rotulo,
       aDireita: degrauIdx - janela.inicioIdx < (janela.fimIdx - janela.inicioIdx) / 2,
     }
     : null;
@@ -271,11 +281,24 @@ export default function FluxoChartModal({
         <span className="sub" data-testid="grafico-expandido-leitura-data">
           {semana(selecionado)}, {formatarDataBR(selecionado)}{quando}
         </span>
+        {/* Com cenário ligado, a linha ocupa o lugar mesmo vazia: se sumisse em dia passado,
+            o gráfico mudaria de altura enquanto o dedo desliza. */}
+        {mostrarCenarios && (
+          <span
+            className={`grafico-expandido-cenario-leitura${cenarioNoDia === null ? ' vazio' : ''}`}
+            data-testid="grafico-expandido-cenario-leitura"
+          >
+            <i />com cenário{' '}
+            <b className={cenarioNoDia !== null && cenarioNoDia < 0 ? 'neg' : 'pos'}>
+              {formatarSaldo(cenarioNoDia ?? 0)}
+            </b>
+          </span>
+        )}
       </div>
 
       {/* Sempre presente, com altura mínima fixa: se o cartão sumisse em dia sem movimento,
           o gráfico mudaria de altura enquanto o dedo desliza. */}
-      <div className="grafico-expandido-dia" data-testid="grafico-expandido-dia">
+      <div className={`grafico-expandido-dia${mostrarCenarios ? ' com-cenarios' : ''}`} data-testid="grafico-expandido-dia">
         <div className="grafico-expandido-dia-linha">
           <span className="sub">Variação no dia</span>
           <span className={`delta ${variacaoSel >= 0 ? 'pos' : 'neg'}`}>
@@ -292,6 +315,25 @@ export default function FluxoChartModal({
           <span className="sub">e mais {itensSel.length - ITENS_NO_CARTAO}</span>
         )}
         {itensSel.length === 0 && <span className="sub">Nenhum lançamento neste dia.</span>}
+        {mostrarCenarios && (
+          <div className="grafico-expandido-cenarios" data-testid="grafico-expandido-cenarios">
+            <span className="grafico-expandido-cenarios-titulo">
+              <i />Cenários neste dia
+              {itensCenario.length > 0 && <> · {formatarSaldo(totalCenario)}</>}
+              {itensCenario.length > ITENS_CENARIO_NO_CARTAO && <> · e mais {itensCenario.length - ITENS_CENARIO_NO_CARTAO}</>}
+            </span>
+            {idxSel < hojeIdx && <span className="sub">Os cenários valem de hoje em diante.</span>}
+            {idxSel >= hojeIdx && itensCenario.length === 0 && (
+              <span className="sub">Nenhum lançamento de cenário neste dia.</span>
+            )}
+            {idxSel >= hojeIdx && itensCenario.slice(0, ITENS_CENARIO_NO_CARTAO).map((i) => (
+              <div key={i.id} className="grafico-expandido-dia-linha">
+                <span>{i.rotulo} · {i.cenario}</span>
+                <span className={classeEfeito(i.efeito)}>{formatarSaldo(i.efeito)}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div
