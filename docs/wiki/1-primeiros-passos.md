@@ -87,5 +87,7 @@ Fazer isso uma vez por semana é o que mantém a projeção confiável.
 
 Depois de uma atualização do Flow, o app que você deixou aberto em segundo plano pode pedir uma parte que já foi trocada, como o gráfico do Fluxo. Antes, a tela inteira ficava preta e só reabrir o app resolvia. Agora o Flow se recupera sozinho.
 
+O Flow também procura uma versão nova toda vez que abre e toda vez que você volta para ele. Quando acha, ele se atualiza sozinho.
+
 - Ele recarrega uma vez, mostrando "Atualizando o Flow…". Você não precisa tocar em nada.
 - Se o erro continuar, aparece "Algo deu errado" com o botão Recarregar. Seus dados continuam salvos no aparelho.
