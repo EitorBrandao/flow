@@ -1,0 +1,1 @@
+- O app procura uma versão nova toda vez que abre e toda vez que volta para a tela
