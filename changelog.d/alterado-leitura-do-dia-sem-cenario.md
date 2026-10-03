@@ -1,3 +1,0 @@
-- Gráfico em tela cheia: o saldo grande e a variação do dia mostram só o real, sem misturar o cenário
-  - Com cenário ligado, o saldo com cenário aparece numa linha azul abaixo da data
-  - Os lançamentos dos cenários ficam numa seção própria do cartão do dia, com o nome do cenário

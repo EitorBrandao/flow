@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.63.1] - 2026-10-03
+
+### Alterado
+
+- Gráfico em tela cheia: o saldo grande e a variação do dia mostram só o real, sem misturar o cenário
+  - Com cenário ligado, o saldo com cenário aparece numa linha azul abaixo da data
+  - Os lançamentos dos cenários ficam numa seção própria do cartão do dia, com o nome do cenário
+
 ## [0.63.0] - 2026-10-03
 
 ### Alterado
