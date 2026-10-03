@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import type { DiaSaldo } from '../domain/projection';
 import type { ISODate } from '../domain/types';
-import { formatarSaldo } from '../domain/money';
+import MinMaxSeries from './MinMaxSeries';
 
 interface Props {
   serie: DiaSaldo[];
@@ -14,17 +14,22 @@ interface Props {
 
 export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenarios = false, rotuloMinMax }: Props) {
   if (serie.length < 2) return null;
-  const valores = serie.flatMap((s) => {
-    const v = mostrarCenarios ? [s.saldoProjetado, s.saldoComCenarios] : [s.saldoProjetado];
+  const valoresReal = serie.flatMap((s) => {
     // a linha "passado" plota saldoEfetivo para os dias já ocorridos; o domínio
     // precisa cobri-lo também, senão ela pode extrapolar o viewBox (ex.: um
     // recebimento confirmado maior que qualquer saldo projetado no horizonte).
-    return s.data <= hoje ? [...v, s.saldoEfetivo] : v;
+    return s.data <= hoje ? [s.saldoProjetado, s.saldoEfetivo] : [s.saldoProjetado];
   });
+  // A linha de cenário só é desenhada de hoje em diante; é dela que saem o mín e o máx do cenário.
+  const valoresCenario = mostrarCenarios ? serie.filter((s) => s.data >= hoje).map((s) => s.saldoComCenarios) : [];
   // O rodapé mostra o menor e o maior saldo reais; o zero entra só na escala do desenho,
   // para a linha do zero ficar sempre visível (como no FluxoChartModal).
-  const min = Math.min(...valores);
-  const max = Math.max(...valores);
+  const real = { min: Math.min(...valoresReal), max: Math.max(...valoresReal) };
+  const cenario = valoresCenario.length > 0
+    ? { min: Math.min(...valoresCenario), max: Math.max(...valoresCenario) }
+    : null;
+  const min = Math.min(real.min, cenario?.min ?? real.min);
+  const max = Math.max(real.max, cenario?.max ?? real.max);
   const escalaMin = Math.min(min, 0);
   const escalaMax = Math.max(max, 0);
   const amp = escalaMax - escalaMin || 1;
@@ -42,13 +47,7 @@ export default function BalanceChart({ serie, hoje, altura = 160, mostrarCenario
   const cruzaAno = serie[0].data.slice(0, 4) !== serie.at(-1)!.data.slice(0, 4);
   const dataPonta = (d: string) =>
     `${d.slice(8, 10)}/${d.slice(5, 7)}${cruzaAno ? `/${d.slice(0, 4)}` : ''}`;
-  const minMax = (
-    <>
-      {rotuloMinMax ? `${rotuloMinMax}: ` : ''}mín <b className={min >= 0 ? 'pos' : 'neg'}>{formatarSaldo(min)}</b>
-      {' · máx '}
-      <b className={max >= 0 ? 'pos' : 'neg'}>{formatarSaldo(max)}</b>
-    </>
-  );
+  const minMax = <MinMaxSeries real={real} cenario={cenario} rotulo={rotuloMinMax} />;
   const ultimoPassado = passado.at(-1)?.i ?? -1;
   const linhaCheia = [...passado, ...futuro.filter((f) => f.i > ultimoPassado)];
   return (

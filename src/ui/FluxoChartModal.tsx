@@ -13,6 +13,7 @@ import {
   PERIODOS_ATALHO, atalhoAtivo, centralizarJanela, janelaDoPeriodo, janelaInicial, panJanela,
   zoomJanela, type Janela,
 } from './chartGestures';
+import MinMaxSeries from './MinMaxSeries';
 import { useTravarRolagem } from './useTravarRolagem';
 
 /** Um lançamento do dia, já com o efeito no saldo (positivo entra, negativo sai). */
@@ -191,15 +192,21 @@ export default function FluxoChartModal({
     if (idx <= hojeIdx) return d.saldoEfetivo;
     return mostrarCenarios ? d.saldoComCenarios : d.saldoProjetado;
   };
-  const valores: number[] = [];
+  const valoresReal: number[] = [];
+  const valoresCenario: number[] = [];
   serieVisivel.forEach((s, i) => {
     const idxGlobal = janela.inicioIdx + i;
-    valores.push(s.saldoProjetado);
-    if (mostrarCenarios) valores.push(s.saldoComCenarios);
-    if (idxGlobal <= hojeIdx) valores.push(s.saldoEfetivo);
+    valoresReal.push(s.saldoProjetado);
+    if (idxGlobal <= hojeIdx) valoresReal.push(s.saldoEfetivo);
+    // a linha de cenário só é desenhada de hoje em diante
+    if (mostrarCenarios && idxGlobal >= hojeIdx) valoresCenario.push(s.saldoComCenarios);
   });
-  const min = Math.min(...valores);
-  const max = Math.max(...valores);
+  const real = { min: Math.min(...valoresReal), max: Math.max(...valoresReal) };
+  const cenario = valoresCenario.length > 0
+    ? { min: Math.min(...valoresCenario), max: Math.max(...valoresCenario) }
+    : null;
+  const min = Math.min(real.min, cenario?.min ?? real.min);
+  const max = Math.max(real.max, cenario?.max ?? real.max);
   const dominioY: [number, number] = [Math.min(min, 0), Math.max(max, 0)];
 
   const pontos = serieVisivel.map((s, i) => {
@@ -319,7 +326,26 @@ export default function FluxoChartModal({
                 label={{ value: formatarSaldo(max), position: 'insideTopLeft', fill: 'var(--muted)', fontSize: 10 }}
               />
             )}
-            {min < 0 && (
+            {cenario ? (
+              <>
+                <ReferenceLine
+                  y={real.min} stroke="var(--line)" strokeDasharray="1 4"
+                  label={{
+                    value: `${formatarSaldo(real.min)} · real`, fill: 'var(--muted)', fontSize: 10,
+                    position: real.min <= cenario.min ? 'insideBottomLeft' : 'insideTopLeft',
+                  }}
+                />
+                {cenario.min !== real.min && (
+                  <ReferenceLine
+                    y={cenario.min} stroke="var(--ac)" strokeDasharray="1 4"
+                    label={{
+                      value: `${formatarSaldo(cenario.min)} · cenário`, fill: 'var(--ac)', fontSize: 10,
+                      position: cenario.min < real.min ? 'insideBottomLeft' : 'insideTopLeft',
+                    }}
+                  />
+                )}
+              </>
+            ) : min < 0 && (
               <ReferenceLine
                 y={min} stroke="var(--line)" strokeDasharray="1 4"
                 label={{ value: formatarSaldo(min), position: 'insideBottomLeft', fill: 'var(--muted)', fontSize: 10 }}
@@ -399,9 +425,7 @@ export default function FluxoChartModal({
       )}
 
       <div className="grafico-expandido-rodape">
-        na janela: mín <b className={min >= 0 ? 'pos' : 'neg'}>{formatarSaldo(min)}</b>
-        {' · máx '}
-        <b className={max >= 0 ? 'pos' : 'neg'}>{formatarSaldo(max)}</b>
+        <MinMaxSeries real={real} cenario={cenario} rotulo="na janela" />
       </div>
       <p className="grafico-expandido-dica">
         Arraste para mover · segure e arraste para ver cada dia · dois dedos para aproximar

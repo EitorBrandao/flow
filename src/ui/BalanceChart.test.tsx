@@ -86,6 +86,31 @@ it('o rótulo "mín" mostra o menor saldo real, não o zero da escala', () => {
   expect(semNbsp(rodape)).toContain(`máx ${semNbsp(formatarBRL(420000))}`);
 });
 
+describe('BalanceChart — mín/máx com cenário ligado', () => {
+  const serieCen: DiaSaldo[] = [
+    { data: '2026-07-01', saldoEfetivo: 200000, saldoProjetado: 200000, saldoComCenarios: 200000 },
+    { data: '2026-07-02', saldoEfetivo: 200000, saldoProjetado: 300000, saldoComCenarios: -50000 },
+    { data: '2026-07-03', saldoEfetivo: 200000, saldoProjetado: 250000, saldoComCenarios: 100000 },
+  ];
+
+  it('mostra o mín e o máx do real e do cenário em linhas separadas', () => {
+    const { container } = render(<BalanceChart serie={serieCen} hoje="2026-07-01" mostrarCenarios />);
+    const celulas = [...container.querySelectorAll('.minmax-celula')].map((c) => semNbsp(c.textContent!));
+    expect(celulas).toEqual([
+      `mín ${semNbsp(formatarBRL(200000))}`, `máx ${semNbsp(formatarBRL(300000))}`,
+      `mín ${semNbsp(formatarSaldo(-50000))}`, `máx ${semNbsp(formatarBRL(200000))}`,
+    ]);
+    expect(screen.getByText(semNbsp(formatarSaldo(-50000)))).toHaveClass('neg');
+  });
+
+  it('sem cenário ligado, o rodapé não muda', () => {
+    const { container } = render(<BalanceChart serie={serieCen} hoje="2026-07-01" />);
+    expect(container.querySelector('.minmax-series')).not.toBeInTheDocument();
+    expect(semNbsp(container.querySelector('.grafico-rodape')!.textContent!))
+      .toContain(`mín ${semNbsp(formatarBRL(200000))} · máx ${semNbsp(formatarBRL(300000))}`);
+  });
+});
+
 describe('BalanceChart — datas das pontas do rodapé', () => {
   const ponta = (data: string): DiaSaldo => ({ data, saldoEfetivo: 100000, saldoProjetado: 100000, saldoComCenarios: 100000 });
 

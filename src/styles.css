@@ -179,6 +179,15 @@ table.tabela td.valor-ganho, table.tabela td.valor-gasto, table.tabela td.valor-
 .grafico-rodape-minmax { text-align: center; }
 .grafico-rodape .pos, .grafico-expandido-rodape .pos { color: var(--pos); }
 .grafico-rodape .neg, .grafico-expandido-rodape .neg { color: var(--neg); }
+/* mín · máx com cenário ligado (MinMaxSeries.tsx): uma linha por série; colunas série, mín, valor, máx, valor */
+.minmax-series { display: inline-grid; grid-template-columns: repeat(5, auto); column-gap: 6px; row-gap: 2px; align-items: center; }
+.minmax-celula { display: contents; }
+.minmax-celula b { justify-self: end; white-space: nowrap; }
+.minmax-serie { display: inline-flex; align-items: center; gap: 5px; text-align: left; }
+.minmax-serie i { width: 16px; height: 0; display: inline-block; border-top-style: solid; }
+.minmax-serie.real i { border-color: var(--fg); border-top-style: dashed; border-top-width: 2px; }
+.minmax-serie.cen { color: var(--ac); }
+.minmax-serie.cen i { border-color: var(--ac); border-top-style: dotted; border-top-width: 3px; }
 
 .resumo-barras { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
 .resumo-barra-trilho { height: 8px; border-radius: 999px; background: var(--surface2); overflow: hidden; }

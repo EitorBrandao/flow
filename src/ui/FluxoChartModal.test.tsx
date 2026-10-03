@@ -148,6 +148,37 @@ describe('FluxoChartModal — cor do rodapé mín/máx', () => {
   });
 });
 
+describe('FluxoChartModal — mín/máx com cenário ligado', () => {
+  it('mostra uma linha para o real e outra para o cenário, cada uma com o seu mín e máx', () => {
+    const { container } = render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios onFechar={() => {}} />);
+    // janela padrão: hoje-30 a hoje+30. Real: de hoje-30 a hoje+30 (saldo cresce 1000 por dia).
+    const realMin = serie[HOJE_IDX - 30].saldoProjetado;
+    const realMax = serie[HOJE_IDX + 30].saldoProjetado;
+    // Cenário: só de hoje em diante, 500000 abaixo do projetado.
+    const cenMin = serie[HOJE_IDX].saldoComCenarios;
+    const cenMax = serie[HOJE_IDX + 30].saldoComCenarios;
+    const celulas = [...container.querySelectorAll('.grafico-expandido-rodape .minmax-celula')]
+      .map((c) => semNbsp(c.textContent!));
+    expect(celulas).toEqual([
+      semNbsp(`mín ${formatarSaldo(realMin)}`), semNbsp(`máx ${formatarSaldo(realMax)}`),
+      semNbsp(`mín ${formatarSaldo(cenMin)}`), semNbsp(`máx ${formatarSaldo(cenMax)}`),
+    ]);
+    expect(container.querySelector('.grafico-expandido-rodape .minmax-serie.real')).toHaveTextContent('real');
+    expect(container.querySelector('.grafico-expandido-rodape .minmax-serie.cen')).toHaveTextContent('cenário');
+  });
+
+  it('sem cenário ligado, o rodapé segue numa linha só, sem grade por série', () => {
+    const { container } = render(<FluxoChartModal serie={serie} hoje={hoje} mostrarCenarios={false} onFechar={() => {}} />);
+    expect(container.querySelector('.minmax-series')).not.toBeInTheDocument();
+  });
+
+  it('hoje no último dia da série: o cenário tem um ponto só e ainda ganha a sua linha', () => {
+    const { container } = render(<FluxoChartModal serie={serie} hoje={serie[N - 1].data} mostrarCenarios onFechar={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: '30 dias' }));
+    expect(container.querySelectorAll('.grafico-expandido-rodape .minmax-celula')).toHaveLength(4);
+  });
+});
+
 describe('FluxoChartModal — gestos', () => {
   function mockRect(largura = 400) {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
