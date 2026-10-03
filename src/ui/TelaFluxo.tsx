@@ -150,7 +150,8 @@ export default function TelaFluxo() {
       if (!ids.includes(l.boxId)) continue;
       if (!lancamentoNoFiltro(l, filtroBanco, dados.cartoes, dados.bancos)) continue;
       if (l.cenarioId && !ligados.has(l.cenarioId)) continue;
-      const item = { id: l.id, rotulo: nomeCat(l.categoriaId), efeito: efeitoNoSaldo(l.valor, tipoCat(l.categoriaId)) };
+      const item: ItemDia = { id: l.id, rotulo: nomeCat(l.categoriaId), efeito: efeitoNoSaldo(l.valor, tipoCat(l.categoriaId)) };
+      if (l.cenarioId) item.cenario = dados.cenarios.find((c) => c.id === l.cenarioId)?.nome ?? 'cenário';
       const arr = itensDoGrafico.get(l.data);
       if (arr) arr.push(item);
       else itensDoGrafico.set(l.data, [item]);

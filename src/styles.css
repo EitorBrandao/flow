@@ -386,6 +386,15 @@ table.tabela th:first-child, table.tabela td:first-child {
 .grafico-expandido-legenda .cen i { border-color: var(--ac); border-top-style: dotted; border-top-width: 3px; }
 .grafico-expandido-rodape { text-align: center; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .grafico-expandido-dia { min-height: 124px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; background: var(--surface); border-radius: 18px; padding: 12px 14px; font-size: 14px; }
+.grafico-expandido-cenario-leitura { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ac); font-variant-numeric: tabular-nums; }
+.grafico-expandido-cenario-leitura i, .grafico-expandido-cenarios-titulo i { width: 16px; height: 0; display: inline-block; border-top: 3px dotted var(--ac); }
+.grafico-expandido-cenario-leitura.vazio { visibility: hidden; }
+.grafico-expandido-cenario-leitura .pos { color: var(--pos); }
+.grafico-expandido-cenario-leitura .neg { color: var(--neg); }
+.grafico-expandido-dia.com-cenarios { min-height: 222px; }
+.grafico-expandido-cenarios { min-height: 62px; display: flex; flex-direction: column; gap: 6px; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--line); }
+.grafico-expandido-cenarios-titulo { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ac); }
+.grafico-expandido-cenarios .valor-ganho, .grafico-expandido-cenarios .valor-gasto { background: var(--ac-dim); }
 .grafico-expandido-dia-linha { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
 .grafico-expandido-atalhos { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .grafico-expandido-atalhos .pills { flex: 0 1 auto; flex-wrap: nowrap; }
