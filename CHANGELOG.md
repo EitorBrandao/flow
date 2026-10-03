@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.63.0] - 2026-10-03
+
+### Alterado
+
+- Gráfico de saldo: com cenário ligado, o menor e o maior saldo aparecem separados — uma linha para o real e outra para o cenário
+  - Em tela cheia, o menor saldo de cada linha ganha uma linha de referência na cor da série
+
 ## [0.62.1] - 2026-10-02
 
 ### Alterado

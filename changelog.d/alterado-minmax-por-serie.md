@@ -1,2 +1,0 @@
-- Gráfico de saldo: com cenário ligado, o menor e o maior saldo aparecem separados — uma linha para o real e outra para o cenário
-  - Em tela cheia, o menor saldo de cada linha ganha uma linha de referência na cor da série
