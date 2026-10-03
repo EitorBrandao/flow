@@ -39,6 +39,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.lista-fluxo` | modificador de `.lista` só na aba Fluxo — deixa o valor de cada transação (`.item .valor-ganho`/`.valor-gasto`/`.valor-neutro`) sem negrito, pra diferenciar do totalizador do dia (`.cabecalho-dia`, em `<strong>`, continua em negrito) |
 | `.total-dia` (+ `.pos`/`.neg`) | saldo (via `classeSaldo`, valor via `formatarSaldo` — mostra o "−" abaixo de zero) — totalizador do dia no cabeçalho do Fluxo, e todo outro saldo (Hoje, Boxes, Bancos); cor própria (`--total-pos`/`--total-neg`), separada da pílula de transação (`--pos`/`--neg`) |
 | `.grafico-rodape` (+ `.pos`/`.neg` no valor) | rodapé "mín · máx" sob o gráfico de saldo (`BalanceChart.tsx`, abas Hoje/Fluxo) — 12px, sem pílula, valor via `formatarSaldo`, `--pos`/`--neg` pelo sinal do próprio valor; os mesmos modificadores `.pos`/`.neg` valem também dentro de `.grafico-expandido-rodape` (modal expandido do Fluxo) |
+| `.minmax-series` (+ `.minmax-serie`, `.minmax-celula`) | "mín · máx" por série, com cenário ligado (`MinMaxSeries.tsx`, usado no `BalanceChart` e no `FluxoChartModal`): grade de 5 colunas — série, "mín", valor, "máx", valor (valores alinhados à direita) —, uma linha para o real e outra para o cenário. `.minmax-serie.real`/`.cen` levam o traço da linha no gráfico (tracejado neutro e pontilhado `--ac`); o cenário também pinta o nome em `--ac`. Valores seguem `.pos`/`.neg` |
 | `.grafico-rodape.duas-linhas` (+ `.grafico-rodape-datas`, `.grafico-rodape-minmax`) | variante do rodapé do `BalanceChart` quando o período cruza anos: as datas completas (DD/MM/AAAA) ficam nas pontas de uma linha e o "mín · máx" centralizado na linha seguinte — numa linha só, não cabe em 360px |
 | `.botao-ver-mais` | link azul de texto: mostrar/ocultar uma lista longa (ex.: lançamentos da fatura, escondidos por padrão) ou levar a outra tela a partir de um card (ex.: "Ver gráfico completo na aba Fluxo →" na Hoje, "Ver fatura completa na aba Cartão →" na fatura) |
 | `.secao` (+ `.acao`) | cabeçalho de seção: título à esquerda, ação/contagem em azul à direita |
@@ -124,6 +125,9 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   central + transição de aba via `motion.div` (fade + leve deslize).
 - **`BalanceChart.tsx`** — linha verde com gradiente, marcador "hoje", cenários em azul
   tracejado.
+- **`MinMaxSeries.tsx`** — rodapé "mín · máx" dos gráficos de saldo. Sem cenário ligado, texto corrido
+  numa linha só (com `rotulo` opcional, ex.: "no período"). Com cenário, uma linha para o real e outra
+  para o cenário, em colunas alinhadas (`.minmax-series`). Usado pelo `BalanceChart` e pelo `FluxoChartModal`.
 - **`FluxoChartModal.tsx`** — versão em tela cheia do `BalanceChart`, com pan (um dedo), leitura por dia (segurar e arrastar), zoom, atalhos de período e cartão do dia, via
   `recharts` carregado sob demanda (`React.lazy`). Ver
   `docs/superpowers/specs/2026-07-08-grafico-fluxo-pan-zoom-design.md`.
