@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.62.1] - 2026-10-02
+
+### Alterado
+
+- O app procura uma versão nova toda vez que abre e toda vez que volta para a tela
+
 ## [0.62.0] - 2026-10-02
 
 ### Alterado
