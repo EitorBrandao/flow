@@ -266,7 +266,9 @@ export const INVARIANTES: Invariante[] = [
         }
       }
       const vazamento = r.dados.lancamentos.find(
-        (l) => l.origem !== 'cartao' && idsCategoria.has(l.categoriaId),
+        // `import` é o histórico da importação de xlsx, que já saiu do app: nasceu antes de a
+        // categoria de fatura ficar escondida e não é vazamento novo.
+        (l) => l.origem !== 'cartao' && (l.origem as string) !== 'import' && idsCategoria.has(l.categoriaId),
       );
       if (vazamento) {
         return {
