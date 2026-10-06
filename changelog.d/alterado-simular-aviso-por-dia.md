@@ -1,0 +1,3 @@
+- Simular avisa o primeiro dia em que o saldo fica negativo
+  - Antes o aviso olhava só o saldo do fim de cada mês e podia dizer "o saldo segue positivo" quando o gráfico já mostrava saldo negativo no meio do mês
+  - O aviso e o resumo de cada cenário agora mostram a data, por exemplo "o saldo fica negativo em 10/10/2026"

@@ -1,10 +1,10 @@
 import { useId, useMemo, useState } from 'react';
 import * as repo from '../db/repo';
-import { dataComDia, mesAbreviado, mesDe, ultimoDiaDoMes } from '../domain/dates';
+import { dataComDia, formatarDataBR, mesAbreviado, mesDe, ultimoDiaDoMes } from '../domain/dates';
 import { cenarioDaVisao } from '../domain/cenarios';
-import { projetarBoxes } from '../domain/projection';
-import { estenderRecorrencias, extremosPossiveis, larguraColunaValor, periodoPadrao, primeiroMesNegativo, resumoMensal, type LinhaMes, type PeriodoSimulacao } from '../domain/simulacao';
-import { agoraISO, novoId, type ID } from '../domain/types';
+import { projetarBoxes, type DiaSaldo } from '../domain/projection';
+import { estenderRecorrencias, extremosPossiveis, larguraColunaValor, periodoPadrao, primeiroDiaNegativo, resumoMensal, type LinhaMes, type PeriodoSimulacao } from '../domain/simulacao';
+import { agoraISO, novoId, type ID, type ISODate } from '../domain/types';
 import { boxIdEfetivo, boxIdsSelecionadas, cenariosLigados, useApp } from '../state/store';
 import CenarioCard from './CenarioCard';
 import SeletorPeriodoSimular from './SeletorPeriodoSimular';
@@ -36,23 +36,34 @@ export default function SimuladorFluxo() {
     // Mantém pelo menos o horizonte do app
     const horizonte = fim > dados.config.horizonteProjecao ? fim : dados.config.horizonteProjecao;
 
-    const resumo = (ligados: ReadonlySet<ID>) => resumoMensal(projetarBoxes(ids, {
+    const serieDe = (ligados: ReadonlySet<ID>) => projetarBoxes(ids, {
       boxes: dados.boxes, categorias: dados.categorias, lancamentos: [...dados.lancamentos, ...extras],
       cenariosLigados: ligados, horizonte,
-    }), hoje, p.ate);
+    });
+    // O aviso de saldo negativo olha dia a dia, dentro do período: o saldo de fim de mês pode
+    // estar positivo e o do meio dele, não (mesma leitura do gráfico).
+    const negativoDe = (serie: DiaSaldo[]) =>
+      primeiroDiaNegativo(serie.filter((d) => d.data <= fim), 'saldoComCenarios', hoje);
     const ligados = cenariosLigados(dados, boxSel);
-    const combinado = resumo(ligados);
-    const porCenario = new Map<ID, LinhaMes[]>(dados.cenarios.filter((c) => cenarioDaVisao(c, boxSel)).map((c) => [c.id, resumo(new Set([c.id]))]));
+    const serieCombinada = serieDe(ligados);
+    const combinado = resumoMensal(serieCombinada, hoje, p.ate);
+    const porCenario = new Map<ID, LinhaMes[]>();
+    const negativoPorCenario = new Map<ID, ISODate | null>();
+    for (const c of dados.cenarios.filter((x) => cenarioDaVisao(x, boxSel))) {
+      const serie = serieDe(new Set([c.id]));
+      porCenario.set(c.id, resumoMensal(serie, hoje, p.ate));
+      negativoPorCenario.set(c.id, negativoDe(serie));
+    }
     const sem = combinado.map((l) => l.sem);
     const ext = extremosPossiveis(sem, [...porCenario.values()].map((ls) => ls.map((l) => l.dif)));
     const larguraCh = larguraColunaValor(sem, ext);
-    const negativoEm = primeiroMesNegativo(combinado);
+    const negativoEm = negativoDe(serieCombinada);
     const ultimoMes = combinado.at(-1)?.mes;
-    return { ligados, combinado, porCenario, larguraCh, negativoEm, ultimoMes };
+    return { ligados, combinado, porCenario, negativoPorCenario, larguraCh, negativoEm, ultimoMes };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dados, boxSel, hoje, periodo]);
   if (!dados || !calc) return null;
-  const { ligados, combinado, porCenario, larguraCh, negativoEm, ultimoMes } = calc;
+  const { ligados, combinado, porCenario, negativoPorCenario, larguraCh, negativoEm, ultimoMes } = calc;
   const cenariosVisao = dados.cenarios.filter((c) => cenarioDaVisao(c, boxSel));
 
   async function criar() {
@@ -92,7 +103,7 @@ export default function SimuladorFluxo() {
               <p className="sub" style={{ margin: '0 0 12px' }}>Nenhum cenário ligado: a tabela mostra só o saldo real.</p>
             ) : negativoEm ? (
               <p className="aviso aviso-urgente" style={{ margin: '0 0 12px' }}>
-                Com os cenários ligados, o saldo fica negativo em {mesAbreviado(negativoEm)}.
+                Com os cenários ligados, o saldo fica negativo em {formatarDataBR(negativoEm)}.
               </p>
             ) : (
               <p className="sub" style={{ margin: '0 0 12px' }}>
@@ -108,7 +119,7 @@ export default function SimuladorFluxo() {
       <div className="lista">
         {[...cenariosVisao].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm)).map((c) => (
           <CenarioCard
-            key={c.id} cenario={c} linhas={porCenario.get(c.id) ?? []} larguraCh={larguraCh}
+            key={c.id} cenario={c} linhas={porCenario.get(c.id) ?? []} negativoEm={negativoPorCenario.get(c.id) ?? null} larguraCh={larguraCh}
             aberto={aberto === c.id} onAlternar={() => setAberto(aberto === c.id ? null : c.id)}
             boxIdNovo={boxIdEfetivo(dados, boxSel)}
           />

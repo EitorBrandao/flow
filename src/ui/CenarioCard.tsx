@@ -2,8 +2,8 @@ import { useState } from 'react';
 import * as repo from '../db/repo';
 import { formatarDataBR, mesAbreviado } from '../domain/dates';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
-import { itensDoCenario, primeiroMesNegativo, type ItemCenario, type LinhaMes } from '../domain/simulacao';
-import type { Cenario, ID } from '../domain/types';
+import { itensDoCenario, type ItemCenario, type LinhaMes } from '../domain/simulacao';
+import type { Cenario, ID, ISODate } from '../domain/types';
 import { useApp } from '../state/store';
 import FormItemCenario, { gravarItemNovo, type ValoresItem } from './FormItemCenario';
 import ItemCenarioSheet from './ItemCenarioSheet';
@@ -13,6 +13,8 @@ interface Props {
   cenario: Cenario;
   /** Resumo mensal do cenário sozinho (só ele ligado). */
   linhas: LinhaMes[];
+  /** Primeiro dia com o saldo negativo só com este cenário, ou `null`. */
+  negativoEm: ISODate | null;
   larguraCh: number;
   aberto: boolean;
   onAlternar: () => void;
@@ -23,7 +25,7 @@ interface Props {
 /** Card de um cenário no Simular: liga/desliga (checkbox), abre/fecha (resto do
  *  cabeçalho), e, aberto, mostra os itens, o impacto isolado, o formulário de item novo
  *  e as ações Tornar real / Excluir. */
-export default function CenarioCard({ cenario, linhas, larguraCh, aberto, onAlternar, boxIdNovo }: Props) {
+export default function CenarioCard({ cenario, linhas, negativoEm, larguraCh, aberto, onAlternar, boxIdNovo }: Props) {
   const { dados, hoje, recarregar } = useApp();
   const [editando, setEditando] = useState<ItemCenario | null>(null);
   const [formKey, setFormKey] = useState(0);
@@ -32,7 +34,6 @@ export default function CenarioCard({ cenario, linhas, larguraCh, aberto, onAlte
   const itens = itensDoCenario(dados, cenario.id);
   const efeitoFinal = linhas.at(-1)?.dif ?? 0;
   const ultimoMes = linhas.at(-1)?.mes;
-  const negativoEm = primeiroMesNegativo(linhas);
   const cat = (id: string) => dados.categorias.find((c) => c.id === id);
 
   async function alternarLigado() {
@@ -99,7 +100,7 @@ export default function CenarioCard({ cenario, linhas, larguraCh, aberto, onAlte
             <span className="sub" style={{ display: 'block' }}>
               {itens.length} {itens.length === 1 ? 'item' : 'itens'}
               {ultimoMes && <> · até {mesAbreviado(ultimoMes)}: <strong className={classeEfeito(efeitoFinal)}>{formatarBRL(efeitoFinal)}</strong></>}
-              {negativoEm && <> · negativo em {mesAbreviado(negativoEm)}</>}
+              {negativoEm && <> · negativo em {formatarDataBR(negativoEm)}</>}
             </span>
           </span>
           <span className="sub" aria-hidden="true">{aberto ? '▲' : '▼'}</span>

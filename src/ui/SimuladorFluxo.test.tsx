@@ -76,12 +76,32 @@ it('resumo combinado: gasto de 300,00 em outubro tira 300,00 de outubro em diant
   }
 });
 
-it('saldo negativo: aviso com o mês e o "−" na coluna Com', async () => {
+it('saldo negativo só no meio do mês: o aviso aponta o dia, mesmo com o fim do mês positivo', async () => {
+  const { box, casa, extra } = await preparar();
+  await cenarioCom('Carro', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 150000 });
+  await cenarioCom('Bônus', true, { boxId: box.id, categoriaId: extra.id, data: '2026-10-28', valor: 200000 });
+  render(<SimuladorFluxo />);
+  const resumo = screen.getByRole('region', { name: 'Cenários ligados' });
+  // fim de out/26: 1.000,00 − 1.500,00 + 2.000,00 = 1.500,00 (positivo), mas de 10/10 a 27/10 é −500,00
+  const out = within(linhaDoMes(within(resumo).getByRole('table'), 'out/26')).getAllByRole('cell');
+  expect(out[1]).toHaveTextContent('1.500,00');
+  expect(within(resumo).getByText(/o saldo fica negativo em 10\/10\/2026/)).toBeInTheDocument();
+  expect(within(resumo).queryByText(/segue positivo/)).not.toBeInTheDocument();
+});
+
+it('cenário isolado: o card mostra o dia em que o saldo fica negativo', async () => {
+  const { box, casa } = await preparar();
+  await cenarioCom('Carro', false, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 150000 });
+  render(<SimuladorFluxo />);
+  expect(screen.getByText(/negativo em 10\/10\/2026/)).toBeInTheDocument();
+});
+
+it('saldo negativo: aviso com o dia e o "−" na coluna Com', async () => {
   const { box, casa } = await preparar();
   await cenarioCom('Carro', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 150000 });
   render(<SimuladorFluxo />);
   const resumo = screen.getByRole('region', { name: 'Cenários ligados' });
-  expect(within(resumo).getByText(/o saldo fica negativo em out\/2026/)).toBeInTheDocument();
+  expect(within(resumo).getByText(/o saldo fica negativo em 10\/10\/2026/)).toBeInTheDocument();
   const out = within(linhaDoMes(within(resumo).getByRole('table'), 'out/26')).getAllByRole('cell');
   expect(out[1]).toHaveTextContent('−500,00');    // 100000 − 150000 = −50000
   expect(out[1].querySelector('strong')).toHaveClass('total-dia', 'neg');
