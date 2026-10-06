@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.63.2] - 2026-10-05
+
+### Alterado
+
+- Simular avisa o primeiro dia em que o saldo fica negativo
+  - Antes o aviso olhava só o saldo do fim de cada mês e podia dizer "o saldo segue positivo" quando o gráfico já mostrava saldo negativo no meio do mês
+  - O aviso e o resumo de cada cenário agora mostram a data, por exemplo "o saldo fica negativo em 10/10/2026"
+
 ## [0.63.1] - 2026-10-03
 
 ### Alterado
