@@ -2,7 +2,7 @@ import type { DiaSaldo } from './projection';
 import type { Dados, Lancamento, Recorrencia } from './types';
 import {
   ajustarAteSim, ajustarDeSim, estenderRecorrencias, extremosPossiveis, itensDoCenario,
-  larguraColunaValor, menorSaldo, periodoPadrao, primeiroDiaNegativo, primeiroMesNegativo, resumoMensal,
+  larguraColunaValor, menorSaldo, periodoPadrao, primeiroDiaNegativo, resumoMensal,
 } from './simulacao';
 
 const dia = (data: string, sem: number, com: number): DiaSaldo =>
@@ -275,20 +275,6 @@ describe('resumoMensal', () => {
       { mes: '2026-09', sem: 1200, com: 1100, dif: -100 },
       { mes: '2026-10', sem: 1500, com: 700, dif: -800 },
     ]);
-  });
-});
-
-describe('primeiroMesNegativo', () => {
-  it('devolve o primeiro mês com saldo com cenários abaixo de zero', () => {
-    const linhas = [
-      { mes: '2026-09', sem: 100, com: 50, dif: -50 },
-      { mes: '2026-10', sem: 100, com: -10, dif: -110 },
-      { mes: '2026-11', sem: 100, com: -20, dif: -120 },
-    ];
-    expect(primeiroMesNegativo(linhas)).toBe('2026-10');
-  });
-  it('zero não é negativo; sem negativo devolve null', () => {
-    expect(primeiroMesNegativo([{ mes: '2026-09', sem: 0, com: 0, dif: 0 }])).toBeNull();
   });
 });
 

@@ -134,11 +134,6 @@ export function resumoMensal(serie: DiaSaldo[], hoje: ISODate, ate?: string): Li
   }));
 }
 
-/** Primeiro mês com o saldo com cenários abaixo de zero, ou `null`. */
-export function primeiroMesNegativo(linhas: LinhaMes[]): string | null {
-  return linhas.find((l) => l.com < 0)?.mes ?? null;
-}
-
 /** Faixa em que o saldo com cenários pode cair, qualquer que seja a combinação ligada.
  *  `efeitos[i][k]` é a diferença do cenário `i` sozinho no mês `k`. */
 export function extremosPossiveis(

@@ -254,3 +254,24 @@ it('detalhe do backup nomeia o registro e o campo quando um valor muda na volta'
   expect(achado!.detalhe).toContain(idAlvo);
   expect(achado!.detalhe).toContain('valor');
 });
+
+describe('categoria de fatura só é usada pelo cartão', () => {
+  const inv = INVARIANTES.find((i) => i.nome === 'categoria de fatura só é usada pelo cartão')!;
+  const agora = '2026-01-01T00:00:00.000Z';
+  const comLancamento = (origem: string): Retrato => {
+    const dados = dadosComCartao('Cartão teste');
+    dados.lancamentos.push({
+      id: 'l1', boxId: 'box-1', categoriaId: 'cat-fatura', data: '2026-01-02', valor: 1000,
+      status: 'efetivo', origem, criadoEm: agora, alteradoEm: agora,
+    } as Dados['lancamentos'][number]);
+    return retratoMinimo(dados);
+  };
+
+  it('lançamento manual na categoria de fatura reprova', () => {
+    expect(inv.checar!(comLancamento('manual')).ok).toBe(false);
+  });
+
+  it('histórico da importação antiga (origem import) não reprova', () => {
+    expect(inv.checar!(comLancamento('import')).ok).toBe(true);
+  });
+});
