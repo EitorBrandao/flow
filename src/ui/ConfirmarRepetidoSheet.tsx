@@ -1,43 +1,41 @@
+import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import Sheet from './Sheet';
-import { formatarDataBR } from '../domain/dates';
-import { formatarBRL } from '../domain/money';
-import type { Lancamento, TipoCategoria } from '../domain/types';
 
 interface Props {
-  /** O lançamento igual que já existe. `null` fecha o sheet. */
-  repetido: Lancamento | null;
-  tipo: TipoCategoria;
-  nomeBox: string;
+  aberto: boolean;
+  titulo: string;
+  /** A frase que descreve o item que já existe. */
+  frase: ReactNode;
+  apoio: string;
+  rotuloConfirmar: string;
   onCancelar: () => void;
   onConfirmar: () => void;
 }
 
-export default function ConfirmarRepetidoSheet({ repetido, tipo, nomeBox, onCancelar, onConfirmar }: Props) {
-  return (
+export default function ConfirmarRepetidoSheet({
+  aberto, titulo, frase, apoio, rotuloConfirmar, onCancelar, onConfirmar,
+}: Props) {
+  // Portal no body: o FormCompra vive dentro do sheet Adicionar, e um sheet aninhado receberia
+  // o arrasto do sheet de fora (os listeners de toque dele ficam no conteúdo) e fecharia os dois.
+  return createPortal(
     <Sheet
-      aberto={repetido != null}
+      aberto={aberto}
       onFechar={onCancelar}
-      rotulo="Lançamento repetido?"
-      cabecalho={<h2 style={{ margin: 0 }}>Lançamento repetido?</h2>}
+      rotulo={titulo}
+      cabecalho={<h2 style={{ margin: 0 }}>{titulo}</h2>}
     >
-      {repetido && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <p className="aviso">
-            Já existe {tipo === 'gasto' ? 'um gasto' : 'um ganho'} de <strong>{formatarBRL(repetido.valor)}</strong>
-            {' '}em <strong>{formatarDataBR(repetido.data)}</strong> na box {nomeBox}
-            {repetido.nota ? <>: “{repetido.nota}”.</> : '.'}
-          </p>
-          <p className="sub" style={{ margin: 0 }}>
-            Se foi um toque duplo, cancele. Se é outro lançamento igual, lance mesmo assim.
-          </p>
-          <div className="acoes">
-            <button className="botao" style={{ flex: 1 }} onClick={onCancelar}>Cancelar</button>
-            <button className="botao botao-primario" style={{ flex: 1 }} onClick={onConfirmar}>
-              Lançar mesmo assim
-            </button>
-          </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <p className="aviso">{frase}</p>
+        <p className="sub" style={{ margin: 0 }}>{apoio}</p>
+        <div className="acoes">
+          <button className="botao" style={{ flex: 1 }} onClick={onCancelar}>Cancelar</button>
+          <button className="botao botao-primario" style={{ flex: 1 }} onClick={onConfirmar}>
+            {rotuloConfirmar}
+          </button>
         </div>
-      )}
-    </Sheet>
+      </div>
+    </Sheet>,
+    document.body,
   );
 }

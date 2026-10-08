@@ -1,20 +1,15 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import type { Lancamento } from '../domain/types';
 import ConfirmarRepetidoSheet from './ConfirmarRepetidoSheet';
 
-const existente = (extra: Partial<Lancamento> = {}): Lancamento => ({
-  id: 'l1', boxId: 'b1', categoriaId: 'c1', data: '2026-10-08', valor: 4500,
-  status: 'efetivo', origem: 'manual', criadoEm: 't', alteradoEm: 't', ...extra,
-});
-
-function abrir(repetido: Lancamento | null, extra: { tipo?: 'gasto' | 'ganho' } = {}) {
+function abrir(aberto = true) {
   const onCancelar = vi.fn();
   const onConfirmar = vi.fn();
   render(
     <ConfirmarRepetidoSheet
-      repetido={repetido} tipo={extra.tipo ?? 'gasto'} nomeBox="Pessoal"
+      aberto={aberto} titulo="Compra repetida?" frase={<>Já existe <strong>algo</strong>.</>}
+      apoio="Texto de apoio." rotuloConfirmar="Salvar mesmo assim"
       onCancelar={onCancelar} onConfirmar={onConfirmar}
     />,
   );
@@ -22,31 +17,24 @@ function abrir(repetido: Lancamento | null, extra: { tipo?: 'gasto' | 'ganho' } 
 }
 
 describe('ConfirmarRepetidoSheet', () => {
-  it('sem lançamento repetido, não mostra nada', () => {
-    abrir(null);
+  it('fechado, não mostra nada', () => {
+    abrir(false);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('descreve o lançamento existente, com a nota', () => {
-    abrir(existente({ nota: 'Almoço' }));
-    const dialog = screen.getByRole('dialog', { name: 'Lançamento repetido?' });
-    expect(within(dialog).getByText(/Já existe um gasto de/)).toHaveTextContent(
-      'Já existe um gasto de R$ 45,00 em 08/10/2026 na box Pessoal: “Almoço”.',
-    );
-  });
-
-  it('sem nota, termina a frase na box; ganho diz "um ganho"', () => {
-    abrir(existente(), { tipo: 'ganho' });
-    expect(screen.getByText(/Já existe um ganho de/)).toHaveTextContent(
-      'Já existe um ganho de R$ 45,00 em 08/10/2026 na box Pessoal.',
-    );
+  it('mostra título, frase, apoio e o rótulo de confirmar recebido', () => {
+    abrir();
+    expect(screen.getByRole('dialog', { name: 'Compra repetida?' })).toBeInTheDocument();
+    expect(screen.getByText(/Já existe/)).toHaveTextContent('Já existe algo.');
+    expect(screen.getByText('Texto de apoio.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Salvar mesmo assim' })).toBeInTheDocument();
   });
 
   it('os botões chamam cancelar e confirmar', async () => {
-    const { onCancelar, onConfirmar } = abrir(existente());
+    const { onCancelar, onConfirmar } = abrir();
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
     expect(onCancelar).toHaveBeenCalledTimes(1);
-    await userEvent.click(screen.getByRole('button', { name: 'Lançar mesmo assim' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar mesmo assim' }));
     expect(onConfirmar).toHaveBeenCalledTimes(1);
   });
 });

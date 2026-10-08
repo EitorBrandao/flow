@@ -11,6 +11,8 @@ import { categoriasFaturaIds } from '../domain/fatura';
 import { categoriasTransferenciaIds } from '../domain/transferencia';
 import { bancoPadrao, bancosDaBox } from '../domain/bancos';
 import type { Lancamento, TipoCategoria } from '../domain/types';
+import { formatarDataBR } from '../domain/dates';
+import { formatarBRL } from '../domain/money';
 import { avisoDataNoSaldo } from '../domain/projection';
 import { gastoDaViagem, viagemAtivaEm } from '../domain/viagem';
 import { categoriaPorDescricao } from '../domain/modos';
@@ -296,9 +298,17 @@ export default function TelaLancar() {
         </>
       )}
       <ConfirmarRepetidoSheet
-        repetido={repetido?.lanc ?? null}
-        tipo={tipo}
-        nomeBox={boxAtual?.nome ?? ''}
+        aberto={repetido != null}
+        titulo="Lançamento repetido?"
+        frase={repetido && (
+          <>
+            Já existe {tipo === 'gasto' ? 'um gasto' : 'um ganho'} de <strong>{formatarBRL(repetido.lanc.valor)}</strong>
+            {' '}em <strong>{formatarDataBR(repetido.lanc.data)}</strong> na box {boxAtual?.nome ?? ''}
+            {repetido.lanc.nota ? <>: “{repetido.lanc.nota}”.</> : '.'}
+          </>
+        )}
+        apoio="Se foi um toque duplo, cancele. Se é outro lançamento igual, lance mesmo assim."
+        rotuloConfirmar="Lançar mesmo assim"
         onCancelar={() => setRepetido(null)}
         onConfirmar={() => {
           const simples = repetido?.simples;

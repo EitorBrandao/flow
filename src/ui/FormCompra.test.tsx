@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
+import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
@@ -557,4 +558,102 @@ it('linha orçamento viagem: editar uma compra já marcada na viagem não conta 
 
     expect(linhaOrcamento(textoOrcamento(160000, 300000, true))).toBeInTheDocument();
   } finally { vi.useRealTimers(); }
+});
+
+describe('compra repetida', () => {
+  async function prepararComExistente(parcelas: number) {
+    const { box, cartao, catCartao } = await montarCartao();
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-01',
+      valorTotal: 30000, parcelas, descricao: 'geladeira',
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    return { cartao, catCartao };
+  }
+  async function preencher(valor: string, parcelas: string) {
+    await userEvent.type(screen.getByLabelText('Valor'), valor);
+    await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+    await userEvent.clear(screen.getByLabelText('Parcelas'));
+    await userEvent.type(screen.getByLabelText('Parcelas'), parcelas);
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  }
+
+  it('compra igual abre a confirmação e não salva; a frase traz as parcelas', async () => {
+    const { cartao } = await prepararComExistente(3);
+    const onFechar = vi.fn();
+    render(<FormCompra cartao={cartao} onFechar={onFechar} />);
+    await preencher('300,00', '3');
+    expect(await screen.findByText('Compra repetida?')).toBeInTheDocument();
+    expect(screen.getByText(/Já existe uma compra/)).toHaveTextContent(
+      'Já existe uma compra de R$ 300,00 em 3x no cartão Nubank, feita em 01/07/2026: “geladeira”.',
+    );
+    expect(await db.comprasCartao.count()).toBe(1);
+    expect(onFechar).not.toHaveBeenCalled();
+  });
+
+  it('à vista, a frase diz "à vista"', async () => {
+    const { cartao } = await prepararComExistente(1);
+    render(<FormCompra cartao={cartao} onFechar={() => {}} />);
+    await preencher('300,00', '1');
+    expect(await screen.findByText(/Já existe uma compra/)).toHaveTextContent(
+      'Já existe uma compra de R$ 300,00 à vista no cartão Nubank',
+    );
+  });
+
+  it('parcelas diferentes salvam direto', async () => {
+    const { cartao } = await prepararComExistente(3);
+    const onFechar = vi.fn();
+    render(<FormCompra cartao={cartao} onFechar={onFechar} />);
+    await preencher('300,00', '1');
+    await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
+    expect(await db.comprasCartao.count()).toBe(2);
+  });
+
+  it('Cancelar não salva e mantém o formulário', async () => {
+    const { cartao } = await prepararComExistente(3);
+    const onFechar = vi.fn();
+    render(<FormCompra cartao={cartao} onFechar={onFechar} />);
+    await preencher('300,00', '3');
+    await userEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Cancelar' }));
+    expect(await db.comprasCartao.count()).toBe(1);
+    expect(onFechar).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Parcelas')).toHaveValue(3);
+  });
+
+  it('Salvar mesmo assim grava uma vez e fecha', async () => {
+    const { cartao } = await prepararComExistente(3);
+    const onFechar = vi.fn();
+    render(<FormCompra cartao={cartao} onFechar={onFechar} />);
+    await preencher('300,00', '3');
+    await userEvent.click(await screen.findByRole('button', { name: 'Salvar mesmo assim' }));
+    await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
+    expect(await db.comprasCartao.count()).toBe(2);
+  });
+
+  it('editar uma compra não pergunta, mesmo com outra igual', async () => {
+    const { cartao, catCartao } = await prepararComExistente(3);
+    const outra = await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-01',
+      valorTotal: 30000, parcelas: 3,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ hoje: '2026-07-01' });
+    const onFechar = vi.fn();
+    render(<FormCompra cartao={cartao} compra={outra} onFechar={onFechar} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
+    expect(screen.queryByText('Compra repetida?')).not.toBeInTheDocument();
+    expect(await db.comprasCartao.count()).toBe(2);
+  });
+
+  it('toque duplo em Salvar grava uma vez só', async () => {
+    const { cartao } = await prepararComExistente(3);
+    render(<FormCompra cartao={cartao} onFechar={() => {}} />);
+    await userEvent.type(screen.getByLabelText('Valor'), '123,00');
+    await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+    await userEvent.dblClick(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(async () => expect(await db.comprasCartao.count()).toBeGreaterThanOrEqual(2));
+    expect(await db.comprasCartao.count()).toBe(2);
+  });
 });

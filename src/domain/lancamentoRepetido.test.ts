@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { lancamentoRepetido } from './lancamentoRepetido';
-import type { Categoria, Lancamento } from './types';
+import { compraRepetida, lancamentoRepetido } from './lancamentoRepetido';
+import type { Categoria, CompraCartao, Lancamento } from './types';
 
 const cat = (id: string, tipo: Categoria['tipo']): Categoria => ({
   id, boxId: 'b1', nome: id, tipo, ordem: 1, arquivada: false, criadoEm: 't', alteradoEm: 't',
@@ -44,5 +44,31 @@ describe('lancamentoRepetido', () => {
   });
   it('categoria desconhecida não repete', () => {
     expect(lancamentoRepetido([lanc({ categoriaId: 'sumiu' })], categorias, candidato)).toBeNull();
+  });
+});
+
+describe('compraRepetida', () => {
+  const compra = (extra: Partial<CompraCartao> = {}): CompraCartao => ({
+    id: 'k1', cartaoId: 'c1', categoriaCartaoId: 'cc1', data: '2026-10-08', valorTotal: 30000,
+    parcelas: 3, criadoEm: 't', alteradoEm: 't', ...extra,
+  });
+  const cand = { cartaoId: 'c1', data: '2026-10-08', valorTotal: 30000, parcelas: 3 };
+
+  it('acha a compra igual', () => {
+    const k = compra();
+    expect(compraRepetida([k], cand)).toBe(k);
+  });
+  it('lista vazia não repete', () => {
+    expect(compraRepetida([], cand)).toBeNull();
+  });
+  it('cartão, data, valor ou parcelas diferentes não repetem', () => {
+    expect(compraRepetida([compra({ cartaoId: 'c2' })], cand)).toBeNull();
+    expect(compraRepetida([compra({ data: '2026-10-09' })], cand)).toBeNull();
+    expect(compraRepetida([compra({ valorTotal: 30001 })], cand)).toBeNull();
+    expect(compraRepetida([compra({ parcelas: 1 })], cand)).toBeNull();
+  });
+  it('compra de assinatura também conta', () => {
+    const k = compra({ recorrenciaCartaoId: 'r1' });
+    expect(compraRepetida([k], cand)).toBe(k);
   });
 });
