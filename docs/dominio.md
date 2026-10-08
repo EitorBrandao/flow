@@ -469,6 +469,8 @@ isso; aqui é a leitura precisa do código):
 (vem sempre de `atual`); só o modo "substituir" da UI grava a `config` do backup, direto,
 sem passar por `mesclar`.
 
+**A box `casa` não duplica no mesclar.** Cada instalação cria a sua box `casa` com `id` novo (`iniciar()`). Mesclar só por `id` traria a casa do backup como segunda box, e os dados dela ficariam fora da casa que o app usa. Por isso `mesclar` troca o `id` de toda box de nome `casa` do backup pelo da casa de `atual`, em tudo que aponta para ela (`boxId` de categorias, lançamentos, recorrências, cartões e bancos; `escopo` de cenários), e descarta a casa do backup. Quem já mesclou antes desta regra pode ter duas boxes `casa`; ela não as junta depois do fato.
+
 ## Invariantes
 
 Confirmadas no código:

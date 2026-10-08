@@ -131,8 +131,40 @@ export function validarBackup(json: unknown): Backup {
   };
 }
 
-/** Mescla por id; em conflito vence o alteradoEm mais recente. Config local é mantida. */
-export function mesclar(atual: Dados, doBackup: Dados): Dados {
+/** Nome da box consolidadora que o app cria sozinho em cada instalação (`iniciar()`), com id novo. */
+const NOME_BOX_CASA = 'casa';
+
+/**
+ * A box "casa" nasce com id novo em cada instalação. Mesclar por id manteria as duas e
+ * duplicaria a casa, deixando os dados do backup numa box que o app não enxerga como "a casa".
+ * Troca o id da casa do backup pelo da casa de `atual` em tudo que aponta para ela, e tira a
+ * casa do backup da lista de boxes. Devolve cópias; não altera o que recebeu.
+ */
+function unificarCasa(atual: Dados, doBackup: Dados): Dados {
+  const casaAtual = atual.boxes.find((b) => b.nome === NOME_BOX_CASA);
+  if (!casaAtual) return doBackup;
+  const trocas = new Set(
+    doBackup.boxes.filter((b) => b.nome === NOME_BOX_CASA && b.id !== casaAtual.id).map((b) => b.id),
+  );
+  if (trocas.size === 0) return doBackup;
+  const novoId = (id: string) => (trocas.has(id) ? casaAtual.id : id);
+  const daBox = <T extends { boxId: string }>(xs: T[]): T[] => xs.map((x) => (trocas.has(x.boxId) ? { ...x, boxId: casaAtual.id } : x));
+  return {
+    ...doBackup,
+    boxes: doBackup.boxes.filter((b) => !trocas.has(b.id)),
+    categorias: daBox(doBackup.categorias),
+    lancamentos: daBox(doBackup.lancamentos),
+    recorrencias: daBox(doBackup.recorrencias),
+    cartoes: daBox(doBackup.cartoes),
+    bancos: daBox(doBackup.bancos),
+    cenarios: doBackup.cenarios.map((c) => (c.escopo != null && trocas.has(c.escopo) ? { ...c, escopo: novoId(c.escopo) } : c)),
+  };
+}
+
+/** Mescla por id; em conflito vence o alteradoEm mais recente. Config local é mantida.
+ *  A box "casa" do backup é unificada com a casa de `atual` (ver `unificarCasa`). */
+export function mesclar(atual: Dados, doBackupBruto: Dados): Dados {
+  const doBackup = unificarCasa(atual, doBackupBruto);
   function mesclarTabela<T extends { id: string; alteradoEm: string }>(a: T[], b: T[]): T[] {
     const porId = new Map(a.map((x) => [x.id, x]));
     for (const x of b) {

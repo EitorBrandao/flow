@@ -309,6 +309,87 @@ it('mescla viagens pelo alteradoEm mais recente', () => {
   expect(mesclar(a, b).viagens[0].nome).toBe('Novo nome');
 });
 
+describe('mesclar: a box "casa" não duplica', () => {
+  const caixa = (id: string, nome = 'casa') => ({ id, nome, saldoInicial: null, dataSaldoInicial: null, criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' });
+  const cat = (id: string, boxId: string) => ({ id, boxId, nome: 'Mercado', tipo: 'gasto' as const, ordem: 0, arquivada: false, criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' });
+  const lanc = (id: string, boxId: string, categoriaId: string) => ({ id, boxId, categoriaId, data: '2026-02-01', valor: 1000, status: 'efetivo' as const, origem: 'manual' as const, criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' });
+
+  it('app novo (casa com id próprio) mescla backup com outra casa: fica uma só, com os dados do backup', () => {
+    const atual = dados();
+    atual.boxes = [caixa('casa-nova')];
+    const backup = dados();
+    backup.boxes = [caixa('casa-velha'), { ...backup.boxes[0] }];
+    backup.categorias = [cat('c1', 'casa-velha')];
+    backup.lancamentos = [lanc('l1', 'casa-velha', 'c1')];
+    backup.recorrencias = [{ id: 'r1', boxId: 'casa-velha', categoriaId: 'c1', dataInicio: '2026-01-01', diaDoMes: 1, valor: 500, parcelas: null, ativa: true, origem: 'manual', criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' }];
+    backup.cenarios = [{ id: 'k1', nome: 'Hipótese', ligado: false, escopo: 'casa-velha', criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' }];
+    backup.bancos = [{ id: 'bk1', boxId: 'casa-velha', nome: 'Banco', ordem: 0, saldoDeclaradoCent: null, dataSaldoDeclarado: null, criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' }];
+    backup.cartoes = [{ id: 'ct1', boxId: 'casa-velha', nome: 'Cartão', diaFechamento: 10, diaVencimento: 20, categoriaFaturaId: 'c1', ativo: true, criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' }];
+
+    const m = mesclar(atual, backup);
+
+    expect(m.boxes.filter((x) => x.nome === 'casa').map((x) => x.id)).toEqual(['casa-nova']);
+    expect(m.boxes).toHaveLength(2); // casa + b1
+    expect(m.categorias[0].boxId).toBe('casa-nova');
+    expect(m.lancamentos[0].boxId).toBe('casa-nova');
+    expect(m.recorrencias[0].boxId).toBe('casa-nova');
+    expect(m.cenarios[0].escopo).toBe('casa-nova');
+    expect(m.bancos[0].boxId).toBe('casa-nova');
+    expect(m.cartoes[0].boxId).toBe('casa-nova');
+  });
+
+  it('nenhum registro fica apontando para uma box que não existe', () => {
+    const atual = dados();
+    atual.boxes = [caixa('casa-nova')];
+    const backup = dados();
+    backup.boxes = [caixa('casa-velha')];
+    backup.categorias = [cat('c1', 'casa-velha')];
+    backup.lancamentos = [lanc('l1', 'casa-velha', 'c1')];
+    const m = mesclar(atual, backup);
+    const ids = new Set(m.boxes.map((x) => x.id));
+    expect(m.boxes.filter((x) => x.nome === 'casa')).toHaveLength(1);
+    expect(m.lancamentos.every((l) => ids.has(l.boxId))).toBe(true);
+    expect(m.categorias.every((c) => ids.has(c.boxId))).toBe(true);
+  });
+
+  it('mesma casa nos dois lados (mesmo id): nada muda', () => {
+    const atual = dados();
+    atual.boxes = [caixa('casa-1')];
+    const backup = dados();
+    backup.boxes = [caixa('casa-1')];
+    backup.lancamentos = [lanc('l1', 'casa-1', 'c1')];
+    const m = mesclar(atual, backup);
+    expect(m.boxes).toHaveLength(1);
+    expect(m.lancamentos[0].boxId).toBe('casa-1');
+  });
+
+  it('só o backup tem casa: ela entra como está', () => {
+    const atual = dados();
+    const backup = dados();
+    backup.boxes = [caixa('casa-velha')];
+    const m = mesclar(atual, backup);
+    expect(m.boxes.map((x) => x.id).sort()).toEqual(['b1', 'casa-velha']);
+  });
+
+  it('boxes de outro nome com ids diferentes continuam entrando as duas', () => {
+    const atual = dados();
+    const backup = dados();
+    backup.boxes = [{ ...backup.boxes[0], id: 'b2', nome: 'outra' }];
+    expect(mesclar(atual, backup).boxes).toHaveLength(2);
+  });
+
+  it('não altera os objetos recebidos', () => {
+    const atual = dados();
+    atual.boxes = [caixa('casa-nova')];
+    const backup = dados();
+    backup.boxes = [caixa('casa-velha')];
+    backup.lancamentos = [lanc('l1', 'casa-velha', 'c1')];
+    mesclar(atual, backup);
+    expect(backup.lancamentos[0].boxId).toBe('casa-velha');
+    expect(backup.boxes).toHaveLength(1);
+  });
+});
+
 // ---------- validação adversarial ----------
 
 function backupCom(config: unknown) {
