@@ -62,7 +62,7 @@ describe('Lançar no modo Simples', () => {
     const lancs = (await db.lancamentos.toArray()).filter((l) => l.valor === 4800);
     expect(lancs).toHaveLength(1);
     expect(lancs[0]).toMatchObject({
-      categoriaId: mercado.id, data: '2026-07-02', status: 'efetivo', origem: 'manual',
+      categoriaId: mercado.id, data: '2026-07-02', status: 'efetivo',
       nota: 'mercado', bancoId: banco.id, boxId: box.id,
     });
   });
@@ -276,5 +276,40 @@ describe('Lançar no modo Simples', () => {
     expect(screen.getByLabelText(/Nota/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Marcar como previsto/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'mercado' })).toBeInTheDocument();
+  });
+});
+
+describe('lançamento repetido (Simples)', () => {
+  it('pede confirmação e só salva com Lançar mesmo assim', async () => {
+    const { box, mercado } = await prepararSimples();
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: mercado.id, data: '2026-07-02', valor: 1234,
+      status: 'efetivo',
+    });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    await userEvent.type(screen.getByLabelText('Valor'), '12,34');
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText('Lançamento repetido?')).toBeInTheDocument();
+    expect(await db.lancamentos.count()).toBe(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar mesmo assim' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect(await db.lancamentos.count()).toBe(2);
+  });
+
+  it('valor diferente salva direto', async () => {
+    const { box, mercado } = await prepararSimples();
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: mercado.id, data: '2026-07-02', valor: 1234,
+      status: 'efetivo',
+    });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    await userEvent.type(screen.getByLabelText('Valor'), '12,35');
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect(await db.lancamentos.count()).toBe(2);
   });
 });

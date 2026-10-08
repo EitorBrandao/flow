@@ -172,6 +172,11 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   Consumido pela fila de pendentes da `TelaHoje`, pela fatura da `TelaCartao` e pelo `FaturaResumo`; recebe o
   lançamento da fatura e o total dela, porque nem sempre um é o outro (fatura já paga em
   parte tem valor menor que o total calculado).
+- **`ConfirmarRepetidoSheet.tsx`** — sheet de confirmação da `TelaLancar`, aberto quando o lançamento
+  novo tem a mesma box, data, valor e tipo de outro que já existe. Mostra um `.aviso` com o valor, a
+  data e a descrição do existente, e os botões Cancelar e Lançar mesmo assim (`.acoes`). Recebe
+  `repetido` (`null` fecha o sheet), `tipo`, `nomeBox`, `onCancelar` e `onConfirmar`. Só usa classes
+  que já existem.
 - **`AssinaturasResumoSheet.tsx`** — sheet de Análises com o total de assinaturas do mês,
   agrupado por cartão (prop opcional `periodo`: o intervalo, sob o título, quando Análises cobre vários meses), no mesmo padrão do `LancamentosSheet`: cabeçalho do grupo em
   `.recuo-1` com o subtotal, itens em `.recuo-2`.

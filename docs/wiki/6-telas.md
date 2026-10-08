@@ -39,6 +39,7 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 - Data padrão hoje; nota opcional; caixa "marcar como previsto".
 - Com dois ou mais bancos na box, aparece o campo **Banco**, já marcado no banco padrão. Toque em outro para trocar; depois de lançar, ele volta ao padrão.
 - Data futura vira previsto automaticamente mesmo sem marcar a caixa.
+- Se já existe um lançamento com o mesmo valor, no mesmo dia, na mesma box e do mesmo tipo (gasto ou ganho), o Flow pergunta antes de salvar: "Lançamento repetido?". Toque em **Cancelar** para voltar ao formulário, ou em **Lançar mesmo assim** para salvar. Vale nos modos Simples e Avançado. Fatura de cartão, transferência e cenário não entram na comparação.
 - Ao salvar, mostra "Lançado ✓", em verde, por alguns segundos e limpa o formulário (mantendo a box e o tipo selecionados).
 - Tocar no (+) mostra antes uma faixa de atalhos para o que você mais lança; cada um já traz a categoria, o destino (box ou cartão) e o valor da última vez — você confere e confirma.
 - Atalho com ponto azul vai para cartão; sem ponto, é lançamento direto na box.

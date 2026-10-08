@@ -1,0 +1,4 @@
+- Aviso ao lançar um valor igual a outro do mesmo dia.
+  - O Flow pergunta "Lançamento repetido?" antes de salvar.
+  - Vale quando o valor, a data, a box e o tipo (gasto ou ganho) coincidem.
+  - Cancelar volta ao formulário; Lançar mesmo assim salva.
