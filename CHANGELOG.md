@@ -3,6 +3,15 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.65.2] - 2026-10-08
+
+### Alterado
+
+- Simular e Importar mais claros
+  - Sem cenário ligado, a tabela do Simular mostra só o saldo real, em duas colunas
+  - Um cenário sem itens não mostra a tabela de impacto, e o formulário de item novo abre pelo botão Adicionar item
+  - Importar e conferir, com a casa no topo, pede a box de destino antes de mostrar a conferência
+
 ## [0.65.1] - 2026-10-08
 
 ### Alterado

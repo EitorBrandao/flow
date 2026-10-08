@@ -1,4 +1,0 @@
-- Simular e Importar mais claros
-  - Sem cenário ligado, a tabela do Simular mostra só o saldo real, em duas colunas
-  - Um cenário sem itens não mostra a tabela de impacto, e o formulário de item novo abre pelo botão Adicionar item
-  - Importar e conferir, com a casa no topo, pede a box de destino antes de mostrar a conferência
