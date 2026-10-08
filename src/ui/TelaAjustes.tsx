@@ -101,7 +101,7 @@ export default function TelaAjustes() {
             <Linha
               key={i.id} rotulo={i.rotulo} onClick={() => setSecao(i.id)}
               valor={i.id === 'versao' ? versaoAtual : undefined}
-              detalhe={i.id === 'modos' ? 'Simples ou avançado, por tela'
+              detalhe={i.id === 'modos' ? 'Simples ou avançado, por box e por tela'
                 : i.id === 'importar' && importacao.nomeArquivo ? 'Conferência em andamento' : undefined}
             />
           ))}

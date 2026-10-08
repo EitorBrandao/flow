@@ -104,7 +104,7 @@ it('cada subtela de Ajustes está em exatamente um grupo', async () => {
   }
   expect([...itens].sort()).toEqual([
     'Assinaturas do cartão', 'Backup e restauração', 'Bancos', 'Boxes', 'Cartões', 'Categorias',
-    'Categorias do cartão', 'Importar e conferir', 'Modo de usoSimples ou avançado, por tela', 'Recorrências',
+    'Categorias do cartão', 'Importar e conferir', 'Modo de usoSimples ou avançado, por box e por tela', 'Recorrências',
     `Versão${versaoAtual}`, 'Viagens', 'Wiki',
   ].sort());
 });
@@ -189,7 +189,7 @@ describe('grupo Sobre o app', () => {
     const itens = Array.from(document.querySelectorAll('.lista .item')).map((el) => el.textContent ?? '');
     expect(itens).toHaveLength(3);
     expect(itens[0]).toContain('Modo de uso');
-    expect(itens[0]).toContain('Simples ou avançado, por tela');
+    expect(itens[0]).toContain('Simples ou avançado, por box e por tela');
     expect(itens[1]).toContain('Wiki');
     expect(itens[2]).toContain('Versão');
     expect(screen.getByText(versaoAtual)).toBeInTheDocument();
