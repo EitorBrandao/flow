@@ -3,16 +3,18 @@ import * as repo from '../db/repo';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import LinhaOrcamentoViagem from './LinhaOrcamentoViagem';
+import ConfirmarRepetidoSheet from './ConfirmarRepetidoSheet';
 import SeletorCategoria from './SeletorCategoria';
 import SeletorBanco from './SeletorBanco';
 import SeletorPills, { OPCOES_TIPO } from './SeletorPills';
 import { categoriasFaturaIds } from '../domain/fatura';
 import { categoriasTransferenciaIds } from '../domain/transferencia';
 import { bancoPadrao, bancosDaBox } from '../domain/bancos';
-import type { TipoCategoria } from '../domain/types';
+import type { Lancamento, TipoCategoria } from '../domain/types';
 import { avisoDataNoSaldo } from '../domain/projection';
 import { gastoDaViagem, viagemAtivaEm } from '../domain/viagem';
 import { categoriaPorDescricao } from '../domain/modos';
+import { lancamentoRepetido } from '../domain/lancamentoRepetido';
 import { useApp } from '../state/store';
 import { useModo } from './useModo';
 
@@ -27,6 +29,8 @@ export default function TelaLancar() {
   const [previsto, setPrevisto] = useState(false);
   const [viagemMarcada, setViagemMarcada] = useState(true);
   const [salvo, setSalvo] = useState(false);
+  // Lançamento igual achado ao tocar em Lançar: guarda o existente e o modo que tentou salvar.
+  const [repetido, setRepetido] = useState<{ lanc: Lancamento; simples: boolean } | null>(null);
   // `null` = "o banco padrão da box"; só vira ID quando a pessoa escolhe outro.
   const [bancoEscolhido, setBancoEscolhido] = useState<string | null>(null);
   // A box que pagou, escolhida no campo Box: no Avançado só com "casa" no topo; no Simples
@@ -129,8 +133,20 @@ export default function TelaLancar() {
         : data === '' ? 'Escolha uma data.'
           : '';
 
-  async function lancarSimples() {
+  // Mesmo valor, data, box e tipo de outro lançamento: pede confirmação antes de salvar.
+  function achaRepetido(dataLancamento: string) {
+    if (!dados || boxId == null) return null;
+    return lancamentoRepetido(dados.lancamentos, dados.categorias, {
+      boxId, data: dataLancamento, valor: cents, tipo,
+    });
+  }
+
+  async function lancarSimples(confirmado = false) {
     if (!valido || salvandoRef.current || !dados) return;
+    if (!confirmado) {
+      const igual = achaRepetido(hoje);
+      if (igual) { setRepetido({ lanc: igual, simples: true }); return; }
+    }
     salvandoRef.current = true;
     try {
       const descricao = nota.trim();
@@ -159,20 +175,30 @@ export default function TelaLancar() {
     }
   }
 
-  async function lancar() {
-    if (!valido) return;
-    await repo.salvarLancamento({
-      boxId: boxId!, categoriaId: categoriaId!, data, valor: cents,
-      ...(nota ? { nota } : {}),
-      status: previsto ? 'previsto' : (data > hoje ? 'previsto' : 'efetivo'),
-      ...(viagemAtiva && viagemMarcada ? { viagemId: viagemAtiva.id } : {}),
-      ...(bancoId ? { bancoId } : {}),
-    });
-    await recarregar();
-    setCents(0); setCategoriaId(null); setNota(''); setData(hoje);
-    setPrevisto(false); setViagemMarcada(true); setBancoEscolhido(null); setSalvo(true);
-    if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
-    salvoTimeoutRef.current = setTimeout(() => setSalvo(false), 2500);
+  async function lancar(confirmado = false) {
+    if (!valido || salvandoRef.current) return;
+    if (!confirmado) {
+      const igual = achaRepetido(data);
+      if (igual) { setRepetido({ lanc: igual, simples: false }); return; }
+    }
+    // Trava o segundo toque até o fim do `await`: sem ela, o toque duplo salva duas vezes.
+    salvandoRef.current = true;
+    try {
+      await repo.salvarLancamento({
+        boxId: boxId!, categoriaId: categoriaId!, data, valor: cents,
+        ...(nota ? { nota } : {}),
+        status: previsto ? 'previsto' : (data > hoje ? 'previsto' : 'efetivo'),
+        ...(viagemAtiva && viagemMarcada ? { viagemId: viagemAtiva.id } : {}),
+        ...(bancoId ? { bancoId } : {}),
+      });
+      await recarregar();
+      setCents(0); setCategoriaId(null); setNota(''); setData(hoje);
+      setPrevisto(false); setViagemMarcada(true); setBancoEscolhido(null); setSalvo(true);
+      if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
+      salvoTimeoutRef.current = setTimeout(() => setSalvo(false), 2500);
+    } finally {
+      salvandoRef.current = false;
+    }
   }
 
   return (
@@ -205,7 +231,7 @@ export default function TelaLancar() {
             <label htmlFor="nota">Do que foi? (opcional)</label>
             <input id="nota" value={nota} onChange={(e) => setNota(e.target.value)} />
           </div>
-          <button className="botao botao-primario" disabled={!valido} onClick={lancarSimples} style={{ padding: 14 }}>
+          <button className="botao botao-primario" disabled={!valido} onClick={() => lancarSimples()} style={{ padding: 14 }}>
             Lançar
           </button>
           {salvo && <p className="aviso aviso-sucesso">Lançado ✓</p>}
@@ -260,7 +286,7 @@ export default function TelaLancar() {
               )
               : <LinhaOrcamentoViagem orcamentoCent={viagemAtiva.orcamentoCent!} gastoCent={gastoAtual} />;
           })()}
-          <button className="botao botao-primario" disabled={!valido} onClick={lancar} style={{ padding: 14 }}>
+          <button className="botao botao-primario" disabled={!valido} onClick={() => lancar()} style={{ padding: 14 }}>
             Lançar
           </button>
           {/* Botão desabilitado sem explicação deixa a pessoa sem saber o que falta — e quem
@@ -269,6 +295,17 @@ export default function TelaLancar() {
           {salvo && <p className="aviso aviso-sucesso">Lançado ✓</p>}
         </>
       )}
+      <ConfirmarRepetidoSheet
+        repetido={repetido?.lanc ?? null}
+        tipo={tipo}
+        nomeBox={boxAtual?.nome ?? ''}
+        onCancelar={() => setRepetido(null)}
+        onConfirmar={() => {
+          const simples = repetido?.simples;
+          setRepetido(null);
+          return simples ? lancarSimples(true) : lancar(true);
+        }}
+      />
     </div>
   );
 }

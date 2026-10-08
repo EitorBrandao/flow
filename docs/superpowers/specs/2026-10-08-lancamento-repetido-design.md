@@ -49,7 +49,7 @@ O mockup aprovado está no chat de 2026-10-08.
 
 ## Testes
 
-- Domínio: igual; valor diferente; data diferente; box diferente; tipo diferente (gasto × entrada com mesmo valor); `previsto` conta; cartão, transferência e cenário não contam; lista vazia.
+- Domínio: igual; valor diferente; data diferente; box diferente; tipo diferente (gasto × ganho com mesmo valor); `previsto` conta; cartão, transferência e cenário não contam; lista vazia.
 - Tela, Simples e Avançado: sem repetido salva direto; com repetido abre o sheet e não salva; Cancelar não salva e mantém o formulário; Lançar mesmo assim salva uma vez.
 
 ## Documentação

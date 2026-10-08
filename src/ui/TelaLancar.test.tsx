@@ -645,3 +645,69 @@ it('escolher banco e trocar de box volta ao banco padrão da nova box', async ()
   expect(screen.getByRole('radio', { name: 'Banco Quatro' })).toHaveAttribute('aria-checked', 'true');
   expect(screen.getByRole('radio', { name: 'Banco Três' })).toHaveAttribute('aria-checked', 'false');
 });
+
+describe('lançamento repetido (Avançado)', () => {
+  async function prepararComExistente() {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: cat.id, data: '2026-07-02', valor: 4500, nota: 'almoço',
+      status: 'efetivo',
+    });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+  }
+  async function preencher(valor: string) {
+    await userEvent.type(screen.getByLabelText('Valor'), valor);
+    await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+  }
+
+  it('sem lançamento igual, salva direto', async () => {
+    await prepararComExistente();
+    render(<TelaLancar />);
+    await preencher('45,01');
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect(screen.queryByText('Lançamento repetido?')).not.toBeInTheDocument();
+    expect(await db.lancamentos.count()).toBe(2);
+  });
+
+  it('com lançamento igual, abre a confirmação e não salva', async () => {
+    await prepararComExistente();
+    render(<TelaLancar />);
+    await preencher('45,00');
+    expect(await screen.findByText('Lançamento repetido?')).toBeInTheDocument();
+    expect(screen.getByText(/“almoço”/)).toBeInTheDocument();
+    expect(await db.lancamentos.count()).toBe(1);
+  });
+
+  it('Cancelar fecha sem salvar e mantém o formulário', async () => {
+    await prepararComExistente();
+    render(<TelaLancar />);
+    await preencher('45,00');
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancelar' }));
+    expect(await db.lancamentos.count()).toBe(1);
+    expect(screen.getByLabelText('Valor')).toHaveValue(formatarBRL(4500));
+  });
+
+  it('Lançar mesmo assim salva uma vez', async () => {
+    await prepararComExistente();
+    render(<TelaLancar />);
+    await preencher('45,00');
+    await userEvent.click(await screen.findByRole('button', { name: 'Lançar mesmo assim' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect(await db.lancamentos.count()).toBe(2);
+  });
+
+  it('toque duplo em Lançar salva uma vez só', async () => {
+    await prepararComExistente();
+    render(<TelaLancar />);
+    await userEvent.type(screen.getByLabelText('Valor'), '45,01');
+    await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+    await userEvent.dblClick(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect(await db.lancamentos.count()).toBe(2);
+  });
+});
