@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { categoriaPorDescricao, modoDe, modosEfetivos, modosInstalacaoNova, modosValidos } from './modos';
+import { categoriaPorDescricao, modoDaBox, modoDe, modosDaBox, modosEfetivos, modosInstalacaoNova, modosValidos } from './modos';
 import type { Categoria, Config, Lancamento } from './types';
 
 const config = (modos?: Config['modos']): Config => ({
@@ -84,5 +84,30 @@ describe('categoriaPorDescricao', () => {
     const categorias = [cat('arq', 'gasto', true), cat('ganho1', 'ganho'), cat('c1', 'gasto')];
     expect(categoriaPorDescricao({ ...base, categorias, lancamentos, descricao: 'x' })).toBeNull();
     expect(categoriaPorDescricao({ ...base, categorias, lancamentos, descricao: '   ' })).toBeNull();
+  });
+});
+
+describe('modoDaBox', () => {
+  it('box com modo próprio vale mais que o global', () => {
+    expect(modoDaBox(config({ hoje: 'avancado' }), { modos: { hoje: 'simples' } }, 'hoje')).toBe('simples');
+  });
+  it('box sem modos herda o global', () => {
+    expect(modoDaBox(config({ hoje: 'simples' }), {}, 'hoje')).toBe('simples');
+  });
+  it('tela ausente na box herda só aquela tela do global', () => {
+    const box = { modos: { hoje: 'simples' } } as const;
+    expect(modoDaBox(config({ fluxo: 'simples' }), box, 'fluxo')).toBe('simples');
+    expect(modoDaBox(config({ fluxo: 'simples' }), box, 'cartao')).toBe('avancado');
+  });
+  it('sem box e sem global vale avançado', () => {
+    expect(modoDaBox(config(), undefined, 'lancar')).toBe('avancado');
+  });
+});
+
+describe('modosDaBox', () => {
+  it('completa as cinco telas: box primeiro, depois o global, depois avançado', () => {
+    expect(modosDaBox(config({ fluxo: 'simples' }), { modos: { hoje: 'simples' } })).toEqual({
+      hoje: 'simples', fluxo: 'simples', cartao: 'avancado', analises: 'avancado', lancar: 'avancado',
+    });
   });
 });

@@ -1,7 +1,7 @@
 import * as repo from '../../db/repo';
-import { modoDe } from '../../domain/modos';
+import { modoDaBox } from '../../domain/modos';
 import { TELAS_MODO, type ModoUso, type TelaModo } from '../../domain/types';
-import { useApp } from '../../state/store';
+import { boxIdEfetivo, useApp } from '../../state/store';
 
 const NOMES: Record<TelaModo, string> = {
   hoje: 'Hoje', fluxo: 'Fluxo', cartao: 'Cartão', analises: 'Análises', lancar: 'Lançar (+)',
@@ -34,10 +34,17 @@ const ROTULO_MODO: Record<ModoUso, string> = { simples: 'Simples', avancado: 'Av
 
 export default function ModoDeUso() {
   const dados = useApp((s) => s.dados);
+  const boxSel = useApp((s) => s.boxSel);
   const recarregar = useApp((s) => s.recarregar);
+  const boxId = dados ? boxIdEfetivo(dados, boxSel) : null;
+  const box = dados?.boxes.find((b) => b.id === boxId);
+  const onde = !box ? 'no padrão do app'
+    : boxSel === 'casa' ? 'na visão casa (todas as boxes juntas)'
+    : `na box ${box.nome}`;
 
   async function escolher(tela: TelaModo, modo: ModoUso) {
-    await repo.salvarModo(tela, modo);
+    if (box) await repo.salvarModoBox(box.id, tela, modo);
+    else await repo.salvarModo(tela, modo);
     await recarregar();
   }
 
@@ -46,10 +53,10 @@ export default function ModoDeUso() {
       <h2>Modo de uso</h2>
       <div className="card lista">
         <div className="sub">
-          Escolha o quanto de detalhe cada tela mostra. Seus dados são os mesmos nos dois modos e nada se perde ao trocar.
+          Escolha o quanto de detalhe cada tela mostra <b>{onde}</b>. Para mudar outra box, troque a box no topo. Seus dados são os mesmos nos dois modos e nada se perde ao trocar.
         </div>
         {TELAS_MODO.map((tela) => {
-          const modo = dados ? modoDe(dados.config, tela) : 'avancado';
+          const modo = dados ? modoDaBox(dados.config, box, tela) : 'avancado';
           return (
             <div className="item item-coluna item-elevado" key={tela}>
               <div className="linha">

@@ -1,0 +1,3 @@
+- O modo Simples ou Avançado agora vale por box
+  - Cada box, e a visão casa, tem os seus modos. Troque a box no topo para ver e mudar os dela, em Ajustes, Modo de uso.
+  - Quem já usava o app continua com os mesmos modos em todas as boxes, até mudar.

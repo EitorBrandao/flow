@@ -19,6 +19,7 @@ export interface Box extends Entidade {
   dataSaldoDeclarado?: ISODate | null;
   categoriaTransferenciaSaidaId?: ID;   // categoria oculta "Transferência" (gasto), criada sob demanda
   categoriaTransferenciaEntradaId?: ID; // categoria oculta "Transferência" (ganho), criada sob demanda
+  modos?: Partial<ModosUso>; // ausente = herda Config.modos (ver modoDaBox em modos.ts)
 }
 
 /** Conta bancária dentro de uma box. O saldo mostrado é calculado: o último saldo informado

@@ -1,7 +1,7 @@
 import { compararCategorias, compararCategoriasCartao, proximaOrdem } from '../domain/categorias';
 import { bancoIdDoCartao } from '../domain/bancos';
 import { hojeISO } from '../domain/dates';
-import { modosEfetivos, modosInstalacaoNova } from '../domain/modos';
+import { modosDaBox, modosEfetivos, modosInstalacaoNova } from '../domain/modos';
 import {
   ajustesDoCartao, calcularFaturas, datasFaturaDoMes, dedupAjustesFechamento, dedupConferencias,
   diffSincronizacao, type PlanoParcelamento,
@@ -289,6 +289,18 @@ export async function salvarModo(tela: TelaModo, modo: ModoUso): Promise<void> {
       // primeira escrita: garante que a config exista
       await db.config.put({ ...configPadrao(), modos: novosModos });
     }
+  });
+}
+
+/** Grava o modo de uma tela numa box. Grava as cinco telas: a box deixa de herdar o global, então mudar o
+ *  global depois não a altera. Não muda `alteradoEm` (o `mesclar` preferiria a box inteira por engano) e
+ *  não chama `marcarMudanca`: trocar de modo não é dado a salvar em backup. */
+export async function salvarModoBox(boxId: ID, tela: TelaModo, modo: ModoUso): Promise<void> {
+  await db.transaction('rw', db.boxes, db.config, async () => {
+    const box = await db.boxes.get(boxId);
+    if (!box) throw new Error('Box não encontrada.');
+    const config = (await db.config.get('config')) ?? configPadrao();
+    await db.boxes.update(boxId, { modos: { ...modosDaBox(config, box), [tela]: modo } });
   });
 }
 

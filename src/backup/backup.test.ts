@@ -628,6 +628,77 @@ it('mesclar mantém os modos da config local', () => {
   expect(mesclar(semModos, backup).config.modos).toBeUndefined();
 });
 
+describe('modos de uso por box no backup', () => {
+  const backupComBox = (box: Record<string, unknown>) => {
+    const b = JSON.parse(JSON.stringify(gerarBackup(dados())));
+    b.dados.boxes = [box];
+    return b;
+  };
+  const boxBase = { id: 'b1', nome: 'eitor', saldoInicial: 100, dataSaldoInicial: '2026-01-01', criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' };
+
+  it('validarBackup: box com modos válido sai com o modos intacto', () => {
+    const modos = { hoje: 'simples', fluxo: 'avancado', cartao: 'simples', analises: 'avancado', lancar: 'simples' };
+    const v = validarBackup(backupComBox({ ...boxBase, modos }));
+    expect(v.dados.boxes[0].modos).toEqual(modos);
+  });
+
+  it('validarBackup: box sem modos ou com modos undefined valida e volta sem modos', () => {
+    expect(validarBackup(backupComBox({ ...boxBase })).dados.boxes[0].modos).toBeUndefined();
+    expect(validarBackup(backupComBox({ ...boxBase, modos: undefined })).dados.boxes[0].modos).toBeUndefined();
+  });
+
+  it('validarBackup: box com modos inválido lança erro em português', () => {
+    for (const modos of [{ hoje: 'facil' }, { telaInexistente: 'simples' }, { hoje: null }, [], 'x', null, 0]) {
+      expect(() => validarBackup(backupComBox({ ...boxBase, modos }))).toThrow(/modos de uso inválidos/);
+    }
+  });
+
+  it('validarBackup: box nula no array de boxes não quebra a checagem de modos', () => {
+    const b = JSON.parse(JSON.stringify(gerarBackup(dados())));
+    b.dados.boxes = [null];
+    try { validarBackup(b); } catch (e) { expect((e as Error).message).not.toMatch(/modos de uso/); }
+  });
+
+  it('mesclar mantém o modos do aparelho mesmo quando a box do backup é mais nova', () => {
+    const atual = dados();
+    atual.boxes[0] = { ...atual.boxes[0], modos: { hoje: 'simples' } };
+    const backup = dados();
+    backup.boxes[0] = { ...backup.boxes[0], nome: 'novo nome', alteradoEm: '2026-06-01T00:00:00Z', modos: { hoje: 'avancado', fluxo: 'simples' } };
+    const m = mesclar(atual, backup);
+    expect(m.boxes[0].nome).toBe('novo nome');
+    expect(m.boxes[0].modos).toEqual({ hoje: 'simples' });
+  });
+
+  it('mesclar: aparelho sem modos na box não ganha o modos do backup', () => {
+    const atual = dados();
+    const backup = dados();
+    backup.boxes[0] = { ...backup.boxes[0], alteradoEm: '2026-06-01T00:00:00Z', modos: { hoje: 'simples' } };
+    expect(mesclar(atual, backup).boxes[0].modos).toBeUndefined();
+  });
+
+  it('mesclar: a casa do backup é descartada e a visão casa fica com o modos da casa do aparelho', () => {
+    const atual = dados();
+    atual.boxes.push({ ...atual.boxes[0], id: 'casa-local', nome: 'casa', saldoInicial: null, dataSaldoInicial: null, modos: { hoje: 'simples' } });
+    const backup = dados();
+    backup.boxes.push({
+      ...backup.boxes[0], id: 'casa-outro', nome: 'casa', saldoInicial: null, dataSaldoInicial: null,
+      alteradoEm: '2026-06-01T00:00:00Z', modos: { hoje: 'avancado' },
+    });
+    const casas = mesclar(atual, backup).boxes.filter((b) => b.nome === 'casa');
+    expect(casas).toHaveLength(1);
+    expect(casas[0].id).toBe('casa-local');
+    expect(casas[0].modos).toEqual({ hoje: 'simples' });
+  });
+
+  it('mesclar: box que só existe no backup entra com o modos dela', () => {
+    const atual = dados();
+    const backup = dados();
+    backup.boxes.push({ ...backup.boxes[0], id: 'b2', modos: { hoje: 'simples' } });
+    const m = mesclar(atual, backup);
+    expect(m.boxes.find((b) => b.id === 'b2')?.modos).toEqual({ hoje: 'simples' });
+  });
+});
+
 describe('escopo do cenário no backup', () => {
   const cenario = (extra: Record<string, unknown> = {}) => ({
     id: 'c1', nome: 'Viagem', ligado: true, criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z', ...extra,

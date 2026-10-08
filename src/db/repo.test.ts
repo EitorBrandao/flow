@@ -2053,6 +2053,92 @@ describe('modos de uso', () => {
     expect(cfg?.modos?.analises).toBe('avancado');
     expect(cfg?.modos?.lancar).toBe('avancado');
   });
+
+  const criarBox = async (id: string, nome = id) => {
+    const agora = '2026-01-01T00:00:00.000Z';
+    await repo.salvarBox({ id, nome, saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora });
+  };
+
+  it('salvarModoBox grava as cinco telas na box, herdando o global nas outras', async () => {
+    await vazio();
+    await db.config.put({
+      id: 'config', boxPadraoId: null, ultimoBackupEm: null, mudancasDesdeBackup: false,
+      horizonteProjecao: '2099-12-31', modos: { fluxo: 'simples' },
+    });
+    await criarBox('b1');
+    await repo.salvarModoBox('b1', 'hoje', 'simples');
+    expect((await db.boxes.get('b1'))?.modos).toEqual({
+      hoje: 'simples', fluxo: 'simples', cartao: 'avancado', analises: 'avancado', lancar: 'avancado',
+    });
+  });
+
+  it('salvarModoBox não muda o global nem outra box', async () => {
+    await vazio();
+    await criarBox('b1');
+    await criarBox('b2');
+    await repo.salvarModoBox('b1', 'hoje', 'simples');
+    expect((await db.boxes.get('b2'))?.modos).toBeUndefined();
+    expect((await db.config.get('config'))?.modos?.hoje).not.toBe('simples');
+  });
+
+  it('salvarModoBox depois de mudar o global não altera a box que já tem modos', async () => {
+    await vazio();
+    await criarBox('b1');
+    await repo.salvarModoBox('b1', 'hoje', 'simples');
+    await repo.salvarModo('cartao', 'simples');
+    expect((await db.boxes.get('b1'))?.modos?.cartao).toBe('avancado');
+  });
+
+  it('salvarModoBox não muda alteradoEm nem marca mudança de backup', async () => {
+    await vazio();
+    await criarBox('b1');
+    const antes = (await db.boxes.get('b1'))?.alteradoEm; // salvarBox carimba alteradoEm com a hora atual
+    await db.config.put({
+      id: 'config', boxPadraoId: null, ultimoBackupEm: null, mudancasDesdeBackup: false,
+      horizonteProjecao: '2099-12-31',
+    });
+    await repo.salvarModoBox('b1', 'hoje', 'simples');
+    expect((await db.boxes.get('b1'))?.alteradoEm).toBe(antes);
+    expect((await db.config.get('config'))?.mudancasDesdeBackup).toBe(false);
+  });
+
+  it('salvarModoBox simultâneo em duas telas da mesma box é atômico', async () => {
+    await vazio();
+    await criarBox('b1');
+    await Promise.all([repo.salvarModoBox('b1', 'hoje', 'simples'), repo.salvarModoBox('b1', 'fluxo', 'simples')]);
+    const m = (await db.boxes.get('b1'))?.modos;
+    expect(m?.hoje).toBe('simples');
+    expect(m?.fluxo).toBe('simples');
+    expect(m?.cartao).toBe('avancado');
+  });
+
+  it('salvarModoBox numa box que não existe lança erro em português', async () => {
+    await vazio();
+    await expect(repo.salvarModoBox('nao-existe', 'hoje', 'simples')).rejects.toThrow('Box não encontrada.');
+  });
+
+  it('salvarBox com a box lida preserva o modos', async () => {
+    await vazio();
+    await criarBox('b1');
+    await repo.salvarModoBox('b1', 'hoje', 'simples');
+    const box = (await db.boxes.get('b1'))!;
+    await repo.salvarBox({ ...box, nome: 'renomeada' });
+    expect((await db.boxes.get('b1'))?.modos?.hoje).toBe('simples');
+  });
+
+  it('substituirTudo traz o modos das boxes do backup', async () => {
+    await vazio();
+    const atuais = await repo.carregarTudo();
+    const agora = '2026-01-01T00:00:00.000Z';
+    await repo.substituirTudo({
+      ...atuais,
+      boxes: [{
+        id: 'b1', nome: 'b1', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora,
+        modos: { hoje: 'simples' },
+      }],
+    });
+    expect((await db.boxes.get('b1'))?.modos).toEqual({ hoje: 'simples' });
+  });
 });
 
 describe('rascunho de simulação rápida não marca "mudanças sem backup"', () => {

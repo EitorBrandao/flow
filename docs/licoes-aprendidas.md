@@ -51,6 +51,7 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 - **Diff vazio do dossiê tem dois sentidos.** Ou nada mudou, ou mudou onde o dossiê não olha. Os limites estão em `.claude/skills/revisar-dossie/SKILL.md`.
 - **Procurar o texto no código não prova que ele aparece na tela.** Uma busca por "DIFERENÇA" não achou nada, porque o cabeçalho está em minúsculas no código e o CSS o mostra em maiúsculas. Só rodar o app mostrou que o defeito seguia ali. *Faça:* para dizer que um achado de tela já fechou ou ainda existe, abra a tela, no celular simulado, com dados sintéticos.
 - **Uma suíte com nome de arquivo parecido quebra no Windows.** `wiki.ts` ao lado de `Wiki.tsx` fez a importação resolver para o parser. Os testes passaram. Só `npm run build` pegou. *Faça:* rode o build antes de integrar.
+- **O servidor de teste pode servir outra pasta que não a do worktree.** O `npx vite` subiu a partir do checkout principal, porque o diretório do shell tinha voltado para a raiz. A varredura rodou contra o código antigo e mostrou a frase velha. *Faça:* suba o servidor com `cd <worktree> && npx vite`, e antes de varrer confirme que a porta serve o código novo: `curl` num arquivo de `src/` e procure um texto que só existe no branch, ou leia a linha de comando do processo da porta.
 
 ## Dados, banco e backup
 

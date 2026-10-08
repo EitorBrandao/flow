@@ -1,4 +1,4 @@
-import type { Categoria, Config, ID, Lancamento, ModoUso, ModosUso, TelaModo, TipoCategoria } from './types';
+import type { Box, Categoria, Config, ID, Lancamento, ModoUso, ModosUso, TelaModo, TipoCategoria } from './types';
 import { TELAS_MODO } from './types';
 
 export { TELAS_MODO } from './types';
@@ -9,6 +9,16 @@ export function modoDe(config: Config, tela: TelaModo): ModoUso {
 
 export function modosEfetivos(config: Config): ModosUso {
   return Object.fromEntries(TELAS_MODO.map((t) => [t, modoDe(config, t)])) as ModosUso;
+}
+
+/** Modo de uma tela numa box: o da própria box, senão o global (`Config.modos`), senão Avançado. */
+export function modoDaBox(config: Config, box: Pick<Box, 'modos'> | undefined, tela: TelaModo): ModoUso {
+  return box?.modos?.[tela] ?? modoDe(config, tela);
+}
+
+/** Os cinco modos efetivos de uma box. */
+export function modosDaBox(config: Config, box: Pick<Box, 'modos'> | undefined): ModosUso {
+  return Object.fromEntries(TELAS_MODO.map((t) => [t, modoDaBox(config, box, t)])) as ModosUso;
 }
 
 export function modosInstalacaoNova(): ModosUso {
