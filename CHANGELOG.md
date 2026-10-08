@@ -3,6 +3,15 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.64.0] - 2026-10-08
+
+### Adicionado
+
+- Aviso ao lançar um valor igual a outro do mesmo dia.
+  - O Flow pergunta "Lançamento repetido?" antes de salvar.
+  - Vale quando o valor, a data, a box e o tipo (gasto ou ganho) coincidem.
+  - Cancelar volta ao formulário; Lançar mesmo assim salva.
+
 ## [0.63.2] - 2026-10-05
 
 ### Alterado
