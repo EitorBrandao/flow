@@ -1,5 +1,8 @@
 # Transferência entre bancos
 
+Status: aprovada em 2026-09-16 — implementada
+Nota: Saiu na v0.29.0.
+
 ## Problema
 
 O usuário recebe o salário no Bradesco e move parte dele para o Nubank (gasto do dia a dia)

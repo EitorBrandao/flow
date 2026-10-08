@@ -1,8 +1,10 @@
 # Regra de sinal: valor sem sinal, a cor diz o sentido
 
+Status: aprovada em 2026-09-26 — implementada
+Nota: Saiu na v0.47.0.
+
 Data: 2026-09-26. Branch: `regra-de-sinal`.
 
-Status: aprovada em 2026-09-26
 
 Entra **antes** do simulador no Fluxo (`2026-09-26-simulador-no-fluxo-design.md`), que já
 nasce seguindo esta regra.

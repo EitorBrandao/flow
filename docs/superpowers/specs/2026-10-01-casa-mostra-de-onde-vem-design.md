@@ -1,5 +1,8 @@
 # A casa mostra de onde vem — design
 
+Status: aprovada em 2026-10-01 — implementada
+Nota: Saiu na v0.58.0 (entrega A do item 34).
+
 Entrega A do item 34 do `TODO.md` (VB-18, VB-21, VB-25, VB-28, VB-30). Mockup aprovado em
 2026-10-01.
 

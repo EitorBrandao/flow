@@ -1,5 +1,8 @@
 # Período do Simular e tabela com rolagem
 
+Status: aprovada em 2026-09-30 — implementada
+Nota: Saiu na v0.57.0 (item 32 do TODO).
+
 Data: 2026-09-30. Mockup aprovado pelo usuário no chat (v2).
 
 ## Objetivo

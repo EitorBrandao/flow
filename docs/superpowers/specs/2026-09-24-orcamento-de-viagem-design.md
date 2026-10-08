@@ -1,5 +1,8 @@
 # Orçamento de viagem (item 19)
 
+Status: aprovada em 2026-09-24 — implementada
+Nota: Saiu na v0.46.0 (item 19 do TODO).
+
 Data: 2026-09-24. Branch: `orcamento-viagem`.
 
 ## Problema

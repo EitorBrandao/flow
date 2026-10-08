@@ -1,5 +1,8 @@
 # Compra no cartão a partir da nota fiscal (QR-code/XML)
 
+Status: aprovada em 2026-08-29 — implementada
+Nota: Saiu na v0.26.0.
+
 ## Contexto
 
 Hoje, lançar uma compra no cartão (`FormCompra`) exige digitar valor, data, categoria e descrição à mão. Essa spec cobre a primeira metade de um pedido maior — "OCR e leitor de XML a partir do QR-code" — usando a NFC-e (nota fiscal de consumidor eletrônica) como fonte de dado estruturado e confiável.

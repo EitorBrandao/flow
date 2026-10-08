@@ -1,7 +1,9 @@
 # Conferência por extrato — entrega 1
 
+Status: aprovada em 2026-09-17 — implementada
+Nota: Entrega 1, na v0.31.0. As entregas 2 e 3 estão no TODO local (item 11). Estado na aprovação: desenho aprovado, plano por escrever.
+
 Data: 2026-09-17
-Estado: desenho aprovado, formatos verificados contra arquivos reais, plano por escrever
 Backlog: item 11 do `TODO.md` ("Importar extrato bancário")
 
 ## O problema

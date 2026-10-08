@@ -1,5 +1,8 @@
 # A casa não duplica nem mente — design
 
+Status: aprovada em 2026-10-01 — implementada
+Nota: Saiu na v0.60.0 (entrega B do item 34).
+
 Entrega B do item 34 do `TODO.md` (VB-19 e VB-20), ampliada em 2026-10-01 por decisão do
 usuário. Mockup de Análises aprovado em 2026-10-01; o de Recorrências foi trocado pela decisão
 abaixo.

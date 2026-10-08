@@ -1,5 +1,8 @@
 # Lançamentos frequentes — atalhos na sheet Adicionar
 
+Status: aprovada em 2026-08-20 — implementada
+Nota: Saiu na v0.22.0.
+
 ## Problema
 
 O gesto mais repetido do app é o mais caro. Lançar o café de todo dia exige abrir a sheet

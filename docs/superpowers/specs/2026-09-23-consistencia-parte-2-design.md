@@ -1,6 +1,8 @@
 # Consistência entre telas — parte 2: fatura, card de destaque e seletor de mês
 
-Status: aprovada em 2026-09-23 — não implementada
+Status: aprovada em 2026-09-23 — implementada
+Nota: Saiu na v0.36.0 (item 25 do TODO). A linha anterior dizia "não implementada" e estava errada.
+
 
 Item 25 do `TODO.md`, itens 5 a 8 da auditoria de consistência de 2026-09-23. A parte 1
 (itens 1 a 4) vai num branch próprio, `consistencia-parte-1`; **este trabalho só começa a

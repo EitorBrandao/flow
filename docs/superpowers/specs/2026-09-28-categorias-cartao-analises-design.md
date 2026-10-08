@@ -1,8 +1,10 @@
 # Categorias do cartão na aba Análises
 
+Status: aprovada em 2026-09-28 — implementada
+Nota: Saiu na v0.49.0. Desenho e mockup aprovados em 2026-09-28.
+
 Data: 2026-09-28. Branch: `categorias-cartao-analises`.
 
-Status: desenho e mockup aprovados em 2026-09-28.
 
 O branch tem duas partes, nesta ordem:
 

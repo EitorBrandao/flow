@@ -1,5 +1,8 @@
 # Hoje leva ao gráfico do Fluxo — design
 
+Status: aprovada em 2026-09-24 — implementada
+Nota: Saiu na v0.42.0 (itens 8 e 24 do TODO).
+
 Fecha o item 8 do TODO (entrega 2 e o resto da entrega 1) e o item 24, juntos.
 
 ## Contexto

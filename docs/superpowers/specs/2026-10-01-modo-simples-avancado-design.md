@@ -1,6 +1,9 @@
 # Modo simples e avançado — desenho
 
-Data: 2026-10-01. Estado: aguardando revisão do usuário.
+Status: aprovada em 2026-10-01 — implementada
+Nota: Saiu na v0.59.0. Estado na aprovação: aguardando revisão do usuário.
+
+Data: 2026-10-01.
 
 ## Objetivo
 

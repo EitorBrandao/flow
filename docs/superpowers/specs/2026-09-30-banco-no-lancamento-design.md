@@ -1,5 +1,8 @@
 # Banco no lançamento
 
+Status: aprovada em 2026-09-30 — implementada
+Nota: Saiu na v0.51.0 (item 12, entrega 2 reduzida). Sobram saldo inicial e projeção por banco.
+
 Data: 2026-09-30. Branch: `banco-no-lancamento`. Mockup aprovado em 2026-09-30.
 
 Entrega 2 do item 12 do backlog ("Bancos na box"), reduzida: vínculo, banco padrão, saldo calculado e filtro. Projeção por banco e saldo inicial por banco ficam de fora.

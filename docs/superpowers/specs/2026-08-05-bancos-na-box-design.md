@@ -1,5 +1,8 @@
 # Bancos dentro da box — entrega 1: o banco existe e tem saldo
 
+Status: aprovada em 2026-08-05 — implementada
+Nota: Entrega 1, na v0.20.0. A entrega 2 saiu em parte na spec 2026-09-30-banco-no-lancamento-design.md; o que sobra está no TODO local.
+
 ## Problema
 
 `Box` guarda **um** saldo declarado (`saldoDeclaradoCent` + `dataSaldoDeclarado`,

@@ -1,5 +1,8 @@
 # Bloquear cartão para novas compras
 
+Status: aprovada em 2026-09-18 — implementada
+Nota: Saiu na v0.30.0.
+
 ## Problema
 
 Um cartão pode existir só para receber assinaturas (via `RecorrenciaCartao`), sem o usuário

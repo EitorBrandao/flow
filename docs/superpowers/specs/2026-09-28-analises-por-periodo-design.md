@@ -1,5 +1,8 @@
 # Análises por período e barra fixa sob o topo — design
 
+Status: aprovada em 2026-09-28 — implementada
+Nota: Saiu na v0.50.0.
+
 Data: 2026-09-28. Branch: `analises-periodo`.
 Mockup aprovado: `analises-periodo-mockup.html` (v2, enviado pelo chat em 2026-09-28).
 A classe da barra fixa chamava `.seletor-fixo` no mockup; aqui ela é `.barra-fixa`, genérica, e a Wiki passa a usá-la.

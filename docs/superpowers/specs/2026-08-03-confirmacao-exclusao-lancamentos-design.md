@@ -1,5 +1,8 @@
 # Confirmação ao excluir/descartar lançamentos
 
+Status: aprovada em 2026-08-03 — implementada
+Nota: Saiu na v0.19.0.
+
 ## Problema
 
 Excluir ou descartar um lançamento é a única ação destrutiva do app que não pede

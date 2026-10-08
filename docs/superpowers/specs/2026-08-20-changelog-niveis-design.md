@@ -1,5 +1,8 @@
 # Changelog com dois níveis — tópico e detalhe
 
+Status: aprovada em 2026-08-20 — implementada
+Nota: Saiu na v0.23.0.
+
 ## Problema
 
 Hoje um fragmento de changelog (`changelog.d/*.md`) só aceita **bullets planos**: toda linha
