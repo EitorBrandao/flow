@@ -4,7 +4,7 @@ Cada tela do Flow tem dois modos de uso: Simples e Avançado. O modo Simples mos
 
 ## Cinco telas, cinco controles
 
-Cada tela tem o seu próprio modo. Você pode deixar uma tela no Simples e outra no Avançado.
+Cada tela tem o seu próprio modo, e cada box também. Você pode deixar uma tela no Simples e outra no Avançado. Pode deixar uma box no Simples e outra no Avançado.
 
 - **Hoje**
 - **Fluxo**
@@ -14,15 +14,16 @@ Cada tela tem o seu próprio modo. Você pode deixar uma tela no Simples e outra
 
 ## Onde mudar
 
-Abra Ajustes (ícone ⚙️ no topo), depois Sobre o app, depois Modo de uso. A tela tem cinco blocos, um por tela do app. Cada bloco tem dois botões, Simples e Avançado. O selo do bloco diz o modo atual da tela.
+Abra Ajustes (ícone ⚙️ no topo), depois Sobre o app, depois Modo de uso. A tela tem cinco blocos, um por tela do app. Cada bloco tem dois botões, Simples e Avançado. O selo do bloco diz o modo atual da tela. Os blocos mostram os modos da box escolhida no topo. Para mudar outra box, troque a box no topo. A visão casa tem os modos dela.
 
 ## Qual modo vale no começo
 
 - Uma instalação nova começa no Simples.
 - Um app que já tinha dados continua no Avançado. Nada muda sozinho para quem já usa o Flow.
 - Um backup antigo, de antes dos modos, restaura no Avançado.
+- Uma box nova começa no modo padrão do app: Simples numa instalação nova e Avançado num app que já tinha dados.
 
-> Ao restaurar um backup, **substituir tudo** traz os modos do arquivo. **Mesclar** mantém os modos deste aparelho.
+> Ao restaurar um backup, **substituir tudo** traz os modos de cada box do arquivo. **Mesclar** mantém os modos deste aparelho.
 
 ## O que o modo Simples muda
 

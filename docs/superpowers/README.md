@@ -94,6 +94,7 @@ implementação acontecer.
 | 2026-10-01 | [casa-mostra-de-onde-vem-design.md](specs/2026-10-01-casa-mostra-de-onde-vem-design.md) | A casa mostra a box de origem de cada lançamento e de cada cartão. | implementada | [casa-mostra-de-onde-vem.md](plans/2026-10-01-casa-mostra-de-onde-vem.md) |
 | 2026-10-01 | [casa-sem-duplicar-design.md](specs/2026-10-01-casa-sem-duplicar-design.md) | A casa junta categorias de mesmo nome e pede uma box nas telas por box. | implementada | [casa-sem-duplicar.md](plans/2026-10-01-casa-sem-duplicar.md) |
 | 2026-10-01 | [modo-simples-avancado-design.md](specs/2026-10-01-modo-simples-avancado-design.md) | Modo Simples e Avançado por tela, com Simples como padrão no app novo. | implementada | [modo-simples-avancado.md](plans/2026-10-01-modo-simples-avancado.md) |
+| 2026-10-08 | [modo-por-box-design.md](specs/2026-10-08-modo-por-box-design.md) | Modo de uso por box, com a casa em modo próprio e herança do padrão. | implementada | [modo-por-box.md](plans/2026-10-08-modo-por-box.md) |
 | 2026-10-08 | [lancamento-repetido-design.md](specs/2026-10-08-lancamento-repetido-design.md) | Aviso ao lançar um valor igual a outro do mesmo dia, na mesma box e na mesma categoria. | implementada | — |
 | 2026-10-08 | [compra-repetida-design.md](specs/2026-10-08-compra-repetida-design.md) | Aviso ao salvar uma compra no cartão igual a outra (cartão, data, valor, parcelas e categoria). | implementada | — |
 
@@ -151,3 +152,4 @@ implementação acontecer.
 | 2026-10-01 | [casa-mostra-de-onde-vem.md](plans/2026-10-01-casa-mostra-de-onde-vem.md) | Implementação da entrega A da casa. | implementada | [casa-mostra-de-onde-vem-design.md](specs/2026-10-01-casa-mostra-de-onde-vem-design.md) |
 | 2026-10-01 | [casa-sem-duplicar.md](plans/2026-10-01-casa-sem-duplicar.md) | Implementação da entrega B da casa. | implementada | [casa-sem-duplicar-design.md](specs/2026-10-01-casa-sem-duplicar-design.md) |
 | 2026-10-01 | [modo-simples-avancado.md](plans/2026-10-01-modo-simples-avancado.md) | Implementação dos modos Simples e Avançado. | implementada | [modo-simples-avancado-design.md](specs/2026-10-01-modo-simples-avancado-design.md) |
+| 2026-10-08 | [modo-por-box.md](plans/2026-10-08-modo-por-box.md) | Implementação do modo de uso por box. | implementada | [modo-por-box-design.md](specs/2026-10-08-modo-por-box-design.md) |

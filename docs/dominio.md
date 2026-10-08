@@ -110,14 +110,18 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   modo, nunca pelo arquivo (`substituirTudo`): **substituir** desliga — os dados passam a ser os
   do arquivo; **mesclar** liga — o resultado não está inteiro em arquivo nenhum. O arquivo não
   serve de fonte porque foi exportado com o marcador ainda ligado.
-  `Config.modos` (`ModosUso`, `src/domain/types.ts`) guarda o modo de uso — `'simples'` ou
-  `'avancado'` — de cada tela: `hoje`, `fluxo`, `cartao`, `analises` e `lancar`. **Campo ou
-  tela ausente = Avançado** (`modoDe`, `src/domain/modos.ts`): uma base que já existe, ou um
-  backup anterior aos modos, nunca muda de aparência sozinha. Só uma instalação nova grava
-  Simples (`modosInstalacaoNova`). `modos` não é entidade nova: não há tabela nem `version(n)`
-  no Dexie. Em backup, `validarBackup` rejeita `modos` inválido (`modosValidos`); **mesclar**
-  mantém os modos do aparelho (a `config` vem sempre de `atual`) e **substituir** traz os do
-  arquivo. O modo Simples só muda o que a tela mostra: reaproveita as entidades existentes.
+  `Box.modos` (`Partial<ModosUso>`, `src/domain/types.ts`) guarda o modo de uso — `'simples'` ou
+  `'avancado'` — de cada tela (`hoje`, `fluxo`, `cartao`, `analises` e `lancar`) **da box**. A
+  visão casa usa o `modos` da box real `"casa"`. `Config.modos` continua e vale como **padrão**:
+  a regra é `Box.modos[tela]` → `Config.modos[tela]` → Avançado (`modoDaBox`,
+  `src/domain/modos.ts`). Uma base que já existe, ou um backup anterior aos modos, nunca muda de
+  aparência sozinha. Só uma instalação nova grava Simples (`modosInstalacaoNova`, em
+  `Config.modos`), e a box nova herda isso. `repo.salvarModoBox` grava as cinco telas da box, não
+  muda `alteradoEm` e não marca mudança de backup. Não há tabela nem `version(n)` no Dexie. Em
+  backup, `validarBackup` rejeita `modos` inválido na `config` e em cada box (`modosValidos`);
+  **mesclar** mantém os modos do aparelho (a `config` vem de `atual`, e o `modos` de toda box que
+  já existe aqui também) e **substituir** traz os do arquivo. O modo Simples só muda o que a tela
+  mostra: reaproveita as entidades existentes.
   - **Hoje simples** grava o saldo declarado da box (ou `Config.saldoDeclaradoCent`, na casa),
     nunca `Banco.saldoDeclaradoCent`. Esse saldo é separado dos saldos por banco do Avançado.
     Na casa, só o modo Simples ainda lê `Config.saldoDeclaradoCent`: a conferência do Avançado
