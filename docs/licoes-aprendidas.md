@@ -88,6 +88,7 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 - **Uma wiki ou doc pode afirmar o falso com autoridade.** Uma frase da wiki dizia que a box `casa` não vinha pronta. Eu tinha conferido uma camada (`repo.carregarTudo`) e não o comportamento (`iniciar()` cria a box). *Faça:* confira o comportamento ponta a ponta, não uma camada.
 - **Um bug pode reabrir o próprio buraco da feature.** O contador do primeiro uso incluía a categoria que o app cria sozinho com o cartão. Quem cadastrava cartão primeiro perdia o guia. *Faça:* teste o fluxo na ordem inversa também.
 - **Marcação crua pode chegar à tela.** O parser da wiki agora lança exceção para sintaxe fora do subconjunto. O changelog aceita dois níveis de lista. Confira a gramática em `src/ui/ajustes/changelog.ts` e `docs/wiki/README.md` antes de escrever.
+- **Um aviso que compara por um campo precisa conhecer o campo antes de salvar.** O aviso de lançamento repetido passou a comparar a categoria. No modo Simples a categoria só nasce ao salvar (atalho, descrição ou "A classificar"). *Faça:* use a mesma função nos dois momentos, sem criar nada para o aviso. Se a categoria ainda não existe, não há o que comparar. O teste antigo do Simples passava sem descrição e deixou de valer: refaça o cenário, não afrouxe a regra.
 - **Teste de seleção chaveada só pelo nome colide.** "Pix" existe como ganho e como gasto.
 
 ## Planejamento e backlog

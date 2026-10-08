@@ -1,10 +1,13 @@
 # Aviso de compra repetida no cartão
 
+Status: aprovada em 2026-10-08 — implementada
+Nota: saiu na v0.65.0; a regra foi estreitada para a categoria do cartão na versão seguinte.
+
 Estende o [aviso de lançamento repetido](2026-10-08-lancamento-repetido-design.md) às compras no cartão.
 
 ## Regra de domínio
 
-`compraRepetida`, em `src/domain/lancamentoRepetido.ts`. Duas compras são iguais quando têm o mesmo cartão, a mesma data, o mesmo valor total e o mesmo número de parcelas. Compra gerada por assinatura também conta.
+`compraRepetida`, em `src/domain/lancamentoRepetido.ts`. Duas compras são iguais quando têm o mesmo cartão, a mesma data, o mesmo valor total, o mesmo número de parcelas e a mesma categoria do cartão (regra estreitada em 2026-10-08, a pedido do usuário). Compra gerada por assinatura também conta.
 
 ## Interface
 

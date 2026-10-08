@@ -601,6 +601,23 @@ describe('compra repetida', () => {
     );
   });
 
+  it('mesma data, valor e parcelas em outra categoria do cartão, salva direto', async () => {
+    const { cartao } = await prepararComExistente(3);
+    await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'lazer', ordem: 1 });
+    await useApp.getState().iniciar();
+    useApp.setState({ hoje: '2026-07-01' });
+    const onFechar = vi.fn();
+    render(<FormCompra cartao={cartao} onFechar={onFechar} />);
+    await userEvent.type(screen.getByLabelText('Valor'), '300,00');
+    await userEvent.click(screen.getByRole('button', { name: 'lazer' }));
+    await userEvent.clear(screen.getByLabelText('Parcelas'));
+    await userEvent.type(screen.getByLabelText('Parcelas'), '3');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
+    expect(screen.queryByText('Compra repetida?')).not.toBeInTheDocument();
+    expect(await db.comprasCartao.count()).toBe(2);
+  });
+
   it('parcelas diferentes salvam direto', async () => {
     const { cartao } = await prepararComExistente(3);
     const onFechar = vi.fn();

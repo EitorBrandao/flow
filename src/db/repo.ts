@@ -535,7 +535,7 @@ async function categoriaReservadaDoCartao(
   });
 }
 
-function nomeCategoriaAClassificar(tipo: TipoCategoria): string {
+export function nomeCategoriaAClassificar(tipo: TipoCategoria): string {
   return tipo === 'ganho' ? 'A classificar (entrada)' : 'A classificar';
 }
 

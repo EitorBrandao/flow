@@ -135,29 +135,38 @@ export default function TelaLancar() {
         : data === '' ? 'Escolha uma data.'
           : '';
 
-  // Mesmo valor, data, box e tipo de outro lançamento: pede confirmação antes de salvar.
-  function achaRepetido(dataLancamento: string) {
+  // Categoria que o Simples vai usar, sem criar nada: o atalho dos Frequentes (se ainda vale), a da
+  // descrição ou a "A classificar" que já existe. Sem nenhuma, devolve null.
+  function categoriaDoSimples(descricao: string): string | null {
     if (!dados || boxId == null) return null;
-    return lancamentoRepetido(dados.lancamentos, dados.categorias, {
-      boxId, data: dataLancamento, valor: cents, tipo,
+    // A categoria do atalho (chip dos Frequentes) vale mais, se ainda for da box e do tipo.
+    const doAtalho = categoriaId != null
+      && dados.categorias.some((c) => c.id === categoriaId && c.boxId === boxId && c.tipo === tipo && !c.arquivada);
+    const aClassificar = dados.categorias.find((c) =>
+      c.boxId === boxId && c.tipo === tipo && !c.arquivada && c.nome === repo.nomeCategoriaAClassificar(tipo));
+    return (doAtalho ? categoriaId : null)
+      ?? categoriaPorDescricao({ lancamentos: dados.lancamentos, categorias: dados.categorias, boxId, tipo, descricao })
+      ?? aClassificar?.id ?? null;
+  }
+
+  // Mesma box, data, valor e categoria de outro lançamento: pede confirmação antes de salvar.
+  function achaRepetido(dataLancamento: string, categoria: string | null) {
+    if (!dados || boxId == null || categoria == null) return null;
+    return lancamentoRepetido(dados.lancamentos, {
+      boxId, data: dataLancamento, valor: cents, categoriaId: categoria,
     });
   }
 
   async function lancarSimples(confirmado = false) {
     if (!valido || salvandoRef.current || !dados) return;
     if (!confirmado) {
-      const igual = achaRepetido(hoje);
+      const igual = achaRepetido(hoje, categoriaDoSimples(nota.trim()));
       if (igual) { setRepetido({ lanc: igual, simples: true }); return; }
     }
     salvandoRef.current = true;
     try {
       const descricao = nota.trim();
-      // A categoria do atalho (chip dos Frequentes) vale mais, se ainda for da box e do tipo.
-      const doAtalho = categoriaId != null
-        && dados.categorias.some((c) => c.id === categoriaId && c.boxId === boxId && c.tipo === tipo && !c.arquivada);
-      const catId = (doAtalho ? categoriaId : null) ?? categoriaPorDescricao({
-        lancamentos: dados.lancamentos, categorias: dados.categorias, boxId: boxId!, tipo, descricao,
-      }) ?? await repo.categoriaAClassificarDe(boxId!, tipo);
+      const catId = categoriaDoSimples(descricao) ?? await repo.categoriaAClassificarDe(boxId!, tipo);
       // Como no Avançado: se há viagem ativa na data do lançamento, ele entra nela.
       const viagemHoje = viagemAtivaEm(dados.viagens, hoje);
       await repo.salvarLancamento({
@@ -180,7 +189,7 @@ export default function TelaLancar() {
   async function lancar(confirmado = false) {
     if (!valido || salvandoRef.current) return;
     if (!confirmado) {
-      const igual = achaRepetido(data);
+      const igual = achaRepetido(data, categoriaId);
       if (igual) { setRepetido({ lanc: igual, simples: false }); return; }
     }
     // Trava o segundo toque até o fim do `await`: sem ela, o toque duplo salva duas vezes.

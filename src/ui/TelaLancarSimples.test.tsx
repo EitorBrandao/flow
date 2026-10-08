@@ -284,7 +284,48 @@ describe('lançamento repetido (Simples)', () => {
     const { box, mercado } = await prepararSimples();
     await repo.salvarLancamento({
       boxId: box.id, categoriaId: mercado.id, data: '2026-07-02', valor: 1234,
-      status: 'efetivo',
+      nota: 'padaria', status: 'efetivo',
+    });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    await userEvent.type(screen.getByLabelText('Valor'), '12,34');
+    await userEvent.type(screen.getByLabelText(/Do que foi/), 'padaria');
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText('Lançamento repetido?')).toBeInTheDocument();
+    expect(await db.lancamentos.count()).toBe(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar mesmo assim' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect(await db.lancamentos.count()).toBe(2);
+  });
+
+  it('mesmo valor e dia, mas a descrição leva a outra categoria, salva direto', async () => {
+    const { box, mercado } = await prepararSimples();
+    const lazer = await repo.salvarCategoria({ boxId: box.id, nome: 'lazer', tipo: 'gasto', ordem: 1 });
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: mercado.id, data: '2026-07-02', valor: 1234,
+      nota: 'padaria', status: 'efetivo',
+    });
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: lazer.id, data: '2026-06-30', valor: 900,
+      nota: 'cinema', status: 'efetivo',
+    });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    await userEvent.type(screen.getByLabelText('Valor'), '12,34');
+    await userEvent.type(screen.getByLabelText(/Do que foi/), 'cinema');
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect(screen.queryByText('Lançamento repetido?')).not.toBeInTheDocument();
+    expect(await db.lancamentos.count()).toBe(3);
+  });
+
+  it('sem descrição, repete o que já foi para "A classificar"', async () => {
+    const { box } = await prepararSimples();
+    const aClassificar = await repo.categoriaAClassificarDe(box.id, 'gasto');
+    await repo.salvarLancamento({
+      boxId: box.id, categoriaId: aClassificar, data: '2026-07-02', valor: 1234, status: 'efetivo',
     });
     await useApp.getState().iniciar();
     useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
@@ -293,9 +334,6 @@ describe('lançamento repetido (Simples)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
     expect(await screen.findByText('Lançamento repetido?')).toBeInTheDocument();
     expect(await db.lancamentos.count()).toBe(1);
-    await userEvent.click(screen.getByRole('button', { name: 'Lançar mesmo assim' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
-    expect(await db.lancamentos.count()).toBe(2);
   });
 
   it('valor diferente salva direto', async () => {

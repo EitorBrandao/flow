@@ -674,6 +674,21 @@ describe('lançamento repetido (Avançado)', () => {
     expect(await db.lancamentos.count()).toBe(2);
   });
 
+  it('mesmo valor e dia em outra categoria do mesmo tipo, salva direto', async () => {
+    await prepararComExistente();
+    const box = (await db.boxes.toArray()).find((b) => b.nome === 'eitor')!;
+    await repo.salvarCategoria({ boxId: box.id, nome: 'transporte', tipo: 'gasto', ordem: 1 });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    render(<TelaLancar />);
+    await userEvent.type(screen.getByLabelText('Valor'), '45,00');
+    await userEvent.click(screen.getByRole('button', { name: 'transporte' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    expect(screen.queryByText('Lançamento repetido?')).not.toBeInTheDocument();
+    expect(await db.lancamentos.count()).toBe(2);
+  });
+
   it('com lançamento igual, abre a confirmação e não salva', async () => {
     await prepararComExistente();
     render(<TelaLancar />);
