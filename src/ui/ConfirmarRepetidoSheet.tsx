@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import Sheet from './Sheet';
 
 interface Props {
@@ -15,7 +16,9 @@ interface Props {
 export default function ConfirmarRepetidoSheet({
   aberto, titulo, frase, apoio, rotuloConfirmar, onCancelar, onConfirmar,
 }: Props) {
-  return (
+  // Portal no body: o FormCompra vive dentro do sheet Adicionar, e um sheet aninhado receberia
+  // o arrasto do sheet de fora (os listeners de toque dele ficam no conteúdo) e fecharia os dois.
+  return createPortal(
     <Sheet
       aberto={aberto}
       onFechar={onCancelar}
@@ -32,6 +35,7 @@ export default function ConfirmarRepetidoSheet({
           </button>
         </div>
       </div>
-    </Sheet>
+    </Sheet>,
+    document.body,
   );
 }
