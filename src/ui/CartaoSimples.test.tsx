@@ -31,6 +31,19 @@ async function montar(hojeISO = '2026-10-01', modo: 'simples' | 'avancado' = 'si
 
 const faturas = async () => (await db.lancamentos.toArray()).filter((l) => l.origem === 'cartao');
 
+it('ajuste de fechamento muda a fatura que abre no Cartão simples', async () => {
+  // Fecha dia 5: em 06/10 a compra de hoje cai na fatura de novembro, a menos que o fechamento de outubro seja ajustado.
+  const { cartao } = await montar('2026-10-06');
+  const { unmount } = render(<TelaCartao />);
+  expect(screen.getByText('Vencimento: 12/11/2026')).toBeInTheDocument();
+  unmount();
+  await repo.salvarAjusteFechamento(cartao.id, '2026-10', 8, HORIZONTE);
+  await useApp.getState().recarregar();
+  useApp.setState({ hoje: '2026-10-06' });
+  render(<TelaCartao />);
+  expect(await screen.findByText('Vencimento: 12/10/2026')).toBeInTheDocument();
+});
+
 it('mostra seletor de mês, valor, vencimento somente leitura e Salvar fatura', async () => {
   await montar();
   render(<TelaCartao />);
@@ -239,6 +252,7 @@ it('Salvar fatura fica desabilitado sem edição e não sobrescreve conferência
 });
 
 it('Remover valor só aparece com conferência marcada; sem compras, a fatura some do Fluxo', async () => {
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
   await montar();
   render(<TelaCartao />);
   expect(screen.queryByRole('button', { name: 'Remover valor' })).not.toBeInTheDocument();
@@ -253,6 +267,7 @@ it('Remover valor só aparece com conferência marcada; sem compras, a fatura so
 });
 
 it('Remover valor com compras: a fatura volta à soma e as compras continuam', async () => {
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
   const { cartao } = await montar();
   const cat = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
   await repo.salvarCompraCartao({
@@ -269,6 +284,51 @@ it('Remover valor com compras: a fatura volta à soma e as compras continuam', a
   expect(await db.conferenciasFatura.count()).toBe(0);
   expect(await db.comprasCartao.count()).toBe(1);
   expect(screen.getByLabelText('Valor da fatura')).toHaveValue(formatarBRL(8000));
+});
+
+describe('Remover valor pede confirmação', () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  async function comValorSalvo() {
+    await montar();
+    render(<TelaCartao />);
+    await userEvent.type(screen.getByLabelText('Valor da fatura'), '187000');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar fatura' }));
+    return screen.findByRole('button', { name: 'Remover valor' });
+  }
+
+  it('Cancelar na confirmação mantém o valor informado', async () => {
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    await userEvent.click(await comValorSalvo());
+    expect(confirmar).toHaveBeenCalledOnce();
+    expect(await db.conferenciasFatura.count()).toBe(1);
+    expect(screen.getByRole('button', { name: 'Remover valor' })).toBeInTheDocument();
+  });
+
+  it('a pergunta diz o que acontece com a fatura sem compras', async () => {
+    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    await userEvent.click(await comValorSalvo());
+    expect(confirmar.mock.calls[0][0]).toMatch(/sem compras.*sai do Fluxo/i);
+  });
+
+  it('toque duplo em Remover valor remove uma vez só', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const remover = vi.spyOn(repo, 'removerConferenciaFatura');
+    await userEvent.dblClick(await comValorSalvo());
+    await waitFor(async () => expect(await db.conferenciasFatura.count()).toBe(0));
+    expect(remover).toHaveBeenCalledOnce();
+  });
+});
+
+it('toque duplo em Salvar fatura salva uma vez só', async () => {
+  await montar();
+  const salvar = vi.spyOn(repo, 'salvarConferenciaFatura');
+  render(<TelaCartao />);
+  await userEvent.type(screen.getByLabelText('Valor da fatura'), '187000');
+  await userEvent.dblClick(screen.getByRole('button', { name: 'Salvar fatura' }));
+  await waitFor(async () => expect(await db.conferenciasFatura.count()).toBe(1));
+  expect(salvar).toHaveBeenCalledOnce();
+  salvar.mockRestore();
 });
 
 it('pago a menor: mostra o aviso e Corrigir o valor pago grava o valor novo', async () => {

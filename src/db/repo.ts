@@ -87,13 +87,20 @@ export interface NovoLancamento {
   nota?: string; status: StatusLancamento; cenarioId?: ID; viagemId?: ID; bancoId?: ID;
 }
 
+/** O cenário é um rascunho de simulação rápida? Rascunho some sozinho e não é dado a salvar em backup:
+ *  mexer nele não marca "mudanças sem backup" (o rodapé de Hoje acusaria uma simulação jogada fora). */
+async function ehRascunho(cenarioId: ID | undefined): Promise<boolean> {
+  if (cenarioId == null) return false;
+  return (await db.cenarios.get(cenarioId))?.rascunho === true;
+}
+
 export async function salvarLancamento(n: NovoLancamento): Promise<Lancamento> {
   recusarEfetivoDeCenario(n.cenarioId, n.status);
   const agora = agoraISO();
   const l: Lancamento = { id: novoId(), origem: 'manual', criadoEm: agora, alteradoEm: agora, ...n };
-  await db.transaction('rw', db.lancamentos, db.config, async () => {
+  await db.transaction('rw', db.lancamentos, db.cenarios, db.config, async () => {
     await db.lancamentos.add(l);
-    await marcarMudanca();
+    if (!(await ehRascunho(l.cenarioId))) await marcarMudanca();
   });
   return l;
 }
@@ -198,10 +205,10 @@ export async function salvarRecorrencia(
   const rec: Recorrencia = 'id' in n
     ? { ...n, alteradoEm: agora }
     : { id: novoId(), ativa: true, origem: 'manual', criadoEm: agora, alteradoEm: agora, ...n };
-  await db.transaction('rw', db.recorrencias, db.lancamentos, db.config, async () => {
+  await db.transaction('rw', db.recorrencias, db.lancamentos, db.cenarios, db.config, async () => {
     await db.recorrencias.put(rec);
     await materializarRecorrencia(rec, horizonte);
-    await marcarMudanca();
+    if (!(await ehRascunho(rec.cenarioId))) await marcarMudanca();
   });
   return rec;
 }
@@ -227,7 +234,8 @@ export async function excluirRecorrencia(id: ID): Promise<void> {
 export async function salvarCenario(c: Cenario): Promise<void> {
   await db.transaction('rw', db.cenarios, db.config, async () => {
     await db.cenarios.put({ ...c, alteradoEm: agoraISO() });
-    await marcarMudanca();
+    // Guardar o rascunho tira a marca `rascunho` e vira dado real: aí marca.
+    if (c.rascunho !== true) await marcarMudanca();
   });
 }
 
@@ -241,8 +249,9 @@ async function apagarCenario(id: ID): Promise<void> {
 
 export async function excluirCenario(id: ID): Promise<void> {
   await db.transaction('rw', db.cenarios, db.lancamentos, db.recorrencias, db.config, async () => {
+    const rascunho = await ehRascunho(id);
     await apagarCenario(id);
-    await marcarMudanca();
+    if (!rascunho) await marcarMudanca();
   });
 }
 

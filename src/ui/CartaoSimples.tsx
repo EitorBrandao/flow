@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import * as repo from '../db/repo';
 import { formatarDataBR } from '../domain/dates';
 import {
@@ -40,6 +40,8 @@ function FaturaDoMes({ cartao, mes }: { cartao: Cartao; mes: string }) {
   const [pagando, setPagando] = useState(false);
   const [valorInicialPagamento, setValorInicialPagamento] = useState<number | null>(null);
   const [cents, setCents] = useState<number | null>(null);
+  // Trava o segundo toque até o fim do `await`, como o Lançar: sem ela, o toque duplo grava duas vezes.
+  const ocupadoRef = useRef(false);
   if (!dados) return null;
 
   const horizonte = dados.config.horizonteProjecao;
@@ -65,15 +67,29 @@ function FaturaDoMes({ cartao, mes }: { cartao: Cartao; mes: string }) {
   const nadaASalvar = cents === null || valor === atual;
 
   async function salvar() {
-    if (valor <= 0 || nadaASalvar) return;
-    await repo.salvarConferenciaFatura(cartao.id, mes, valor, true, horizonte);
-    await recarregar();
+    if (valor <= 0 || nadaASalvar || ocupadoRef.current) return;
+    ocupadoRef.current = true;
+    try {
+      await repo.salvarConferenciaFatura(cartao.id, mes, valor, true, horizonte);
+      await recarregar();
+    } finally {
+      ocupadoRef.current = false;
+    }
   }
 
   async function removerValor() {
-    await repo.removerConferenciaFatura(cartao.id, mes, horizonte);
-    setCents(null);
-    await recarregar();
+    if (ocupadoRef.current) return;
+    // Apagar o valor pode perder um valor do banco vindo do Avançado: pede confirmação, como as outras ações destrutivas.
+    const efeito = compras.length > 0 ? 'A fatura volta à soma das compras.' : 'Sem compras, a fatura sai do Fluxo.';
+    if (!window.confirm(`Remover o valor informado desta fatura? ${efeito}`)) return;
+    ocupadoRef.current = true;
+    try {
+      await repo.removerConferenciaFatura(cartao.id, mes, horizonte);
+      setCents(null);
+      await recarregar();
+    } finally {
+      ocupadoRef.current = false;
+    }
   }
 
   async function pagarTudo() {

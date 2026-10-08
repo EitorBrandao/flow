@@ -368,7 +368,15 @@ describe('faturaForaDoFluxo', () => {
     const compras = [criadaEm(compra('2026-07-10', 10000), '2026-08-20')];
     expect(faturaForaDoFluxo({
       cartao: cartaoK, fatura: fatura08(compras), compras, lancFatura: undefined, hoje: '2026-08-20',
-    })).toEqual({ tipo: 'vencida-sem-lancamento' });
+    })).toEqual({ tipo: 'vencida-sem-lancamento', semCompras: false });
+  });
+
+  it('vencida, sem lançamento e sem compra nenhuma, só com o valor informado: avisa, marcando que não há compras', () => {
+    const compras = [criadaEm(compra('2026-07-10', 10000), '2026-08-20')];
+    const vazia = { ...fatura08(compras), itens: [], totalCent: 0 };
+    expect(faturaForaDoFluxo({
+      cartao: cartaoK, fatura: vazia, compras: [], lancFatura: undefined, conferencia: conf('2026-08', 10800, true), hoje: '2026-08-20',
+    })).toEqual({ tipo: 'vencida-sem-lancamento', semCompras: true });
   });
 
   it('não avisa quando alguma compra já existia antes do vencimento (a fatura foi descartada)', () => {
