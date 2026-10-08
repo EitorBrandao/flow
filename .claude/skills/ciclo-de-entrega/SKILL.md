@@ -117,6 +117,19 @@ Se o usuário pedir ajuste depois do release, corrija a seção da versão no `C
 branch próprio, com merge na `main`. Não crie versão nova para isso: a correção sai no próximo
 deploy.
 
+## Passo 4.5 — Backlog e lições
+
+Valem para toda mudança, visível ou não. Nada no ciclo olhava o `TODO.md`, e o backlog
+envelheceu em silêncio (ver `docs/licoes-aprendidas.md`, seção "Planejamento e backlog").
+
+1. **Que item do `TODO.md` isto fecha, inteiro ou em parte?** "Nenhum" é resposta válida,
+   desde que dita. Item fechado sai do `TODO.md` e vai inteiro para o `TODO-CONCLUIDOS.md`,
+   com o relato. Item parcial fica, descrevendo só o que falta. Os dois arquivos são locais,
+   fora do git: edite-os no checkout principal, não no worktree.
+2. **Que lição este ciclo deixou?** Um tropeço, um guard que abortou, um teste que passava
+   vazio. Se houve, acrescente na seção do tema em `docs/licoes-aprendidas.md`, no mesmo
+   branch, sem valor, nome ou termo real.
+
 ## Passo 5 — Integração na `main`
 
 Uma vez só, depois de mostrar a revisão:
