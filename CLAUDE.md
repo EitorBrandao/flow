@@ -91,7 +91,7 @@ Camadas, de baixo para cima:
   - `bancos.ts`, `saldoPorBox.ts`, `conferenciaPorBox.ts`, `transferencia.ts`: bancos dentro da box, saldo calculado, conferência de saldo por box e transferência entre bancos.
   - `cenarios.ts`, `simulacao.ts`: cenários (cada um pertence a uma visão, a casa ou uma box) e a tabela mensal do Simular.
   - `periodo.ts`: período de análise (mês, 12 meses, ano, intervalo livre) da aba Análises.
-  - `modos.ts`: modo Simples ou Avançado de cada tela.
+  - `modos.ts`: modo Simples ou Avançado por box e por tela (`modoDaBox`).
   - `notaFiscal.ts`, `notas.ts`, `categoriasSugeridas.ts`, `estadoBackup.ts`: leitura de nota fiscal, texto de nota do lançamento, categorias sugeridas no primeiro uso e estado do rodapé de backup.
 - **`src/db/`**
   - `database.ts`: é o schema Dexie, versionado. Uma tabela ou índice novo exige uma nova `this.version(n)`.

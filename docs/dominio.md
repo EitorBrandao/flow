@@ -122,6 +122,9 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   **mesclar** mantém os modos do aparelho (a `config` vem de `atual`, e o `modos` de toda box que
   já existe aqui também) e **substituir** traz os do arquivo. O modo Simples só muda o que a tela
   mostra: reaproveita as entidades existentes.
+  **Limite conhecido:** nada deduplica a box `"casa"` ao mesclar um backup de outro aparelho
+  (cada aparelho cria a sua, com `novoId()`). Com duas, `boxIdEfetivo` pega a primeira que achar, e
+  a visão casa pode mostrar os modos da casa do backup. **Expectativa não garantida.**
   - **Hoje simples** grava o saldo declarado da box (ou `Config.saldoDeclaradoCent`, na casa),
     nunca `Banco.saldoDeclaradoCent`. Esse saldo é separado dos saldos por banco do Avançado.
     Na casa, só o modo Simples ainda lê `Config.saldoDeclaradoCent`: a conferência do Avançado
