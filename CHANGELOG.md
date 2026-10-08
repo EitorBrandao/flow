@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.65.1] - 2026-10-08
+
+### Alterado
+
+- O aviso de lançamento repetido e o de compra repetida ficam mais precisos
+  - Só avisam quando a categoria também é a mesma, além do valor, da data e da box (ou do cartão)
+  - Dois gastos diferentes de mesmo valor no mesmo dia, em categorias diferentes, deixam de perguntar à toa
+
 ## [0.65.0] - 2026-10-08
 
 ### Adicionado

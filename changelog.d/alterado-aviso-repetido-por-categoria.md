@@ -1,3 +1,0 @@
-- O aviso de lançamento repetido e o de compra repetida ficam mais precisos
-  - Só avisam quando a categoria também é a mesma, além do valor, da data e da box (ou do cartão)
-  - Dois gastos diferentes de mesmo valor no mesmo dia, em categorias diferentes, deixam de perguntar à toa
