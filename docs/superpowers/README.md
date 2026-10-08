@@ -96,6 +96,7 @@ implementação acontecer.
 | 2026-10-01 | [modo-simples-avancado-design.md](specs/2026-10-01-modo-simples-avancado-design.md) | Modo Simples e Avançado por tela, com Simples como padrão no app novo. | implementada | [modo-simples-avancado.md](plans/2026-10-01-modo-simples-avancado.md) |
 | 2026-10-08 | [lancamento-repetido-design.md](specs/2026-10-08-lancamento-repetido-design.md) | Aviso ao lançar um valor igual a outro do mesmo dia, na mesma box e na mesma categoria. | implementada | — |
 | 2026-10-08 | [compra-repetida-design.md](specs/2026-10-08-compra-repetida-design.md) | Aviso ao salvar uma compra no cartão igual a outra (cartão, data, valor, parcelas e categoria). | implementada | — |
+| 2026-10-08 | [simular-importar-ajustes-design.md](specs/2026-10-08-simular-importar-ajustes-design.md) | Simular sem cenário ligado só com o saldo real, item novo atrás de um botão e Importar na casa pedindo a box. | implementada | — |
 
 ## Planos
 

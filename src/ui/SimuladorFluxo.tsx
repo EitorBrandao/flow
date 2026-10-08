@@ -111,7 +111,7 @@ export default function SimuladorFluxo() {
               </p>
             )}
           </div>
-          <TabelaSimulacao linhas={combinado} larguraCh={larguraCh} aberta={tabelaAberta} onAlternar={() => setTabelaAberta(!tabelaAberta)} />
+          <TabelaSimulacao linhas={combinado} larguraCh={larguraCh} aberta={tabelaAberta} onAlternar={() => setTabelaAberta(!tabelaAberta)} soReal={ligados.size === 0} />
         </div>
       </section>
 

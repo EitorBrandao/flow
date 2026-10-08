@@ -412,7 +412,14 @@ export default function Importar() {
         </section>
       )}
 
-      {temConferencia && (
+      {temConferencia && !leitura!.blocos && boxIdEscolhida == null && (
+        <>
+          <div className="secao"><h3>3. Conferir</h3></div>
+          <p className="aviso">Escolha a box de destino no passo 2 para conferir o extrato.</p>
+        </>
+      )}
+
+      {temConferencia && (leitura!.blocos || boxIdEscolhida != null) && (
         <>
           <div className="secao">
             <h3>3. Conferir</h3>
