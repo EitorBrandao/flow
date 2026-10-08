@@ -29,6 +29,7 @@ export default function CenarioCard({ cenario, linhas, negativoEm, larguraCh, ab
   const { dados, hoje, recarregar } = useApp();
   const [editando, setEditando] = useState<ItemCenario | null>(null);
   const [formKey, setFormKey] = useState(0);
+  const [adicionando, setAdicionando] = useState(false);
   const [tabelaAberta, setTabelaAberta] = useState(true);
   if (!dados) return null;
   const itens = itensDoCenario(dados, cenario.id);
@@ -56,6 +57,7 @@ export default function CenarioCard({ cenario, linhas, negativoEm, larguraCh, ab
     await gravarItemNovo(cenario.id, boxIdNovo!, v, dados!.config.horizonteProjecao);
     await recarregar();
     setFormKey((k) => k + 1); // formulário volta limpo
+    setAdicionando(false);
   }
 
   function linhaDoItem(item: ItemCenario) {
@@ -132,21 +134,31 @@ export default function CenarioCard({ cenario, linhas, negativoEm, larguraCh, ab
             {itens.length === 0 && <p className="sub">Nenhum item ainda.</p>}
           </div>
 
-          <section aria-label="Impacto só deste cenário">
-            <p className="rotulo-grupo">Impacto só deste cenário</p>
-            <div style={{ margin: '0 -16px' }}>
-              <TabelaSimulacao linhas={linhas} larguraCh={larguraCh} aberta={tabelaAberta} onAlternar={() => setTabelaAberta(!tabelaAberta)} />
-            </div>
-          </section>
+          {itens.length > 0 && (
+            <section aria-label="Impacto só deste cenário">
+              <p className="rotulo-grupo">Impacto só deste cenário</p>
+              <div style={{ margin: '0 -16px' }}>
+                <TabelaSimulacao linhas={linhas} larguraCh={larguraCh} aberta={tabelaAberta} onAlternar={() => setTabelaAberta(!tabelaAberta)} />
+              </div>
+            </section>
+          )}
 
-          <p className="rotulo-grupo">Novo item</p>
           {boxIdNovo == null ? (
-            <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+            <>
+              <p className="rotulo-grupo">Novo item</p>
+              <p className="sub">A box "casa" não foi encontrada — crie uma em Ajustes → Boxes.</p>
+            </>
+          ) : adicionando ? (
+            <>
+              <p className="rotulo-grupo">Novo item</p>
+              <FormItemCenario
+                key={formKey} boxId={boxIdNovo} rotuloBotao="Adicionar ao cenário" onSalvar={adicionar}
+                inicial={{ valor: 0, descricao: '', tipo: 'gasto', categoriaId: null, repeticao: 'unica', data: hoje, parcelas: 2 }}
+              />
+              <button type="button" className="botao" onClick={() => setAdicionando(false)}>Cancelar</button>
+            </>
           ) : (
-            <FormItemCenario
-              key={formKey} boxId={boxIdNovo} rotuloBotao="Adicionar ao cenário" onSalvar={adicionar}
-              inicial={{ valor: 0, descricao: '', tipo: 'gasto', categoriaId: null, repeticao: 'unica', data: hoje, parcelas: 2 }}
-            />
+            <button type="button" className="botao" onClick={() => setAdicionando(true)}>Adicionar item</button>
           )}
 
           <div className="acoes">

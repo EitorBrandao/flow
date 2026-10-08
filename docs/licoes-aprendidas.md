@@ -49,6 +49,7 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 - **Teste de data depende do dia em que roda.** Um teste do simulador falhou por isso. *Faça:* fixe a data no teste.
 - **O guard do dossiê falha em clone Windows sem `.gitattributes`.** Com `core.autocrlf=true`, regenerar suja a árvore e o checkout seguinte converte de novo. Um agente que contou o tropeço como nota de processo revelou o defeito. *Faça:* reporte tropeço lateral, não o engula.
 - **Diff vazio do dossiê tem dois sentidos.** Ou nada mudou, ou mudou onde o dossiê não olha. Os limites estão em `.claude/skills/revisar-dossie/SKILL.md`.
+- **Procurar o texto no código não prova que ele aparece na tela.** Uma busca por "DIFERENÇA" não achou nada, porque o cabeçalho está em minúsculas no código e o CSS o mostra em maiúsculas. Só rodar o app mostrou que o defeito seguia ali. *Faça:* para dizer que um achado de tela já fechou ou ainda existe, abra a tela, no celular simulado, com dados sintéticos.
 - **Uma suíte com nome de arquivo parecido quebra no Windows.** `wiki.ts` ao lado de `Wiki.tsx` fez a importação resolver para o parser. Os testes passaram. Só `npm run build` pegou. *Faça:* rode o build antes de integrar.
 
 ## Dados, banco e backup
