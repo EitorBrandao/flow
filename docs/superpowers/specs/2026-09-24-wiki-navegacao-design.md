@@ -1,5 +1,8 @@
 # Navegação e texto da wiki — design
 
+Status: aprovada em 2026-09-24 — implementada
+Nota: Saiu na v0.45.0. As sobras estão no item 29 do TODO local.
+
 ## Objetivo
 
 A wiki fica mais fácil de navegar e de ler. Hoje:

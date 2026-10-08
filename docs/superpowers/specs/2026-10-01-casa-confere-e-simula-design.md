@@ -1,5 +1,8 @@
 # A casa confere por box e cada visão tem os seus cenários — design
 
+Status: aprovada em 2026-10-01 — implementada
+Nota: Saiu na v0.61.0 (entrega C do item 34).
+
 Entrega C do item 34 do `TODO.md` (VB-23 e VB-24, mais o que Simular e Importar fazem na casa).
 Mockup de Conferir, Importar e Bancos aprovado em 2026-10-01. O bloco do Simular do mockup foi
 trocado pela decisão abaixo.

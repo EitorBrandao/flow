@@ -1,5 +1,8 @@
 # Hiperlinks na wiki — design
 
+Status: aprovada em 2026-09-23 — implementada
+Nota: Saiu na v0.34.0.
+
 ## Objetivo
 
 A wiki passa a ligar seus capítulos entre si. Hoje, uma referência cruzada é só prosa ("veja o capítulo Motor por baixo dos panos, seção Fronteira do hoje"). O leitor precisa abrir o índice e procurar. Com esta mudança:

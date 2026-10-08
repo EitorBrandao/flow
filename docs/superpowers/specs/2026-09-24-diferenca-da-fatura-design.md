@@ -1,5 +1,8 @@
 # Diferença da fatura: para onde vai o que sobrou (item 20)
 
+Status: aprovada em 2026-09-24 — implementada
+Nota: Saiu na v0.44.0 (item 20 do TODO).
+
 Data: 2026-09-24. Branch: `diferenca-fatura`.
 
 ## Problema

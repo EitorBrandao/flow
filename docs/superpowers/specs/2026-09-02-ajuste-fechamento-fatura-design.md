@@ -1,5 +1,8 @@
 # Ajuste excepcional do dia de fechamento de uma fatura
 
+Status: aprovada em 2026-09-02 — implementada
+Nota: Saiu na v0.27.0.
+
 ## Problema
 
 `Cartao.diaFechamento` (`src/domain/types.ts`) é um único valor, usado por todas as faturas do

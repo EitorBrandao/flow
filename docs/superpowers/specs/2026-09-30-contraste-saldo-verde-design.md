@@ -1,6 +1,8 @@
 # Contraste do saldo positivo em verde
 
-Status: aprovada em 2026-10-01 — não implementada
+Status: aprovada em 2026-10-01 — implementada
+Nota: Saiu na v0.56.0 (commit c105a85, `--total-pos: #4ade80`). A linha anterior dizia "não implementada" e estava errada.
+
 
 ## Objetivo
 

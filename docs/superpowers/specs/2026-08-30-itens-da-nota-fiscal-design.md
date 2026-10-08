@@ -1,5 +1,8 @@
 # Itens da nota fiscal na compra do cartão
 
+Status: aprovada em 2026-08-30 — implementada
+Nota: Saiu na v0.28.0.
+
 ## Contexto
 
 A spec de 2026-08-29 (`2026-08-29-compra-por-nota-fiscal-design.md`) trouxe a compra por nota

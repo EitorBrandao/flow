@@ -1,5 +1,8 @@
 # Confirmar pendente com outro valor — design
 
+Status: aprovada em 2026-08-27 — implementada
+Nota: Saiu na v0.25.0.
+
 **Data:** 2026-08-27
 **Item do backlog:** 6 (parcial desde a v0.17.0)
 

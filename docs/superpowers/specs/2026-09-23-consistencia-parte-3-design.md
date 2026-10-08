@@ -1,6 +1,8 @@
 # Consistência entre telas — parte 3: formulários de Ajustes e textos
 
-Status: aprovada em 2026-09-23 — entrega A lançada na v0.38.0; entrega B implementada em 2026-09-24
+Status: aprovada em 2026-09-23 — implementada
+Nota: Entrega A na v0.38.0; entrega B na v0.40.0 (2026-09-24).
+
 
 Item 26 do `TODO.md`, itens 9 a 13 e "menores" da auditoria de consistência de 2026-09-23,
 mais os restos da parte 2 (item 25). Duas entregas, cada uma com mockup e release próprios:

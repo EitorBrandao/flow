@@ -1,5 +1,8 @@
 # Fatura do cartão Nubank em CSV — design
 
+Status: aprovada em 2026-09-30 — implementada
+Nota: Saiu na v0.55.0.
+
 Data: 2026-09-30. Mockup aprovado pelo usuário no chat (v2), com dados sintéticos.
 
 ## Objetivo

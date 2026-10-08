@@ -1,5 +1,8 @@
 # Dossiê de comportamento — evidência legível para um agente revisor
 
+Status: aprovada em 2026-08-10 — implementada
+Nota: Entregue sem release, porque não muda o que o usuário vê.
+
 ## Problema
 
 A suíte tem 55 arquivos de teste, quase todos espelhando um arquivo de código. Eles provam

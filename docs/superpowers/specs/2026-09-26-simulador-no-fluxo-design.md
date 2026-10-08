@@ -1,8 +1,10 @@
 # Simulador no Fluxo (item 16)
 
+Status: aprovada em 2026-09-26 — implementada
+Nota: Saiu na v0.48.0 (item 16 do TODO).
+
 Data: 2026-09-26. Branch: `simulador-fluxo`.
 
-Status: aprovada em 2026-09-26
 
 Segue a **regra de sinal** (v0.47.0, spec `2026-09-26-regra-de-sinal-design.md`):
 movimento sem sinal, a cor diz o sentido; **saldo abaixo de zero com o "−"**; saldo em
