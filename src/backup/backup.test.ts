@@ -677,20 +677,20 @@ describe('modos de uso por box no backup', () => {
   });
 
   it('mesclar: a casa do backup é descartada e a visão casa fica com o modos da casa do aparelho', () => {
-  const atual = dados();
-  atual.boxes.push({ ...atual.boxes[0], id: 'casa-local', nome: 'casa', saldoInicial: null, dataSaldoInicial: null, modos: { hoje: 'simples' } });
-  const backup = dados();
-  backup.boxes.push({
-    ...backup.boxes[0], id: 'casa-outro', nome: 'casa', saldoInicial: null, dataSaldoInicial: null,
-    alteradoEm: '2026-06-01T00:00:00Z', modos: { hoje: 'avancado' },
+    const atual = dados();
+    atual.boxes.push({ ...atual.boxes[0], id: 'casa-local', nome: 'casa', saldoInicial: null, dataSaldoInicial: null, modos: { hoje: 'simples' } });
+    const backup = dados();
+    backup.boxes.push({
+      ...backup.boxes[0], id: 'casa-outro', nome: 'casa', saldoInicial: null, dataSaldoInicial: null,
+      alteradoEm: '2026-06-01T00:00:00Z', modos: { hoje: 'avancado' },
+    });
+    const casas = mesclar(atual, backup).boxes.filter((b) => b.nome === 'casa');
+    expect(casas).toHaveLength(1);
+    expect(casas[0].id).toBe('casa-local');
+    expect(casas[0].modos).toEqual({ hoje: 'simples' });
   });
-  const casas = mesclar(atual, backup).boxes.filter((b) => b.nome === 'casa');
-  expect(casas).toHaveLength(1);
-  expect(casas[0].id).toBe('casa-local');
-  expect(casas[0].modos).toEqual({ hoje: 'simples' });
-});
 
-it('mesclar: box que só existe no backup entra com o modos dela', () => {
+  it('mesclar: box que só existe no backup entra com o modos dela', () => {
     const atual = dados();
     const backup = dados();
     backup.boxes.push({ ...backup.boxes[0], id: 'b2', modos: { hoje: 'simples' } });
