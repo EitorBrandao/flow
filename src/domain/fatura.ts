@@ -162,7 +162,8 @@ export function valorSincronizado(fatura: Fatura, conf: ConferenciaFatura | unde
 }
 
 export type FaturaForaDoFluxo =
-  | { tipo: 'vencida-sem-lancamento' }
+  /** `semCompras`: a fatura só existe pelo valor informado (Cartão simples); não há compra a citar. */
+  | { tipo: 'vencida-sem-lancamento'; semCompras: boolean }
   | { tipo: 'paga-a-menor'; diferencaCent: number; valorSugeridoCent: number };
 
 /**
@@ -212,7 +213,7 @@ export function faturaForaDoFluxo(p: {
     if (fatura.dataVencimento > hoje) return null;
     const ids = new Set(fatura.itens.map((i) => i.compraId));
     const existiaAntes = compras.some((c) => ids.has(c.id) && c.criadoEm.slice(0, 10) < fatura.dataVencimento);
-    return existiaAntes ? null : { tipo: 'vencida-sem-lancamento' };
+    return existiaAntes ? null : { tipo: 'vencida-sem-lancamento', semCompras: fatura.itens.length === 0 };
   }
 
   if (lancFatura.status !== 'efetivo') return null;

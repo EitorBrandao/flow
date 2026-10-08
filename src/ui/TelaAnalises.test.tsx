@@ -589,6 +589,24 @@ describe('modo Simples', () => {
     await waitFor(() => expect(resumoDoCard()).toContain(formatarBRL(40000)));
   });
 
+  it('trocar para Simples restaura o filtro por banco, também nos lançamentos efetivos', async () => {
+    const { box } = await seedJulho('avancado');
+    const lazer = await repo.salvarCategoria({ boxId: box.id, nome: 'lazer', tipo: 'gasto', ordem: 5 });
+    const um = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    const dois = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: lazer.id, data: '2026-07-08', valor: 7000, status: 'efetivo', bancoId: um.id });
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: lazer.id, data: '2026-07-09', valor: 3000, status: 'efetivo', bancoId: dois.id });
+    await useApp.getState().recarregar();
+    useApp.setState({ hoje: '2026-07-15' });
+    render(<TelaAnalises />);
+    const semFiltro = resumoDoCard();
+    await userEvent.click(screen.getByRole('radio', { name: 'Banco Dois' }));
+    await waitFor(() => expect(resumoDoCard()).not.toBe(semFiltro));
+    expect(resumoDoCard()).toContain(formatarBRL(3000));
+    await act(async () => { await repo.salvarModo('analises', 'simples'); await useApp.getState().recarregar(); useApp.setState({ hoje: '2026-07-15' }); });
+    await waitFor(() => expect(resumoDoCard()).toBe(semFiltro));
+  });
+
   it('Avançado mantém todos os blocos', async () => {
     await seedJulho('avancado');
     render(<TelaAnalises />);

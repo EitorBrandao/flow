@@ -25,6 +25,7 @@ export default function SimuladorSimples() {
   const [ocupado, setOcupado] = useState(false);
   const [cenarioId, setCenarioId] = useState<ID | null>(null);
   const [guardado, setGuardado] = useState(false);
+  const [erroGuardar, setErroGuardar] = useState(false);
   // O efeito de limpeza roda ao desmontar: lê o que vale naquele momento, não o do render.
   const rascunhoRef = useRef<ID | null>(null);
   // Verdadeiro depois do desmonte: quem estava no meio de um `await` desfaz o que criou e para.
@@ -101,7 +102,7 @@ export default function SimuladorSimples() {
       if (desmontadoRef.current) return;
       const pronto = id;
       id = null;
-      setGuardado(false);
+      setGuardado(false); setErroGuardar(false);
       setCenarioId(pronto);
     } finally {
       // Desmontou no meio: apaga o que foi criado (cenário e itens), sem `setState`.
@@ -123,6 +124,7 @@ export default function SimuladorSimples() {
     if (!id || !cenario || ocupado) return;
     // Zera já, de forma síncrona: um desmonte durante o `await` não apaga o que está sendo guardado.
     rascunhoRef.current = null;
+    setErroGuardar(false);
     setOcupado(true);
     try {
       const [, mes, dia] = hoje.split('-');
@@ -133,9 +135,12 @@ export default function SimuladorSimples() {
       await recarregar();
       if (desmontadoRef.current) return;
       setGuardado(true);
-    } catch (e) {
-      if (!desmontadoRef.current) rascunhoRef.current = id;
-      throw e;
+    } catch {
+      // O rascunho segue no banco: devolve a referência, para a próxima tentativa e o desmonte o acharem.
+      if (!desmontadoRef.current) {
+        rascunhoRef.current = id;
+        setErroGuardar(true);
+      }
     } finally {
       if (!desmontadoRef.current) setOcupado(false);
     }
@@ -195,7 +200,10 @@ export default function SimuladorSimples() {
           {guardado ? (
             <p className="sub" style={{ margin: 0 }}>Guardada. Ela aparece em Simular, no modo Avançado, desligada.</p>
           ) : (
-            <button className="botao" disabled={ocupado} onClick={guardar}>Guardar</button>
+            <>
+              {erroGuardar && <p className="aviso" style={{ margin: 0 }}>Não foi possível guardar a simulação. Tente de novo.</p>}
+              <button className="botao" disabled={ocupado} onClick={guardar}>Guardar</button>
+            </>
           )}
         </div>
       )}

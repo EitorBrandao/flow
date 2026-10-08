@@ -73,7 +73,7 @@ Pagou **mais** que a fatura? A folha avisa o excesso. O banco costuma abater da 
 
 A aba Cartão mostra um aviso âmbar logo abaixo das datas da fatura — a folha que abre ao tocar na fatura no Fluxo mostra o mesmo aviso — quando o total dela e o que o Fluxo considera divergem, e o app não sabe explicar a diferença:
 
-- **"Essa fatura ficou de fora do Fluxo":** todas as compras da fatura foram lançadas depois do vencimento, e fatura vencida não vira lançamento novo. Se ela já foi paga no banco, o saldo está certo e não há nada a fazer.
+- **"Essa fatura ficou de fora do Fluxo":** todas as compras da fatura foram lançadas depois do vencimento (ou, no modo Simples, o valor da fatura foi informado depois do vencimento), e fatura vencida não vira lançamento novo. Se ela já foi paga no banco, o saldo está certo e não há nada a fazer.
 - **"Tem R$ X nessa fatura que não chegaram no Fluxo":** a fatura foi paga, e depois entrou mais compra no mesmo ciclo. Fatura paga nunca é recalculada, então a diferença fica de fora. O link **Corrigir o valor pago** abre a mesma folha de "corrigir ou parcelar", já com o valor que fecha a conta.
 
 O aviso não aparece quando a diferença tem explicação: um restante ou parcelamento já lançado da fatura, ou um pagamento maior que a fatura (aí o saldo já está certo, e quem mostra as compras que faltam é a aba Conferência).

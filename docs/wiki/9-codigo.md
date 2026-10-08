@@ -91,4 +91,4 @@ A fatura nunca é uma entidade salva: é sempre recalculada a partir das compras
 
 Um backup com `schema` maior do que este app entende é rejeitado antes de tocar em qualquer dado. Um backup com `schema` menor é aceito: as tabelas que ainda não existiam naquela versão entram vazias.
 
-**Mesclar por id:** a função `mesclar` junta cada tabela registro a registro, pelo campo `id`. Um registro do backup substitui o correspondente atual só se `alteradoEm` for mais recente; o que só existe de um dos dois lados entra como está. A configuração local nunca é substituída pela do backup.
+**Mesclar por id:** a função `mesclar` junta cada tabela registro a registro, pelo campo `id`. Um registro do backup substitui o correspondente atual só se `alteradoEm` for mais recente; o que só existe de um dos dois lados entra como está. A configuração local nunca é substituída pela do backup. A box casa do backup não vira uma segunda: seus dados passam para a casa deste aparelho.
