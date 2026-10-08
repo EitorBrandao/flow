@@ -1,4 +1,4 @@
-import type { Categoria, ISODate, Lancamento, TipoCategoria } from './types';
+import type { Categoria, CompraCartao, ISODate, Lancamento, TipoCategoria } from './types';
 
 export interface CandidatoLancamento {
   boxId: string;
@@ -25,5 +25,22 @@ export function lancamentoRepetido(
     && l.data === c.data
     && l.valor === c.valor
     && tipoDe.get(l.categoriaId) === c.tipo,
+  ) ?? null;
+}
+
+export interface CandidatoCompra {
+  cartaoId: string;
+  data: ISODate;
+  valorTotal: number;
+  parcelas: number;
+}
+
+/** Acha uma compra igual à candidata: mesmo cartão, data, valor total e número de parcelas. */
+export function compraRepetida(compras: CompraCartao[], c: CandidatoCompra): CompraCartao | null {
+  return compras.find((x) =>
+    x.cartaoId === c.cartaoId
+    && x.data === c.data
+    && x.valorTotal === c.valorTotal
+    && x.parcelas === c.parcelas,
   ) ?? null;
 }

@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import * as repo from '../db/repo';
 import { addMesesData, formatarDataBR } from '../domain/dates';
 import { categoriasCartaoReservadasIds } from '../domain/categorias';
+import { compraRepetida } from '../domain/lancamentoRepetido';
 import { formatarBRL, formatarPercentual as formatarPercentualDominio } from '../domain/money';
 import { distribuirItens, notaDaCompra, parsearNotaFiscal, type NotaFiscalExtraida } from '../domain/notaFiscal';
 import type { Cartao, CompraCartao, ID, ISODate } from '../domain/types';
@@ -9,6 +10,7 @@ import { gastoDaViagem, viagemAtivaEm } from '../domain/viagem';
 import { useApp } from '../state/store';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
+import ConfirmarRepetidoSheet from './ConfirmarRepetidoSheet';
 import EscolherArquivo from './EscolherArquivo';
 import LinhaOrcamentoViagem from './LinhaOrcamentoViagem';
 import SeletorCategoria from './SeletorCategoria';
@@ -72,6 +74,10 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
   const [erroNota, setErroNota] = useState<string | null>(null);
   const [verItens, setVerItens] = useState(false);
   const montouRef = useRef(true);
+  // Compra igual achada ao tocar em Salvar: a confirmação abre antes de gravar.
+  const [repetida, setRepetida] = useState<CompraCartao | null>(null);
+  // Trava o segundo toque até o fim do `await`: o `dados` só atualiza depois do recarregar.
+  const salvandoRef = useRef(false);
   const uid = useId();
   if (!dados) return null;
   const ocultas = categoriasCartaoReservadasIds(dados.cartoes);
@@ -140,10 +146,25 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
     setVerItens(false);
   }
 
-  async function salvar() {
-    if (valor <= 0 || !categoriaId) return;
+  async function salvar(confirmado = false) {
+    if (valor <= 0 || !categoriaId || salvandoRef.current) return;
+    if (!compra && !confirmado) {
+      const igual = compraRepetida(dados!.comprasCartao, {
+        cartaoId: cartao.id, data, valorTotal: valor, parcelas: parcelasNum,
+      });
+      if (igual) { setRepetida(igual); return; }
+    }
+    salvandoRef.current = true;
+    try {
+      await gravar();
+    } finally {
+      salvandoRef.current = false;
+    }
+  }
+
+  async function gravar() {
     const campos = {
-      data, valorTotal: valor, parcelas: parcelasNum, categoriaCartaoId: categoriaId,
+      data, valorTotal: valor, parcelas: parcelasNum, categoriaCartaoId: categoriaId!,
       ...(descricao.trim() ? { descricao: descricao.trim() } : {}),
       // viagemId sempre presente (mesmo undefined) para permitir desmarcar ao editar
       viagemId: (viagemAtiva && viagemMarcada) ? viagemAtiva.id : undefined,
@@ -312,10 +333,26 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
             </div>
           );
         })()}
-        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={salvar}>Salvar</button>
+        <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={() => salvar()}>Salvar</button>
         <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={onFechar}>Cancelar</button>
         {compra && <button className="botao botao-perigo" style={{ alignSelf: 'flex-end' }} onClick={excluir}>Excluir</button>}
       </div>
+      <ConfirmarRepetidoSheet
+        aberto={repetida != null}
+        titulo="Compra repetida?"
+        frase={repetida && (
+          <>
+            Já existe uma compra de <strong>{formatarBRL(repetida.valorTotal)}</strong>
+            {repetida.parcelas > 1 ? <> em <strong>{repetida.parcelas}x</strong></> : <> à vista</>}
+            {' '}no cartão {cartao.nome}, feita em <strong>{formatarDataBR(repetida.data)}</strong>
+            {repetida.descricao ? <>: “{repetida.descricao}”.</> : '.'}
+          </>
+        )}
+        apoio="Se foi um toque duplo, cancele. Se é outra compra igual, salve mesmo assim."
+        rotuloConfirmar="Salvar mesmo assim"
+        onCancelar={() => setRepetida(null)}
+        onConfirmar={() => { setRepetida(null); return salvar(true); }}
+      />
     </>
   );
 }
