@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.66.0] - 2026-10-08
+
+### Alterado
+
+- O modo Simples ou Avançado agora vale por box
+  - Cada box, e a visão casa, tem os seus modos. Troque a box no topo para ver e mudar os dela, em Ajustes, Modo de uso.
+  - Quem já usava o app continua com os mesmos modos em todas as boxes, até mudar.
+
 ## [0.65.3] - 2026-10-08
 
 ### Alterado
