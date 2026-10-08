@@ -105,7 +105,7 @@ A tela tem três passos, e nada é gravado antes do terceiro:
 - **Arquivo.** Escolher o CSV ou o PDF. O Flow reconhece o formato sozinho; se não reconhecer, você escolhe manualmente.
 - **Destino.** Para o extrato de conta: a box (a lista traz só as boxes com saldo próprio; com a casa no topo, nenhuma vem marcada, e quem só tem a box casa precisa criar uma box antes) e, se ela tiver mais de um banco cadastrado, o banco. Para a fatura: o cartão de cada bloco — a fatura pode trazer mais de um cartão, e "Não importar" é resposta válida para um bloco. A lista de cartões mostra só os da box selecionada no momento; na visão consolidada de todas as boxes, aparecem os cartões de qualquer uma.
 Se dois blocos vão para o mesmo cartão (por exemplo, titular e adicional), o Flow os confere juntos, como uma fatura só.
-- **Conferir.** A lista mostra cada linha do arquivo já comparada com o Flow. Só ao tocar em "Confirmar" algo é gravado.
+- **Conferir.** A lista mostra cada linha do arquivo já comparada com o Flow. Enquanto nenhuma box estiver marcada no passo 2 (acontece com a casa no topo), este passo só pede a escolha da box. Só ao tocar em "Confirmar" algo é gravado.
 
 > Você pode sair da tela no meio da conferência: o arquivo, os destinos e as decisões ficam guardados enquanto o app estiver aberto, e o menu de Ajustes mostra "Conferência em andamento" em Importar e conferir. Só "Confirmar" ou "Escolher outro arquivo" apagam o que foi guardado.
 

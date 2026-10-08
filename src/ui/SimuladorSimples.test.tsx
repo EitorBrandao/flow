@@ -187,6 +187,24 @@ it('Guardar renomeia para "Simulação de DD/MM" e o cenário sobrevive ao desmo
   expect((await db.lancamentos.toArray()).filter((l) => l.cenarioId)).toHaveLength(1);
 });
 
+it('Guardar que falha mostra a mensagem, mantém o botão e deixa tentar de novo', async () => {
+  await preparar();
+  render(<SimuladorSimples />);
+  await preencher('1500,00', '2026-10-15');
+  await simular();
+  const salvar = vi.spyOn(repo, 'salvarCenario').mockRejectedValueOnce(new Error('falha'));
+  await userEvent.click(await screen.findByRole('button', { name: 'Guardar' }));
+  expect(await screen.findByText('Não foi possível guardar a simulação. Tente de novo.')).toHaveClass('aviso');
+  expect(screen.getByRole('button', { name: 'Guardar' })).toBeEnabled();
+  // O rascunho continua no banco, e a segunda tentativa guarda.
+  expect(await rascunhos()).toHaveLength(1);
+  await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+  expect(await screen.findByText('Guardada. Ela aparece em Simular, no modo Avançado, desligada.')).toBeInTheDocument();
+  expect(screen.queryByText('Não foi possível guardar a simulação. Tente de novo.')).not.toBeInTheDocument();
+  expect((await db.cenarios.toArray()).map((c) => c.nome)).toEqual(['Simulação de 15/09']);
+  salvar.mockRestore();
+});
+
 it('depois de Guardar, uma nova simulação não apaga a guardada', async () => {
   await preparar();
   render(<SimuladorSimples />);

@@ -11,8 +11,8 @@ export default function AvisoFaturaForaDoFluxo({ situacao, onCorrigir }: {
   if (situacao.tipo === 'vencida-sem-lancamento') {
     return (
       <p className="aviso" style={{ margin: '12px 0 0' }}>
-        Essa fatura ficou de fora do Fluxo: as compras entraram depois do vencimento. Se já pagou,
-        tá tudo certo.
+        Essa fatura ficou de fora do Fluxo: {situacao.semCompras ? 'o valor entrou' : 'as compras entraram'} depois
+        do vencimento. Se já pagou, tá tudo certo.
       </p>
     );
   }

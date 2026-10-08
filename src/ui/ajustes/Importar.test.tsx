@@ -566,7 +566,7 @@ describe('Importar — extrato da conta com a casa no topo', () => {
     await screen.findByRole('radiogroup', { name: 'Box de destino' });
   }
 
-  it('na casa: lista só boxes com saldo próprio, nenhuma marcada, e o passo 3 fica bloqueado', async () => {
+  it('na casa: lista só boxes com saldo próprio, nenhuma marcada, e o passo 3 pede a box', async () => {
     await duasBoxes();
     useApp.getState().setBoxSel('casa');
     render(<Importar />);
@@ -576,7 +576,9 @@ describe('Importar — extrato da conta com a casa no topo', () => {
     const radios = within(grupo).getAllByRole('radio');
     expect(radios.map((r) => r.textContent).sort()).toEqual(['ana', 'bruno']);
     radios.forEach((r) => expect(r).toHaveAttribute('aria-checked', 'false'));
-    expect(screen.getByRole('button', { name: /Confirmar/ })).toBeDisabled();
+    expect(screen.getByText('Escolha a box de destino no passo 2 para conferir o extrato.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Confirmar/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/itens não geram mudança/)).not.toBeInTheDocument();
   });
 
   it('na casa: escolher bruno marca só ela e libera o passo 3', async () => {
@@ -591,6 +593,7 @@ describe('Importar — extrato da conta com a casa no topo', () => {
     expect(within(grupo).getByRole('radio', { name: 'bruno' })).toHaveAttribute('aria-checked', 'true');
     expect(within(grupo).getByRole('radio', { name: 'ana' })).toHaveAttribute('aria-checked', 'false');
     expect(await screen.findByRole('button', { name: /Confirmar — 2 mudanças/ })).toBeEnabled();
+    expect(screen.queryByText('Escolha a box de destino no passo 2 para conferir o extrato.')).not.toBeInTheDocument();
   });
 
   it('só com a box casa: explica que falta uma box com saldo próprio, sem botões de destino', async () => {
@@ -620,6 +623,7 @@ describe('Importar — extrato da conta com a casa no topo', () => {
     const grupo = screen.getByRole('radiogroup', { name: 'Box de destino' });
     expect(within(grupo).getByRole('radio', { name: 'ana' })).toHaveAttribute('aria-checked', 'true');
     expect(within(grupo).getByRole('radio', { name: 'bruno' })).toHaveAttribute('aria-checked', 'false');
+    expect(screen.queryByText('Escolha a box de destino no passo 2 para conferir o extrato.')).not.toBeInTheDocument();
   });
 
   it('fatura de cartão na casa: os destinos são cartões ativos de qualquer box', async () => {

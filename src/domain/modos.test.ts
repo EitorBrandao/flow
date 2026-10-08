@@ -35,6 +35,8 @@ describe('modosValidos', () => {
   it('aceita objeto parcial', () => expect(modosValidos({ hoje: 'simples' })).toBe(true));
   it('rejeita valor fora do conjunto', () => expect(modosValidos({ hoje: 'facil' })).toBe(false));
   it('rejeita chave desconhecida', () => expect(modosValidos({ lixo: 'simples' })).toBe(false));
+  it('aceita objeto vazio (nenhuma tela com modo próprio)', () => expect(modosValidos({})).toBe(true));
+  it('rejeita undefined', () => expect(modosValidos(undefined)).toBe(false));
   it('rejeita não-objeto e array', () => {
     expect(modosValidos('simples')).toBe(false);
     expect(modosValidos([])).toBe(false);
@@ -60,6 +62,16 @@ describe('categoriaPorDescricao', () => {
       lancamentos: [lanc('l1', { nota: 'padaria', categoriaId: 'c1', data: '2026-08-01' }),
                     lanc('l2', { nota: 'padaria', categoriaId: 'c2', data: '2026-09-10' })] });
     expect(r).toBe('c2');
+  });
+  it('com a mesma data, vence o lançamento criado por último', () => {
+    const r = categoriaPorDescricao({ ...base, categorias: [cat('c1', 'gasto'), cat('c2', 'gasto')], descricao: 'padaria',
+      lancamentos: [lanc('l1', { nota: 'padaria', categoriaId: 'c1', data: '2026-09-10', criadoEm: '2026-09-10T09:00:00Z' }),
+                    lanc('l2', { nota: 'padaria', categoriaId: 'c2', data: '2026-09-10', criadoEm: '2026-09-10T18:00:00Z' })] });
+    expect(r).toBe('c2');
+    const inverso = categoriaPorDescricao({ ...base, categorias: [cat('c1', 'gasto'), cat('c2', 'gasto')], descricao: 'padaria',
+      lancamentos: [lanc('l2', { nota: 'padaria', categoriaId: 'c2', data: '2026-09-10', criadoEm: '2026-09-10T18:00:00Z' }),
+                    lanc('l1', { nota: 'padaria', categoriaId: 'c1', data: '2026-09-10', criadoEm: '2026-09-10T09:00:00Z' })] });
+    expect(inverso).toBe('c2');
   });
   it('ignora descrição vazia, categoria arquivada, tipo diferente, outra box, cenário e origem não manual', () => {
     const lancamentos = [

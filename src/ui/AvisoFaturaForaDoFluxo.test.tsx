@@ -7,9 +7,16 @@ import AvisoFaturaForaDoFluxo from './AvisoFaturaForaDoFluxo';
 const semNbsp = (s: string) => s.replace(/\s/g, ' ');
 
 it('fatura vencida sem lançamento: explica, sem ação', () => {
-  render(<AvisoFaturaForaDoFluxo situacao={{ tipo: 'vencida-sem-lancamento' }} onCorrigir={() => {}} />);
+  render(<AvisoFaturaForaDoFluxo situacao={{ tipo: 'vencida-sem-lancamento', semCompras: false }} onCorrigir={() => {}} />);
   expect(screen.getByText(/Essa fatura ficou de fora do Fluxo/)).toHaveClass('aviso');
+  expect(screen.getByText(/as compras entraram depois do vencimento/)).toBeInTheDocument();
   expect(screen.queryByRole('button')).not.toBeInTheDocument();
+});
+
+it('fatura vencida sem compras, só com o valor informado: não fala de compras', () => {
+  render(<AvisoFaturaForaDoFluxo situacao={{ tipo: 'vencida-sem-lancamento', semCompras: true }} onCorrigir={() => {}} />);
+  expect(screen.getByText(/o valor entrou depois do vencimento/)).toHaveClass('aviso');
+  expect(screen.queryByText(/as compras/)).not.toBeInTheDocument();
 });
 
 it('fatura paga a menor: mostra a diferença e o link corrige com o valor sugerido', async () => {

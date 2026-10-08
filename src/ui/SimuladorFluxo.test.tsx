@@ -44,7 +44,8 @@ it('criar cenário: formulário no topo, o cenário nasce ligado e aberto', asyn
   await userEvent.type(screen.getByLabelText('Novo cenário'), 'Mudança');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
   expect(await screen.findByRole('checkbox', { name: 'Ligar Mudança' })).toBeChecked();
-  expect(screen.getByText('Novo item')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Adicionar item' })).toBeInTheDocument();
+  expect(screen.queryByText('Novo item')).not.toBeInTheDocument();
   expect((await db.cenarios.toArray())[0]).toMatchObject({ nome: 'Mudança', ligado: true });
 });
 
@@ -121,17 +122,18 @@ it('cenário desligado não entra no resumo, mas o impacto dele aparece ao abrir
   expect(screen.getByText('Pagamento').closest('.item')?.querySelector('.valor-ganho')).not.toBeNull();
 });
 
-it('ligar e desligar muda o resumo sem mudar a largura da tabela', async () => {
+it('sem cenário ligado a tabela mostra só o saldo real; com um ligado, voltam Com, Diferença e Sem', async () => {
   const { box, casa } = await preparar();
   const c = await cenarioCom('Geladeira', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 30000 });
   render(<SimuladorFluxo />);
-  const tabelaAntes = within(screen.getByRole('region', { name: 'Cenários ligados' })).getByRole('table');
-  const larguraAntes = tabelaAntes.style.minWidth;
+  const resumoAntes = screen.getByRole('region', { name: 'Cenários ligados' });
+  expect(within(resumoAntes).getAllByRole('columnheader').map((th) => th.textContent)).toEqual(['Mês', 'Com', 'Diferença', 'Sem']);
   await userEvent.click(screen.getByRole('checkbox', { name: 'Ligar Geladeira' }));
   expect(await screen.findByText(/Nenhum cenário ligado/)).toBeInTheDocument();
   expect((await db.cenarios.get(c.id))?.ligado).toBe(false);
-  const tabelaDepois = within(screen.getByRole('region', { name: 'Cenários ligados' })).getByRole('table');
-  expect(tabelaDepois.style.minWidth).toBe(larguraAntes);
+  const resumoDepois = screen.getByRole('region', { name: 'Cenários ligados' });
+  expect(within(resumoDepois).getAllByRole('columnheader').map((th) => th.textContent)).toEqual(['Mês', 'Saldo']);
+  expect(c.id).toBeTruthy();
 });
 
 it('lista os cenários por criadoEm, do mais antigo pro mais novo', async () => {
@@ -162,7 +164,7 @@ it('cenário recém-criado pelo formulário vai ao fim da lista', async () => {
     render(<SimuladorFluxo />);
     await userEvent.type(screen.getByLabelText('Novo cenário'), 'Novo');
     await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
-    await screen.findByText('Novo item');
+    await screen.findByRole('button', { name: 'Adicionar item' });
     const nomes = screen.getAllByRole('checkbox').map((el) => el.getAttribute('aria-label'));
     expect(nomes).toEqual(['Ligar Existente', 'Ligar Novo']);
   } finally {
@@ -182,7 +184,7 @@ it('só um cenário aberto por vez; a seta abre; o checkbox não abre', async ()
   expect(botaoA).toHaveAttribute('aria-expanded', 'true');
   await userEvent.click(screen.getByRole('button', { name: /^B/ }));
   expect(botaoA).toHaveAttribute('aria-expanded', 'false');
-  expect(screen.getAllByText('Novo item')).toHaveLength(1);
+  expect(screen.getAllByRole('button', { name: 'Adicionar item' })).toHaveLength(1);
 });
 
 it('adicionar item pelo cenário grava no cenário certo', async () => {
@@ -190,7 +192,7 @@ it('adicionar item pelo cenário grava no cenário certo', async () => {
   render(<SimuladorFluxo />);
   await userEvent.type(screen.getByLabelText('Novo cenário'), 'Mudança');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
-  await screen.findByText('Novo item');
+  await userEvent.click(await screen.findByRole('button', { name: 'Adicionar item' }));
   await userEvent.type(screen.getByLabelText('Valor'), '300,00');
   await userEvent.click(screen.getByRole('button', { name: 'Casa' }));
   await userEvent.click(screen.getByRole('button', { name: 'Adicionar ao cenário' }));
@@ -222,7 +224,7 @@ it('parcelado 3x a partir de hoje gera 3 lançamentos', async () => {
     render(<SimuladorFluxo />);
     await userEvent.type(screen.getByLabelText('Novo cenário'), 'Móveis');
     await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
-    await screen.findByText('Novo item');
+    await userEvent.click(await screen.findByRole('button', { name: 'Adicionar item' }));
     await userEvent.type(screen.getByLabelText('Valor'), '900,00');
     await userEvent.click(screen.getByRole('button', { name: 'Casa' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Parcelado' }));
@@ -476,4 +478,50 @@ it('a projeção de cada visão soma só o item dos cenários dela', async () =>
   // Ana: só o item A (100,00). Casa: só o item C (300,00); A e B não entram.
   expect(saldoEm(boxIdsSelecionadas(dados!, ana.id), ana.id)).toBe(-10000);
   expect(saldoEm(boxIdsSelecionadas(dados!, 'casa'), 'casa')).toBe(-30000);
+});
+
+describe('cenário aberto: item novo atrás de um botão', () => {
+  async function abrirNovoCenario() {
+    await preparar();
+    render(<SimuladorFluxo />);
+    await userEvent.type(screen.getByLabelText('Novo cenário'), 'Mudança');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+    return screen.findByRole('button', { name: 'Adicionar item' });
+  }
+
+  it('o formulário só aparece depois de tocar em "Adicionar item"', async () => {
+    const botao = await abrirNovoCenario();
+    expect(screen.queryByLabelText('Valor')).not.toBeInTheDocument();
+    await userEvent.click(botao);
+    expect(screen.getByLabelText('Valor')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Adicionar ao cenário' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Adicionar item' })).not.toBeInTheDocument();
+  });
+
+  it('Cancelar fecha o formulário e devolve o botão', async () => {
+    await userEvent.click(await abrirNovoCenario());
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(screen.queryByLabelText('Valor')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Adicionar item' })).toBeInTheDocument();
+  });
+
+  it('depois de adicionar, o formulário fecha e o botão volta', async () => {
+    await userEvent.click(await abrirNovoCenario());
+    await userEvent.type(screen.getByLabelText('Valor'), '300,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Casa' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar ao cenário' }));
+    expect(await screen.findByRole('button', { name: 'Adicionar item' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Valor')).not.toBeInTheDocument();
+  });
+
+  it('sem item, não mostra a tabela de impacto; com item, mostra', async () => {
+    await abrirNovoCenario();
+    expect(screen.getByText('Nenhum item ainda.')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Impacto só deste cenário' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar item' }));
+    await userEvent.type(screen.getByLabelText('Valor'), '300,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Casa' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar ao cenário' }));
+    expect(await screen.findByRole('region', { name: 'Impacto só deste cenário' })).toBeInTheDocument();
+  });
 });

@@ -2140,3 +2140,71 @@ describe('modos de uso', () => {
     expect((await db.boxes.get('b1'))?.modos).toEqual({ hoje: 'simples' });
   });
 });
+
+describe('rascunho de simulação rápida não marca "mudanças sem backup"', () => {
+  const mudancas = async () => (await db.config.get('config'))?.mudancasDesdeBackup;
+  async function zerar() { await db.config.update('config', { mudancasDesdeBackup: false }); }
+  const cenario = (extra: Partial<import('../domain/types').Cenario> = {}) => {
+    const agora = agoraISO();
+    return { id: novoId(), nome: 'Teste', ligado: false, criadoEm: agora, alteradoEm: agora, ...extra };
+  };
+
+  it('salvar o cenário rascunho não marca; o cenário comum marca', async () => {
+    await boxECategoria();
+    await zerar();
+    await repo.salvarCenario(cenario({ rascunho: true }));
+    expect(await mudancas()).toBe(false);
+    await repo.salvarCenario(cenario());
+    expect(await mudancas()).toBe(true);
+  });
+
+  it('item de lançamento do rascunho não marca; o de um cenário comum marca', async () => {
+    const { box, gasto } = await boxECategoria();
+    const rascunho = cenario({ rascunho: true });
+    const comum = cenario();
+    await repo.salvarCenario(rascunho);
+    await repo.salvarCenario(comum);
+    await zerar();
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: gasto.id, data: '2027-01-10', valor: 5000, status: 'previsto', cenarioId: rascunho.id });
+    expect(await mudancas()).toBe(false);
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: gasto.id, data: '2027-01-10', valor: 5000, status: 'previsto', cenarioId: comum.id });
+    expect(await mudancas()).toBe(true);
+  });
+
+  it('item de recorrência do rascunho não marca; o de um cenário comum marca', async () => {
+    const { box, gasto } = await boxECategoria();
+    const rascunho = cenario({ rascunho: true });
+    const comum = cenario();
+    await repo.salvarCenario(rascunho);
+    await repo.salvarCenario(comum);
+    await zerar();
+    const base = { boxId: box.id, categoriaId: gasto.id, dataInicio: '2027-01-10', diaDoMes: 10, valor: 5000, parcelas: 3 };
+    await repo.salvarRecorrencia({ ...base, cenarioId: rascunho.id }, '2027-12-31');
+    expect(await mudancas()).toBe(false);
+    await repo.salvarRecorrencia({ ...base, cenarioId: comum.id }, '2027-12-31');
+    expect(await mudancas()).toBe(true);
+  });
+
+  it('excluir o rascunho não marca; excluir um cenário comum marca', async () => {
+    await boxECategoria();
+    const rascunho = cenario({ rascunho: true });
+    const comum = cenario();
+    await repo.salvarCenario(rascunho);
+    await repo.salvarCenario(comum);
+    await zerar();
+    await repo.excluirCenario(rascunho.id);
+    expect(await mudancas()).toBe(false);
+    await repo.excluirCenario(comum.id);
+    expect(await mudancas()).toBe(true);
+  });
+
+  it('guardar o rascunho (tira a marca de rascunho) conta como mudança', async () => {
+    await boxECategoria();
+    const r = cenario({ rascunho: true });
+    await repo.salvarCenario(r);
+    await zerar();
+    const { rascunho: _r, ...guardado } = r;
+    await repo.salvarCenario({ ...guardado, nome: 'Simulação de 15/09' });
+    expect(await mudancas()).toBe(true);
+  });
+});

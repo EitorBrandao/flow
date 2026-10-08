@@ -49,6 +49,7 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 - **Teste de data depende do dia em que roda.** Um teste do simulador falhou por isso. *Faça:* fixe a data no teste.
 - **O guard do dossiê falha em clone Windows sem `.gitattributes`.** Com `core.autocrlf=true`, regenerar suja a árvore e o checkout seguinte converte de novo. Um agente que contou o tropeço como nota de processo revelou o defeito. *Faça:* reporte tropeço lateral, não o engula.
 - **Diff vazio do dossiê tem dois sentidos.** Ou nada mudou, ou mudou onde o dossiê não olha. Os limites estão em `.claude/skills/revisar-dossie/SKILL.md`.
+- **Procurar o texto no código não prova que ele aparece na tela.** Uma busca por "DIFERENÇA" não achou nada, porque o cabeçalho está em minúsculas no código e o CSS o mostra em maiúsculas. Só rodar o app mostrou que o defeito seguia ali. *Faça:* para dizer que um achado de tela já fechou ou ainda existe, abra a tela, no celular simulado, com dados sintéticos.
 - **Uma suíte com nome de arquivo parecido quebra no Windows.** `wiki.ts` ao lado de `Wiki.tsx` fez a importação resolver para o parser. Os testes passaram. Só `npm run build` pegou. *Faça:* rode o build antes de integrar.
 
 ## Dados, banco e backup
@@ -63,6 +64,7 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 - **Uma nova `this.version(n)` do Dexie exige teste de upgrade no mesmo commit.** Sessões paralelas podem criar o mesmo `n`. *Faça:* antes do merge, compare o maior `n` com o da `main`. O teste de schema também falha de propósito quando alguém adiciona versão, para forçar o salto a ser escrito.
 - **Uma API da web que existe no Node pode faltar na WebView.** `crypto.randomUUID` funcionou em dev e em teste e falhou num Android real. *Faça:* para todo uso novo de API da web, pergunte se precisa de plano B. Leia o texto exato do erro na tela.
 - **A passagem para outro armazenamento perde dado se não houver backup.** Desinstalar o app ou trocar de origem apaga o IndexedDB. *Faça:* sempre teste exportar e importar backup no ambiente novo antes de largar o antigo.
+- **Mesclar por id duplica o que cada instalação cria sozinha, com id novo.** A box "casa" nasce em todo aparelho com um id próprio. O Mesclar de um backup num app novo trazia a casa do backup como segunda box. Ninguém viu, porque cada tela escolhe "a casa" pelo nome e pega a primeira. *Faça:* para toda entidade que o app cria sozinha, decida como o backup a reconhece (aqui, o nome) e teste o Mesclar com ela dos dois lados, com ids diferentes. Rode o fluxo pela tela de Backup e confira que nenhum registro aponta para uma box inexistente.
 - **Operações "acha ou cria" concorrentes duplicam.** Faça a busca e a escrita na mesma transação.
 - **O backup nunca relaxa.** `validarBackup` só pode ficar mais rígido. Toda mudança em `src/backup/` leva testes adversariais.
 

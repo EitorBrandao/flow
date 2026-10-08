@@ -53,6 +53,39 @@ it('com aberta e 14 linhas, o contêiner da tabela tem a classe rolavel-12', () 
   expect(rolavel).toHaveClass('rolavel-12');
 });
 
+describe('sem cenário ligado (soReal)', () => {
+  it('mostra só Mês e Saldo, com o saldo real, e a frase que manda ligar um cenário', () => {
+    render(<TabelaSimulacao linhas={linhas} larguraCh={9} aberta soReal onAlternar={() => {}} />);
+    expect(screen.getAllByRole('columnheader').map((th) => th.textContent)).toEqual(['Mês', 'Saldo']);
+    expect(screen.queryByText('Diferença')).not.toBeInTheDocument();
+    const out = within(screen.getAllByRole('row')[1]).getAllByRole('cell');
+    expect(out).toHaveLength(2);
+    expect(out[1]).toHaveTextContent('1.000,00');
+    expect(out[1].querySelector('strong')).toHaveClass('total-dia', 'pos');
+    expect(screen.getByText('Saldo real no fim de cada mês. Ligue um cenário para ver o saldo com ele e a diferença.')).toBeInTheDocument();
+  });
+
+  it('usa a coluna "sem", não a "com"', () => {
+    render(<TabelaSimulacao linhas={[{ mes: '2026-10', sem: 50000, com: 10000, dif: -40000 }]} larguraCh={9} aberta soReal onAlternar={() => {}} />);
+    const celulas = within(screen.getAllByRole('row')[1]).getAllByRole('cell');
+    expect(celulas[1]).toHaveTextContent('500,00');
+  });
+
+  it('saldo abaixo de zero leva "−" e vermelho', () => {
+    render(<TabelaSimulacao linhas={[{ mes: '2026-10', sem: -50000, com: -50000, dif: 0 }]} larguraCh={9} aberta soReal onAlternar={() => {}} />);
+    const celula = within(screen.getAllByRole('row')[1]).getAllByRole('cell')[1];
+    expect(celula).toHaveTextContent('−500,00');
+    expect(celula.querySelector('strong')).toHaveClass('total-dia', 'neg');
+  });
+
+  it('é mais estreita que a de quatro colunas', () => {
+    const { container, rerender } = render(<TabelaSimulacao linhas={linhas} larguraCh={9} aberta soReal onAlternar={() => {}} />);
+    const duas = (container.querySelector('table') as HTMLElement).style.minWidth;
+    rerender(<TabelaSimulacao linhas={linhas} larguraCh={9} aberta onAlternar={() => {}} />);
+    expect(duas).not.toBe((container.querySelector('table') as HTMLElement).style.minWidth);
+  });
+});
+
 it('botão "Tabela por mês" tem aria-expanded="true" e clicar chama onAlternar', async () => {
   const onAlternar = vi.fn();
   render(<TabelaSimulacao linhas={linhas} larguraCh={9} aberta onAlternar={onAlternar} />);

@@ -3,6 +3,27 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.65.3] - 2026-10-08
+
+### Alterado
+
+- Mesclar um backup num app novo não cria mais uma segunda box casa
+  - Os lançamentos, categorias e cenários da casa do backup passam para a casa deste aparelho
+- Acertos no modo Simples
+  - No Cartão, Remover valor pede confirmação, e tocar duas vezes em Salvar fatura ou em Remover valor não repete a ação
+  - No Simular, se Guardar falhar, a tela avisa e deixa tentar de novo
+  - O aviso de fatura vencida sem compras diz que o valor entrou depois do vencimento, em vez de falar de compras
+  - Simular e jogar a simulação fora não faz mais o rodapé de Hoje avisar que há mudanças sem backup
+
+## [0.65.2] - 2026-10-08
+
+### Alterado
+
+- Simular e Importar mais claros
+  - Sem cenário ligado, a tabela do Simular mostra só o saldo real, em duas colunas
+  - Um cenário sem itens não mostra a tabela de impacto, e o formulário de item novo abre pelo botão Adicionar item
+  - Importar e conferir, com a casa no topo, pede a box de destino antes de mostrar a conferência
+
 ## [0.65.1] - 2026-10-08
 
 ### Alterado

@@ -97,6 +97,7 @@ implementação acontecer.
 | 2026-10-08 | [modo-por-box-design.md](specs/2026-10-08-modo-por-box-design.md) | Modo de uso por box, com a casa em modo próprio e herança do padrão. | implementada | [modo-por-box.md](plans/2026-10-08-modo-por-box.md) |
 | 2026-10-08 | [lancamento-repetido-design.md](specs/2026-10-08-lancamento-repetido-design.md) | Aviso ao lançar um valor igual a outro do mesmo dia, na mesma box e na mesma categoria. | implementada | — |
 | 2026-10-08 | [compra-repetida-design.md](specs/2026-10-08-compra-repetida-design.md) | Aviso ao salvar uma compra no cartão igual a outra (cartão, data, valor, parcelas e categoria). | implementada | — |
+| 2026-10-08 | [simular-importar-ajustes-design.md](specs/2026-10-08-simular-importar-ajustes-design.md) | Simular sem cenário ligado só com o saldo real, item novo atrás de um botão e Importar na casa pedindo a box. | implementada | — |
 
 ## Planos
 

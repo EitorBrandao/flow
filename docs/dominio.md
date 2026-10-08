@@ -122,9 +122,10 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   **mesclar** mantém os modos do aparelho (a `config` vem de `atual`, e o `modos` de toda box que
   já existe aqui também) e **substituir** traz os do arquivo. O modo Simples só muda o que a tela
   mostra: reaproveita as entidades existentes.
-  **Limite conhecido:** nada deduplica a box `"casa"` ao mesclar um backup de outro aparelho
-  (cada aparelho cria a sua, com `novoId()`). Com duas, `boxIdEfetivo` pega a primeira que achar, e
-  a visão casa pode mostrar os modos da casa do backup. **Expectativa não garantida.**
+  O `mesclar` descarta a casa do backup (ver "A box `casa` não duplica no mesclar"), então a visão
+  casa segue com o `modos` da casa deste aparelho. **Limite conhecido:** quem mesclou antes dessa
+  regra pode ter duas boxes `casa`; `boxIdEfetivo` pega a primeira que achar. **Expectativa não
+  garantida.**
   - **Hoje simples** grava o saldo declarado da box (ou `Config.saldoDeclaradoCent`, na casa),
     nunca `Banco.saldoDeclaradoCent`. Esse saldo é separado dos saldos por banco do Avançado.
     Na casa, só o modo Simples ainda lê `Config.saldoDeclaradoCent`: a conferência do Avançado
@@ -475,6 +476,8 @@ isso; aqui é a leitura precisa do código):
 (`existente`, ou seja o `atual` da chamada). `config` nunca vem do backup em modo mesclar
 (vem sempre de `atual`); só o modo "substituir" da UI grava a `config` do backup, direto,
 sem passar por `mesclar`.
+
+**A box `casa` não duplica no mesclar.** Cada instalação cria a sua box `casa` com `id` novo (`iniciar()`). Mesclar só por `id` traria a casa do backup como segunda box, e os dados dela ficariam fora da casa que o app usa. Por isso `mesclar` troca o `id` de toda box de nome `casa` do backup pelo da casa de `atual`, em tudo que aponta para ela (`boxId` de categorias, lançamentos, recorrências, cartões e bancos; `escopo` de cenários), e descarta a casa do backup. Quem já mesclou antes desta regra pode ter duas boxes `casa`; ela não as junta depois do fato.
 
 ## Invariantes
 
