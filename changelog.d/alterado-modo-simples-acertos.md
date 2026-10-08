@@ -1,5 +1,0 @@
-- Acertos no modo Simples
-  - No Cartão, Remover valor pede confirmação, e tocar duas vezes em Salvar fatura ou em Remover valor não repete a ação
-  - No Simular, se Guardar falhar, a tela avisa e deixa tentar de novo
-  - O aviso de fatura vencida sem compras diz que o valor entrou depois do vencimento, em vez de falar de compras
-  - Simular e jogar a simulação fora não faz mais o rodapé de Hoje avisar que há mudanças sem backup

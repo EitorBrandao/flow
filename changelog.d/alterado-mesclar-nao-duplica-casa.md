@@ -1,2 +1,0 @@
-- Mesclar um backup num app novo não cria mais uma segunda box casa
-  - Os lançamentos, categorias e cenários da casa do backup passam para a casa deste aparelho
