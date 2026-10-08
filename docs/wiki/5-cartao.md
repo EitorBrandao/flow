@@ -14,7 +14,7 @@ Sem categoria do cartão, o formulário da compra diz onde criá-la (Ajustes →
 - A compra manda: o valor dela não muda ao anexar a nota. Quando a soma dos itens não fecha com o valor da compra, uma linha final mostra a diferença (desconto, frete ou acréscimo).
 - Uma compra tem no máximo uma nota: anexar de novo substitui a anterior.
 
-Ao salvar uma compra **nova** igual a outra do mesmo cartão — mesma data, mesmo valor total e mesmo número de parcelas — o Flow pergunta antes: "Compra repetida?". **Cancelar** volta ao formulário; **Salvar mesmo assim** grava. Editar uma compra existente não pergunta. O aviso equivalente para lançamentos na box está em [Lançar](#telas/lancar).
+Ao salvar uma compra **nova** igual a outra do mesmo cartão — mesma data, mesmo valor total, mesmo número de parcelas e mesma categoria do cartão — o Flow pergunta antes: "Compra repetida?". **Cancelar** volta ao formulário; **Salvar mesmo assim** grava. Editar uma compra existente não pergunta. O aviso equivalente para lançamentos na box está em [Lançar](#telas/lancar).
 - Só os itens ficam guardados; o arquivo XML não.
 - Excluir a compra apaga a nota junto.
 

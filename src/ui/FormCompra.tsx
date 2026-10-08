@@ -150,7 +150,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
     if (valor <= 0 || !categoriaId || salvandoRef.current) return;
     if (!compra && !confirmado) {
       const igual = compraRepetida(dados!.comprasCartao, {
-        cartaoId: cartao.id, data, valorTotal: valor, parcelas: parcelasNum,
+        cartaoId: cartao.id, data, valorTotal: valor, parcelas: parcelasNum, categoriaCartaoId: categoriaId,
       });
       if (igual) { setRepetida(igual); return; }
     }
