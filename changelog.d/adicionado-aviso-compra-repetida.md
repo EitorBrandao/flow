@@ -1,5 +1,0 @@
-- Aviso ao salvar uma compra no cartão igual a outra já registrada.
-  - O Flow pergunta "Compra repetida?" antes de salvar.
-  - Vale quando o cartão, a data, o valor total e o número de parcelas coincidem.
-  - Cancelar volta ao formulário; Salvar mesmo assim grava.
-  - Editar uma compra existente não pergunta.

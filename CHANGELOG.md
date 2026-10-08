@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.65.0] - 2026-10-08
+
+### Adicionado
+
+- Aviso ao salvar uma compra no cartão igual a outra já registrada.
+  - O Flow pergunta "Compra repetida?" antes de salvar.
+  - Vale quando o cartão, a data, o valor total e o número de parcelas coincidem.
+  - Cancelar volta ao formulário; Salvar mesmo assim grava.
+  - Editar uma compra existente não pergunta.
+
 ## [0.64.0] - 2026-10-08
 
 ### Adicionado
