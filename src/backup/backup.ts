@@ -45,6 +45,13 @@ export function validarBackup(json: unknown): Backup {
   if ('modos' in d.config && d.config.modos !== undefined && !modosValidos(d.config.modos)) {
     throw new Error('Backup corrompido: modos de uso inválidos.');
   }
+  // modos de uso por box: opcional (ausente = herda o global), mas se vier tem que ser válido.
+  // Box nula ou que não é objeto passa: quem trata é o resto do import, não esta checagem.
+  for (const x of d.boxes as Array<Record<string, unknown> | null>) {
+    if (x && typeof x === 'object' && 'modos' in x && x.modos !== undefined && !modosValidos(x.modos)) {
+      throw new Error('Backup corrompido: modos de uso inválidos.');
+    }
+  }
   if (b.schema >= 2 && TABELAS_CARTAO.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
@@ -131,7 +138,7 @@ export function validarBackup(json: unknown): Backup {
   };
 }
 
-/** Mescla por id; em conflito vence o alteradoEm mais recente. Config local é mantida. */
+/** Mescla por id; em conflito vence o alteradoEm mais recente. Config local e o modos das boxes locais são mantidos. */
 export function mesclar(atual: Dados, doBackup: Dados): Dados {
   function mesclarTabela<T extends { id: string; alteradoEm: string }>(a: T[], b: T[]): T[] {
     const porId = new Map(a.map((x) => [x.id, x]));
@@ -141,8 +148,21 @@ export function mesclar(atual: Dados, doBackup: Dados): Dados {
     }
     return [...porId.values()];
   }
+  // O modo de uso é preferência do aparelho (como `config`): em toda box que já existe aqui, o
+  // `modos` local vale, mesmo quando a box do backup vence por `alteradoEm`.
+  function mesclarBoxes() {
+    const locais = new Map(atual.boxes.map((x) => [x.id, x]));
+    return mesclarTabela(atual.boxes, doBackup.boxes).map((x) => {
+      const local = locais.get(x.id);
+      if (!local) return x;
+      const copia = { ...x };
+      if (local.modos) copia.modos = local.modos;
+      else delete copia.modos;
+      return copia;
+    });
+  }
   return {
-    boxes: mesclarTabela(atual.boxes, doBackup.boxes),
+    boxes: mesclarBoxes(),
     categorias: mesclarTabela(atual.categorias, doBackup.categorias),
     lancamentos: mesclarTabela(atual.lancamentos, doBackup.lancamentos),
     recorrencias: mesclarTabela(atual.recorrencias, doBackup.recorrencias),
