@@ -3,6 +3,18 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.66.1] - 2026-10-08
+
+### Alterado
+
+- Quem tinha duas boxes casa, por ter mesclado um backup, passa a ter uma só
+  - O app junta as duas ao abrir, sem perder lançamento, categoria nem cenário
+- No Simular, Novo cenário vira um botão
+  - O campo do nome só aparece depois do toque, com Criar e Cancelar
+- Modo Simples mais enxuto
+  - Com o Cartão no Simples, o botão + só oferece Lançamento: somem a Compra no cartão, o Ler nota fiscal e os atalhos de cartão
+  - Na lista do Fluxo no Simples, o lançamento não mostra mais o nome do banco
+
 ## [0.66.0] - 2026-10-08
 
 ### Alterado

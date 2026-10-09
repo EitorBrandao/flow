@@ -1,2 +1,0 @@
-- Quem tinha duas boxes casa, por ter mesclado um backup, passa a ter uma só
-  - O app junta as duas ao abrir, sem perder lançamento, categoria nem cenário

@@ -1,2 +1,0 @@
-- No Simular, Novo cenário vira um botão
-  - O campo do nome só aparece depois do toque, com Criar e Cancelar
