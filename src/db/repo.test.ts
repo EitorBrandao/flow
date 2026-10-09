@@ -2208,3 +2208,90 @@ describe('rascunho de simulação rápida não marca "mudanças sem backup"', ()
     expect(await mudancas()).toBe(true);
   });
 });
+
+describe('unificarCasasDuplicadas', () => {
+  const caixa = (id: string, criadoEm: string, nome = 'casa') => ({ id, nome, saldoInicial: null, dataSaldoInicial: null, criadoEm, alteradoEm: criadoEm });
+  const pessoa = (id: string) => ({ id, nome: 'ana', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: '2026-01-01T00:00:00Z', alteradoEm: '2026-01-01T00:00:00Z' });
+
+  async function duasCasas() {
+    await repo.salvarBox(caixa('casa-1', '2026-02-01T00:00:00Z'));
+    await repo.salvarBox(caixa('casa-2', '2026-03-01T00:00:00Z'));
+    await repo.salvarBox(pessoa('ana'));
+    const velha = await repo.salvarCategoria({ boxId: 'casa-2', nome: 'Moradia', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({ boxId: 'casa-2', categoriaId: velha.id, data: '2026-04-01', valor: 1000, status: 'efetivo' });
+    await repo.salvarLancamento({ boxId: 'casa-1', categoriaId: velha.id, data: '2026-04-02', valor: 2000, status: 'efetivo' });
+    await repo.salvarBanco({ boxId: 'casa-2', nome: 'Banco', ordem: 0 });
+    await db.config.update('config', { mudancasDesdeBackup: false, boxPadraoId: 'casa-2' });
+    return velha;
+  }
+
+  it('sem casa duplicada, não faz nada e não marca mudança', async () => {
+    await repo.salvarBox(caixa('casa-1', '2026-02-01T00:00:00Z'));
+    await db.config.update('config', { mudancasDesdeBackup: false });
+    expect(await repo.unificarCasasDuplicadas()).toBe(false);
+    expect((await db.config.get('config'))?.mudancasDesdeBackup).toBe(false);
+    expect(await db.boxes.count()).toBe(1);
+  });
+
+  it('junta as casas na criada primeiro e aponta tudo para ela', async () => {
+    const cat = await duasCasas();
+    expect(await repo.unificarCasasDuplicadas()).toBe(true);
+    const boxes = await db.boxes.toArray();
+    expect(boxes.filter((b) => b.nome === 'casa').map((b) => b.id)).toEqual(['casa-1']);
+    expect(boxes.map((b) => b.id).sort()).toEqual(['ana', 'casa-1']);
+    expect((await db.categorias.get(cat.id))?.boxId).toBe('casa-1');
+    expect((await db.lancamentos.toArray()).every((l) => l.boxId === 'casa-1')).toBe(true);
+    expect((await db.bancos.toArray())[0].boxId).toBe('casa-1');
+    expect((await db.config.get('config'))?.boxPadraoId).toBe('casa-1');
+    expect((await db.config.get('config'))?.mudancasDesdeBackup).toBe(true);
+  });
+
+  it('nenhum registro fica apontando para uma box que não existe', async () => {
+    await duasCasas();
+    await repo.unificarCasasDuplicadas();
+    const ids = new Set((await db.boxes.toArray()).map((b) => b.id));
+    expect((await db.lancamentos.toArray()).every((l) => ids.has(l.boxId))).toBe(true);
+    expect((await db.categorias.toArray()).every((c) => ids.has(c.boxId))).toBe(true);
+    expect((await db.bancos.toArray()).every((b) => ids.has(b.boxId))).toBe(true);
+  });
+
+  it('o escopo de um cenário da casa que sai passa para a casa que fica', async () => {
+    await duasCasas();
+    const agora = agoraISO();
+    await repo.salvarCenario({ id: novoId(), nome: 'Hipótese', ligado: false, escopo: 'casa-2', criadoEm: agora, alteradoEm: agora });
+    await repo.unificarCasasDuplicadas();
+    expect((await db.cenarios.toArray())[0].escopo).toBe('casa-1');
+  });
+
+  it('é idempotente: a segunda chamada não faz nada', async () => {
+    await duasCasas();
+    expect(await repo.unificarCasasDuplicadas()).toBe(true);
+    await db.config.update('config', { mudancasDesdeBackup: false });
+    expect(await repo.unificarCasasDuplicadas()).toBe(false);
+    expect((await db.config.get('config'))?.mudancasDesdeBackup).toBe(false);
+  });
+
+  it('com três casas, fica uma só', async () => {
+    await repo.salvarBox(caixa('c3', '2026-05-01T00:00:00Z'));
+    await repo.salvarBox(caixa('c1', '2026-02-01T00:00:00Z'));
+    await repo.salvarBox(caixa('c2', '2026-03-01T00:00:00Z'));
+    await repo.unificarCasasDuplicadas();
+    expect((await db.boxes.toArray()).map((b) => b.id)).toEqual(['c1']);
+  });
+
+  it('box de outro nome, mesmo parecido, não é tocada', async () => {
+    await repo.salvarBox(caixa('c1', '2026-02-01T00:00:00Z'));
+    await repo.salvarBox(caixa('x1', '2026-03-01T00:00:00Z', 'Casa'));
+    await repo.salvarBox(caixa('x2', '2026-03-01T00:00:00Z', 'casa nova'));
+    expect(await repo.unificarCasasDuplicadas()).toBe(false);
+    expect(await db.boxes.count()).toBe(3);
+  });
+
+  it('os registros que mudaram de box ganham alteradoEm novo, para um backup antigo não desfazer a união', async () => {
+    const cat = await duasCasas();
+    const antes = (await db.categorias.get(cat.id))!.alteradoEm;
+    await new Promise((r) => setTimeout(r, 5));
+    await repo.unificarCasasDuplicadas();
+    expect((await db.categorias.get(cat.id))!.alteradoEm > antes).toBe(true);
+  });
+});

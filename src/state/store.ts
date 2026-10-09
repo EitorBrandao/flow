@@ -79,6 +79,8 @@ export const useApp = create<AppState>((set) => ({
   rascunhoLancar: null,
   importacao: IMPORTACAO_VAZIA,
   async iniciar() {
+    // Um Mesclar antigo pode ter deixado duas boxes casa: junta antes de qualquer outra coisa.
+    await repo.unificarCasasDuplicadas();
     const inicial = await repo.carregarTudo();
     if (!inicial.boxes.some((b) => b.nome === 'casa')) {
       const agora = agoraISO();

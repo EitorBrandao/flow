@@ -1,5 +1,6 @@
 import { compararCategorias, compararCategoriasCartao, proximaOrdem } from '../domain/categorias';
 import { bancoIdDoCartao } from '../domain/bancos';
+import { casaQueFica, trocasDaCasa } from '../domain/casas';
 import { hojeISO } from '../domain/dates';
 import { modosDaBox, modosEfetivos, modosInstalacaoNova } from '../domain/modos';
 import {
@@ -14,6 +15,7 @@ import {
   type Lancamento, type ModoUso, type NotaFiscalSalva, type Recorrencia, type RecorrenciaCartao,
   type StatusLancamento, type TelaModo, type TipoCategoria, type Viagem,
 } from '../domain/types';
+import type { Table } from 'dexie';
 import { db } from './database';
 
 function configPadrao(): Config {
@@ -305,6 +307,44 @@ export async function salvarModoBox(boxId: ID, tela: TelaModo, modo: ModoUso): P
 }
 
 export const NOME_SIMULACAO_RAPIDA = 'Simulação rápida';
+
+/**
+ * Junta as boxes de nome "casa" em uma só: a criada primeiro. Um Mesclar anterior à regra de
+ * `mesclar` (ver `src/domain/casas.ts`) trazia a casa do backup como segunda box. Aponta para a
+ * casa que fica tudo que apontava para as outras (categorias, lançamentos, recorrências, cartões,
+ * bancos, escopo de cenários e a box padrão) e apaga as sobras. Nada é perdido: só o id muda.
+ * Os registros que mudam ganham `alteradoEm` novo, para um backup antigo não desfazer a união.
+ * Idempotente. Devolve `true` se mexeu em alguma coisa (e então marca "mudanças sem backup").
+ */
+export async function unificarCasasDuplicadas(): Promise<boolean> {
+  return db.transaction(
+    'rw',
+    [db.boxes, db.categorias, db.lancamentos, db.recorrencias, db.cartoes, db.bancos, db.cenarios, db.config],
+    async () => {
+      const boxes = await db.boxes.toArray();
+      const fica = casaQueFica(boxes);
+      if (!fica) return false;
+      const trocas = trocasDaCasa(boxes, fica.id);
+      if (trocas.size === 0) return false;
+      const agora = agoraISO();
+      const daBox = (tabela: Table<{ boxId: ID; alteradoEm: string }, string>) =>
+        tabela.filter((x) => trocas.has(x.boxId)).modify((x) => { x.boxId = trocas.get(x.boxId)!; x.alteradoEm = agora; });
+      await daBox(db.categorias);
+      await daBox(db.lancamentos);
+      await daBox(db.recorrencias);
+      await daBox(db.cartoes);
+      await daBox(db.bancos);
+      await db.cenarios
+        .filter((c) => c.escopo != null && trocas.has(c.escopo))
+        .modify((c) => { c.escopo = trocas.get(c.escopo!)!; c.alteradoEm = agora; });
+      const padrao = (await db.config.get('config'))?.boxPadraoId;
+      if (padrao != null && trocas.has(padrao)) await db.config.update('config', { boxPadraoId: trocas.get(padrao)! });
+      await db.boxes.bulkDelete([...trocas.keys()]);
+      await marcarMudanca();
+      return true;
+    },
+  );
+}
 
 /** Apaga rascunhos de simulação rápida (`rascunho: true`, nunca pelo nome) e seus itens deixados por um fechamento abrupto.
  *  Não marca mudança: limpeza de rascunho não afeta dados a salvar em backup. */

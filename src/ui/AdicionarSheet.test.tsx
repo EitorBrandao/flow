@@ -318,3 +318,43 @@ it('itens da nota escaneada chegam até a compra salva', async () => {
   expect(nota.emitente).toBe('Mercado Exemplo LTDA');
   expect(nota.compraCartaoId).toBe(compraSalva.id);
 });
+
+describe('com o Cartão no modo Simples', () => {
+  // O Cartão simples só cuida do valor da fatura: não há compra a detalhar, então o "+" não oferece
+  // compra no cartão, nota fiscal nem atalhos de cartão.
+  async function montarSimples() {
+    await repo.salvarModo('cartao', 'simples');
+    return montarComHistorico();
+  }
+
+  it('só oferece Lançamento: sem Compra no cartão e sem Ler nota fiscal', async () => {
+    await montarSimples();
+    render(<AdicionarSheet aberto onFechar={() => {}} />);
+    expect(await screen.findByText('Lançamento')).toBeInTheDocument();
+    expect(screen.queryByText('Compra no cartão')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Compra por nota fiscal' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Ler nota fiscal')).not.toBeInTheDocument();
+  });
+
+  it('os atalhos de cartão somem; os da box ficam', async () => {
+    await montarSimples();
+    render(<AdicionarSheet aberto onFechar={() => {}} />);
+    expect(await screen.findByRole('button', { name: /Café/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Farmácia/ })).not.toBeInTheDocument();
+    expect(screen.queryByText('vai para o cartão')).not.toBeInTheDocument();
+  });
+
+  it('o título Adicionar continua no topo', async () => {
+    await montarSimples();
+    render(<AdicionarSheet aberto onFechar={() => {}} />);
+    expect(await screen.findByRole('heading', { name: 'Adicionar' })).toBeInTheDocument();
+  });
+
+  it('no modo Avançado do Cartão, tudo continua lá', async () => {
+    await montarComHistorico();
+    render(<AdicionarSheet aberto onFechar={() => {}} />);
+    expect(await screen.findByText('Compra no cartão')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Compra por nota fiscal' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Farmácia/ })).toBeInTheDocument();
+  });
+});

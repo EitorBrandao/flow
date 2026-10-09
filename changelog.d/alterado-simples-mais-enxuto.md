@@ -1,0 +1,3 @@
+- Modo Simples mais enxuto
+  - Com o Cartão no Simples, o botão + só oferece Lançamento: somem a Compra no cartão, o Ler nota fiscal e os atalhos de cartão
+  - Na lista do Fluxo no Simples, o lançamento não mostra mais o nome do banco

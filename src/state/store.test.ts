@@ -229,3 +229,17 @@ it('iniciar num banco vazio deixa todos os cinco modos em simples', async () => 
     lancar: 'simples',
   });
 });
+
+it('iniciar junta duas boxes casa (resto de um Mesclar antigo) e nenhum dado se perde', async () => {
+  const caixa = (id: string, criadoEm: string) => ({ id, nome: 'casa', saldoInicial: null, dataSaldoInicial: null, criadoEm, alteradoEm: criadoEm });
+  await repo.salvarBox(caixa('casa-1', '2026-02-01T00:00:00Z'));
+  await repo.salvarBox(caixa('casa-2', '2026-03-01T00:00:00Z'));
+  const cat = await repo.salvarCategoria({ boxId: 'casa-2', nome: 'Moradia', tipo: 'gasto', ordem: 0 });
+  await repo.salvarLancamento({ boxId: 'casa-2', categoriaId: cat.id, data: '2026-04-01', valor: 1234, status: 'efetivo' });
+  await useApp.getState().iniciar();
+  const { dados } = useApp.getState();
+  expect(dados!.boxes.filter((b) => b.nome === 'casa').map((b) => b.id)).toEqual(['casa-1']);
+  expect(dados!.lancamentos).toHaveLength(1);
+  expect(dados!.lancamentos[0]).toMatchObject({ boxId: 'casa-1', valor: 1234 });
+  expect(dados!.categorias[0].boxId).toBe('casa-1');
+});

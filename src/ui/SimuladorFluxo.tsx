@@ -14,6 +14,7 @@ import TabelaSimulacao from './TabelaSimulacao';
 export default function SimuladorFluxo() {
   const { dados, boxSel, hoje, recarregar } = useApp();
   const [nomeNovo, setNomeNovo] = useState('');
+  const [criando, setCriando] = useState(false);
   const [aberto, setAberto] = useState<ID | null>(null);
   const [tabelaAberta, setTabelaAberta] = useState(true);
   const [periodo, setPeriodo] = useState<PeriodoSimulacao | null>(null);
@@ -74,18 +75,31 @@ export default function SimuladorFluxo() {
     await repo.salvarCenario({ id, nome, ligado: true, escopo: boxSel, criadoEm: agora, alteradoEm: agora });
     await recarregar();
     setNomeNovo('');
+    setCriando(false);
     setAberto(id);
+  }
+
+  function cancelarNovo() {
+    setNomeNovo('');
+    setCriando(false);
   }
 
   return (
     <>
-      <div className="form-linha">
-        <div className="campo">
-          <label htmlFor={`${uid}-novo`}>Novo cenário</label>
-          <input id={`${uid}-novo`} placeholder="ex.: bike em 10x" value={nomeNovo} onChange={(e) => setNomeNovo(e.target.value)} />
-        </div>
-        <button className="botao botao-primario" disabled={!nomeNovo.trim()} onClick={criar}>Criar</button>
-      </div>
+      {criando ? (
+        <>
+          <div className="campo">
+            <label htmlFor={`${uid}-novo`}>Novo cenário</label>
+            <input id={`${uid}-novo`} placeholder="ex.: bike em 10x" value={nomeNovo} onChange={(e) => setNomeNovo(e.target.value)} />
+          </div>
+          <div style={{ display: 'flex', gap: 8, margin: '8px 0 12px' }}>
+            <button className="botao botao-primario" style={{ flex: 1 }} disabled={!nomeNovo.trim()} onClick={criar}>Criar</button>
+            <button className="botao" style={{ flex: 1 }} onClick={cancelarNovo}>Cancelar</button>
+          </div>
+        </>
+      ) : (
+        <button type="button" className="botao" style={{ width: '100%', marginBottom: 8 }} onClick={() => setCriando(true)}>Novo cenário</button>
+      )}
       <p className="sub" style={{ margin: '0 0 12px' }}>
         Cenário é uma hipótese, como comprar algo ou trocar de aluguel. Ele nunca altera o seu saldo real: só aparece aqui e no gráfico, quando ligado.
       </p>

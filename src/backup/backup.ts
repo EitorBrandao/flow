@@ -1,3 +1,4 @@
+import { aplicarTrocasDeBox, casaQueFica, trocasDaCasa } from '../domain/casas';
 import { dedupAjustesFechamento, dedupConferencias } from '../domain/fatura';
 import { modosValidos } from '../domain/modos';
 import type { Dados } from '../domain/types';
@@ -138,34 +139,16 @@ export function validarBackup(json: unknown): Backup {
   };
 }
 
-/** Nome da box consolidadora que o app cria sozinho em cada instalação (`iniciar()`), com id novo. */
-const NOME_BOX_CASA = 'casa';
-
 /**
  * A box "casa" nasce com id novo em cada instalação. Mesclar por id manteria as duas e
  * duplicaria a casa, deixando os dados do backup numa box que o app não enxerga como "a casa".
  * Troca o id da casa do backup pelo da casa de `atual` em tudo que aponta para ela, e tira a
- * casa do backup da lista de boxes. Devolve cópias; não altera o que recebeu.
+ * casa do backup da lista de boxes (ver `src/domain/casas.ts`). Devolve cópias.
  */
 function unificarCasa(atual: Dados, doBackup: Dados): Dados {
-  const casaAtual = atual.boxes.find((b) => b.nome === NOME_BOX_CASA);
+  const casaAtual = casaQueFica(atual.boxes);
   if (!casaAtual) return doBackup;
-  const trocas = new Set(
-    doBackup.boxes.filter((b) => b.nome === NOME_BOX_CASA && b.id !== casaAtual.id).map((b) => b.id),
-  );
-  if (trocas.size === 0) return doBackup;
-  const novoId = (id: string) => (trocas.has(id) ? casaAtual.id : id);
-  const daBox = <T extends { boxId: string }>(xs: T[]): T[] => xs.map((x) => (trocas.has(x.boxId) ? { ...x, boxId: casaAtual.id } : x));
-  return {
-    ...doBackup,
-    boxes: doBackup.boxes.filter((b) => !trocas.has(b.id)),
-    categorias: daBox(doBackup.categorias),
-    lancamentos: daBox(doBackup.lancamentos),
-    recorrencias: daBox(doBackup.recorrencias),
-    cartoes: daBox(doBackup.cartoes),
-    bancos: daBox(doBackup.bancos),
-    cenarios: doBackup.cenarios.map((c) => (c.escopo != null && trocas.has(c.escopo) ? { ...c, escopo: novoId(c.escopo) } : c)),
-  };
+  return aplicarTrocasDeBox(doBackup, trocasDaCasa(doBackup.boxes, casaAtual.id));
 }
 
 /** Mescla por id; em conflito vence o alteradoEm mais recente. Config local e o modos das boxes locais são mantidos.

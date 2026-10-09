@@ -477,7 +477,7 @@ isso; aqui é a leitura precisa do código):
 (vem sempre de `atual`); só o modo "substituir" da UI grava a `config` do backup, direto,
 sem passar por `mesclar`.
 
-**A box `casa` não duplica no mesclar.** Cada instalação cria a sua box `casa` com `id` novo (`iniciar()`). Mesclar só por `id` traria a casa do backup como segunda box, e os dados dela ficariam fora da casa que o app usa. Por isso `mesclar` troca o `id` de toda box de nome `casa` do backup pelo da casa de `atual`, em tudo que aponta para ela (`boxId` de categorias, lançamentos, recorrências, cartões e bancos; `escopo` de cenários), e descarta a casa do backup. Quem já mesclou antes desta regra pode ter duas boxes `casa`; ela não as junta depois do fato.
+**A box `casa` não duplica no mesclar.** Cada instalação cria a sua box `casa` com `id` novo (`iniciar()`). Mesclar só por `id` traria a casa do backup como segunda box, e os dados dela ficariam fora da casa que o app usa. Por isso `mesclar` troca o `id` de toda box de nome `casa` do backup pelo da casa de `atual`, em tudo que aponta para ela (`boxId` de categorias, lançamentos, recorrências, cartões e bancos; `escopo` de cenários), e descarta a casa do backup. Quem já mesclou antes desta regra pode ter duas boxes `casa`: `iniciar()` chama `unificarCasasDuplicadas` (`repo.ts`), que junta as casas na criada primeiro (empate pelo `id`) e aponta para ela tudo que apontava para as outras, incluindo `config.boxPadraoId`. Os registros que mudam de box ganham `alteradoEm` novo, para um backup antigo não desfazer a união. A função é idempotente e só marca "mudanças sem backup" quando mexe em algo.
 
 ## Invariantes
 
