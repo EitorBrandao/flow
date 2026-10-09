@@ -302,7 +302,7 @@ export default function TelaFluxo() {
                           {l.status === 'previsto' && <span className="badge" style={{ marginLeft: 6 }}>{l.cenarioId ? 'cenário' : 'previsto'}</span>}
                           {l.valor < 0 && <span className="badge" style={{ marginLeft: 6 }}>estorno</span>}
                           {nota && <div className="sub">{nota}</div>}
-                          {bancosSel.length >= 2 && <div className="sub">{nomeBancoDoLancamento(l, dados)}</div>}
+                          {!simples && bancosSel.length >= 2 && <div className="sub">{nomeBancoDoLancamento(l, dados)}</div>}
                         </div>
                         <span className={classeEfeito(efeitoNoSaldo(l.valor, tipoCat(l.categoriaId)))}>
                           {formatarBRL(l.valor)}

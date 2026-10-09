@@ -8,6 +8,7 @@ import { boxIdEfetivo, boxIdsSelecionadas, useApp } from '../state/store';
 import EscanearNotaSheet from './EscanearNotaSheet';
 import FormCompra, { type InicialCompra } from './FormCompra';
 import Sheet from './Sheet';
+import { useModo } from './useModo';
 
 type Passo = 'menu' | 'sem-cartao' | 'sem-cartao-liberado' | 'escolher-cartao' | 'escanear' | 'form';
 
@@ -25,6 +26,9 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
   const [passo, setPasso] = useState<Passo>('menu');
   const [cartaoEscolhido, setCartaoEscolhido] = useState<Cartao | null>(null);
   const [inicialCompra, setInicialCompra] = useState<InicialCompra | null>(null);
+  // O Cartão simples só cuida do valor da fatura, sem compra a detalhar: o "+" não oferece compra no
+  // cartão, nota fiscal nem atalhos de cartão.
+  const cartaoSimples = useModo('cartao') === 'simples';
 
   const cartoesAtivos = useMemo(() => {
     if (!dados) return [];
@@ -34,9 +38,9 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
 
   const chips = useMemo(() => {
     if (!dados) return [];
-    const cartaoIds = cartoesAtivos.map((c) => c.id);
+    const cartaoIds = cartaoSimples ? [] : cartoesAtivos.map((c) => c.id);
     return frequentes(dados, { hoje, boxId: boxIdEfetivo(dados, boxSel), cartaoIds });
-  }, [dados, boxSel, hoje, cartoesAtivos]);
+  }, [dados, boxSel, hoje, cartoesAtivos, cartaoSimples]);
 
   useEffect(() => {
     if (!aberto) { setPasso('menu'); setCartaoEscolhido(null); setInicialCompra(null); }
@@ -117,9 +121,11 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
       cabecalho={passo === 'menu' ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ marginTop: 0 }}>Adicionar</h2>
-          <button className="chip chip-elevado" aria-label="Compra por nota fiscal" onClick={irParaEscanear}>
-            <Camera size={18} /> Ler nota fiscal
-          </button>
+          {!cartaoSimples && (
+            <button className="chip chip-elevado" aria-label="Compra por nota fiscal" onClick={irParaEscanear}>
+              <Camera size={18} /> Ler nota fiscal
+            </button>
+          )}
         </div>
       ) : undefined}
     >
@@ -160,12 +166,14 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
                 <div className="sub">Gasto ou ganho avulso</div>
               </div>
             </button>
-            <button className="item" onClick={irParaCompra}>
-              <div className="cresce">
-                <div>Compra no cartão</div>
-                <div className="sub">Com parcelas, entra direto na fatura</div>
-              </div>
-            </button>
+            {!cartaoSimples && (
+              <button className="item" onClick={irParaCompra}>
+                <div className="cresce">
+                  <div>Compra no cartão</div>
+                  <div className="sub">Com parcelas, entra direto na fatura</div>
+                </div>
+              </button>
+            )}
           </div>
         </>
       )}

@@ -666,7 +666,7 @@ it('a aba Simular mostra o formulário de novo cenário', async () => {
   render(<TelaFluxo />);
   await userEvent.click(screen.getByRole('tab', { name: 'Simular' }));
 
-  expect(screen.getByLabelText('Novo cenário')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Novo cenário' })).toBeInTheDocument();
 });
 
 it('dia antes do início da projeção mostra traço e quando a projeção começa', async () => {
@@ -819,19 +819,43 @@ describe('Fluxo nos modos Simples e Avançado', () => {
     expect(screen.getByText('R$ 950,00')).toBeInTheDocument();
   });
 
+  async function montarComBanco(modo: 'simples' | 'avancado') {
+    const { box, catMercado } = await seedBoxComCategoria();
+    const a = await repo.salvarBanco({ boxId: box.id, nome: 'Banco Alfa', ordem: 0 });
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Beta', ordem: 1 });
+    const hoje = '2026-07-05';
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: hoje, valor: 5000, status: 'efetivo', nota: 'feira de domingo', bancoId: a.id });
+    await repo.salvarModo('fluxo', modo);
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje });
+    render(<TelaFluxo />);
+  }
+
+  it('Simples: o lançamento não mostra o nome do banco, já que o filtro por banco está escondido', async () => {
+    await montarComBanco('simples');
+    expect(await screen.findByText('feira de domingo')).toBeInTheDocument();
+    expect(screen.queryByText('Banco Alfa')).not.toBeInTheDocument();
+  });
+
+  it('Avançado: o lançamento mostra o nome do banco', async () => {
+    await montarComBanco('avancado');
+    expect(await screen.findByText('feira de domingo')).toBeInTheDocument();
+    expect(screen.getAllByText('Banco Alfa').length).toBeGreaterThan(0);
+  });
+
   it('Simples: o gráfico continua e a aba Simular mostra o simulador leve', async () => {
     await montar('simples');
     await abrirGrafico();
     expect(screen.getByRole('button', { name: 'Expandir gráfico de saldo' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('tab', { name: 'Simular' }));
     expect(screen.getByText('E se eu gastar…')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Novo cenário')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Novo cenário' })).not.toBeInTheDocument();
   });
 
   it('Avançado: a aba Simular mostra o simulador completo', async () => {
     await montar('avancado');
     await userEvent.click(screen.getByRole('tab', { name: 'Simular' }));
-    expect(screen.getByLabelText('Novo cenário')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Novo cenário' })).toBeInTheDocument();
     expect(screen.queryByText('E se eu gastar…')).not.toBeInTheDocument();
   });
 });

@@ -41,6 +41,7 @@ const linhaDoMes = (tabela: HTMLElement, mes: string) =>
 it('criar cenário: formulário no topo, o cenário nasce ligado e aberto', async () => {
   await preparar();
   render(<SimuladorFluxo />);
+  await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
   await userEvent.type(screen.getByLabelText('Novo cenário'), 'Mudança');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
   expect(await screen.findByRole('checkbox', { name: 'Ligar Mudança' })).toBeChecked();
@@ -52,6 +53,7 @@ it('criar cenário: formulário no topo, o cenário nasce ligado e aberto', asyn
 it('Criar fica desativado com o nome vazio', async () => {
   await preparar();
   render(<SimuladorFluxo />);
+  await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
   expect(screen.getByRole('button', { name: 'Criar' })).toBeDisabled();
 });
 
@@ -162,6 +164,7 @@ it('cenário recém-criado pelo formulário vai ao fim da lista', async () => {
     await cenarioCom('Existente', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });
     vi.setSystemTime(new Date('2026-09-15T10:00:10'));
     render(<SimuladorFluxo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
     await userEvent.type(screen.getByLabelText('Novo cenário'), 'Novo');
     await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
     await screen.findByRole('button', { name: 'Adicionar item' });
@@ -190,6 +193,7 @@ it('só um cenário aberto por vez; a seta abre; o checkbox não abre', async ()
 it('adicionar item pelo cenário grava no cenário certo', async () => {
   await preparar();
   render(<SimuladorFluxo />);
+  await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
   await userEvent.type(screen.getByLabelText('Novo cenário'), 'Mudança');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
   await userEvent.click(await screen.findByRole('button', { name: 'Adicionar item' }));
@@ -208,6 +212,7 @@ it('memoiza a projeção: digitar em "Novo cenário" não recalcula projetarBoxe
   render(<SimuladorFluxo />);
   const chamadasIniciais = spy.mock.calls.length;
   expect(chamadasIniciais).toBeGreaterThan(0);
+  await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
   await userEvent.type(screen.getByLabelText('Novo cenário'), 'abc');
   expect(spy.mock.calls.length).toBe(chamadasIniciais);
   spy.mockRestore();
@@ -222,6 +227,7 @@ it('parcelado 3x a partir de hoje gera 3 lançamentos', async () => {
     vi.setSystemTime(new Date('2026-09-15T12:00:00'));
     await preparar();
     render(<SimuladorFluxo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
     await userEvent.type(screen.getByLabelText('Novo cenário'), 'Móveis');
     await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Adicionar item' }));
@@ -450,6 +456,7 @@ it('criar um cenário grava o escopo da visão: "casa" na casa, o id da box numa
   const { ana } = await prepararVisoes();
   useApp.setState({ boxSel: 'casa' });
   const { unmount } = render(<SimuladorFluxo />);
+  await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
   await userEvent.type(screen.getByLabelText('Novo cenário'), 'Da casa');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
   await screen.findByRole('button', { name: /Da casa/ });
@@ -458,6 +465,7 @@ it('criar um cenário grava o escopo da visão: "casa" na casa, o id da box numa
 
   useApp.setState({ boxSel: ana.id, hoje: '2026-09-15' });
   render(<SimuladorFluxo />);
+  await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
   await userEvent.type(screen.getByLabelText('Novo cenário'), 'Da ana');
   await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
   await screen.findByRole('button', { name: /Da ana/ });
@@ -484,6 +492,7 @@ describe('cenário aberto: item novo atrás de um botão', () => {
   async function abrirNovoCenario() {
     await preparar();
     render(<SimuladorFluxo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
     await userEvent.type(screen.getByLabelText('Novo cenário'), 'Mudança');
     await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
     return screen.findByRole('button', { name: 'Adicionar item' });
@@ -523,5 +532,48 @@ describe('cenário aberto: item novo atrás de um botão', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Casa' }));
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar ao cenário' }));
     expect(await screen.findByRole('region', { name: 'Impacto só deste cenário' })).toBeInTheDocument();
+  });
+});
+
+describe('Novo cenário atrás de um botão', () => {
+  it('fechado: só o botão, sem o campo', async () => {
+    await preparar();
+    render(<SimuladorFluxo />);
+    expect(screen.getByRole('button', { name: 'Novo cenário' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Novo cenário')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Criar' })).not.toBeInTheDocument();
+  });
+
+  it('abrir mostra o campo com Criar e Cancelar, e esconde o botão', async () => {
+    await preparar();
+    render(<SimuladorFluxo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
+    expect(screen.getByLabelText('Novo cenário')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Criar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Novo cenário' })).not.toBeInTheDocument();
+  });
+
+  it('Cancelar fecha e descarta o que foi digitado', async () => {
+    await preparar();
+    render(<SimuladorFluxo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
+    await userEvent.type(screen.getByLabelText('Novo cenário'), 'Rascunho');
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(screen.queryByLabelText('Novo cenário')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
+    expect(screen.getByLabelText('Novo cenário')).toHaveValue('');
+    expect(await db.cenarios.count()).toBe(0);
+  });
+
+  it('Criar grava o cenário e o formulário volta a ser o botão', async () => {
+    await preparar();
+    render(<SimuladorFluxo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
+    await userEvent.type(screen.getByLabelText('Novo cenário'), 'Mudança');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+    expect(await screen.findByRole('checkbox', { name: 'Ligar Mudança' })).toBeChecked();
+    expect(screen.queryByLabelText('Novo cenário')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Novo cenário' })).toBeInTheDocument();
   });
 });
