@@ -34,6 +34,61 @@ async function abrirGrafico() {
 }
 
 
+it('busca acha lançamento fora da janela de 14 dias e diz que olha todo o período', async () => {
+  const { box, catMercado } = await seedBoxComCategoria();
+  const hoje = '2026-07-05';
+  const dataFora = addDias(hoje, -60); // fora da janela padrão de 14 dias
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: dataFora, valor: -5000, status: 'efetivo', nota: 'padaria da esquina' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje });
+
+  render(<TelaFluxo />);
+  await abrirFiltros();
+  expect(screen.queryByText('padaria da esquina')).not.toBeInTheDocument();
+  await userEvent.type(screen.getByPlaceholderText(/Buscar/), 'padaria');
+
+  expect(await screen.findByText('padaria da esquina')).toBeInTheDocument();
+  expect(screen.getByText('Busca em todo o período: 1 resultado')).toBeInTheDocument();
+});
+
+it('busca sem acento acha nota acentuada, e valor sem ponto de milhar acha o lançamento', async () => {
+  const { box, catMercado } = await seedBoxComCategoria();
+  const hoje = '2026-07-05';
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: hoje, valor: -123456, status: 'efetivo', nota: 'Café da manhã' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje });
+
+  render(<TelaFluxo />);
+  await abrirFiltros();
+  const campo = screen.getByPlaceholderText(/Buscar/);
+  await userEvent.type(campo, 'cafe');
+  expect(await screen.findByText('Café da manhã')).toBeInTheDocument();
+  await userEvent.clear(campo);
+  await userEvent.type(campo, 'zzz');
+  expect(await screen.findByText('Nenhum resultado para a busca.')).toBeInTheDocument();
+  await userEvent.clear(campo);
+  await userEvent.type(campo, '1234');
+  expect(await screen.findByText('Café da manhã')).toBeInTheDocument();
+});
+
+it('busca pelo selo "previsto" acha o lançamento previsto, e o +30 dias some enquanto se busca', async () => {
+  const { box, catMercado } = await seedBoxComCategoria();
+  const hoje = '2026-07-05';
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: addDias(hoje, 3), valor: -7000, status: 'previsto', nota: 'conta futura' });
+  await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: hoje, valor: -3000, status: 'efetivo', nota: 'conta paga' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje });
+
+  render(<TelaFluxo />);
+  await abrirFiltros();
+  expect(screen.getByRole('button', { name: '+30 dias atrás' })).toBeInTheDocument();
+  await userEvent.type(screen.getByPlaceholderText(/Buscar/), 'previsto');
+
+  expect(await screen.findByText('conta futura')).toBeInTheDocument();
+  expect(screen.queryByText('conta paga')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: '+30 dias atrás' })).not.toBeInTheDocument();
+});
+
 it('busca por nome de categoria encontra lançamento sem nota dentro do intervalo', async () => {
   const { box, catSalario } = await seedBoxComCategoria();
   const hoje = '2026-07-05';

@@ -111,6 +111,9 @@ export default function TelaFluxo() {
     if (textoBate(dataBonita(l.data), q)) return true;
     if (valorBate(l.valor, q)) return true;
     if (naCasa && textoBate(nomeBox(l.boxId), q)) return true;
+    // Os selos que a linha mostra também valem na busca.
+    if (l.status === 'previsto' && textoBate(l.cenarioId ? 'cenário' : 'previsto', q)) return true;
+    if (l.valor < 0 && textoBate('estorno', q)) return true;
     return l.origem === 'cartao' && bateFaturaCartao(l);
   };
   const porDia = new Map<string, Lancamento[]>();
@@ -237,7 +240,7 @@ export default function TelaFluxo() {
                   <button className="botao" onClick={() => { setBusca(''); setDataDe(''); setDataAte(''); setPeriodoAtivo(false); }}>Limpar</button>
                 )}
               </div>
-              {!dataAtiva && (
+              {!dataAtiva && !buscaAtiva && (
                 <div className="linha">
                   <button className="botao" onClick={() => setDiasAtras(diasAtras + 30)}>+30 dias atrás</button>
                 </div>
