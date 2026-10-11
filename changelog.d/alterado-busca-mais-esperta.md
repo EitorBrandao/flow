@@ -1,0 +1,5 @@
+- A busca do Fluxo olha todo o período, não só os últimos 14 dias, e mostra quantos resultados achou.
+- A busca ignora maiúsculas e acentos ("cafe" acha "Café") e acha o valor com ou sem ponto de milhar ("1234" acha R$ 1.234,56). Vale no Fluxo, na aba Cartão e na fatura aberta pela busca.
+- O botão Voltar do celular fecha a folha aberta (fatura, edição, detalhes) em vez de sair do app.
+- Na aba Cartão, ao filtrar por uma categoria do resumo, os Lançamentos mostram "Só a categoria ..." com o botão Limpar.
+- O campo de busca passa a abrir o teclado com a tecla de busca.

@@ -14,8 +14,19 @@ interface Props {
 const DISTANCIA_FECHAR = 80;
 const VELOCIDADE_FECHAR = 500;
 
-/** Sheets abertos, do mais antigo ao mais novo: Esc fecha só o de cima. */
-const pilhaAbertos: Array<{ fechar: () => void }> = [];
+/** Sheets abertos, do mais antigo ao mais novo: Esc e o botão Voltar fecham só o de cima. */
+const pilhaAbertos: Array<{ fechar: () => void; desempilhado: boolean; empilhado: boolean }> = [];
+
+/** Quantos `history.back()` nossos ainda vão disparar `popstate`: esses não fecham sheet. */
+let popsProprios = 0;
+let ouvindoVoltar = false;
+function aoVoltar() {
+  if (popsProprios > 0) { popsProprios--; return; }
+  const topo = pilhaAbertos[pilhaAbertos.length - 1];
+  if (!topo) return;
+  topo.desempilhado = true; // o navegador já tirou a entrada de histórico deste sheet
+  topo.fechar();
+}
 
 export default function Sheet({ aberto, onFechar, rotulo, cabecalho, children }: Props) {
   const dragControls = useDragControls();
@@ -27,8 +38,17 @@ export default function Sheet({ aberto, onFechar, rotulo, cabecalho, children }:
 
   useEffect(() => {
     if (!aberto) return;
-    const entrada = { fechar: () => onFecharRef.current() };
+    const entrada = { fechar: () => onFecharRef.current(), desempilhado: false, empilhado: false };
     pilhaAbertos.push(entrada);
+    // Cada sheet aberto ganha uma entrada de histórico: o Voltar do Android fecha o sheet
+    // em vez de sair do app.
+    // O push espera um ciclo: o StrictMode monta, desmonta e monta de novo na hora, e isso
+    // não pode deixar entradas de histórico para trás.
+    const timer = setTimeout(() => {
+      window.history.pushState({ flowSheet: true }, '');
+      entrada.empilhado = true;
+    }, 0);
+    if (!ouvindoVoltar) { window.addEventListener('popstate', aoVoltar); ouvindoVoltar = true; }
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape' && pilhaAbertos[pilhaAbertos.length - 1] === entrada) entrada.fechar();
     }
@@ -36,6 +56,8 @@ export default function Sheet({ aberto, onFechar, rotulo, cabecalho, children }:
     return () => {
       document.removeEventListener('keydown', onKey);
       pilhaAbertos.splice(pilhaAbertos.indexOf(entrada), 1);
+      clearTimeout(timer);
+      if (entrada.empilhado && !entrada.desempilhado) { popsProprios++; window.history.back(); }
     };
   }, [aberto]);
 

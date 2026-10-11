@@ -1,3 +1,4 @@
+import { normalizarBusca } from '../domain/buscaTexto';
 import { itemFaturaBate } from '../domain/buscaFatura';
 import { formatarDataBR, nomeDoMes } from '../domain/dates';
 import { useState } from 'react';
@@ -56,7 +57,7 @@ export default function FaturaResumo({ lanc, busca = '', onFechar }: {
 
   // A busca pode ter casado só com o lançamento da fatura (o nome do cartão, por exemplo) e não
   // com nenhuma compra: então não há grupo, e a aba Cartão abre sem busca.
-  const termo = busca.trim().toLowerCase();
+  const termo = normalizarBusca(busca.trim());
   const encontrados = termo ? itens.filter((i) => itemFaturaBate(i, termo, nomeCatCartao)) : [];
   const restantes = itens.filter((i) => !encontrados.includes(i));
   const porDataDesc = (a: Fatura['itens'][number], b: Fatura['itens'][number]) => b.data.localeCompare(a.data);

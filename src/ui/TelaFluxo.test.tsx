@@ -33,39 +33,6 @@ async function abrirGrafico() {
   await userEvent.click(screen.getByRole('tab', { name: 'Gráfico' }));
 }
 
-it('busca não encontra lançamento fora do intervalo já exibido', async () => {
-  const { box, catMercado } = await seedBoxComCategoria();
-  const hoje = '2026-07-05';
-  const dataFora = addDias(hoje, -60); // fora da janela padrão de 14 dias
-  await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: dataFora, valor: -5000, status: 'efetivo', nota: 'padaria da esquina' });
-  await useApp.getState().iniciar();
-  useApp.setState({ boxSel: box.id, hoje });
-
-  render(<TelaFluxo />);
-  await abrirFiltros();
-  await userEvent.type(screen.getByPlaceholderText(/Buscar/), 'padaria');
-
-  expect(await screen.findByText('Nenhum resultado para a busca.')).toBeInTheDocument();
-  expect(screen.queryByText('padaria da esquina')).not.toBeInTheDocument();
-});
-
-it('ampliar o intervalo com +30 dias atrás passa a incluir o lançamento na busca ativa', async () => {
-  const { box, catMercado } = await seedBoxComCategoria();
-  const hoje = '2026-07-05';
-  const dataFora = addDias(hoje, -20); // fora dos 14 dias padrão, dentro de 14+30
-  await repo.salvarLancamento({ boxId: box.id, categoriaId: catMercado.id, data: dataFora, valor: -5000, status: 'efetivo', nota: 'padaria da esquina' });
-  await useApp.getState().iniciar();
-  useApp.setState({ boxSel: box.id, hoje });
-
-  render(<TelaFluxo />);
-  await abrirFiltros();
-  await userEvent.type(screen.getByPlaceholderText(/Buscar/), 'padaria');
-  expect(screen.queryByText('padaria da esquina')).not.toBeInTheDocument();
-
-  await userEvent.click(screen.getByRole('button', { name: '+30 dias atrás' }));
-
-  expect(await screen.findByText('padaria da esquina')).toBeInTheDocument();
-});
 
 it('busca por nome de categoria encontra lançamento sem nota dentro do intervalo', async () => {
   const { box, catSalario } = await seedBoxComCategoria();

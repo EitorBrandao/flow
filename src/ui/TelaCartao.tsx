@@ -1,3 +1,4 @@
+import { normalizarBusca } from '../domain/buscaTexto';
 import { useEffect, useId, useState } from 'react';
 import * as repo from '../db/repo';
 import { itemFaturaBate } from '../domain/buscaFatura';
@@ -170,7 +171,7 @@ function CartaoFatura({ cartao, pedido }: { cartao: Cartao; pedido?: PedidoCarta
   const nomeCat = (id: string) => dados.categoriasCartao.find((c) => c.id === id)?.nome ?? '?';
   const resumo = resumoPorCategoria(fatura);
 
-  const q = busca.trim().toLowerCase();
+  const q = normalizarBusca(busca.trim());
   const buscaAtiva = q.length > 0;
   const itensFiltrados = fatura.itens.filter((i) =>
     (!filtroCategoriaId || i.categoriaCartaoId === filtroCategoriaId)
@@ -264,12 +265,19 @@ function CartaoFatura({ cartao, pedido }: { cartao: Cartao; pedido?: PedidoCarta
             <div className="linha">
               <input
                 className="campo-busca"
+                type="search" enterKeyHint="search" autoComplete="off"
                 placeholder="Buscar por descrição, categoria, data ou valor..."
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 style={{ flex: 1 }}
               />
             </div>
+            {filtroCategoriaId && (
+              <div className="linha" style={{ justifyContent: 'space-between', marginTop: 8 }}>
+                <span className="sub">Só a categoria {nomeCat(filtroCategoriaId)}</span>
+                <button className="botao" onClick={() => setFiltroCategoriaId(null)}>Limpar</button>
+              </div>
+            )}
             <div className="lista" style={{ marginTop: 8 }}>
               {mostrarGrupos && <p className="rotulo-grupo">À vista</p>}
               {aVista.map((i) => (

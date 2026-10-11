@@ -1,3 +1,4 @@
+import { normalizarBusca, textoBate, valorBate } from '../domain/buscaTexto';
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Maximize2, Search } from 'lucide-react';
 import { itemFaturaBate } from '../domain/buscaFatura';
@@ -76,7 +77,7 @@ export default function TelaFluxo() {
   const nomeCatCartao = (id: string) => dados.categoriasCartao.find((c) => c.id === id)?.nome ?? '?';
   const naCasa = boxSel === 'casa';
   const nomeBox = (id: string) => dados.boxes.find((b) => b.id === id)?.nome ?? '?';
-  const q = busca.trim().toLowerCase();
+  const q = normalizarBusca(busca.trim());
   const buscaAtiva = q.length > 0;
   const dataAtiva = dataDe.length > 0;
   const filtroAtivo = buscaAtiva || dataAtiva;
@@ -105,11 +106,11 @@ export default function TelaFluxo() {
     return fatura.itens.some((i) => itemFaturaBate(i, q, nomeCatCartao));
   };
   const bate = (l: Lancamento) => {
-    if (l.nota && l.nota.toLowerCase().includes(q)) return true;
-    if (nomeCat(l.categoriaId).toLowerCase().includes(q)) return true;
-    if (dataBonita(l.data).toLowerCase().includes(q)) return true;
-    if (formatarBRL(l.valor).toLowerCase().includes(q)) return true;
-    if (naCasa && nomeBox(l.boxId).toLowerCase().includes(q)) return true;
+    if (textoBate(l.nota, q)) return true;
+    if (textoBate(nomeCat(l.categoriaId), q)) return true;
+    if (textoBate(dataBonita(l.data), q)) return true;
+    if (valorBate(l.valor, q)) return true;
+    if (naCasa && textoBate(nomeBox(l.boxId), q)) return true;
     return l.origem === 'cartao' && bateFaturaCartao(l);
   };
   const porDia = new Map<string, Lancamento[]>();
@@ -120,13 +121,14 @@ export default function TelaFluxo() {
     if (dataAtiva) {
       if (l.data < dataDeFiltro || l.data > dataAteFiltro) continue;
     } else {
-      if (l.data < inicioLista) continue;
-      if (buscaAtiva && !bate(l)) continue;
+      if (buscaAtiva ? !bate(l) : l.data < inicioLista) continue;
     }
     const arr = porDia.get(l.data);
     if (arr) arr.push(l);
     else porDia.set(l.data, [l]);
   }
+  const totalAchados = [...porDia.values()].reduce((n, arr) => n + arr.length, 0);
+  const textoResultados = `Busca em todo o período: ${totalAchados} ${totalAchados === 1 ? 'resultado' : 'resultados'}`;
   const saldoPorDia = new Map(serie.map((s) => [s.data, s.saldoProjetado]));
   const horizonte = dados.config.horizonteProjecao;
   const inicioSerie = serie[0]?.data;
@@ -203,7 +205,7 @@ export default function TelaFluxo() {
             <p className="sub">O filtro vale só para a lista: o saldo de cada dia continua sendo o da box inteira.</p>
           )}
           <div className="linha" style={{ justifyContent: 'space-between' }}>
-            <span className="sub">{dataAtiva ? 'Filtro por data ativo' : `Mostrando desde ${dataBonita(inicioLista)}`}</span>
+            <span className="sub">{dataAtiva ? 'Filtro por data ativo' : buscaAtiva ? textoResultados : `Mostrando desde ${dataBonita(inicioLista)}`}</span>
             <button
               type="button" className={`botao${filtrosAbertos ? ' ativo' : ''}`}
               aria-label="Buscar e filtrar" aria-pressed={filtrosAbertos}
@@ -215,7 +217,7 @@ export default function TelaFluxo() {
           {filtrosAbertos && (
             <>
               <div className="linha">
-                <input className="campo-busca" placeholder="Buscar por nota, categoria, data ou valor..." value={busca}
+                <input className="campo-busca" type="search" enterKeyHint="search" autoComplete="off" placeholder="Buscar por nota, categoria, data ou valor..." value={busca}
                        onChange={(e) => { setBusca(e.target.value); if (e.target.value) setDataDe(''); }}
                        style={{ flex: 1 }} />
               </div>
