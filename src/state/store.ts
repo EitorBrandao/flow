@@ -17,6 +17,10 @@ export type SecaoAjustes = 'menu' | 'categorias' | 'recorrencias' | 'boxes' | 'b
 /** Aba interna do Fluxo; `abrirFluxo` escolhe qual abre na chegada. */
 export type AbaFluxo = 'lista' | 'grafico' | 'simular';
 
+/** Pedido de abertura da aba Cartão: qual cartão e qual fatura (`mes` = mês do vencimento,
+ *  `AAAA-MM`). Com `busca`, a aba abre em Lançamentos já filtrada. Vale só na chegada. */
+export interface PedidoCartao { cartaoId: ID; mes: string; busca?: string }
+
 /** Semente de um lançamento vinda dos atalhos da sheet Adicionar; de uso único. */
 export interface RascunhoLancar { categoriaId: ID; valorCent: number }
 
@@ -52,6 +56,7 @@ interface AppState {
   boxSel: BoxSelecionada;
   ajustesSecao: SecaoAjustes | null;
   fluxoAba: AbaFluxo | null;
+  cartaoPedido: PedidoCartao | null;
   rascunhoLancar: RascunhoLancar | null;
   importacao: ImportacaoPendente;
   iniciar(): Promise<void>;
@@ -62,6 +67,8 @@ interface AppState {
   limparAjustesSecao(): void;
   abrirFluxo(aba: AbaFluxo): void;
   limparFluxoAba(): void;
+  abrirCartao(pedido: PedidoCartao): void;
+  limparCartaoPedido(): void;
   setRascunhoLancar(r: RascunhoLancar | null): void;
   /** Mescla o que `f` devolve na conferência pendente; `f` recebe o estado mais recente. */
   setImportacao(f: (atual: ImportacaoPendente) => Partial<ImportacaoPendente>): void;
@@ -76,6 +83,7 @@ export const useApp = create<AppState>((set) => ({
   boxSel: 'casa',
   ajustesSecao: null,
   fluxoAba: null,
+  cartaoPedido: null,
   rascunhoLancar: null,
   importacao: IMPORTACAO_VAZIA,
   async iniciar() {
@@ -104,6 +112,8 @@ export const useApp = create<AppState>((set) => ({
   limparAjustesSecao: () => set({ ajustesSecao: null }),
   abrirFluxo: (aba) => set({ aba: 'fluxo', fluxoAba: aba }),
   limparFluxoAba: () => set({ fluxoAba: null }),
+  abrirCartao: (cartaoPedido) => set({ aba: 'cartao', cartaoPedido }),
+  limparCartaoPedido: () => set({ cartaoPedido: null }),
   setRascunhoLancar: (rascunhoLancar) => set({ rascunhoLancar }),
   setImportacao: (f) => set((st) => ({ importacao: { ...st.importacao, ...f(st.importacao) } })),
   limparImportacao: () => set({ importacao: IMPORTACAO_VAZIA }),

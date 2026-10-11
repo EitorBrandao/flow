@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Maximize2, Search } from 'lucide-react';
+import { itemFaturaBate } from '../domain/buscaFatura';
 import { addDias, formatarDataBR } from '../domain/dates';
 import { bancosDaBox, lancamentoNoFiltro, nomeBancoDoLancamento, type FiltroBanco } from '../domain/bancos';
 import { ajustesDoCartao, calcularFaturas, type Fatura } from '../domain/fatura';
@@ -101,10 +102,7 @@ export default function TelaFluxo() {
     if (!l.cartaoId || !l.faturaMes) return false;
     const fatura = faturasDoCartao(l.cartaoId).find((f) => f.mes === l.faturaMes);
     if (!fatura) return false;
-    return fatura.itens.some((i) =>
-      (i.descricao != null && i.descricao.toLowerCase().includes(q))
-      || nomeCatCartao(i.categoriaCartaoId).toLowerCase().includes(q)
-      || formatarBRL(i.valorCent).toLowerCase().includes(q));
+    return fatura.itens.some((i) => itemFaturaBate(i, q, nomeCatCartao));
   };
   const bate = (l: Lancamento) => {
     if (l.nota && l.nota.toLowerCase().includes(q)) return true;
@@ -332,7 +330,7 @@ export default function TelaFluxo() {
         </Suspense>
       )}
       {editando && <LancEditor lanc={editando} onFechar={() => setEditando(null)} />}
-      {faturaSel && <FaturaResumo lanc={faturaSel} onFechar={() => setFaturaSel(null)} />}
+      {faturaSel && <FaturaResumo lanc={faturaSel} busca={buscaAtiva ? busca : ''} onFechar={() => setFaturaSel(null)} />}
       {transferenciaSel && (
         <TransferenciaSheet lanc={transferenciaSel} onFechar={() => setTransferenciaSel(null)} />
       )}

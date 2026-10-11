@@ -1,3 +1,4 @@
+import { itemFaturaBate } from '../domain/buscaFatura';
 import { formatarDataBR, nomeDoMes } from '../domain/dates';
 import { useState } from 'react';
 import {
@@ -10,9 +11,11 @@ import AvisoFaturaForaDoFluxo from './AvisoFaturaForaDoFluxo';
 import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
 import Sheet from './Sheet';
 
-function LinhaFatura({ item, nomeCat }: { item: Fatura['itens'][number]; nomeCat: (id: string) => string }) {
+function LinhaFatura({ item, nomeCat, destaque = false }: {
+  item: Fatura['itens'][number]; nomeCat: (id: string) => string; destaque?: boolean;
+}) {
   return (
-    <div className="item">
+    <div className={destaque ? 'item ativo' : 'item'}>
       <div className="cresce">
         <div>{item.descricao ?? nomeCat(item.categoriaCartaoId)}</div>
         <div className="sub">
@@ -25,8 +28,12 @@ function LinhaFatura({ item, nomeCat }: { item: Fatura['itens'][number]; nomeCat
   );
 }
 
-export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onFechar: () => void }) {
-  const { dados, hoje, setAba } = useApp();
+/** `busca`: o texto que levou a esta fatura (busca do Fluxo). As compras que casam com ele sobem
+ *  para o grupo "Encontrado na busca". */
+export default function FaturaResumo({ lanc, busca = '', onFechar }: {
+  lanc: Lancamento; busca?: string; onFechar: () => void;
+}) {
+  const { dados, hoje, abrirCartao } = useApp();
   // Valor com que abre a correção do pagamento; enquanto definido, a folha de pagamento toma
   // o lugar desta (uma folha por vez).
   const [corrigindoCom, setCorrigindoCom] = useState<number | null>(null);
@@ -47,12 +54,20 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
     ? faturaForaDoFluxo({ cartao, fatura, compras, lancFatura: lanc, conferencia, hoje })
     : null;
 
-  const aVista = itens.filter((i) => i.totalParcelas === 1).sort((a, b) => b.data.localeCompare(a.data));
-  const parceladas = itens.filter((i) => i.totalParcelas > 1).sort((a, b) => b.data.localeCompare(a.data));
-  const mostrarGrupos = aVista.length > 0 && parceladas.length > 0;
+  // A busca pode ter casado só com o lançamento da fatura (o nome do cartão, por exemplo) e não
+  // com nenhuma compra: então não há grupo, e a aba Cartão abre sem busca.
+  const termo = busca.trim().toLowerCase();
+  const encontrados = termo ? itens.filter((i) => itemFaturaBate(i, termo, nomeCatCartao)) : [];
+  const restantes = itens.filter((i) => !encontrados.includes(i));
+  const porDataDesc = (a: Fatura['itens'][number], b: Fatura['itens'][number]) => b.data.localeCompare(a.data);
+  const aVista = restantes.filter((i) => i.totalParcelas === 1).sort(porDataDesc);
+  const parceladas = restantes.filter((i) => i.totalParcelas > 1).sort(porDataDesc);
+  encontrados.sort(porDataDesc);
+  const mostrarGrupos = encontrados.length > 0 || (aVista.length > 0 && parceladas.length > 0);
 
-  function abrirCartao() {
-    setAba('cartao');
+  const cartaoId = cartao.id;
+  function irParaCartao() {
+    abrirCartao({ cartaoId, mes, busca: encontrados.length > 0 ? busca.trim() : undefined });
     onFechar();
   }
 
@@ -75,20 +90,24 @@ export default function FaturaResumo({ lanc, onFechar }: { lanc: Lancamento; onF
             <strong className={classeEfeito(-total)}>{formatarBRL(total)}</strong>
             {' · '}fecha {formatarDataBR(dataFechamento)} · vence {formatarDataBR(dataVencimento)}
           </p>
+          <button className="botao-ver-mais" style={{ marginTop: 6 }} onClick={irParaCartao}>
+            Ver fatura completa na aba Cartão →
+          </button>
         </>
       )}
     >
       {foraDoFluxo && <AvisoFaturaForaDoFluxo situacao={foraDoFluxo} onCorrigir={setCorrigindoCom} />}
       <div className="lista" style={{ marginTop: 8 }}>
-        {mostrarGrupos && <p className="rotulo-grupo">À vista</p>}
+        {encontrados.length > 0 && <p className="rotulo-grupo">Encontrado na busca</p>}
+        {encontrados.map((i) => <LinhaFatura key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCatCartao} destaque />)}
+        {mostrarGrupos && aVista.length > 0 && (
+          <p className="rotulo-grupo" style={encontrados.length > 0 ? { marginTop: 6 } : undefined}>À vista</p>
+        )}
         {aVista.map((i) => <LinhaFatura key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCatCartao} />)}
-        {mostrarGrupos && <p className="rotulo-grupo" style={{ marginTop: 6 }}>Parceladas</p>}
+        {mostrarGrupos && parceladas.length > 0 && <p className="rotulo-grupo" style={{ marginTop: 6 }}>Parceladas</p>}
         {parceladas.map((i) => <LinhaFatura key={`${i.compraId}:${i.parcela}`} item={i} nomeCat={nomeCatCartao} />)}
         {itens.length === 0 && <p className="sub">Nenhum gasto nesta fatura.</p>}
       </div>
-      <button className="botao-ver-mais" style={{ marginTop: 10 }} onClick={abrirCartao}>
-        Ver fatura completa na aba Cartão →
-      </button>
     </Sheet>
   );
 }

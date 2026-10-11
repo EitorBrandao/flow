@@ -32,7 +32,7 @@ import { useModo } from './useModo';
 const EvolucaoMensalChart = lazy(() => import('./EvolucaoMensalChart'));
 
 export default function TelaAnalises() {
-  const { dados: dadosTodos, boxSel, hoje, setAba } = useApp();
+  const { dados: dadosTodos, boxSel, hoje, abrirCartao } = useApp();
   const [periodo, setPeriodo] = useState<EstadoPeriodo>(() => estadoInicial(mesDe(hoje)));
   const [incluirPrevistosEscolha, setIncluirPrevistos] = useState(true);
   const [filtroBanco, setFiltroBanco] = useState<FiltroBanco>('todos');
@@ -332,7 +332,7 @@ export default function TelaAnalises() {
           ajustesFechamento={dados.ajustesFechamento}
           onFechar={fecharDetalhe}
           onVoltar={voltarAoPeriodo}
-          onAbrirCartao={() => { setAba('cartao'); fecharDetalhe(); }}
+          onAbrirCartao={() => { abrirCartao({ cartaoId: cartaoDaCategoria.id, mes: mesDetalhe }); fecharDetalhe(); }}
         />
       ) : (
         <LancamentosSheet

@@ -15,10 +15,10 @@ import SeletorMes from './SeletorMes';
 
 /** Cartão no modo Simples: só o valor da fatura do mês. O valor vira uma `ConferenciaFatura`
  *  com `usarValorApp` (mesma conferência da aba Conferência do Avançado) — não cria compra. */
-export default function CartaoSimples({ cartao }: { cartao: Cartao }) {
+export default function CartaoSimples({ cartao, mesInicial }: { cartao: Cartao; mesInicial?: string }) {
   const { dados, hoje } = useApp();
-  const [mes, setMes] = useState(() =>
-    mesFaturaDaCompra(cartao, hoje, ajustesDoCartao(dados?.ajustesFechamento ?? [], cartao.id)),
+  const [mes, setMes] = useState(() => mesInicial
+    ?? mesFaturaDaCompra(cartao, hoje, ajustesDoCartao(dados?.ajustesFechamento ?? [], cartao.id)),
   );
   if (!dados) return null;
   return (
