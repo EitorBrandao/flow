@@ -1,7 +1,7 @@
 # Fatura aberta pela busca
 
-Status: aprovada em 2026-10-11 — implementada
-Nota: mockup (opção A) aprovado pelo usuário no chat em 2026-10-11. Vem da varredura de usabilidade das buscas, feita com Playwright no viewport do Galaxy S25+.
+Status: implementada. O usuário aprovou o mockup (opção A) no chat em 2026-10-11 e pediu para seguir até o fragmento de changelog; esta spec não passou por revisão separada.
+Nota: vem da varredura de usabilidade das buscas, feita com Playwright no viewport do Galaxy S25+.
 
 ## Problema
 
