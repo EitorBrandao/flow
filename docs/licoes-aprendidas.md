@@ -95,6 +95,7 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 - **Marcação crua pode chegar à tela.** O parser da wiki agora lança exceção para sintaxe fora do subconjunto. O changelog aceita dois níveis de lista. Confira a gramática em `src/ui/ajustes/changelog.ts` e `docs/wiki/README.md` antes de escrever.
 - **Um aviso que compara por um campo precisa conhecer o campo antes de salvar.** O aviso de lançamento repetido passou a comparar a categoria. No modo Simples a categoria só nasce ao salvar (atalho, descrição ou "A classificar"). *Faça:* use a mesma função nos dois momentos, sem criar nada para o aviso. Se a categoria ainda não existe, não há o que comparar. O teste antigo do Simples passava sem descrição e deixou de valer: refaça o cenário, não afrouxe a regra.
 - **Teste de seleção chaveada só pelo nome colide.** "Pix" existe como ganho e como gasto.
+- **Efeito com `history.pushState` no desmonte precisa esperar um ciclo.** O `StrictMode` monta, desmonta e monta de novo na hora; empilhar a entrada de histórico direto no efeito deixava entradas sobrando, e o Voltar saía do app. Adie o `pushState` com `setTimeout(0)`, cancele no desmonte, e conte os `history.back()` próprios para o `popstate` deles não fechar nada. Confirme no navegador com `page.goBack()`: o teste de unidade sozinho não mostrou o problema.
 
 ## Planejamento e backlog
 

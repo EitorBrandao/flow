@@ -319,6 +319,35 @@ it('clicar numa categoria do resumo filtra os lançamentos; clicar de novo limpa
   } finally { vi.useRealTimers(); }
 });
 
+it('o filtro de categoria fica visível nos Lançamentos e o Limpar o tira', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao, catCartao } = await montarCartao();
+    const catLazer = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'lazer', ordem: 1 });
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-04',
+      valorTotal: 41230, parcelas: 1, descricao: 'Mercado',
+    }, '2027-12-31');
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catLazer.id, data: '2026-07-15',
+      valorTotal: 4490, parcelas: 1, descricao: 'Streaming',
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    render(<TelaCartao />);
+
+    expect(screen.queryByText('Só a categoria lazer')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /^lazer/ }));
+    expect(await screen.findByText('Só a categoria lazer')).toBeInTheDocument();
+    expect(screen.queryByText('Mercado')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Limpar' }));
+    expect(await screen.findByText('Mercado')).toBeInTheDocument();
+    expect(screen.queryByText('Só a categoria lazer')).not.toBeInTheDocument();
+  } finally { vi.useRealTimers(); }
+});
+
 it('busca filtra por descrição e mostra estado vazio quando nada bate', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   try {
