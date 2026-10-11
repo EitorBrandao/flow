@@ -3,6 +3,18 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.67.0] - 2026-10-11
+
+### Alterado
+
+- "Ver fatura completa na aba Cartão" agora abre o cartão e o mês da fatura que você estava vendo.
+  - Antes, a aba Cartão abria sempre no primeiro cartão, no mês atual.
+  - Vale para a folha da fatura no Fluxo e para a folha por categoria nas Análises.
+- O link "Ver fatura completa" subiu para o cabeçalho da folha, sob o total, e fica sempre à vista, mesmo numa fatura longa.
+- Fatura aberta a partir de uma busca no Fluxo: as compras que bateram sobem para o grupo "Encontrado na busca", em destaque.
+  - A aba Cartão abre em Lançamentos, com a busca já preenchida.
+- A busca do Fluxo passa a achar compras da fatura também pela data, como já fazia a aba Cartão.
+
 ## [0.66.1] - 2026-10-08
 
 ### Alterado
