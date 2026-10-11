@@ -335,6 +335,8 @@ it('lançamento de fatura de cartão abre o resumo em vez do editor, e o link na
 
     await userEvent.click(screen.getByRole('button', { name: /Ver fatura completa na aba Cartão/ }));
     expect(useApp.getState().aba).toBe('cartao');
+    // o pedido leva o cartão e o mês exatos da fatura aberta, não só a troca de aba
+    expect(useApp.getState().cartaoPedido).toEqual({ cartaoId: cartao.id, mes: '2026-08', busca: undefined });
   } finally { vi.useRealTimers(); }
 });
 
@@ -357,6 +359,26 @@ describe('busca alcança compras dentro da fatura do cartão', () => {
     await useApp.getState().iniciar();
     useApp.setState({ boxSel: box.id, hoje });
   }
+
+  it('abrir a fatura achada pela busca destaca a compra e leva a busca para a aba Cartão', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      await seedFaturaComDuasCompras();
+      render(<TelaFluxo />);
+      await abrirFiltros();
+      await userEvent.type(screen.getByPlaceholderText(/Buscar/), 'Farmácia');
+      await userEvent.click(await screen.findByRole('button', { name: /Nubank/ }));
+
+      const dialog = await screen.findByRole('dialog');
+      expect(within(dialog).getByText('Encontrado na busca')).toBeInTheDocument();
+      expect(within(dialog).getByText('Farmácia').closest('.item')).toHaveClass('ativo');
+      expect(within(dialog).getByText('Padaria').closest('.item')).not.toHaveClass('ativo');
+
+      await userEvent.click(within(dialog).getByRole('button', { name: /Ver fatura completa na aba Cartão/ }));
+      expect(useApp.getState().cartaoPedido).toMatchObject({ mes: '2026-08', busca: 'Farmácia' });
+    } finally { vi.useRealTimers(); }
+  });
 
   it('busca por descrição de uma compra da fatura mostra o lançamento do cartão', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });

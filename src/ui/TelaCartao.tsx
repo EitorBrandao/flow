@@ -1,5 +1,6 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import * as repo from '../db/repo';
+import { itemFaturaBate } from '../domain/buscaFatura';
 import { formatarDataBR } from '../domain/dates';
 import {
   ajustesDoCartao, calcularFaturas, datasFaturaDoMes, faturaForaDoFluxo, mesFaturaDaCompra, resumoPorCategoria,
@@ -7,7 +8,7 @@ import {
 } from '../domain/fatura';
 import { classeEfeito, formatarBRL } from '../domain/money';
 import type { Cartao, CompraCartao } from '../domain/types';
-import { boxIdsSelecionadas, useApp } from '../state/store';
+import { boxIdsSelecionadas, useApp, type PedidoCartao } from '../state/store';
 import CampoValor from './CampoValor';
 import CartaoSimples from './CartaoSimples';
 import FormCompra from './FormCompra';
@@ -141,18 +142,19 @@ function BlocoAjusteFechamento({ cartao, mesFechamento }: { cartao: Cartao; mesF
   );
 }
 
-function CartaoFatura({ cartao }: { cartao: Cartao }) {
+function CartaoFatura({ cartao, pedido }: { cartao: Cartao; pedido?: PedidoCartao }) {
   const { dados, hoje } = useApp();
-  const [mes, setMes] = useState(() =>
-    mesFaturaDaCompra(cartao, hoje, ajustesDoCartao(dados?.ajustesFechamento ?? [], cartao.id)),
+  const [mes, setMes] = useState(() => pedido?.mes
+    ?? mesFaturaDaCompra(cartao, hoje, ajustesDoCartao(dados?.ajustesFechamento ?? [], cartao.id)),
   );
   const [editando, setEditando] = useState<CompraCartao | null>(null);
   const [filtroCategoriaId, setFiltroCategoriaId] = useState<string | null>(null);
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useState(pedido?.busca ?? '');
   const [pagando, setPagando] = useState(false);
   // Valor que abre na folha de pagamento; `null` = o próprio valor já registrado.
   const [valorInicialPagamento, setValorInicialPagamento] = useState<number | null>(null);
-  const [abaCartao, setAbaCartao] = useState<AbaCartao>('resumo');
+  // Chegando de uma busca, a aba já abre em Lançamentos, onde a busca está preenchida.
+  const [abaCartao, setAbaCartao] = useState<AbaCartao>(pedido?.busca ? 'lancamentos' : 'resumo');
   if (!dados) return null;
 
   const ajustes = ajustesDoCartao(dados.ajustesFechamento, cartao.id);
@@ -170,14 +172,9 @@ function CartaoFatura({ cartao }: { cartao: Cartao }) {
 
   const q = busca.trim().toLowerCase();
   const buscaAtiva = q.length > 0;
-  const bate = (i: Fatura['itens'][number]) => {
-    if (i.descricao && i.descricao.toLowerCase().includes(q)) return true;
-    if (nomeCat(i.categoriaCartaoId).toLowerCase().includes(q)) return true;
-    if (i.data.split('-').reverse().join('/').includes(q)) return true;
-    return formatarBRL(i.valorCent).toLowerCase().includes(q);
-  };
   const itensFiltrados = fatura.itens.filter((i) =>
-    (!filtroCategoriaId || i.categoriaCartaoId === filtroCategoriaId) && (!buscaAtiva || bate(i)));
+    (!filtroCategoriaId || i.categoriaCartaoId === filtroCategoriaId)
+    && (!buscaAtiva || itemFaturaBate(i, q, nomeCat)));
 
   const lancFatura = dados.lancamentos.find((l) => l.cartaoId === cartao.id && l.faturaMes === mes);
 
@@ -334,14 +331,21 @@ function ItemFaturaBotao({ item, nomeCat, onClick }: {
 }
 
 export default function TelaCartao() {
-  const { dados, boxSel, abrirAjustes } = useApp();
+  const { dados, boxSel, abrirAjustes, limparCartaoPedido } = useApp();
   const modo = useModo('cartao');
-  const [cartaoSelId, setCartaoSelId] = useState<string | null>(null);
+  // O pedido de fora (fatura aberta no Fluxo ou nas Análises) vale só na chegada: vira o estado
+  // inicial daqui e sai do store. Trocar de cartão no seletor o descarta.
+  const [pedido, setPedido] = useState(() => useApp.getState().cartaoPedido);
+  const [cartaoSelId, setCartaoSelId] = useState<string | null>(pedido?.cartaoId ?? null);
+  useEffect(() => {
+    if (pedido) limparCartaoPedido();
+  }, [pedido, limparCartaoPedido]);
   const uid = useId();
   if (!dados) return null;
   const ids = boxIdsSelecionadas(dados, boxSel);
+  // Cartão inativo também gera fatura no Fluxo: o pedido o inclui, para não abrir outro cartão.
   const cartoes = dados.cartoes
-    .filter((c) => c.ativo && ids.includes(c.boxId))
+    .filter((c) => (c.ativo || c.id === pedido?.cartaoId) && ids.includes(c.boxId))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   if (cartoes.length === 0) {
     return (
@@ -365,7 +369,7 @@ export default function TelaCartao() {
       {cartoes.length >= 2 && (
         <div className="campo">
           <label htmlFor={`${uid}-cartao`}>Cartão</label>
-          <select id={`${uid}-cartao`} value={cartao.id} onChange={(e) => setCartaoSelId(e.target.value)}>
+          <select id={`${uid}-cartao`} value={cartao.id} onChange={(e) => { setCartaoSelId(e.target.value); setPedido(null); }}>
             {cartoes.map((c) => (
               <option key={c.id} value={c.id}>{boxSel === 'casa' ? `${c.nome} · ${nomeBox(c.boxId)}` : c.nome}</option>
             ))}
@@ -373,8 +377,8 @@ export default function TelaCartao() {
         </div>
       )}
       {modo === 'simples'
-        ? <CartaoSimples key={cartao.id} cartao={cartao} />
-        : <CartaoFatura key={cartao.id} cartao={cartao} />}
+        ? <CartaoSimples key={cartao.id} cartao={cartao} mesInicial={pedido?.cartaoId === cartao.id ? pedido.mes : undefined} />
+        : <CartaoFatura key={cartao.id} cartao={cartao} pedido={pedido?.cartaoId === cartao.id ? pedido : undefined} />}
     </div>
   );
 }

@@ -94,6 +94,7 @@ it('clicar na categoria do cartão mostra o detalhamento por categoria de cartã
     const link = within(dialog).getByRole('button', { name: /Ver fatura completa/ });
     await userEvent.click(link);
     expect(useApp.getState().aba).toBe('cartao');
+    expect(useApp.getState().cartaoPedido).toEqual({ cartaoId: cartao.id, mes: '2026-08' });
   } finally { vi.useRealTimers(); }
 });
 

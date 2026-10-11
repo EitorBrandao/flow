@@ -40,6 +40,9 @@ export default function FaturaCategoriaSheet({
             <strong className={classeEfeito(-total)}>{formatarBRL(total)}</strong>
             {' · '}fecha {formatarDataBR(fatura.dataFechamento)} · vence {formatarDataBR(fatura.dataVencimento)}
           </p>
+          <button className="botao-ver-mais" style={{ marginTop: 6 }} onClick={onAbrirCartao}>
+            Ver fatura completa na aba Cartão →
+          </button>
         </>
       )}
     >
@@ -52,9 +55,6 @@ export default function FaturaCategoriaSheet({
         ))}
         {resumo.length === 0 && <p className="sub">Nenhum gasto nesta fatura.</p>}
       </div>
-      <button className="botao-ver-mais" style={{ marginTop: 10 }} onClick={onAbrirCartao}>
-        Ver fatura completa na aba Cartão →
-      </button>
     </Sheet>
   );
 }
