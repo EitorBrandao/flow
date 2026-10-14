@@ -1,5 +1,0 @@
-- Transferência entre boxes, em Hoje → Conferir
-  - O botão "Transferir entre boxes" move dinheiro de uma box para outra, com o banco de cada lado quando a box tem bancos
-  - Aparece o saldo de cada banco antes e depois, e um aviso de que o saldo somado da casa não muda
-  - No Fluxo, a saída e a entrada aparecem cada uma na sua box, e ao tocar numa delas o resumo mostra de onde saiu e onde entrou
-  - Fica fora dos totais de ganhos e gastos de Análises
