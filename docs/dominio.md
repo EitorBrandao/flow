@@ -22,8 +22,8 @@ Só o significado de produto; os campos estão em `src/domain/types.ts`.
   seção abaixo); recorrências e cenários ainda podem gravar. Uma `Box` também guarda duas **categorias
   ocultas de transferência** (`categoriaTransferenciaSaidaId`, de gasto, e
   `categoriaTransferenciaEntradaId`, de ganho) que recebem as duas pernas de uma
-  transferência entre bancos da própria box. Elas nascem sob demanda, na primeira
-  transferência (`transferirEntreBancos`, `src/db/repo.ts`) e são escondidas de qualquer
+  transferência da própria box (entre bancos, ou entre boxes: a box de origem usa só a de saída e a de destino só a de entrada). Elas nascem sob demanda, na primeira
+  transferência (`transferirEntreBancos` ou `transferirEntreBoxes`, `src/db/repo.ts`) e são escondidas de qualquer
   seletor manual por `categoriasTransferenciaIds` (`src/domain/transferencia.ts`).
 - **Banco** — conta bancária **dentro** de uma box, com `nome`, `ordem`, `padrao` (opcional) e o
   par `saldoDeclaradoCent`/`dataSaldoDeclarado`. Existe porque a box modela a *pessoa*, e uma
@@ -200,7 +200,7 @@ Combinações que o código realmente produz, hoje:
 | `recorrencia` | não | sempre `previsto` | `materializarRecorrencia` (`src/db/repo.ts`) | "Confirmar" em `LancEditor.tsx` (ajusta valor e status juntos); depois de `efetivo`, `materializar` (`src/domain/recurrence.ts`) nunca mais toca o registro |
 | `recorrencia` | sim | sempre `previsto` | `CenarioCard.tsx` (`FormItemCenario`, repetição "parcelado" ou "todo mês") → `gravarItemNovo` → `repo.salvarRecorrencia` com `cenarioId`, materializado do mesmo jeito | ver ressalva abaixo |
 | `cartao` | não | sempre `previsto` | `sincronizarCartoes` (`src/db/repo.ts`) | fila de pendentes da `TelaHoje` (`pendentes`, `src/domain/projection.ts`) não filtra por `origem`, então uma fatura vencida cai na mesma fila manual/recorrência e é confirmada por `repo.confirmarPendente`; depois de `efetivo`, `diffSincronizacao` (`src/domain/fatura.ts`) nunca mais toca o registro |
-| `transferencia` | não | sempre `efetivo` | `transferirEntreBancos` (`src/db/repo.ts`) | não existe: as duas pernas nascem `efetivo` e nunca são revisitadas — não há "transferência prevista" nem confirmação; `excluirTransferencia` (`src/db/repo.ts`) só apaga as duas, nunca muda `status` |
+| `transferencia` | não | sempre `efetivo` | `transferirEntreBancos`, `transferirEntreBoxes` (`src/db/repo.ts`) | não existe: as duas pernas nascem `efetivo` e nunca são revisitadas — não há "transferência prevista" nem confirmação; `excluirTransferencia` (`src/db/repo.ts`) só apaga as duas, nunca muda `status` |
 
 O checkbox "Marcar como previsto" (`TelaLancar.tsx`) força `status: 'previsto'` mesmo com
 `data` de hoje ou passada. É o único caminho, para lançamento manual, que alimenta a fila de

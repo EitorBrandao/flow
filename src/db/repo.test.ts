@@ -2295,3 +2295,88 @@ describe('unificarCasasDuplicadas', () => {
     expect((await db.categorias.get(cat.id))!.alteradoEm > antes).toBe(true);
   });
 });
+
+describe('transferirEntreBoxes', () => {
+  async function duasBoxes() {
+    const agora = agoraISO();
+    const ana: Box = { id: novoId(), nome: 'ana', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    const caio: Box = { id: novoId(), nome: 'caio', saldoInicial: 50000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(ana);
+    await repo.salvarBox(caio);
+    return { ana, caio };
+  }
+
+  it('grava uma perna em cada box, ligadas, com banco e nota de cada ponta', async () => {
+    const { ana, caio } = await duasBoxes();
+    const azul = await repo.salvarBanco({ boxId: ana.id, nome: 'Azul', ordem: 0 });
+    const verde = await repo.salvarBanco({ boxId: caio.id, nome: 'Verde', ordem: 0 });
+
+    await repo.transferirEntreBoxes({ boxId: ana.id, bancoId: azul.id }, { boxId: caio.id, bancoId: verde.id }, 30000, '2026-07-05');
+
+    const pernas = (await db.lancamentos.toArray()).filter((l) => l.origem === 'transferencia');
+    expect(pernas).toHaveLength(2);
+    const saida = pernas.find((l) => l.boxId === ana.id)!;
+    const entrada = pernas.find((l) => l.boxId === caio.id)!;
+    const anaAtual = (await db.boxes.get(ana.id))!;
+    const caioAtual = (await db.boxes.get(caio.id))!;
+    expect(saida).toMatchObject({ valor: 30000, data: '2026-07-05', status: 'efetivo', bancoId: azul.id, categoriaId: anaAtual.categoriaTransferenciaSaidaId, nota: 'ana · Azul → caio · Verde' });
+    expect(entrada).toMatchObject({ valor: 30000, bancoId: verde.id, categoriaId: caioAtual.categoriaTransferenciaEntradaId, nota: 'ana · Azul → caio · Verde' });
+    expect(saida.transferenciaId).toBeTruthy();
+    expect(saida.transferenciaId).toBe(entrada.transferenciaId);
+    expect((await db.categorias.get(anaAtual.categoriaTransferenciaSaidaId!))?.tipo).toBe('gasto');
+    expect((await db.categorias.get(caioAtual.categoriaTransferenciaEntradaId!))?.tipo).toBe('ganho');
+    // cada box só ganha a categoria da sua ponta
+    expect(anaAtual.categoriaTransferenciaEntradaId).toBeUndefined();
+    expect(caioAtual.categoriaTransferenciaSaidaId).toBeUndefined();
+  });
+
+  it('box sem bancos: perna sem banco e nota só com o nome da box', async () => {
+    const { ana, caio } = await duasBoxes();
+    await repo.transferirEntreBoxes({ boxId: ana.id }, { boxId: caio.id }, 10000, '2026-07-05');
+    const pernas = (await db.lancamentos.toArray()).filter((l) => l.origem === 'transferencia');
+    expect(pernas.map((l) => l.bancoId)).toEqual([undefined, undefined]);
+    expect(pernas[0].nota).toBe('ana → caio');
+  });
+
+  it('reaproveita as categorias ocultas e a soma das pernas é zero para a casa', async () => {
+    const { ana, caio } = await duasBoxes();
+    await repo.transferirEntreBoxes({ boxId: ana.id }, { boxId: caio.id }, 10000, '2026-07-05');
+    await repo.transferirEntreBoxes({ boxId: caio.id }, { boxId: ana.id }, 2500, '2026-07-06');
+    // 2 categorias ocultas por box usada: ana (saída + entrada) e caio (entrada + saída)
+    expect(await db.categorias.count()).toBe(4);
+    const tipos = new Map((await db.categorias.toArray()).map((c) => [c.id, c.tipo]));
+    const soma = (await db.lancamentos.toArray()).reduce((s, l) => s + (tipos.get(l.categoriaId) === 'ganho' ? l.valor : -l.valor), 0);
+    expect(soma).toBe(0);
+  });
+
+  it('recusa mesma box, valor inválido, box sem saldo próprio e box inexistente', async () => {
+    const { ana, caio } = await duasBoxes();
+    const agora = agoraISO();
+    const casa: Box = { id: novoId(), nome: 'casa', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(casa);
+    await expect(repo.transferirEntreBoxes({ boxId: ana.id }, { boxId: ana.id }, 100, '2026-07-05')).rejects.toThrow();
+    await expect(repo.transferirEntreBoxes({ boxId: ana.id }, { boxId: caio.id }, 0, '2026-07-05')).rejects.toThrow();
+    await expect(repo.transferirEntreBoxes({ boxId: ana.id }, { boxId: caio.id }, -5, '2026-07-05')).rejects.toThrow();
+    await expect(repo.transferirEntreBoxes({ boxId: ana.id }, { boxId: casa.id }, 100, '2026-07-05')).rejects.toThrow();
+    await expect(repo.transferirEntreBoxes({ boxId: ana.id }, { boxId: 'x' }, 100, '2026-07-05')).rejects.toThrow();
+    expect(await db.lancamentos.count()).toBe(0);
+  });
+
+  it('exige banco quando a box tem bancos, recusa banco de outra box e banco em box sem bancos', async () => {
+    const { ana, caio } = await duasBoxes();
+    const azul = await repo.salvarBanco({ boxId: ana.id, nome: 'Azul', ordem: 0 });
+    await expect(repo.transferirEntreBoxes({ boxId: ana.id }, { boxId: caio.id }, 100, '2026-07-05')).rejects.toThrow('Escolha o banco.');
+    await expect(repo.transferirEntreBoxes({ boxId: caio.id, bancoId: azul.id }, { boxId: ana.id, bancoId: azul.id }, 100, '2026-07-05')).rejects.toThrow('Esta box não tem bancos.');
+    await expect(repo.transferirEntreBoxes({ boxId: ana.id, bancoId: 'x' }, { boxId: caio.id }, 100, '2026-07-05')).rejects.toThrow('Banco não encontrado.');
+    expect(await db.lancamentos.count()).toBe(0);
+    expect(await db.categorias.count()).toBe(0);
+  });
+
+  it('excluirTransferencia apaga as duas pernas, uma em cada box', async () => {
+    const { ana, caio } = await duasBoxes();
+    await repo.transferirEntreBoxes({ boxId: ana.id }, { boxId: caio.id }, 10000, '2026-07-05');
+    const id = (await db.lancamentos.toArray())[0].transferenciaId!;
+    await repo.excluirTransferencia(id);
+    expect(await db.lancamentos.count()).toBe(0);
+  });
+});
