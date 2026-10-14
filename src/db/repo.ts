@@ -1054,6 +1054,46 @@ export async function transferirEntreBancos(
   });
 }
 
+/** Ponta de uma transferência entre boxes: a box e, quando ela tem bancos, o banco. */
+export interface PontaTransferencia { boxId: ID; bancoId?: ID }
+
+/** Move dinheiro de uma box para outra, no mesmo formato da transferência entre bancos: duas
+ *  pernas ligadas por `transferenciaId`, saída (gasto) na origem e entrada (ganho) no destino,
+ *  nas categorias ocultas de cada box. O saldo somado da casa não muda. Cada ponta exige banco
+ *  quando a box tem bancos, e não aceita banco quando não tem. Boxes sem saldo próprio (a
+ *  `casa`) ficam fora. A nota traz "box · banco → box · banco" nas duas pernas. */
+export async function transferirEntreBoxes(
+  origem: PontaTransferencia, destino: PontaTransferencia, valorCent: number, data: ISODate,
+): Promise<void> {
+  if (origem.boxId === destino.boxId) throw new Error('Escolha duas boxes diferentes.');
+  if (valorCent <= 0) throw new Error('O valor da transferência precisa ser maior que zero.');
+  await db.transaction('rw', db.bancos, db.categorias, db.boxes, db.lancamentos, db.config, async () => {
+    const nomes: string[] = [];
+    for (const ponta of [origem, destino]) {
+      const box = await db.boxes.get(ponta.boxId);
+      if (!box) throw new Error('Box não encontrada.');
+      if (box.saldoInicial == null) throw new Error('Transferência só entre boxes com saldo próprio.');
+      const bancosDaBox = await db.bancos.where('boxId').equals(box.id).toArray();
+      if (bancosDaBox.length > 0 && !ponta.bancoId) throw new Error('Escolha o banco.');
+      if (bancosDaBox.length === 0 && ponta.bancoId) throw new Error('Esta box não tem bancos.');
+      const banco = ponta.bancoId ? bancosDaBox.find((b) => b.id === ponta.bancoId) : undefined;
+      if (ponta.bancoId && !banco) throw new Error('Banco não encontrado.');
+      nomes.push(banco ? `${box.nome} · ${banco.nome}` : box.nome);
+    }
+    const categoriaSaidaId = await categoriaTransferenciaSaidaDe(origem.boxId);
+    const categoriaEntradaId = await categoriaTransferenciaEntradaDe(destino.boxId);
+    const agora = agoraISO();
+    const transferenciaId = novoId();
+    const nota = `${nomes[0]} → ${nomes[1]}`;
+    const base = { data, valor: valorCent, nota, status: 'efetivo' as const, origem: 'transferencia' as const, transferenciaId, criadoEm: agora, alteradoEm: agora };
+    await db.lancamentos.bulkAdd([
+      { ...base, id: novoId(), boxId: origem.boxId, categoriaId: categoriaSaidaId, bancoId: origem.bancoId },
+      { ...base, id: novoId(), boxId: destino.boxId, categoriaId: categoriaEntradaId, bancoId: destino.bancoId },
+    ]);
+    await marcarMudanca();
+  });
+}
+
 /** Apaga as duas pernas de uma transferência. O saldo calculado dos dois bancos volta ao que
  *  era. Uma transferência feita ANTES do banco no lançamento (v0.29 a v0.50) já tinha
  *  ajustado o `saldoDeclaradoCent` dos bancos; esse ajuste antigo não é desfeito — corrigir é

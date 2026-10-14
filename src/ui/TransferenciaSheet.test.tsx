@@ -53,3 +53,28 @@ it('cancelar a confirmação de exclusão não apaga nada', async () => {
 
   expect((await db.lancamentos.toArray()).filter((l) => l.origem === 'transferencia')).toHaveLength(2);
 });
+
+it('entre boxes: mostra de onde saiu e onde entrou, e exclui as duas pernas', async () => {
+  const agora = agoraISO();
+  const ana = { id: novoId(), nome: 'ana', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  const caio = { id: novoId(), nome: 'caio', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(ana);
+  await repo.salvarBox(caio);
+  const azul = await repo.salvarBanco({ boxId: ana.id, nome: 'Azul', ordem: 0 });
+  await repo.transferirEntreBoxes({ boxId: ana.id, bancoId: azul.id }, { boxId: caio.id }, 30000, '2026-07-05');
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: ana.id, hoje: '2026-07-05' });
+  const saida = (await db.lancamentos.toArray()).find((l) => l.boxId === ana.id) as Lancamento;
+  window.confirm = vi.fn(() => true);
+  const onFechar = vi.fn();
+  render(<TransferenciaSheet lanc={saida} onFechar={onFechar} />);
+
+  expect(await screen.findByText('Saiu de')).toBeInTheDocument();
+  expect(screen.getByText('ana · Azul')).toBeInTheDocument();
+  expect(screen.getByText('Entrou em')).toBeInTheDocument();
+  expect(screen.getByText('Excluir apaga os dois lançamentos, um em cada box.')).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir transferência' }));
+  await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
+  expect(await db.lancamentos.count()).toBe(0);
+});

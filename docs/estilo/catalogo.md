@@ -239,9 +239,13 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   aceita o XML da nota por upload ou colado, faz o parse (`domain/notaFiscal.ts`) e devolve o
   resultado por `onConcluir`. Usado por `AdicionarSheet`.
 - **`TransferenciaSheet.tsx`** — sheet somente leitura com o detalhe de uma transferência
-  entre bancos (a nota do lançamento, "banco origem → banco destino", mais valor e data), com
+  entre bancos ou entre boxes (a nota do lançamento, "banco origem → banco destino", mais valor e data; entre boxes, também "Saiu de" e "Entrou em"), com
   o botão que exclui as duas pernas ligadas por `transferenciaId`. Mesmo padrão do
   `FaturaResumo.tsx`. Usado pela `TelaFluxo` ao clicar num lançamento `origem: 'transferencia'`.
+- **`TransferirEntreBoxes.tsx`** — botão "Transferir entre boxes" e o formulário embutido (De/Para
+  com box e banco, valor, data) da aba Conferir, na `TelaHoje`. Some com menos de duas boxes
+  com saldo próprio. Grava por `repo.transferirEntreBoxes`. Mostra o saldo antes e depois dos
+  bancos, no mesmo formato da transferência entre bancos. Só usa classes já catalogadas.
 - **`FormItemCenario.tsx`** — formulário de item de cenário, novo e edição: valor, descrição,
   Gasto/Ganho, categoria (`SeletorCategoria`, sem as categorias de fatura e de transferência,
   e sem as arquivadas), repetição Uma vez/Parcelado/Todo mês, data (ou "a partir de", nas

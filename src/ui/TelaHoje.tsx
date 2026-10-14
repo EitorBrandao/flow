@@ -16,6 +16,7 @@ import { useModo } from './useModo';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import PrimeiroUso from './PrimeiroUso';
+import TransferirEntreBoxes from './TransferirEntreBoxes';
 import SeloBox from './SeloBox';
 import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
 
@@ -644,6 +645,7 @@ export default function TelaHoje() {
           )}
           {/* Embaixo, depois do Salvar — mesma posição de todo aviso de validação. */}
           {avisoSalvarBancos && <p className="aviso">{avisoSalvarBancos}</p>}
+          <TransferirEntreBoxes dados={dados} hoje={hoje} />
         </div>
       )}
 
