@@ -1,0 +1,1 @@
+- O campo de valor da compra no cartão agora mostra valores acima de mil reais sem cortar os centavos.

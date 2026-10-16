@@ -210,7 +210,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
       <div className="linha">
         <div className="campo">
           <label htmlFor={`${uid}-valor`}>Valor</label>
-          <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} style={{ width: 100 }} />
+          <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} style={{ width: 130 }} />
         </div>
         <div className="campo">
           <label htmlFor={`${uid}-data`}>Data</label>
