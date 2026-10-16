@@ -1,2 +1,0 @@
-- O campo de valor da compra no cartão mostra valores acima de mil reais sem cortar os centavos.
-- O botão "Anexar nota fiscal" não encosta mais nos botões de categoria.

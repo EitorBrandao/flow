@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.70.2] - 2026-10-16
+
+### Alterado
+
+- O campo de valor da compra no cartão mostra valores acima de mil reais sem cortar os centavos.
+- O botão "Anexar nota fiscal" não encosta mais nos botões de categoria.
+
 ## [0.70.1] - 2026-10-16
 
 ### Alterado
