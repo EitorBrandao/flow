@@ -49,11 +49,13 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 - Atalho com ponto azul vai para cartão; sem ponto, é lançamento direto na box.
 - Só conta o que você digitou — lançamentos e compras no cartão — nos últimos dois meses; recorrência, fatura e assinatura não viram atalho porque já entram sozinhas.
 - Sem histórico de lançamentos, a faixa de atalhos não aparece.
-- O cabeçalho da tela Adicionar tem o botão "Ler nota fiscal", com um ícone de câmera (no modo Simples do Cartão, ele e a "Compra no cartão" não aparecem): escaneia o QR-code de uma nota fiscal (NFC-e) e extrai a [[chave de acesso]].
+- O cabeçalho da tela Adicionar tem os botões "Nota fiscal", com um ícone de câmera, e "Comprovante" (no modo Simples do Cartão, eles e a "Compra no cartão" não aparecem): escaneia o QR-code de uma nota fiscal (NFC-e) e extrai a [[chave de acesso]].
 - Com a chave, você busca o XML fora do app (num site de consulta de NFC-e) e volta com ele — por upload de arquivo ou colando o texto.
 - O Flow lê o XML e pré-preenche valor, data e descrição da compra; categoria e cartão continuam por sua conta.
 - A nota também traz seus [itens](#glossario/item-da-nota): no formulário da compra, "Ver itens" mostra a lista de produtos com valor e percentual do total.
 - Sem câmera disponível, ou se o QR não for lido, dá para digitar a chave de 44 dígitos à mão.
+- O botão "Comprovante" lê a foto de um comprovante de maquininha. A leitura roda no seu aparelho e a foto não é guardada. Na primeira leitura, o app baixa os arquivos de leitura (cerca de 6 MB); depois, funciona sem internet.
+- O Flow pré-preenche valor, data, parcelas e descrição da compra no cartão. O cartão continua por sua conta: o final lido no comprovante aparece só como dica.
 
 **Obrigatórios:** valor, categoria. **Têm padrão:** data (hoje) e banco (o padrão da box, quando ela tem dois ou mais bancos). **Opcionais:** nota, marcar como previsto.
 

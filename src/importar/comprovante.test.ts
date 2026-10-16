@@ -1,4 +1,4 @@
-import { parsearComprovante } from './comprovante';
+import { parsearComprovante, parsearComprovantes } from './comprovante';
 
 // Texto sintético no layout de maquininha — nenhum dado real.
 const PARCELADO = `
@@ -16,7 +16,7 @@ Auto:000000
 describe('parsearComprovante', () => {
   it('lê total, parcelas, data, estabelecimento e final do cartão', () => {
     expect(parsearComprovante(PARCELADO)).toEqual({
-      valorTotal: 100000, parcelas: 2, data: '2027-03-05', descricao: 'LOJA TESTE LTDA',
+      valorTotal: 100000, parcelas: 2, data: '2027-03-05', descricao: 'Loja Teste Ltda',
       finalCartao: '1234', bandeira: 'Mastercard',
     });
   });
@@ -56,5 +56,52 @@ describe('parsearComprovante', () => {
 
   it('total zerado é ignorado', () => {
     expect(parsearComprovante('TOTAL: R$ 0,00').valorTotal).toBeUndefined();
+  });
+
+  it('milhar com vírgula e espaço antes dos centavos ("1,000 ,00")', () => {
+    expect(parsearComprovante('TOTAL:\nR$ 1,000 ,00').valorTotal).toBe(100000);
+  });
+});
+
+describe('parsearComprovantes (várias passadas de OCR)', () => {
+  it('vota o total: o dígito errado de uma passada perde para as outras', () => {
+    const r = parsearComprovantes([
+      'TOTAL: R$ 4.000,06\nPARCELAS: 02 X R$ 500,00',
+      'TOTAL: R$ 1.000,00\nPARCELAS: 02 X R$ 506,00',
+      'TOTAL: R$ 1.000,06\nPARCELAS: 02 X R$ 500,00',
+    ]);
+    expect(r).toMatchObject({ valorTotal: 100000, parcelas: 2 });
+  });
+
+  it('data inválida de uma passada (mês 19) não atrapalha a válida de outra', () => {
+    expect(parsearComprovantes(['16/19/26', '05/03/27']).data).toBe('2027-03-05');
+  });
+
+  it('descarta data no futuro quando `hoje` é informado', () => {
+    expect(parsearComprovantes(['16/12/26', '05/03/27'], '2027-03-05').data).toBe('2027-03-05');
+  });
+
+  it('vota dia, mês e ano separadamente: cada passada acerta uma parte', () => {
+    const r = parsearComprovantes(['15/19/26', '16/19/26', '46/10/26', '16/10/16'], '2027-03-05');
+    expect(r.data).toBe('2027-03-05');
+  });
+
+  it('ano implausível (2016 numa foto de 2026) deixa a data em branco', () => {
+    expect(parsearComprovantes(['16/10/16'], '2027-03-05').data).toBeUndefined();
+  });
+
+  it('descrição: escolhe o texto mais parecido com os das outras passadas', () => {
+    const r = parsearComprovantes([
+      'CASA EXEMPLU LOJA CNPJ:1', 'CASA EXEMPLO LOJA CNPJ:1', 'CASA EXEMPLO LOJA S CNPJ:1', 'XXXXXXXX CNPJ:1',
+    ]);
+    expect(r.descricao).toBe('Casa Exemplo Loja');
+  });
+
+  it('final do cartão sem asteriscos, na linha da bandeira', () => {
+    expect(parsearComprovante('MASTERCARD  FrERETRRRRA 9876').finalCartao).toBe('9876');
+  });
+
+  it('lista vazia devolve objeto vazio', () => {
+    expect(parsearComprovantes([])).toEqual({});
   });
 });

@@ -8,6 +8,9 @@ import { agoraISO, novoId } from '../domain/types';
 import { formatarBRL } from '../domain/money';
 import { useApp } from '../state/store';
 import AdicionarSheet from './AdicionarSheet';
+import { lerTextosDaImagem } from '../importar/ocr';
+
+vi.mock('../importar/ocr', () => ({ lerTextosDaImagem: vi.fn() }));
 
 beforeEach(async () => {
   await limparDb();
@@ -274,6 +277,27 @@ it('nota fiscal escaneada, com um só cartão ativo, abre o formulário direto p
   expect(screen.getByRole('button', { name: 'Farmácia' })).not.toHaveClass('selecionada');
 });
 
+it('comprovante lido, com um só cartão ativo, abre a compra preenchida com valor, parcelas e dica', async () => {
+  vi.mocked(lerTextosDaImagem).mockResolvedValue([
+    'LOJA TESTE LTDA CNPJ:00.000.000/0001-00\nTOTAL: R$ 90,00\nPARCELAS: 03 X R$ 30,00\nMASTERCARD ****1234\n15/08/26',
+  ]);
+  await montarComCartao();
+  render(<AdicionarSheet aberto onFechar={() => {}} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Compra por comprovante' }));
+
+  await userEvent.upload(
+    await screen.findByLabelText('Imagem do comprovante'),
+    new File(['x'], 'c.jpg', { type: 'image/jpeg' }),
+  );
+
+  expect(await screen.findByRole('heading', { name: 'Nova compra' })).toBeInTheDocument();
+  expect(screen.getByLabelText('Valor')).toHaveValue(formatarBRL(9000));
+  expect(screen.getByLabelText('Parcelas')).toHaveValue(3);
+  expect(screen.getByLabelText('Data')).toHaveValue('2026-08-15');
+  expect(screen.getByLabelText('Descrição (opcional)')).toHaveValue('Loja Teste Ltda');
+  expect(screen.getByText(/Lido do comprovante: Mastercard final 1234/)).toBeInTheDocument();
+});
+
 it('cancelar o escaneamento volta pro menu', async () => {
   await montarComCartao();
   render(<AdicionarSheet aberto onFechar={() => {}} />);
@@ -327,13 +351,13 @@ describe('com o Cartão no modo Simples', () => {
     return montarComHistorico();
   }
 
-  it('só oferece Lançamento: sem Compra no cartão e sem Ler nota fiscal', async () => {
+  it('só oferece Lançamento: sem Compra no cartão e sem Nota fiscal', async () => {
     await montarSimples();
     render(<AdicionarSheet aberto onFechar={() => {}} />);
     expect(await screen.findByText('Lançamento')).toBeInTheDocument();
     expect(screen.queryByText('Compra no cartão')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Compra por nota fiscal' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Ler nota fiscal')).not.toBeInTheDocument();
+    expect(screen.queryByText('Nota fiscal')).not.toBeInTheDocument();
   });
 
   it('os atalhos de cartão somem; os da box ficam', async () => {

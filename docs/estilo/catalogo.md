@@ -238,6 +238,11 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   QR-code via `jsQR` (ou chave digitada à mão, sempre disponível); mostra a chave extraída;
   aceita o XML da nota por upload ou colado, faz o parse (`domain/notaFiscal.ts`) e devolve o
   resultado por `onConcluir`. Usado por `AdicionarSheet`.
+- **`EscanearComprovanteSheet.tsx`** — captura de compra por comprovante de maquininha: o
+  usuário tira a foto ou escolhe uma imagem (`EscolherArquivo` com `accept="image/*"`), o OCR
+  (`importar/ocr.ts`) lê o texto no aparelho, `importar/comprovante.ts` extrai valor, data,
+  parcelas e estabelecimento, e o resultado sai por `onConcluir`. Progresso e erro usam `.aviso`
+  e `.aviso-urgente`. Usado por `AdicionarSheet`.
 - **`TransferenciaSheet.tsx`** — sheet somente leitura com o detalhe de uma transferência
   entre bancos ou entre boxes (a nota do lançamento, "banco origem → banco destino", mais valor e data; entre boxes, também "Saiu de" e "Entrou em"), com
   o botão que exclui as duas pernas ligadas por `transferenciaId`. Mesmo padrão do
