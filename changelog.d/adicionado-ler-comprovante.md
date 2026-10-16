@@ -1,4 +1,0 @@
-- Leitura de comprovante de maquininha na tela Adicionar
-  - O botão "Comprovante" lê a foto e preenche valor, data, parcelas e descrição da compra no cartão
-  - A leitura roda no aparelho; a foto não é guardada
-  - O botão "Ler nota fiscal" passou a se chamar "Nota fiscal"

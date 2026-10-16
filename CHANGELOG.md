@@ -3,6 +3,15 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.70.0] - 2026-10-16
+
+### Adicionado
+
+- Leitura de comprovante de maquininha na tela Adicionar
+  - O botão "Comprovante" lê a foto e preenche valor, data, parcelas e descrição da compra no cartão
+  - A leitura roda no aparelho; a foto não é guardada
+  - O botão "Ler nota fiscal" passou a se chamar "Nota fiscal"
+
 ## [0.69.0] - 2026-10-14
 
 ### Adicionado
