@@ -9,6 +9,16 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        // Os arquivos do OCR (~6 MB) ficam fora do pré-cache: só são baixados, e guardados, na
+        // primeira leitura de comprovante.
+        globIgnores: ['**/tesseract/**'],
+        runtimeCaching: [{
+          urlPattern: ({ url }) => url.pathname.includes('/tesseract/'),
+          handler: 'CacheFirst',
+          options: { cacheName: 'ocr', expiration: { maxEntries: 5 } },
+        }],
+      },
       includeAssets: ['icon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
         name: 'Flow — controle financeiro',

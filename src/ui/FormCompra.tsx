@@ -25,6 +25,9 @@ export interface InicialCompra {
   data?: ISODate;
   descricao?: string;
   nota?: NotaFiscalExtraida;
+  parcelas?: number;
+  /** texto de apoio mostrado no topo (ex.: o final do cartão lido de um comprovante) */
+  dica?: string;
 }
 
 /** "Não mexi", "anexei uma" e "removi" são três coisas diferentes na hora de salvar: sem o
@@ -62,7 +65,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
   const [categoriaId, setCategoriaId] = useState<string | null>(
     compra?.categoriaCartaoId ?? inicial?.categoriaCartaoId ?? null,
   );
-  const [parcelas, setParcelas] = useState(compra ? String(compra.parcelas) : '1');
+  const [parcelas, setParcelas] = useState(compra ? String(compra.parcelas) : String(inicial?.parcelas ?? 1));
   const [parcelasPagas, setParcelasPagas] = useState('');
   const [descricao, setDescricao] = useState(compra?.descricao ?? inicial?.descricao ?? '');
   const [viagemMarcada, setViagemMarcada] = useState(compra ? compra.viagemId != null : true);
@@ -203,6 +206,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
     <>
       <h2 style={{ marginTop: 0 }}>{compra ? 'Editar compra' : 'Nova compra'}</h2>
       <p className="sub">{cartao.nome}</p>
+      {!compra && inicial?.dica && <p className="aviso aviso-sucesso">{inicial.dica}</p>}
       <div className="linha">
         <div className="campo">
           <label htmlFor={`${uid}-valor`}>Valor</label>

@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Camera } from 'lucide-react';
+import { Camera, Receipt } from 'lucide-react';
 import type { Cartao } from '../domain/types';
 import { frequentes, type ChipFrequente } from '../domain/aggregations';
 import { formatarSemSimbolo } from '../domain/money';
 import type { NotaFiscalExtraida } from '../domain/notaFiscal';
+import type { ComprovanteExtraido } from '../importar/comprovante';
 import { boxIdEfetivo, boxIdsSelecionadas, useApp } from '../state/store';
+import EscanearComprovanteSheet from './EscanearComprovanteSheet';
 import EscanearNotaSheet from './EscanearNotaSheet';
 import FormCompra, { type InicialCompra } from './FormCompra';
 import Sheet from './Sheet';
 import { useModo } from './useModo';
 
-type Passo = 'menu' | 'sem-cartao' | 'sem-cartao-liberado' | 'escolher-cartao' | 'escanear' | 'form';
+type Passo = 'menu' | 'sem-cartao' | 'sem-cartao-liberado' | 'escolher-cartao' | 'escanear' | 'comprovante' | 'form';
 
 const ROTULOS: Record<Passo, string> = {
   menu: 'Adicionar',
@@ -18,6 +20,7 @@ const ROTULOS: Record<Passo, string> = {
   'sem-cartao-liberado': 'Nenhum cartão liberado para compra',
   'escolher-cartao': 'Compra em qual cartão?',
   escanear: 'Compra por nota fiscal',
+  comprovante: 'Compra por comprovante',
   form: 'Nova compra',
 };
 
@@ -110,6 +113,19 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
     });
   }
 
+  function aoConcluirComprovante(r: ComprovanteExtraido) {
+    const cartao = [r.bandeira, r.finalCartao && `final ${r.finalCartao}`].filter(Boolean).join(' ');
+    rotearParaCompra({
+      ...(r.valorTotal !== undefined ? { valorTotal: r.valorTotal } : {}),
+      ...(r.data ? { data: r.data } : {}),
+      ...(r.descricao ? { descricao: r.descricao } : {}),
+      ...(r.parcelas ? { parcelas: r.parcelas } : {}),
+      dica: cartao
+        ? `Lido do comprovante: ${cartao}. Confira o cartão, a data e o valor.`
+        : 'Lido do comprovante. Confira o cartão, a data e o valor.',
+    });
+  }
+
   function irParaAjustes() {
     onFechar();
     abrirAjustes('cartoes');
@@ -122,9 +138,14 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ marginTop: 0 }}>Adicionar</h2>
           {!cartaoSimples && (
-            <button className="chip chip-elevado" aria-label="Compra por nota fiscal" onClick={irParaEscanear}>
-              <Camera size={18} /> Ler nota fiscal
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="chip chip-elevado" aria-label="Compra por nota fiscal" onClick={irParaEscanear}>
+                <Camera size={18} /> Nota fiscal
+              </button>
+              <button className="chip chip-elevado" aria-label="Compra por comprovante" onClick={() => setPasso('comprovante')}>
+                <Receipt size={18} /> Comprovante
+              </button>
+            </div>
           )}
         </div>
       ) : undefined}
@@ -213,6 +234,9 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
       )}
       {passo === 'escanear' && (
         <EscanearNotaSheet onConcluir={aoConcluirEscaneamento} onFechar={() => setPasso('menu')} />
+      )}
+      {passo === 'comprovante' && (
+        <EscanearComprovanteSheet onConcluir={aoConcluirComprovante} onFechar={() => setPasso('menu')} />
       )}
       {passo === 'form' && cartaoEscolhido && (
         <FormCompra
