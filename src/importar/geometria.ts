@@ -138,3 +138,77 @@ export function anguloPorProjecao(cinza: Uint8ClampedArray, largura: number, alt
   const grosso = melhorEm(-25, 25, 2);
   return melhorEm(grosso - 2, grosso + 2, 0.5);
 }
+
+/** Caixa do papel numa foto: o maior bloco claro e sem cor (comprovante branco), que deixa de fora
+ *  tecido escuro e pele (colorida). `rgba` é a imagem em miniatura, 4 bytes por pixel. Devolve
+ *  `undefined` quando o bloco ocupa menos de `minimoFracao` da imagem. O papel entra pelo brilho
+ *  (limiar de Otsu entre os pixels sem cor) e pela saturação baixa; o maior componente conexo é o
+ *  comprovante, e o resto (reflexos, parede) é descartado. */
+export function caixaDoPapel(
+  rgba: Uint8ClampedArray, largura: number, altura: number, minimoFracao = 0.06,
+): Caixa | undefined {
+  const n = largura * altura;
+  const luma = new Uint8Array(n);
+  const semCor = new Uint8Array(n);
+  const histograma = new Array<number>(256).fill(0);
+  let total = 0;
+  for (let i = 0; i < n; i++) {
+    const r = rgba[i * 4];
+    const g = rgba[i * 4 + 1];
+    const b = rgba[i * 4 + 2];
+    luma[i] = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+    if (Math.max(r, g, b) - Math.min(r, g, b) <= 45) {
+      semCor[i] = 1;
+      histograma[luma[i]]++;
+      total++;
+    }
+  }
+  if (total === 0) return undefined;
+  // Otsu entre os pixels sem cor: separa papel claro de tecido escuro.
+  let somaTotal = 0;
+  for (let v = 0; v < 256; v++) somaTotal += v * histograma[v];
+  let somaFundo = 0;
+  let pesoFundo = 0;
+  let melhorVar = -1;
+  let limiar = 128;
+  for (let v = 0; v < 256; v++) {
+    pesoFundo += histograma[v];
+    if (pesoFundo === 0) continue;
+    const pesoFrente = total - pesoFundo;
+    if (pesoFrente === 0) break;
+    somaFundo += v * histograma[v];
+    const mediaFundo = somaFundo / pesoFundo;
+    const mediaFrente = (somaTotal - somaFundo) / pesoFrente;
+    const variancia = pesoFundo * pesoFrente * (mediaFundo - mediaFrente) ** 2;
+    if (variancia > melhorVar) { melhorVar = variancia; limiar = v; }
+  }
+  const mascara = new Uint8Array(n);
+  for (let i = 0; i < n; i++) mascara[i] = semCor[i] && luma[i] > limiar ? 1 : 0;
+
+  // Maior componente conexo (4 vizinhos), por busca em largura.
+  const visitado = new Uint8Array(n);
+  let melhor: { area: number; x0: number; y0: number; x1: number; y1: number } | undefined;
+  const fila = new Int32Array(n);
+  for (let inicio = 0; inicio < n; inicio++) {
+    if (!mascara[inicio] || visitado[inicio]) continue;
+    let ini = 0;
+    let fim = 0;
+    fila[fim++] = inicio;
+    visitado[inicio] = 1;
+    let area = 0;
+    let x0 = largura; let y0 = altura; let x1 = 0; let y1 = 0;
+    while (ini < fim) {
+      const p = fila[ini++];
+      const x = p % largura;
+      const y = (p - x) / largura;
+      area++;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      for (const q of [x > 0 ? p - 1 : -1, x < largura - 1 ? p + 1 : -1, y > 0 ? p - largura : -1, y < altura - 1 ? p + largura : -1]) {
+        if (q >= 0 && mascara[q] && !visitado[q]) { visitado[q] = 1; fila[fim++] = q; }
+      }
+    }
+    if (!melhor || area > melhor.area) melhor = { area, x0, y0, x1: x1 + 1, y1: y1 + 1 };
+  }
+  if (!melhor || melhor.area < n * minimoFracao) return undefined;
+  return { x0: melhor.x0, y0: melhor.y0, x1: melhor.x1, y1: melhor.y1 };
+}

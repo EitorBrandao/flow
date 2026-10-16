@@ -22,6 +22,9 @@ const BANDEIRAS = ['Mastercard', 'Visa', 'Elo', 'Amex', 'Hipercard'];
 function corrigirDigitos(texto: string): string {
   const digito = (s: string) => s.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1');
   return texto
+    // milhar com vírgula e centavos separados por espaço, e milhar sem os centavos
+    .replace(/(\d)[.,](\d{3})\s*,\s*(\d{2})\b/g, '$1.$2,$3')
+    .replace(/R\$\s*(\d{1,3})[.,](\d{3})(?![\d.]|,\d)/g, 'R$ $1.$2,00')
     .replace(/R\$\s*([\dOoIl|.,]+(?:\s+,[\dOoIl|]{2})?)/g,
       (_, n: string) => `R$ ${digito(n).replace(/(\d)[.,](\d{3})\s*,(\d{2})\b/, '$1.$2,$3').replace(/\s+/g, '')}`)
     .replace(/\b([\dOoIl|]{1,2})\s*\/\s*([\dOoIl|]{1,2})\s*\/\s*([\dOoIl|]{2,4})\b/g,
@@ -56,64 +59,95 @@ interface Leitura {
   bandeira?: string;
 }
 
+/** O "02" de "02 X R$ 500,00" chega como "UZ", "U2", "Q2", "VZ"…: letras de forma parecida com
+ *  dígitos. Só vale no número de parcelas, que fica sempre antes do "X". */
+function parcelasDoToken(token: string): number | undefined {
+  const digitos = token
+    .replace(/[OoUuQqVvDd]/g, '0').replace(/[Zz]/g, '2').replace(/[Il|]/g, '1').replace(/[Ss]/g, '5');
+  return /^\d{1,2}$/.test(digitos) ? Number(digitos) : undefined;
+}
+
 function lerUmTexto(textoBruto: string): Leitura {
   const texto = corrigirDigitos(textoBruto);
   const linhas = texto.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const total = new RegExp(String.raw`TOTAL\s*:?\s*(?:R\$)?\s*${VALOR}`, 'i').exec(texto);
+
+  // Linha de parcelas: "N X R$ valor". O "R$" também chega estragado ("Rá", "R3", "RS").
+  const parc = new RegExp(String.raw`\b([\dOoUuQqVvDdIl|]{1,2}|[OoUuQqVvDd][Zz2])\s*[xX]\s*(?:R\S{0,2}\s*)?${VALOR}`).exec(texto);
+  const n = parc ? parcelasDoToken(parc[1]) : undefined;
+
+  // Total: depois da palavra "TOTAL" (que também chega como "JuIAL", "TA;"), ou, sem ela, o
+  // primeiro valor com centavos de uma linha sem "X" (a das parcelas tem).
+  const comPalavra = new RegExp(String.raw`TOTAL\s*:?\s*(?:R\$)?\s*${VALOR}`, 'i').exec(texto);
+  const solto = linhas.find((l) => !/[xX]/.test(l) && new RegExp(VALOR).test(l));
+  const soltoValor = solto ? new RegExp(VALOR).exec(solto) : null;
+  // Sem a palavra TOTAL, o valor solto só vale se a linha das parcelas aparecer no mesmo texto:
+  // sozinho, ele pode ser a parcela.
+  const total = comPalavra ?? (parc ? soltoValor : null);
   const totalCent = total ? parsearValorExtrato(total[1]) : undefined;
-  const parc = new RegExp(String.raw`(\d{1,2})\s*[xX]\s*(?:R\$)?\s*${VALOR}`).exec(texto);
-  const n = parc ? Number(parc[1]) : undefined;
+
   const final = /\*{3,}\s*(\d{4})\b/.exec(texto)
     ?? /(?:MASTERCARD|VISA|ELO|AMEX|HIPERCARD)[^\n\d]*(\d{4})\s*$/im.exec(texto);
+  const bandeira = BANDEIRAS.find((b) => new RegExp(`\\b${b}\\b`, 'i').test(texto));
+  const descricao = descricaoDoTexto(linhas);
   return {
     ...(totalCent !== undefined && totalCent > 0 ? { total: totalCent } : {}),
     ...(n !== undefined && n >= 1 && n <= 99 ? { parcelas: n } : {}),
     ...(parc ? { parcelaCent: parsearValorExtrato(parc[2]) } : {}),
     datas: datasDoTexto(texto),
-    ...(descricaoDoTexto(linhas) ? { descricao: descricaoDoTexto(linhas) } : {}),
+    ...(descricao ? { descricao } : {}),
     ...(final ? { finalCartao: final[1] } : {}),
-    ...(BANDEIRAS.find((b) => new RegExp(`\\b${b}\\b`, 'i').test(texto))
-      ? { bandeira: BANDEIRAS.find((b) => new RegExp(`\\b${b}\\b`, 'i').test(texto)) } : {}),
+    ...(bandeira ? { bandeira } : {}),
   };
 }
 
 /** Dígitos que a impressora térmica entrega e o OCR lê errado: a chave é o dígito verdadeiro, o
- *  valor são as leituras erradas mais comuns (o zero riscado vira 6, 8 ou 9). */
-const CONFUSOES: Record<string, string> = { 0: '689', 1: '7', 3: '8', 5: '6', 6: '05', 8: '03' };
+ *  valor são as leituras erradas mais comuns. O zero com ponto ou risco no meio vira 6, 8, 9 ou 4,
+ *  em qualquer posição do número e de forma independente de um dígito para outro. */
+const CONFUSOES: Record<string, string> = { 0: '6894', 1: '74', 3: '8', 5: '6', 6: '05', 8: '03' };
 
-const P_EXATO = 0.6;
-const P_CONFUSAO = 0.12; // um dígito trocado por uma confusão conhecida
-const P_OUTRO = 0.005;
+/** Por dígito: lido igual ao verdadeiro, lido como uma confusão conhecida, ou qualquer outra
+ *  coisa. Os dígitos são independentes, então o valor todo é o produto. */
+const P_DIGITO_IGUAL = 0.7;
+const P_DIGITO_CONFUSAO = 0.08;
+const P_DIGITO_OUTRO = 0.002;
+const P_TAMANHO_DIFERENTE = 1e-4; // por dígito de diferença no tamanho
+/** Valores em reais têm muito mais zeros que o acaso (500, 1.000, ,00): a priori, o dígito
+ *  verdadeiro é zero com probabilidade bem acima dos outros. */
+const PRIORI_ZERO = 0.35;
+const PRIORI_OUTRO = (1 - PRIORI_ZERO) / 9;
 
 /** Probabilidade de o OCR ler `lido` quando o valor verdadeiro é `verdadeiro` (os dois em
- *  centavos): igual, um dígito trocado por confusão conhecida, ou qualquer outra coisa. */
+ *  centavos), dígito a dígito. */
 function verossimilhanca(verdadeiro: number, lido: number): number {
-  if (verdadeiro === lido) return P_EXATO;
   const v = String(verdadeiro);
   const l = String(lido);
-  if (v.length !== l.length) return P_OUTRO;
-  let diferentes = 0;
-  let confusao = true;
+  if (v.length !== l.length) return P_TAMANHO_DIFERENTE ** Math.abs(v.length - l.length);
+  let p = 1;
   for (let i = 0; i < v.length; i++) {
-    if (v[i] === l[i]) continue;
-    diferentes++;
-    if (!CONFUSOES[v[i]]?.includes(l[i])) confusao = false;
+    if (v[i] === l[i]) p *= P_DIGITO_IGUAL;
+    else if (CONFUSOES[v[i]]?.includes(l[i])) p *= P_DIGITO_CONFUSAO;
+    else p *= P_DIGITO_OUTRO;
   }
-  return diferentes === 1 && confusao ? P_CONFUSAO : P_OUTRO;
+  return p;
 }
 
-/** Hipóteses para o valor verdadeiro: cada valor lido e o que ele seria se um dígito tivesse
- *  sido lido errado. */
+/** Valores verdadeiros que explicam uma leitura: o próprio valor e todos os que resultam de
+ *  trocar qualquer subconjunto de dígitos pelos que o OCR costuma confundir com eles. */
+function explicacoes(lido: number): number[] {
+  const digitos = String(lido).split('');
+  const opcoes = digitos.map((d) => [
+    d, ...Object.entries(CONFUSOES).filter(([, lidos]) => lidos.includes(d)).map(([verdadeiro]) => verdadeiro),
+  ]);
+  if (opcoes.reduce((n, o) => n * o.length, 1) > 20000) return [lido];
+  let partes = [''];
+  for (const o of opcoes) partes = partes.flatMap((prefixo) => o.map((d) => prefixo + d));
+  return partes.map(Number);
+}
+
+/** Hipóteses para o valor verdadeiro: tudo que alguma leitura poderia ter sido. */
 function hipoteses(lidos: number[]): number[] {
-  const todas = new Set<number>(lidos);
-  for (const lido of lidos) {
-    const d = String(lido);
-    for (let i = 0; i < d.length; i++) {
-      for (const [verdadeiro, errados] of Object.entries(CONFUSOES)) {
-        if (errados.includes(d[i])) todas.add(Number(d.slice(0, i) + verdadeiro + d.slice(i + 1)));
-      }
-    }
-  }
+  const todas = new Set<number>();
+  for (const lido of lidos) for (const e of explicacoes(lido)) todas.add(e);
   return [...todas].filter((t) => Number.isSafeInteger(t) && t > 0);
 }
 
@@ -130,6 +164,7 @@ function escolherTotal(diretos: number[], porParcela: number[], parcelas: number
   let melhorPontos = -Infinity;
   for (const h of hipoteses(lidos)) {
     let pontos = 0;
+    for (const dig of String(h)) pontos += Math.log(dig === '0' ? PRIORI_ZERO : PRIORI_OUTRO);
     for (const d of diretos) pontos += Math.log(verossimilhanca(h, d));
     const esperada = Math.round(h / parcelas);
     for (const p of porParcela) pontos += Math.log(verossimilhanca(esperada, p));
@@ -254,4 +289,26 @@ export function parsearComprovantes(textos: string[], hoje?: ISODate): Comprovan
 /** Um texto só — ver `parsearComprovantes`. */
 export function parsearComprovante(texto: string, hoje?: ISODate): ComprovanteExtraido {
   return parsearComprovantes([texto], hoje);
+}
+
+/** Quantas leituras exatamente iguais ao total escolhido precisam existir para encerrar a leitura
+ *  cedo. Cada passada de OCR custa cerca de 1 s no celular. */
+const APOIOS_PARA_PARAR = 3;
+
+/** Já dá para parar de ler? Sim quando o total escolhido e as parcelas têm pelo menos
+ *  `APOIOS_PARA_PARAR` leituras independentes iguais a ele (linha TOTAL ou parcela × N). Total ou
+ *  parcelas sem confirmação mandam seguir lendo. Uma passada a mais custa segundos; um valor
+ *  errado custa o dinheiro do usuário. */
+export function leituraConfiavel(textos: string[], hoje?: ISODate): boolean {
+  const r = parsearComprovantes(textos, hoje);
+  if (r.valorTotal === undefined) return false;
+  const leituras = textos.map(lerUmTexto);
+  const n = r.parcelas ?? 1;
+  let apoios = 0;
+  for (const l of leituras) {
+    if (l.total === r.valorTotal) apoios++;
+    if (l.parcelaCent !== undefined && l.parcelaCent * n === r.valorTotal) apoios++;
+  }
+  const parcelasIguais = leituras.filter((l) => l.parcelas === r.parcelas).length;
+  return apoios >= APOIOS_PARA_PARAR && (r.parcelas === undefined || parcelasIguais >= 2);
 }

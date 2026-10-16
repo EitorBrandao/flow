@@ -54,7 +54,7 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 - O Flow lê o XML e pré-preenche valor, data e descrição da compra; categoria e cartão continuam por sua conta.
 - A nota também traz seus [itens](#glossario/item-da-nota): no formulário da compra, "Ver itens" mostra a lista de produtos com valor e percentual do total.
 - Sem câmera disponível, ou se o QR não for lido, dá para digitar a chave de 44 dígitos à mão.
-- O botão "Comprovante" lê a foto de um comprovante de maquininha. A leitura roda no seu aparelho e a foto não é guardada. Na primeira leitura, o app baixa os arquivos de leitura (cerca de 6 MB); depois, funciona sem internet.
+- O botão "Comprovante" lê a foto de um comprovante de maquininha. A leitura roda no seu aparelho e a foto não é guardada. Na primeira leitura, o app baixa os arquivos de leitura (cerca de 6 MB); depois, funciona sem internet. O app procura o papel na foto, então o comprovante pode estar na mão ou sobre uma mesa; chegue perto e deixe o texto aparecer inteiro.
 - O Flow pré-preenche valor, data, parcelas e descrição da compra no cartão. O cartão continua por sua conta: o final lido no comprovante aparece só como dica. Se o app não tiver certeza da data, deixa a de hoje; confira o valor e a data antes de salvar.
 
 **Obrigatórios:** valor, categoria. **Têm padrão:** data (hoje) e banco (o padrão da box, quando ela tem dois ou mais bancos). **Opcionais:** nota, marcar como previsto.

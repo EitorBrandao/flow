@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import EscanearComprovanteSheet from './EscanearComprovanteSheet';
 import { lerTextosDaImagem } from '../importar/ocr';
 
-vi.mock('../importar/ocr', () => ({ lerTextosDaImagem: vi.fn() }));
+vi.mock('../importar/ocr', () => ({ lerTextosDaImagem: vi.fn(), aquecerOcr: vi.fn(), liberarOcr: vi.fn() }));
 
 const TEXTO = 'LOJA TESTE LTDA CNPJ:00.000.000/0001-00\nTOTAL: R$ 90,00\nPARCELAS: 03 X R$ 30,00\n05/03/27';
 

@@ -1,4 +1,4 @@
-import { parsearComprovante, parsearComprovantes } from './comprovante';
+import { leituraConfiavel, parsearComprovante, parsearComprovantes } from './comprovante';
 
 // Texto sintético no layout de maquininha — nenhum dado real.
 const PARCELADO = `
@@ -135,5 +135,63 @@ describe('parsearComprovantes (várias passadas de OCR)', () => {
 
   it('lista vazia devolve objeto vazio', () => {
     expect(parsearComprovantes([])).toEqual({});
+  });
+});
+
+describe('leituras ruidosas de foto real', () => {
+  it('"R$ 1,000" sem centavos e com vírgula no milhar vale 1.000,00', () => {
+    expect(parsearComprovante('TOTAL: R$ 1,000,\nPARCELAS: 02 X R$ 500,00').valorTotal).toBe(100000);
+    expect(parsearComprovante('R$ 1,000,00\n02 X R$ 500,00').valorTotal).toBe(100000);
+  });
+
+  it('número de parcelas e "R$" estragados ("UZ X R3 509,08")', () => {
+    expect(parsearComprovante('PARCELAS: UZ X R3 500,00')).toMatchObject({ parcelas: 2, valorTotal: 100000 });
+    expect(parsearComprovante('Q2 X Rá 500,00').parcelas).toBe(2);
+  });
+
+  it('total sem a palavra TOTAL: o valor solto vale se a linha das parcelas aparece junto', () => {
+    expect(parsearComprovante('BR 1.000,00\n02 X R$ 500,00').valorTotal).toBe(100000);
+  });
+
+  it('valor solto sem linha de parcelas não vira total (pode ser a parcela)', () => {
+    expect(parsearComprovante('* 500,00').valorTotal).toBeUndefined();
+  });
+
+  it('o zero que o OCR lê como 8 ou 9 nas parcelas não faz o total sair 1.016,00', () => {
+    const r = parsearComprovantes([
+      '02 X R$ 508,00', 'UZ X R$ 500,06', 'PARCELAS: 02 X R$ 508,06', 'UZ X R$ 500,06', 'JuIAL: R$ 1.000,06\nUZ X R$ 509,06',
+    ]);
+    expect(r.valorTotal).toBe(100000);
+  });
+
+  it('1 lido como 4 no total ("4.000,00") perde para as parcelas que dizem 500', () => {
+    const r = parsearComprovantes([
+      'TOTAL: R$ 4.000,00\n02 X R$ 500,00', '02 X R$ 508,06', 'UZ X R$ 500,00',
+    ]);
+    expect(r.valorTotal).toBe(100000);
+  });
+
+  it('valor redondo não vira outro por causa do prior de zeros: 33,33 x 3', () => {
+    expect(parsearComprovante('PARCELAS: 03 X R$ 33,33').valorTotal).toBe(9999);
+  });
+});
+
+describe('leituraConfiavel', () => {
+  const boa = 'TOTAL: R$ 1.000,00\nPARCELAS: 02 X R$ 500,00';
+
+  it('com poucas leituras iguais, ainda não', () => {
+    expect(leituraConfiavel([boa])).toBe(false);
+  });
+
+  it('total e parcelas confirmados em várias leituras: pode parar', () => {
+    expect(leituraConfiavel([boa, boa, 'lixo'])).toBe(true);
+  });
+
+  it('total confirmado, mas parcelas lidas uma vez só: segue lendo', () => {
+    expect(leituraConfiavel(['TOTAL: R$ 1.000,00', 'TOTAL: R$ 1.000,00', 'TOTAL: R$ 1.000,00\n02 X R$ 500,00'])).toBe(false);
+  });
+
+  it('sem total, não', () => {
+    expect(leituraConfiavel(['lorem', 'ipsum', 'dolor'])).toBe(false);
   });
 });

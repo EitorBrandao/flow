@@ -1,4 +1,4 @@
-import { anguloDeInclinacao, anguloPorProjecao, caixaDoTexto, transformacaoDoRecorte, type LinhaLida } from './geometria';
+import { anguloDeInclinacao, anguloPorProjecao, caixaDoPapel, caixaDoTexto, transformacaoDoRecorte, type LinhaLida } from './geometria';
 
 function linha(texto: string, x0: number, y0: number, x1: number, y1: number, confianca = 90): LinhaLida {
   return { texto, confianca, caixa: { x0, y0, x1, y1: y1 + 20 }, baseline: { x0, y0, x1, y1 } };
@@ -89,5 +89,50 @@ describe('anguloPorProjecao', () => {
 
   it('imagem em branco devolve 0', () => {
     expect(anguloPorProjecao(new Uint8ClampedArray(100).fill(255), 10, 10)).toBe(0);
+  });
+});
+
+describe('caixaDoPapel', () => {
+  const L = 100;
+  const A = 60;
+  function foto(pintar: (x: number, y: number) => [number, number, number]) {
+    const rgba = new Uint8ClampedArray(L * A * 4);
+    for (let y = 0; y < A; y++) for (let x = 0; x < L; x++) {
+      const [r, g, b] = pintar(x, y);
+      rgba.set([r, g, b, 255], (y * L + x) * 4);
+    }
+    return rgba;
+  }
+  const tecido: [number, number, number] = [60, 60, 60];
+  const papel: [number, number, number] = [225, 225, 218];
+  const pele: [number, number, number] = [235, 165, 140];
+  const dentro = (x: number, y: number, x0: number, y0: number, x1: number, y1: number) => x >= x0 && x < x1 && y >= y0 && y < y1;
+
+  it('acha o papel claro sobre o tecido escuro', () => {
+    const rgba = foto((x, y) => (dentro(x, y, 20, 10, 80, 50) ? papel : tecido));
+    expect(caixaDoPapel(rgba, L, A)).toEqual({ x0: 20, y0: 10, x1: 80, y1: 50 });
+  });
+
+  it('deixa a pele (colorida) de fora, mesmo encostada no papel', () => {
+    const rgba = foto((x, y) => {
+      if (dentro(x, y, 20, 10, 80, 50)) return papel;
+      if (dentro(x, y, 0, 10, 20, 50)) return pele;
+      return tecido;
+    });
+    expect(caixaDoPapel(rgba, L, A)).toEqual({ x0: 20, y0: 10, x1: 80, y1: 50 });
+  });
+
+  it('escolhe o maior bloco claro e ignora um reflexo pequeno', () => {
+    const rgba = foto((x, y) => {
+      if (dentro(x, y, 20, 10, 80, 50)) return papel;
+      if (dentro(x, y, 90, 2, 95, 6)) return papel;
+      return tecido;
+    });
+    expect(caixaDoPapel(rgba, L, A)).toEqual({ x0: 20, y0: 10, x1: 80, y1: 50 });
+  });
+
+  it('sem bloco claro grande, undefined', () => {
+    expect(caixaDoPapel(foto(() => tecido), L, A)).toBeUndefined();
+    expect(caixaDoPapel(foto((x, y) => (dentro(x, y, 0, 0, 5, 5) ? papel : tecido)), L, A)).toBeUndefined();
   });
 });
