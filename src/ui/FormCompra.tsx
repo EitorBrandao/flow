@@ -210,7 +210,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
       <div className="linha">
         <div className="campo">
           <label htmlFor={`${uid}-valor`}>Valor</label>
-          <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} style={{ width: 100 }} />
+          <CampoValor id={`${uid}-valor`} valorCentavos={valor} onChange={setValor} style={{ width: 130 }} />
         </div>
         <div className="campo">
           <label htmlFor={`${uid}-data`}>Data</label>
@@ -303,7 +303,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
           )}
         </div>
       ) : (
-        <button className="botao" onClick={() => { setAnexando(true); setXmlTexto(''); setErroNota(null); }}>
+        <button className="botao" style={{ marginTop: 12 }} onClick={() => { setAnexando(true); setXmlTexto(''); setErroNota(null); }}>
           Anexar nota fiscal
         </button>
       )}
