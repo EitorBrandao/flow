@@ -1,4 +1,4 @@
-import { aplicarLimiar, normalizarPeloFundo } from './preparoImagem';
+import { esticarContraste, normalizarPeloFundo } from './preparoImagem';
 
 describe('normalizarPeloFundo', () => {
   it('papel igual ao fundo vira cinza claro uniforme, em qualquer sombra', () => {
@@ -11,8 +11,15 @@ describe('normalizarPeloFundo', () => {
   });
 });
 
-describe('aplicarLimiar', () => {
-  it('separa em preto e branco; o próprio limiar é preto', () => {
-    expect(Array.from(aplicarLimiar(Uint8ClampedArray.of(10, 150, 151, 255), 150))).toEqual([0, 0, 255, 255]);
+describe('esticarContraste', () => {
+  it('leva o mais escuro a 0 e o mais claro a 255', () => {
+    const entrada = Uint8ClampedArray.from({ length: 100 }, (_, i) => 100 + i); // 100..199
+    const r = esticarContraste(entrada);
+    expect(r[0]).toBe(0);
+    expect(r[99]).toBe(255);
+  });
+
+  it('imagem de uma cor só fica como está', () => {
+    expect(Array.from(esticarContraste(Uint8ClampedArray.of(80, 80, 80)))).toEqual([80, 80, 80]);
   });
 });

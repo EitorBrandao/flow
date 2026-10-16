@@ -1,0 +1,4 @@
+- Leitura de comprovante mais precisa
+  - O app endireita a foto e recorta o comprovante antes de ler
+  - Valor, parcelas e descrição saem certos mais vezes, mesmo com a foto torta
+  - Sem certeza da data, o app deixa a de hoje

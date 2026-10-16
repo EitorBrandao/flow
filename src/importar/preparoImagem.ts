@@ -1,3 +1,5 @@
+import type { Transformacao } from './geometria';
+
 /** Preparo de imagem para OCR de comprovante térmico: o papel é claro, mas a foto tem sombra,
  *  mão e fundo. Dividir cada pixel pela luz local (um desfoque grande) tira a sombra, e o limiar
  *  deixa só tinta e papel. Cada variante erra dígitos diferentes — o OCR roda nas duas e vota. */
@@ -9,12 +11,24 @@ export function normalizarPeloFundo(cinza: Uint8ClampedArray, fundo: Uint8Clampe
   return saida;
 }
 
-export function aplicarLimiar(cinza: Uint8ClampedArray, limiar: number): Uint8ClampedArray {
-  return cinza.map((v) => (v > limiar ? 255 : 0));
+/** Estica o contraste: leva o 1º percentil de brilho a 0 e o 99º a 255. Mantém a textura do
+ *  traço — o recorte limpo lê melhor que qualquer binarização. */
+export function esticarContraste(cinza: Uint8ClampedArray): Uint8ClampedArray {
+  const histograma = new Uint32Array(256);
+  for (const v of cinza) histograma[v]++;
+  const corte = (fracao: number) => {
+    let acumulado = 0;
+    for (let v = 0; v < 256; v++) {
+      acumulado += histograma[v];
+      if (acumulado >= cinza.length * fracao) return v;
+    }
+    return 255;
+  };
+  const baixo = corte(0.01);
+  const alto = corte(0.99);
+  if (alto <= baixo) return cinza.slice();
+  return cinza.map((v) => ((v - baixo) / (alto - baixo)) * 255);
 }
-
-const LADO_MAXIMO = 1800;
-const LIMIAR = 150;
 
 function paraBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -36,45 +50,88 @@ function canvasDeCinza(cinza: Uint8ClampedArray, largura: number, altura: number
   return canvas;
 }
 
-/** Devolve duas variantes da foto: cinza normalizado e preto-e-branco. A orientação do EXIF é
- *  respeitada (foto de celular costuma vir deitada). */
-export async function prepararVariantes(imagem: Blob): Promise<Blob[]> {
-  const bitmap = await createImageBitmap(imagem, { imageOrientation: 'from-image' });
-  const escala = Math.min(1, LADO_MAXIMO / Math.max(bitmap.width, bitmap.height));
-  const largura = Math.round(bitmap.width * escala);
-  const altura = Math.round(bitmap.height * escala);
+/** Abre a imagem respeitando a orientação do EXIF (foto de celular costuma vir deitada). */
+/** Foto aberta ou canvas já preparado: ambos desenham e têm largura e altura. */
+export type Fonte = ImageBitmap | HTMLCanvasElement;
 
-  const origem = document.createElement('canvas');
-  origem.width = largura;
-  origem.height = altura;
-  const ctx = origem.getContext('2d', { willReadFrequently: true })!;
-  ctx.drawImage(bitmap, 0, 0, largura, altura);
-  bitmap.close();
-  const rgba = ctx.getImageData(0, 0, largura, altura).data;
-  const cinza = new Uint8ClampedArray(largura * altura);
-  for (let i = 0; i < cinza.length; i++) {
-    cinza[i] = 0.299 * rgba[i * 4] + 0.587 * rgba[i * 4 + 1] + 0.114 * rgba[i * 4 + 2];
-  }
+export function abrirImagem(imagem: Blob): Promise<ImageBitmap> {
+  return createImageBitmap(imagem, { imageOrientation: 'from-image' });
+}
 
-  // Fundo local: reduz a 1/16 e amplia com suavização — um desfoque barato.
+/** Cópia reduzida para o primeiro olhar (achar o texto): mais barata de ler. */
+export function reduzir(bitmap: Fonte, ladoMaximo: number): { canvas: HTMLCanvasElement; escala: number } {
+  const escala = Math.min(1, ladoMaximo / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * escala);
+  canvas.height = Math.round(bitmap.height * escala);
+  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return { canvas, escala };
+}
+
+/** Desfaz a inclinação, recorta a caixa do texto e escala para `larguraAlvo` — texto pequeno
+ *  demais na foto inteira é a principal causa de dígito trocado. */
+export function recortarGirado(bitmap: Fonte, t: Transformacao): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = t.largura;
+  canvas.height = t.altura;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, t.largura, t.altura);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.setTransform(t.a, t.b, t.c, t.d, t.e, t.f);
+  ctx.drawImage(bitmap, 0, 0);
+  return canvas;
+}
+
+/** Desfoque barato do cinza: reduz por `divisor` e amplia com suavização. */
+function fundoDe(cinza: Uint8ClampedArray, largura: number, altura: number, divisor: number): Uint8ClampedArray {
   const pequeno = document.createElement('canvas');
-  pequeno.width = Math.max(1, Math.round(largura / 16));
-  pequeno.height = Math.max(1, Math.round(altura / 16));
-  const pctx = pequeno.getContext('2d', { willReadFrequently: true })!;
-  pctx.drawImage(canvasDeCinza(cinza, largura, altura), 0, 0, pequeno.width, pequeno.height);
+  pequeno.width = Math.max(1, Math.round(largura / divisor));
+  pequeno.height = Math.max(1, Math.round(altura / divisor));
+  pequeno.getContext('2d')!.drawImage(canvasDeCinza(cinza, largura, altura), 0, 0, pequeno.width, pequeno.height);
   const grande = document.createElement('canvas');
   grande.width = largura;
   grande.height = altura;
   const gctx = grande.getContext('2d', { willReadFrequently: true })!;
   gctx.imageSmoothingQuality = 'high';
   gctx.drawImage(pequeno, 0, 0, largura, altura);
-  const fundoRgba = gctx.getImageData(0, 0, largura, altura).data;
+  const rgba = gctx.getImageData(0, 0, largura, altura).data;
   const fundo = new Uint8ClampedArray(largura * altura);
-  for (let i = 0; i < fundo.length; i++) fundo[i] = fundoRgba[i * 4];
+  for (let i = 0; i < fundo.length; i++) fundo[i] = rgba[i * 4];
+  return fundo;
+}
 
-  const normalizada = normalizarPeloFundo(cinza, fundo);
+/** Duas variantes de um canvas, ambas em tons de cinza: contraste esticado, e normalizada pela
+ *  luz de fundo (janela larga, para não criar halo ao redor das letras). Sem binarização: a
+ *  imagem limpa lê melhor, e cada variante erra dígitos diferentes — o OCR roda nas duas e vota. */
+export async function variantesDe(origem: HTMLCanvasElement): Promise<Blob[]> {
+  const { width: largura, height: altura } = origem;
+  const rgba = origem.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, largura, altura).data;
+  const cinza = new Uint8ClampedArray(largura * altura);
+  for (let i = 0; i < cinza.length; i++) {
+    cinza[i] = 0.299 * rgba[i * 4] + 0.587 * rgba[i * 4 + 1] + 0.114 * rgba[i * 4 + 2];
+  }
+  const normalizada = esticarContraste(normalizarPeloFundo(cinza, fundoDe(cinza, largura, altura, 48)));
   return Promise.all([
+    paraBlob(canvasDeCinza(esticarContraste(cinza), largura, altura)),
     paraBlob(canvasDeCinza(normalizada, largura, altura)),
-    paraBlob(canvasDeCinza(aplicarLimiar(normalizada, LIMIAR), largura, altura)),
   ]);
+}
+
+/** Tons de cinza de um canvas, para as medidas que não passam pelo OCR. */
+export function cinzaDe(canvas: HTMLCanvasElement): Uint8ClampedArray {
+  const rgba = canvas.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, canvas.width, canvas.height).data;
+  const cinza = new Uint8ClampedArray(canvas.width * canvas.height);
+  for (let i = 0; i < cinza.length; i++) {
+    cinza[i] = 0.299 * rgba[i * 4] + 0.587 * rgba[i * 4 + 1] + 0.114 * rgba[i * 4 + 2];
+  }
+  return cinza;
+}
+
+/** Só a tinta: 0 onde o pixel é bem mais escuro que a vizinhança, 255 no resto. Mão, mesa e
+ *  sombra grande somem — o que sobra é traço de letra, que é o que o ângulo precisa medir. */
+export function tintaLocal(canvas: HTMLCanvasElement): Uint8ClampedArray {
+  const cinza = cinzaDe(canvas);
+  const fundo = fundoDe(cinza, canvas.width, canvas.height, 12);
+  return cinza.map((v, i) => (fundo[i] - v > 25 ? 0 : 255));
 }
