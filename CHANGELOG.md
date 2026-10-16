@@ -3,6 +3,15 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.70.1] - 2026-10-16
+
+### Alterado
+
+- Leitura de comprovante mais precisa
+  - O app endireita a foto e recorta o comprovante antes de ler
+  - Valor, parcelas e descrição saem certos mais vezes, mesmo com a foto torta
+  - Sem certeza da data, o app deixa a de hoje
+
 ## [0.70.0] - 2026-10-16
 
 ### Adicionado
