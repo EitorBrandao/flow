@@ -73,6 +73,28 @@ describe('parsearComprovantes (várias passadas de OCR)', () => {
     expect(r).toMatchObject({ valorTotal: 100000, parcelas: 2 });
   });
 
+  it('total confirmado pela linha TOTAL e pelas parcelas vence um valor mais repetido só numa fonte', () => {
+    const r = parsearComprovantes([
+      'TOTAL: R$ 1.000,06', 'TOTAL: R$ 1.000,06', 'TOTAL: R$ 1.000,00\nPARCELAS: 02 X R$ 500,00',
+    ]);
+    expect(r.valorTotal).toBe(100000);
+  });
+
+  it('zero lido como 6, 8 ou 9: o valor com zeros vence leituras que só diferem por essa confusão', () => {
+    const r = parsearComprovantes([
+      'TOTAL: R$ 1.000,06\nPARCELAS: 02 X R$ 500,06',
+      'TOTAL:\nPARCELAS: 02 X R$ 500,00',
+      'PARCELAS: 02 X R$ 500,08',
+      'PARCELAS: 02 X R$ 500,06',
+      'PARCELAS: 02 X R$ 500,00',
+    ]);
+    expect(r.valorTotal).toBe(100000);
+  });
+
+  it('confusão só vale para dígitos conhecidos: 1.000,07 não vira 1.000,00', () => {
+    expect(parsearComprovantes(['TOTAL: R$ 1.000,07', 'TOTAL: R$ 1.000,07']).valorTotal).toBe(100007);
+  });
+
   it('data inválida de uma passada (mês 19) não atrapalha a válida de outra', () => {
     expect(parsearComprovantes(['16/19/26', '05/03/27']).data).toBe('2027-03-05');
   });
@@ -86,6 +108,11 @@ describe('parsearComprovantes (várias passadas de OCR)', () => {
     expect(r.data).toBe('2027-03-05');
   });
 
+  it('com várias passadas, leitura isolada de uma parte da data não basta', () => {
+    expect(parsearComprovantes(['06/10/26', '05/03/27', '05/03/27', ''], '2027-03-05').data).toBe('2027-03-05');
+    expect(parsearComprovantes(['06/10/26', 'lixo', ''], '2027-03-05').data).toBeUndefined();
+  });
+
   it('ano implausível (2016 numa foto de 2026) deixa a data em branco', () => {
     expect(parsearComprovantes(['16/10/16'], '2027-03-05').data).toBeUndefined();
   });
@@ -95,6 +122,11 @@ describe('parsearComprovantes (várias passadas de OCR)', () => {
       'CASA EXEMPLU LOJA CNPJ:1', 'CASA EXEMPLO LOJA CNPJ:1', 'CASA EXEMPLO LOJA S CNPJ:1', 'XXXXXXXX CNPJ:1',
     ]);
     expect(r.descricao).toBe('Casa Exemplo Loja');
+  });
+
+  it('com várias passadas, final do cartão lido uma vez só não entra', () => {
+    expect(parsearComprovantes(['MASTERCARD ****1778', '', '']).finalCartao).toBeUndefined();
+    expect(parsearComprovantes(['MASTERCARD ****9876', 'VISA ****9876', '']).finalCartao).toBe('9876');
   });
 
   it('final do cartão sem asteriscos, na linha da bandeira', () => {

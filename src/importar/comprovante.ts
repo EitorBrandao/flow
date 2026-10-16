@@ -77,6 +77,67 @@ function lerUmTexto(textoBruto: string): Leitura {
   };
 }
 
+/** Dígitos que a impressora térmica entrega e o OCR lê errado: a chave é o dígito verdadeiro, o
+ *  valor são as leituras erradas mais comuns (o zero riscado vira 6, 8 ou 9). */
+const CONFUSOES: Record<string, string> = { 0: '689', 1: '7', 3: '8', 5: '6', 6: '05', 8: '03' };
+
+const P_EXATO = 0.6;
+const P_CONFUSAO = 0.12; // um dígito trocado por uma confusão conhecida
+const P_OUTRO = 0.005;
+
+/** Probabilidade de o OCR ler `lido` quando o valor verdadeiro é `verdadeiro` (os dois em
+ *  centavos): igual, um dígito trocado por confusão conhecida, ou qualquer outra coisa. */
+function verossimilhanca(verdadeiro: number, lido: number): number {
+  if (verdadeiro === lido) return P_EXATO;
+  const v = String(verdadeiro);
+  const l = String(lido);
+  if (v.length !== l.length) return P_OUTRO;
+  let diferentes = 0;
+  let confusao = true;
+  for (let i = 0; i < v.length; i++) {
+    if (v[i] === l[i]) continue;
+    diferentes++;
+    if (!CONFUSOES[v[i]]?.includes(l[i])) confusao = false;
+  }
+  return diferentes === 1 && confusao ? P_CONFUSAO : P_OUTRO;
+}
+
+/** Hipóteses para o valor verdadeiro: cada valor lido e o que ele seria se um dígito tivesse
+ *  sido lido errado. */
+function hipoteses(lidos: number[]): number[] {
+  const todas = new Set<number>(lidos);
+  for (const lido of lidos) {
+    const d = String(lido);
+    for (let i = 0; i < d.length; i++) {
+      for (const [verdadeiro, errados] of Object.entries(CONFUSOES)) {
+        if (errados.includes(d[i])) todas.add(Number(d.slice(0, i) + verdadeiro + d.slice(i + 1)));
+      }
+    }
+  }
+  return [...todas].filter((t) => Number.isSafeInteger(t) && t > 0);
+}
+
+/**
+ * O total mais provável, dadas as leituras da linha "TOTAL" (`diretos`) e das parcelas
+ * (`porParcela`, valor de uma parcela). Cada passada de OCR é uma observação ruidosa do mesmo
+ * valor: escolhe-se a hipótese que melhor explica todas, onde ler o dígito certo é provável, ler
+ * um 6 no lugar de um 0 é plausível, e o resto é raro. A parcela esperada de uma hipótese é
+ * total ÷ parcelas, arredondado. Empate: a hipótese que apareceu primeiro.
+ */
+function escolherTotal(diretos: number[], porParcela: number[], parcelas: number): number | undefined {
+  const lidos = [...diretos, ...porParcela.map((p) => p * parcelas)].filter((t) => Number.isSafeInteger(t) && t > 0);
+  let melhor: number | undefined;
+  let melhorPontos = -Infinity;
+  for (const h of hipoteses(lidos)) {
+    let pontos = 0;
+    for (const d of diretos) pontos += Math.log(verossimilhanca(h, d));
+    const esperada = Math.round(h / parcelas);
+    for (const p of porParcela) pontos += Math.log(verossimilhanca(esperada, p));
+    if (pontos > melhorPontos) { melhorPontos = pontos; melhor = h; }
+  }
+  return melhor;
+}
+
 /** O valor mais votado; no empate, o que apareceu primeiro. `undefined` sem nenhum voto. */
 function maisVotado<T>(votos: T[]): T | undefined {
   const contagem = new Map<T, number>();
@@ -96,7 +157,10 @@ const IDADE_MAXIMA_DIAS = 400;
  *  votos somados — assim "mês 12" (futuro) perde para "mês 10" mesmo empatando em votos. Sem
  *  `hoje`, não filtra por plausibilidade. Fora da janela [hoje − 400 dias, hoje + 1 dia],
  *  devolve `undefined`. */
-function votarData(trios: Array<[number, number, number]>, hoje?: ISODate): ISODate | undefined {
+function votarData(trios: Array<[number, number, number]>, passadas: number, hoje?: ISODate): ISODate | undefined {
+  // Com 3 passadas ou mais, cada parte da data precisa de 2 leituras iguais: uma leitura isolada
+  // de "06" no lugar de "16" é plausível e errada, e a data em branco cai em hoje.
+  const minimo = passadas >= 3 ? 2 : 1;
   const contar = (valores: number[]) => {
     const m = new Map<number, number>();
     for (const v of valores) m.set(v, (m.get(v) ?? 0) + 1);
@@ -108,6 +172,7 @@ function votarData(trios: Array<[number, number, number]>, hoje?: ISODate): ISOD
   let melhor: ISODate | undefined;
   let pontos = 0;
   for (const [d, vd] of dias) for (const [m, vm] of meses) for (const [a, va] of anos) {
+    if (vd < minimo || vm < minimo || va < minimo) continue;
     const data = montarISODate(a, m, d);
     if (!data) continue;
     if (hoje && (data > addDias(hoje, 1) || data < addDias(hoje, -IDADE_MAXIMA_DIAS))) continue;
@@ -159,25 +224,26 @@ export function parsearComprovantes(textos: string[], hoje?: ISODate): Comprovan
   const leituras = textos.map(lerUmTexto);
   const r: ComprovanteExtraido = {};
 
-  const totais: number[] = [];
-  for (const l of leituras) {
-    if (l.total !== undefined) totais.push(l.total);
-    if (l.parcelas !== undefined && l.parcelaCent !== undefined) totais.push(l.parcelaCent * l.parcelas);
-  }
-  const total = maisVotado(totais.filter((t) => Number.isSafeInteger(t) && t > 0));
-  if (total !== undefined) r.valorTotal = total;
-
   const parcelas = maisVotado(leituras.flatMap((l) => (l.parcelas !== undefined ? [l.parcelas] : [])));
   if (parcelas !== undefined) r.parcelas = parcelas;
 
-  const data = votarData(leituras.flatMap((l) => l.datas), hoje);
+  const diretos = leituras.flatMap((l) => (l.total !== undefined ? [l.total] : []));
+  const porParcela = leituras.flatMap((l) => (l.parcelaCent !== undefined ? [l.parcelaCent] : []));
+  const total = escolherTotal(diretos, porParcela, parcelas ?? 1);
+  if (total !== undefined) r.valorTotal = total;
+
+  const data = votarData(leituras.flatMap((l) => l.datas), leituras.length, hoje);
   if (data) r.data = data;
 
   const descricao = medoide(leituras.flatMap((l) => (l.descricao ? [l.descricao] : [])));
   if (descricao) r.descricao = descricao;
 
-  const final = maisVotado(leituras.flatMap((l) => (l.finalCartao ? [l.finalCartao] : [])));
-  if (final) r.finalCartao = final;
+  // Final do cartão: dígitos soltos depois dos asteriscos são fáceis de errar, e um final errado
+  // com cara de certo é pior que nenhum. Com 3 passadas ou mais, exige 2 leituras iguais.
+  const finais = leituras.flatMap((l) => (l.finalCartao ? [l.finalCartao] : []));
+  const final = maisVotado(finais);
+  const confirmado = final !== undefined && (leituras.length < 3 || finais.filter((f) => f === final).length >= 2);
+  if (confirmado) r.finalCartao = final;
 
   const bandeira = maisVotado(leituras.flatMap((l) => (l.bandeira ? [l.bandeira] : [])));
   if (bandeira) r.bandeira = bandeira;

@@ -56,6 +56,8 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 
 - **Leitor de OCR testado só com texto limpo passa e falha na foto real.** O comprovante térmico trocou 0 por 6, leu o ano como 2016 e entregou o estabelecimento truncado, e os testes com texto perfeito passaram. Uma única passada de OCR nunca acertou tudo. *Faça:* rode o OCR de verdade numa foto sintética ou anonimizada, veja o texto cru de cada passada e escreva testes com os erros reais (dígito trocado, data impossível, ano implausível). Passada extra e votação entre elas custam menos que um parser que confia em uma leitura.
 
+- **Foto torta e texto pequeno custam mais que o motor de OCR.** Endireitar a foto (ângulo pela tinta, sem OCR), recortar o comprovante e ampliar o recorte tirou os erros de dígito que votar entre passadas sozinho não resolvia. Binarizar quebrou os caracteres e normalizar o fundo com janela pequena criou halos: o recorte limpo em tons de cinza leu melhor. O zero riscado da impressora térmica sai como 6, 8 ou 9, e o total vem de um modelo de erro (qual valor verdadeiro explica melhor as leituras), não de maioria simples. *Faça:* meça cada mudança numa bateria de variações da mesma foto (tamanho, inclinação, compressão), e olhe a imagem que vai para o OCR antes de culpar o motor.
+
 ## Dados, banco e backup
 
 - **Validador compartilhado que devolve `null` em silêncio vira "nada aconteceu".** Um parser de valor rejeitava zero, o que vale para lançamento mas não para saldo inicial. Digitar zero apagava o saldo sem erro. *Faça:* quando o relato é "não deu erro, mas não salvou", suspeite de validador reaproveitado fora do contexto. Rode grep por todos os pontos de chamada.
