@@ -357,6 +357,7 @@ table.tabela th:first-child, table.tabela td:first-child {
   .sheet-backdrop { align-items: center; }
   .sheet { border-radius: 24px; }
   .importar-rodape { padding-bottom: 24px; }
+  .aviso-atualizacao-pista { left: 190px; bottom: 24px; }
 }
 
 /* ---- Gráfico expandido (FluxoChartModal) ---- */
@@ -736,3 +737,15 @@ table.tabela th:first-child, table.tabela td:first-child {
 .erro-app > .card > p { margin: 0; }
 .erro-app .botao { width: 100%; }
 .erro-app-detalhe { font-size: 12px; color: var(--muted); word-break: break-word; }
+
+/* ---- Aviso de atualização (AvisoAtualizacao.tsx) ---- */
+.aviso-atualizacao-pista {
+  position: fixed; left: 0; right: 0; bottom: calc(80px + env(safe-area-inset-bottom));
+  display: flex; justify-content: center; pointer-events: none; z-index: 30;
+}
+.aviso-atualizacao {
+  pointer-events: auto; border: none; border-radius: 999px; min-height: 38px;
+  padding: 8px 16px; background: var(--surface2); color: var(--fg);
+  font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+}
+.aviso-atualizacao u { color: var(--ac); text-underline-offset: 2px; }
