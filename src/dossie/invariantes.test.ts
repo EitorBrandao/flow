@@ -36,7 +36,7 @@ function dadosComCartao(nomeCartao: string): Dados {
     viagens: [],
     bancos: [],
     ajustesFechamento: [],
-    notasFiscais: [],
+    notasFiscais: [], cnpjsCategoria: [],
     config: {
       id: 'config', boxPadraoId: null, ultimoBackupEm: null,
       mudancasDesdeBackup: false, horizonteProjecao: '2026-12-31',

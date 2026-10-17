@@ -103,6 +103,12 @@ const SCHEMA_V5 = {
   ajustesFechamento: 'id, cartaoId, [cartaoId+mes]',
 };
 
+/** Schema da v6 do FlowDB — literal, histórico, nunca mude. */
+const SCHEMA_V6 = {
+  ...SCHEMA_V5,
+  notasFiscais: 'id, compraCartaoId',
+};
+
 /** Dados-base comuns a v1 e v2 (boxes, categorias, lançamentos, recorrência, cenário, config). */
 function dadosBase() {
   const agora = agoraISO();
@@ -310,7 +316,7 @@ describe('caminho de upgrade do schema Dexie (FlowDB real)', () => {
     const flow = new FlowDB(nome);
     try {
       await flow.open();
-      expect(flow.verno).toBe(6);
+      expect(flow.verno).toBe(7);
 
       expect(await flow.boxes.get(box.id)).toEqual(box);
       expect(await flow.categorias.get(categoriaGanho.id)).toEqual(categoriaGanho);
@@ -364,7 +370,7 @@ describe('caminho de upgrade do schema Dexie (FlowDB real)', () => {
     const flow = new FlowDB(nome);
     try {
       await flow.open();
-      expect(flow.verno).toBe(6);
+      expect(flow.verno).toBe(7);
 
       expect(await flow.boxes.get(box.id)).toEqual(box);
       expect(await flow.categorias.get(categoriaGanho.id)).toEqual(categoriaGanho);
@@ -422,7 +428,7 @@ describe('caminho de upgrade do schema Dexie (FlowDB real)', () => {
     const flow = new FlowDB(nome);
     try {
       await flow.open();
-      expect(flow.verno).toBe(6);
+      expect(flow.verno).toBe(7);
 
       expect(await flow.boxes.get(box.id)).toEqual(box);
       expect(await flow.lancamentos.get(lancamentoEfetivo.id)).toEqual(lancamentoEfetivo);
@@ -472,7 +478,7 @@ describe('caminho de upgrade do schema Dexie (FlowDB real)', () => {
     const flow = new FlowDB(nome);
     try {
       await flow.open();
-      expect(flow.verno).toBe(6);
+      expect(flow.verno).toBe(7);
 
       expect(await flow.boxes.get(box.id)).toEqual(box);
       expect(await flow.lancamentos.get(lancamentoEfetivo.id)).toEqual(lancamentoEfetivo);
@@ -541,7 +547,7 @@ describe('caminho de upgrade do schema Dexie (FlowDB real)', () => {
     const flow = new FlowDB(nome);
     try {
       await flow.open();
-      expect(flow.verno).toBe(6);
+      expect(flow.verno).toBe(7);
 
       expect(await flow.boxes.get(box.id)).toEqual(box);
       expect(await flow.lancamentos.get(lancamentoEfetivo.id)).toEqual(lancamentoEfetivo);
@@ -566,15 +572,71 @@ describe('caminho de upgrade do schema Dexie (FlowDB real)', () => {
     }
   });
 
-  // Guarda de versão: ao adicionar `this.version(7)` em database.ts, este teste falha de
-  // propósito — é o lembrete forçado para escrever o salto 6 → 7 (schema congelado + teste
+  it('salto v6 → v7: dados sobrevivem e cnpjsCategoria nasce vazia com o índice raiz', async () => {
+    const nome = `flow-teste-v6-${novoId()}`;
+    const { box, categoriaGanho, categoriaGasto, lancamentoEfetivo, lancamentoPrevisto, recorrencia, cenario, config } = dadosBase();
+    const { cartao, categoriaCartao, compraCartao, recorrenciaCartao, conferenciaFatura } = dadosCartao(box.id);
+    const agora = agoraISO();
+    const nota = {
+      id: novoId(), compraCartaoId: compraCartao.id, itens: [], criadoEm: agora, alteradoEm: agora,
+    };
+
+    const antigo = new Dexie(nome);
+    antigo.version(1).stores(SCHEMA_V1);
+    antigo.version(2).stores(SCHEMA_V2);
+    antigo.version(3).stores(SCHEMA_V3);
+    antigo.version(4).stores(SCHEMA_V4);
+    antigo.version(5).stores(SCHEMA_V5);
+    antigo.version(6).stores(SCHEMA_V6);
+    try {
+      await antigo.open();
+      await antigo.table('boxes').add(box);
+      await antigo.table('categorias').bulkAdd([categoriaGanho, categoriaGasto]);
+      await antigo.table('lancamentos').bulkAdd([lancamentoEfetivo, lancamentoPrevisto]);
+      await antigo.table('recorrencias').add(recorrencia);
+      await antigo.table('cenarios').add(cenario);
+      await antigo.table('config').put(config);
+      await antigo.table('cartoes').add(cartao);
+      await antigo.table('categoriasCartao').add(categoriaCartao);
+      await antigo.table('comprasCartao').add(compraCartao);
+      await antigo.table('recorrenciasCartao').add(recorrenciaCartao);
+      await antigo.table('conferenciasFatura').add(conferenciaFatura);
+      await antigo.table('notasFiscais').add(nota);
+    } finally {
+      await antigo.close();
+    }
+
+    const flow = new FlowDB(nome);
+    try {
+      await flow.open();
+      expect(flow.verno).toBe(7);
+      expect(await flow.boxes.get(box.id)).toEqual(box);
+      expect(await flow.comprasCartao.get(compraCartao.id)).toEqual(compraCartao);
+      expect(await flow.notasFiscais.get(nota.id)).toEqual(nota);
+      expect(await flow.config.get('config')).toEqual(config);
+
+      await expect(flow.cnpjsCategoria.count()).resolves.toBe(0);
+      // O índice `raiz` é não-único de propósito: o merge de backups pode trazer duas.
+      await flow.cnpjsCategoria.bulkAdd([
+        { id: novoId(), raiz: '11222333', categoriaCartaoId: categoriaCartao.id, categoriaNome: 'A', criadoEm: agora, alteradoEm: agora },
+        { id: novoId(), raiz: '11222333', categoriaCartaoId: categoriaCartao.id, categoriaNome: 'A', criadoEm: agora, alteradoEm: agora },
+      ]);
+      await expect(flow.cnpjsCategoria.where('raiz').equals('11222333').count()).resolves.toBe(2);
+    } finally {
+      await flow.close();
+      await Dexie.delete(nome);
+    }
+  });
+
+  // Guarda de versão: ao adicionar `this.version(8)` em database.ts, este teste falha de
+  // propósito — é o lembrete forçado para escrever o salto 7 → 8 (schema congelado + teste
   // de migração) antes de mexer no schema real.
-  it('a versão atual do schema é 6 — subiu de versão? adicione o salto novo aqui', async () => {
+  it('a versão atual do schema é 7 — subiu de versão? adicione o salto novo aqui', async () => {
     const nome = `flow-teste-guarda-versao-${novoId()}`;
     const flow = new FlowDB(nome);
     try {
       await flow.open();
-      expect(flow.verno).toBe(6);
+      expect(flow.verno).toBe(7);
     } finally {
       await flow.close();
       await Dexie.delete(nome);

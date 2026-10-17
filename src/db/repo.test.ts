@@ -372,7 +372,7 @@ it('substituirTudo troca completamente os dados e reseta mudancasDesdeBackup', a
     viagens: [],
     bancos: [],
     ajustesFechamento: [],
-    notasFiscais: [],
+    notasFiscais: [], cnpjsCategoria: [],
     config: {
       id: 'config', boxPadraoId: 'nb1', ultimoBackupEm: agora,
       mudancasDesdeBackup: true, horizonteProjecao: `${new Date().getFullYear() + 1}-12-31`,
@@ -2378,5 +2378,41 @@ describe('transferirEntreBoxes', () => {
     const id = (await db.lancamentos.toArray())[0].transferenciaId!;
     await repo.excluirTransferencia(id);
     expect(await db.lancamentos.count()).toBe(0);
+  });
+});
+
+describe('cnpjsCategoria', () => {
+  it('salvarCnpjCategoria mantém uma raiz por registro e troca a categoria', async () => {
+    await repo.salvarCnpjCategoria('11222333', { id: 'c1', nome: 'Mercado' });
+    await repo.salvarCnpjCategoria('11222333', { id: 'c2', nome: 'Lazer' });
+    const todos = await db.cnpjsCategoria.toArray();
+    expect(todos).toHaveLength(1);
+    expect(todos[0]).toMatchObject({ raiz: '11222333', categoriaCartaoId: 'c2', categoriaNome: 'Lazer' });
+  });
+
+  it('salvar a mesma categoria de novo não regrava nem marca mudança', async () => {
+    await repo.salvarCnpjCategoria('11222333', { id: 'c1', nome: 'Mercado' });
+    const [antes] = await db.cnpjsCategoria.toArray();
+    await repo.salvarCnpjCategoria('11222333', { id: 'c1', nome: 'Mercado' });
+    const [depois] = await db.cnpjsCategoria.toArray();
+    expect(depois).toEqual(antes);
+  });
+
+  it('carregarTudo devolve e substituirTudo regrava deduplicando por raiz', async () => {
+    await repo.salvarCnpjCategoria('11222333', { id: 'c1', nome: 'Mercado' });
+    const dados = await repo.carregarTudo();
+    expect(dados.cnpjsCategoria).toHaveLength(1);
+    const dup = { ...dados.cnpjsCategoria[0], id: 'outro', alteradoEm: '2999-01-01T00:00:00.000Z', categoriaNome: 'Novo' };
+    await repo.substituirTudo({ ...dados, cnpjsCategoria: [...dados.cnpjsCategoria, dup] });
+    const volta = await db.cnpjsCategoria.toArray();
+    expect(volta).toHaveLength(1);
+    expect(volta[0].categoriaNome).toBe('Novo');
+  });
+
+  it('excluirCnpjCategoria remove o registro', async () => {
+    await repo.salvarCnpjCategoria('11222333', { id: 'c1', nome: 'Mercado' });
+    const [r] = await db.cnpjsCategoria.toArray();
+    await repo.excluirCnpjCategoria(r.id);
+    await expect(db.cnpjsCategoria.count()).resolves.toBe(0);
   });
 });

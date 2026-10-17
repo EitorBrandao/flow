@@ -1,3 +1,4 @@
+import { dedupCnpjsCategoria } from '../domain/cnpj';
 import { aplicarTrocasDeBox, casaQueFica, trocasDaCasa } from '../domain/casas';
 import { dedupAjustesFechamento, dedupConferencias } from '../domain/fatura';
 import { modosValidos } from '../domain/modos';
@@ -5,13 +6,13 @@ import type { Dados } from '../domain/types';
 
 export interface Backup {
   app: 'flow';
-  schema: 6;
+  schema: 7;
   exportadoEm: string;
   dados: Dados;
 }
 
 export function gerarBackup(dados: Dados): Backup {
-  return { app: 'flow', schema: 6, exportadoEm: new Date().toISOString(), dados };
+  return { app: 'flow', schema: 7, exportadoEm: new Date().toISOString(), dados };
 }
 
 const TABELAS_V1 = ['boxes', 'categorias', 'lancamentos', 'recorrencias', 'cenarios'] as const;
@@ -22,13 +23,15 @@ const TABELAS_VIAGEM = ['viagens'] as const;
 const TABELAS_BANCO = ['bancos'] as const;
 const TABELAS_AJUSTE_FECHAMENTO = ['ajustesFechamento'] as const;
 const TABELAS_NOTA = ['notasFiscais'] as const;
+const TABELAS_CNPJ = ['cnpjsCategoria'] as const;
 
 export function validarBackup(json: unknown): Backup {
   const b = json as { app?: unknown; schema?: unknown; exportadoEm?: unknown; dados?: Record<string, unknown> } | null;
   if (!b || typeof b !== 'object' || b.app !== 'flow') {
     throw new Error('Este arquivo não é um backup do Flow.');
   }
-  if (b.schema !== 1 && b.schema !== 2 && b.schema !== 3 && b.schema !== 4 && b.schema !== 5 && b.schema !== 6) {
+  if (b.schema !== 1 && b.schema !== 2 && b.schema !== 3 && b.schema !== 4 && b.schema !== 5 && b.schema !== 6
+    && b.schema !== 7) {
     throw new Error(`Backup de versão incompatível (${String(b.schema)}). Atualize o app e tente de novo.`);
   }
   const d = b.dados;
@@ -88,6 +91,13 @@ export function validarBackup(json: unknown): Backup {
   if (d.notasFiscais !== undefined && TABELAS_NOTA.some((t) => !Array.isArray(d[t]))) {
     throw new Error('Backup corrompido: estrutura de dados inesperada.');
   }
+  // cnpjsCategoria nasceu no schema 7: mesma regra das tabelas anteriores.
+  if (b.schema >= 7 && TABELAS_CNPJ.some((t) => !Array.isArray(d[t]))) {
+    throw new Error('Backup corrompido: estrutura de dados inesperada.');
+  }
+  if (d.cnpjsCategoria !== undefined && TABELAS_CNPJ.some((t) => !Array.isArray(d[t]))) {
+    throw new Error('Backup corrompido: estrutura de dados inesperada.');
+  }
   // escopo do cenário: opcional (ausente = casa), mas se vier tem que ser 'casa' ou o id de uma
   // box do próprio backup — senão o cenário ficaria órfão: invisível e sem como apagar.
   const idsBoxes = new Set(
@@ -132,8 +142,13 @@ export function validarBackup(json: unknown): Backup {
     const md = dados as unknown as Record<string, unknown[]>;
     for (const t of TABELAS_NOTA) md[t] = [];
   }
+  if (!Array.isArray(dados.cnpjsCategoria)) {
+    // mesmo raciocínio de `notasFiscais`: backfill por ausência do array, não por número de schema.
+    const md = dados as unknown as Record<string, unknown[]>;
+    for (const t of TABELAS_CNPJ) md[t] = [];
+  }
   return {
-    app: 'flow', schema: 6,
+    app: 'flow', schema: 7,
     exportadoEm: typeof b.exportadoEm === 'string' ? b.exportadoEm : new Date().toISOString(),
     dados,
   };
@@ -195,6 +210,7 @@ export function mesclar(atual: Dados, doBackupBruto: Dados): Dados {
       mesclarTabela(atual.ajustesFechamento, doBackup.ajustesFechamento),
     ),
     notasFiscais: mesclarTabela(atual.notasFiscais, doBackup.notasFiscais),
+    cnpjsCategoria: dedupCnpjsCategoria(mesclarTabela(atual.cnpjsCategoria, doBackup.cnpjsCategoria)),
     config: atual.config,
   };
 }

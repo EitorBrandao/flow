@@ -149,7 +149,7 @@ function dadosF(p: Partial<Dados> = {}): Dados {
     boxes: [], categorias: catsF, lancamentos: [], recorrencias: [], cenarios: [],
     cartoes: cartoesF, categoriasCartao: catsCartaoF, comprasCartao: [],
     recorrenciasCartao: [], conferenciasFatura: [], viagens: [], bancos: [],
-    ajustesFechamento: [], notasFiscais: [],
+    ajustesFechamento: [], notasFiscais: [], cnpjsCategoria: [],
     config: {
       id: 'config', boxPadraoId: null, ultimoBackupEm: null,
       mudancasDesdeBackup: false, horizonteProjecao: '2027-12-31',

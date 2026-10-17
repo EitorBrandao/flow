@@ -3,6 +3,7 @@ import { bancoIdDoCartao } from '../domain/bancos';
 import { casaQueFica, trocasDaCasa } from '../domain/casas';
 import { hojeISO } from '../domain/dates';
 import { modosDaBox, modosEfetivos, modosInstalacaoNova } from '../domain/modos';
+import { dedupCnpjsCategoria } from '../domain/cnpj';
 import {
   ajustesDoCartao, calcularFaturas, datasFaturaDoMes, dedupAjustesFechamento, dedupConferencias,
   diffSincronizacao, type PlanoParcelamento,
@@ -62,13 +63,13 @@ export async function carregarTudo(): Promise<Dados> {
   const [
     boxes, categorias, lancamentos, recorrencias, cenarios,
     cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, bancos,
-    ajustesFechamento, notasFiscais,
+    ajustesFechamento, notasFiscais, cnpjsCategoria,
   ] = await Promise.all([
     db.boxes.toArray(), db.categorias.toArray(), db.lancamentos.toArray(),
     db.recorrencias.toArray(), db.cenarios.toArray(),
     db.cartoes.toArray(), db.categoriasCartao.toArray(), db.comprasCartao.toArray(),
     db.recorrenciasCartao.toArray(), db.conferenciasFatura.toArray(), db.viagens.toArray(), db.bancos.toArray(),
-    db.ajustesFechamento.toArray(), db.notasFiscais.toArray(),
+    db.ajustesFechamento.toArray(), db.notasFiscais.toArray(), db.cnpjsCategoria.toArray(),
   ]);
   // ordem canônica na fonte: todo consumidor do snapshot herda a ordem de Ajustes
   categorias.sort(compararCategorias);
@@ -80,7 +81,7 @@ export async function carregarTudo(): Promise<Dados> {
   return {
     boxes, categorias, lancamentos, recorrencias, cenarios,
     cartoes, categoriasCartao, comprasCartao, recorrenciasCartao, conferenciasFatura, viagens, bancos,
-    ajustesFechamento, notasFiscais, config,
+    ajustesFechamento, notasFiscais, cnpjsCategoria, config,
   };
 }
 
@@ -369,7 +370,7 @@ export async function substituirTudo(
   const tabelas = [
     db.boxes, db.categorias, db.lancamentos, db.recorrencias, db.cenarios,
     db.cartoes, db.categoriasCartao, db.comprasCartao, db.recorrenciasCartao,
-    db.conferenciasFatura, db.viagens, db.bancos, db.ajustesFechamento, db.notasFiscais, db.config,
+    db.conferenciasFatura, db.viagens, db.bancos, db.ajustesFechamento, db.notasFiscais, db.cnpjsCategoria, db.config,
   ];
   await db.transaction('rw', tabelas, async () => {
     await Promise.all(tabelas.map((t) => t.clear()));
@@ -389,6 +390,7 @@ export async function substituirTudo(
     await db.bancos.bulkAdd(d.bancos);
     await db.ajustesFechamento.bulkAdd(dedupAjustesFechamento(d.ajustesFechamento));
     await db.notasFiscais.bulkAdd(d.notasFiscais);
+    await db.cnpjsCategoria.bulkAdd(dedupCnpjsCategoria(d.cnpjsCategoria));
     await db.config.put({ ...d.config, mudancasDesdeBackup });
   });
 }
@@ -792,6 +794,33 @@ export async function salvarNotaFiscal(n: NovaNotaFiscal): Promise<NotaFiscalSal
     await marcarMudanca();
   });
   return nota;
+}
+
+/** Aprende (ou troca) a categoria do cartão de uma raiz de CNPJ. Uma raiz por registro: a
+ *  unicidade é aplicada aqui, na mesma transação, porque o índice do Dexie é não-único. */
+export async function salvarCnpjCategoria(
+  raiz: string, categoria: Pick<CategoriaCartao, 'id' | 'nome'>,
+): Promise<void> {
+  const agora = agoraISO();
+  await db.transaction('rw', db.cnpjsCategoria, db.config, async () => {
+    const antigos = await db.cnpjsCategoria.where('raiz').equals(raiz).toArray();
+    if (antigos.length === 1 && antigos[0].categoriaCartaoId === categoria.id
+      && antigos[0].categoriaNome === categoria.nome) return;
+    const criadoEm = antigos.map((a) => a.criadoEm).sort()[0] ?? agora;
+    await db.cnpjsCategoria.bulkDelete(antigos.map((a) => a.id));
+    await db.cnpjsCategoria.add({
+      id: novoId(), criadoEm, alteradoEm: agora, raiz,
+      categoriaCartaoId: categoria.id, categoriaNome: categoria.nome,
+    });
+    await marcarMudanca();
+  });
+}
+
+export async function excluirCnpjCategoria(id: ID): Promise<void> {
+  await db.transaction('rw', db.cnpjsCategoria, db.config, async () => {
+    await db.cnpjsCategoria.delete(id);
+    await marcarMudanca();
+  });
 }
 
 export async function excluirNotaFiscalDaCompra(compraCartaoId: ID): Promise<void> {

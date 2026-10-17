@@ -6,7 +6,7 @@ function dados(): Dados {
     boxes: [{ id: 'b1', nome: 'eitor', saldoInicial: 100, dataSaldoInicial: '2026-01-01', criadoEm: 'x', alteradoEm: '2026-01-01T00:00:00Z' }],
     categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
     cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [], conferenciasFatura: [],
-    viagens: [], bancos: [], ajustesFechamento: [], notasFiscais: [],
+    viagens: [], bancos: [], ajustesFechamento: [], notasFiscais: [], cnpjsCategoria: [],
     config: { id: 'config', boxPadraoId: null, ultimoBackupEm: null, mudancasDesdeBackup: false, horizonteProjecao: '2027-12-31' },
   };
 }
@@ -15,7 +15,7 @@ it('round-trip: gerar → serializar → validar', () => {
   const b = gerarBackup(dados());
   const volta = validarBackup(JSON.parse(JSON.stringify(b)));
   expect(volta.dados.boxes).toHaveLength(1);
-  expect(volta.schema).toBe(6);
+  expect(volta.schema).toBe(7);
 });
 
 it('backup com cenário rascunho valida e mescla com o campo preservado', () => {
@@ -52,12 +52,12 @@ it('mesclar une registros de ids diferentes', () => {
   expect(mesclar(atual, backup).boxes).toHaveLength(2);
 });
 
-it('gerarBackup emite schema 6', () => {
+it('gerarBackup emite schema 7', () => {
   const b = gerarBackup(dados());
-  expect(b.schema).toBe(6);
+  expect(b.schema).toBe(7);
 });
 
-it('gerarBackup emite schema 6 e leva as notas fiscais', () => {
+it('gerarBackup emite schema 7 e leva as notas fiscais', () => {
   const d = dados();
   d.notasFiscais = [{
     id: 'n1', compraCartaoId: 'c1', emitente: 'Mercado Exemplo LTDA', emissao: '2026-08-29',
@@ -65,7 +65,7 @@ it('gerarBackup emite schema 6 e leva as notas fiscais', () => {
     criadoEm: 'x', alteradoEm: '2026-08-29T00:00:00Z',
   }];
   const b = gerarBackup(d);
-  expect(b.schema).toBe(6);
+  expect(b.schema).toBe(7);
   const volta = validarBackup(JSON.parse(JSON.stringify(b)));
   expect(volta.dados.notasFiscais).toHaveLength(1);
   expect(volta.dados.notasFiscais[0].itens[0].valorCent).toBe(1000);
@@ -76,7 +76,7 @@ it('backup de schema 4 sem notasFiscais backfila lista vazia', () => {
   delete d.notasFiscais;
   const volta = validarBackup({ app: 'flow', schema: 4, exportadoEm: 'x', dados: d });
   expect(volta.dados.notasFiscais).toEqual([]);
-  expect(volta.schema).toBe(6);
+  expect(volta.schema).toBe(7);
 });
 
 it('backup de schema 5 da v0.27.0 sem notasFiscais é aceito e backfila lista vazia', () => {
@@ -87,7 +87,7 @@ it('backup de schema 5 da v0.27.0 sem notasFiscais é aceito e backfila lista va
   const volta = validarBackup({ app: 'flow', schema: 5, exportadoEm: 'x', dados: d });
   expect(volta.dados.notasFiscais).toEqual([]);
   expect(volta.dados.ajustesFechamento).toEqual([]);
-  expect(volta.schema).toBe(6);
+  expect(volta.schema).toBe(7);
 });
 
 it('backup de schema 6 sem notasFiscais é recusado como corrompido', () => {
@@ -168,7 +168,7 @@ it('aceita backup schema 1 preenchendo as tabelas do cartão e viagens vazias', 
     },
   };
   const b = validarBackup(v1);
-  expect(b.schema).toBe(6);
+  expect(b.schema).toBe(7);
   expect(b.dados.cartoes).toEqual([]);
   expect(b.dados.conferenciasFatura).toEqual([]);
   expect(b.dados.viagens).toEqual([]);
@@ -200,7 +200,7 @@ it('aceita backup schema 2 preenchendo viagens vazia', () => {
     },
   };
   const b = validarBackup(v2);
-  expect(b.schema).toBe(6);
+  expect(b.schema).toBe(7);
   expect(b.dados.viagens).toEqual([]);
 });
 
@@ -213,7 +213,7 @@ it('aceita backup schema 3 preenchendo bancos vazia', () => {
       conferenciasFatura: [], viagens: [], config: { id: 'config' },
     },
   });
-  expect(b.schema).toBe(6);
+  expect(b.schema).toBe(7);
   expect(b.dados.bancos).toEqual([]);
 });
 
@@ -248,7 +248,7 @@ it('recusa backup schema 4 sem a tabela viagens ou com viagens que não é array
     dados: {
       boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
       cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
-      conferenciasFatura: [], bancos: [], notasFiscais: [], config: { id: 'config' },
+      conferenciasFatura: [], bancos: [], notasFiscais: [], cnpjsCategoria: [], config: { id: 'config' },
     },
   };
   expect(() => validarBackup(base)).toThrow(/estrutura de dados inesperada/);
@@ -271,7 +271,7 @@ it('backup schema 3 com bancos real preserva o registro (não é apagado no back
     dados: {
       boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
       cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
-      conferenciasFatura: [], viagens: [], bancos: [bancoReal], notasFiscais: [], config: { id: 'config' },
+      conferenciasFatura: [], viagens: [], bancos: [bancoReal], notasFiscais: [], cnpjsCategoria: [], config: { id: 'config' },
     },
   });
   expect(b.dados.bancos).toEqual([bancoReal]);
@@ -476,7 +476,7 @@ it('aceita backup schema 4 preenchendo ajustesFechamento vazia', () => {
       conferenciasFatura: [], viagens: [], bancos: [], config: { id: 'config' },
     },
   });
-  expect(b.schema).toBe(6);
+  expect(b.schema).toBe(7);
   expect(b.dados.ajustesFechamento).toEqual([]);
 });
 
@@ -777,5 +777,45 @@ describe('escopo do cenário no backup', () => {
     d.cenarios = [cenario({ escopo: 'b1' }) as unknown as Dados['cenarios'][number]];
     const volta = validarBackup(JSON.parse(JSON.stringify(gerarBackup(d))));
     expect(volta.dados.cenarios[0].escopo).toBe('b1');
+  });
+});
+
+describe('cnpjsCategoria no backup', () => {
+  const item = (id: string, raiz: string, alteradoEm: string) =>
+    ({ id, raiz, categoriaCartaoId: 'c1', categoriaNome: 'Mercado', criadoEm: alteradoEm, alteradoEm });
+
+  it('backup de schema 6 sem cnpjsCategoria é aceito e backfila lista vazia', () => {
+    const d = dados() as unknown as Record<string, unknown>;
+    delete d.cnpjsCategoria;
+    const volta = validarBackup({ app: 'flow', schema: 6, exportadoEm: 'x', dados: d });
+    expect(volta.dados.cnpjsCategoria).toEqual([]);
+    expect(volta.schema).toBe(7);
+  });
+
+  it('backup de schema 7 sem cnpjsCategoria é recusado como corrompido', () => {
+    const d = dados() as unknown as Record<string, unknown>;
+    delete d.cnpjsCategoria;
+    expect(() => validarBackup({ app: 'flow', schema: 7, exportadoEm: 'x', dados: d }))
+      .toThrow(/corrompido/i);
+  });
+
+  it('recusa cnpjsCategoria que não é array, em qualquer schema', () => {
+    for (const schema of [5, 6, 7]) {
+      const d = { ...dados(), cnpjsCategoria: { id: 'x' } };
+      expect(() => validarBackup({ app: 'flow', schema, exportadoEm: 'x', dados: d })).toThrow(/corrompido/i);
+    }
+  });
+
+  it('preserva cnpjsCategoria real de um backup antigo (não apaga no backfill)', () => {
+    const d = { ...dados(), cnpjsCategoria: [item('i1', '11222333', '2026-01-01')] };
+    const volta = validarBackup({ app: 'flow', schema: 6, exportadoEm: 'x', dados: d });
+    expect(volta.dados.cnpjsCategoria).toHaveLength(1);
+  });
+
+  it('mesclar mantém uma por raiz, a mais recente', () => {
+    const atual = { ...dados(), cnpjsCategoria: [item('a', '11222333', '2026-01-01')] };
+    const doBackup = { ...dados(), cnpjsCategoria: [item('b', '11222333', '2026-02-01'), item('c', '55555555', '2026-01-01')] };
+    const r = mesclar(atual, doBackup);
+    expect(r.cnpjsCategoria.map((i) => i.id).sort()).toEqual(['b', 'c']);
   });
 });

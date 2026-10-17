@@ -217,3 +217,37 @@ describe('leituraConfiavel', () => {
     expect(leituraConfiavel(['lorem', 'ipsum', 'dolor'])).toBe(false);
   });
 });
+
+// Débito: sem linha TOTAL e sem parcelas, o valor vem colado ao "R$" na linha do tipo.
+const DEBITO = `
+LOJA TESTE
+DEBITO                       R$21,47
+VIA ESTABELECIMENTO (L)  17/10/26 19H10
+MASTERCARD DEBITO ***2417
+COM GENEROS    CNPJ: 11.222.333/0001-81
+SAO PAULO/SP
+APROVADO PELO EMISSOR
+`;
+
+describe('comprovante de débito', () => {
+  it('lê valor, data, final do cartão e CNPJ sem linha TOTAL nem parcelas', () => {
+    const r = parsearComprovante(DEBITO, '2026-10-17');
+    expect(r).toMatchObject({
+      valorTotal: 2147, data: '2026-10-17', finalCartao: '2417', bandeira: 'Mastercard', cnpj: '11222333000181',
+    });
+    expect(r.parcelas).toBeUndefined();
+  });
+
+  it('aceita o "R$" lido como "RS"', () => {
+    expect(parsearComprovante('DEBITO  RS21,47\n17/10/26').valorTotal).toBe(2147);
+  });
+
+  it('CNPJ com dígito errado é descartado', () => {
+    expect(parsearComprovante('CNPJ: 11.222.333/0001-80\nTOTAL: R$ 10,00').cnpj).toBeUndefined();
+  });
+
+  it('vota o CNPJ entre passadas: uma leitura ruim perde', () => {
+    const ruim = DEBITO.replace('0001-81', '0001-31');
+    expect(parsearComprovantes([ruim, DEBITO, DEBITO]).cnpj).toBe('11222333000181');
+  });
+});

@@ -41,7 +41,7 @@ describe('aplicarTrocasDeBox', () => {
   const vazio = (boxes: Box[]): Dados => ({
     boxes, categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
     cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [], conferenciasFatura: [],
-    viagens: [], bancos: [], ajustesFechamento: [], notasFiscais: [],
+    viagens: [], bancos: [], ajustesFechamento: [], notasFiscais: [], cnpjsCategoria: [],
     config: { id: 'config', boxPadraoId: null, ultimoBackupEm: null, mudancasDesdeBackup: false, horizonteProjecao: '2027-12-31' },
   });
   const t = new Map([['c2', 'c1']]);
