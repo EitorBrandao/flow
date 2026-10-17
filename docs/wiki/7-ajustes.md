@@ -8,6 +8,8 @@ Atrás do ícone ⚙️ no topo. O menu tem cinco grupos; toque num grupo para v
 - **Dados:** Importar e conferir, e Backup e restauração.
 - **Sobre o app:** Modo de uso, Wiki e Versão. Veja [Modo simples e avançado](#modos).
 
+Depois de uma atualização, o app mostra por 2 segundos, acima do +, o aviso "Nova versão atualizada · Ver atualizações". Tocar no aviso abre a tela Versão.
+
 Nas seções de cadastro, o formulário no topo serve para criar; para editar, toque no lápis do próprio item.
 
 > Com **casa** no topo, Categorias, Categorias do cartão, Cartões, Assinaturas do cartão e Recorrências mostram só um aviso: esses cadastros são de cada box. Escolha uma box no topo para ver e editar.
