@@ -674,3 +674,24 @@ describe('compra repetida', () => {
     expect(await db.comprasCartao.count()).toBe(2);
   });
 });
+
+it('avisa o que falta ao salvar sem valor ou sem categoria, uma frase por vez', async () => {
+  const { box, cartao } = await montarCartao();
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+  const onFechar = vi.fn();
+  render(<FormCompra cartao={cartao} onFechar={onFechar} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  expect(screen.getByText('Digite um valor para salvar.')).toBeInTheDocument();
+
+  await userEvent.type(screen.getByLabelText('Valor'), '10,00');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+  expect(screen.getByText('Escolha uma categoria para salvar.')).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+  expect(screen.queryByText('Escolha uma categoria para salvar.')).not.toBeInTheDocument();
+  expect(onFechar).not.toHaveBeenCalled();
+  expect(await db.comprasCartao.toArray()).toHaveLength(0);
+});
