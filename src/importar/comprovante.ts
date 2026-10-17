@@ -59,7 +59,7 @@ interface Leitura {
   bandeira?: string;
 }
 
-/** O "02" de "02 X R$ 500,00" chega como "UZ", "U2", "Q2", "VZ"…: letras de forma parecida com
+/** O "02" de "02 X R$ 400,00" chega como "UZ", "U2", "Q2", "VZ"…: letras de forma parecida com
  *  dígitos. Só vale no número de parcelas, que fica sempre antes do "X". */
 function parcelasDoToken(token: string): number | undefined {
   const digitos = token
@@ -295,20 +295,21 @@ export function parsearComprovante(texto: string, hoje?: ISODate): ComprovanteEx
  *  cedo. Cada passada de OCR custa cerca de 1 s no celular. */
 const APOIOS_PARA_PARAR = 3;
 
-/** Já dá para parar de ler? Sim quando o total escolhido e as parcelas têm pelo menos
- *  `APOIOS_PARA_PARAR` leituras independentes iguais a ele (linha TOTAL ou parcela × N). Total ou
- *  parcelas sem confirmação mandam seguir lendo. Uma passada a mais custa segundos; um valor
- *  errado custa o dinheiro do usuário. */
+/** Já dá para parar de ler? Só quando o total escolhido foi confirmado por fontes diferentes.
+ *  Com linha de parcelas: pelo menos uma leitura da linha TOTAL e uma de parcela × N, somando
+ *  `APOIOS_PARA_PARAR`, com as parcelas lidas em 2 passadas. Sem ela (à vista): `APOIOS_PARA_PARAR`
+ *  leituras da linha TOTAL. Várias leituras da mesma linha não bastam: o erro que o OCR repete
+ *  passada após passada é justamente o de uma linha só (o zero da parcela lido como 8, por
+ *  exemplo), e parar ali pularia as passadas que poderiam ler a outra linha. Uma passada a mais
+ *  custa segundos; um valor errado custa o dinheiro do usuário. */
 export function leituraConfiavel(textos: string[], hoje?: ISODate): boolean {
   const r = parsearComprovantes(textos, hoje);
   if (r.valorTotal === undefined) return false;
   const leituras = textos.map(lerUmTexto);
   const n = r.parcelas ?? 1;
-  let apoios = 0;
-  for (const l of leituras) {
-    if (l.total === r.valorTotal) apoios++;
-    if (l.parcelaCent !== undefined && l.parcelaCent * n === r.valorTotal) apoios++;
-  }
+  const diretos = leituras.filter((l) => l.total === r.valorTotal).length;
+  if (r.parcelas === undefined) return diretos >= APOIOS_PARA_PARAR;
+  const derivados = leituras.filter((l) => l.parcelaCent !== undefined && l.parcelaCent * n === r.valorTotal).length;
   const parcelasIguais = leituras.filter((l) => l.parcelas === r.parcelas).length;
-  return apoios >= APOIOS_PARA_PARAR && (r.parcelas === undefined || parcelasIguais >= 2);
+  return diretos >= 1 && derivados >= 1 && diretos + derivados >= APOIOS_PARA_PARAR && parcelasIguais >= 2;
 }
