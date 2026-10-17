@@ -3,6 +3,16 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.70.3] - 2026-10-17
+
+### Alterado
+
+- Leitura de comprovante mais rápida e mais certeira
+  - O app acha o papel na foto e lê só ele, sem a mão e o fundo
+  - O motor de leitura sobe enquanto você tira a foto
+  - A leitura para sozinha quando o valor já está confirmado
+  - O total sai certo mais vezes, mesmo quando o zero é lido como 6, 8 ou 9
+
 ## [0.70.2] - 2026-10-16
 
 ### Alterado
