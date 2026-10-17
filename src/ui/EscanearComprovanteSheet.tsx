@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { parsearComprovantes, type ComprovanteExtraido } from '../importar/comprovante';
-import { lerTextosDaImagem } from '../importar/ocr';
+import { useEffect, useState } from 'react';
+import { leituraConfiavel, parsearComprovantes, type ComprovanteExtraido } from '../importar/comprovante';
+import { aquecerOcr, lerTextosDaImagem, liberarOcr } from '../importar/ocr';
 import { useApp } from '../state/store';
 import EscolherArquivo from './EscolherArquivo';
 
@@ -18,12 +18,15 @@ export default function EscanearComprovanteSheet({ onConcluir, onFechar }: {
   const [progresso, setProgresso] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
 
+  // O motor sobe enquanto o usuário tira a foto, e desliga quando a tela fecha.
+  useEffect(() => { aquecerOcr(); return liberarOcr; }, []);
+
   async function aoEscolher(arquivo: File) {
     setErro(null);
     setLendo(true);
     setProgresso(0);
     try {
-      const textos = await lerTextosDaImagem(arquivo, setProgresso);
+      const textos = await lerTextosDaImagem(arquivo, setProgresso, (t) => leituraConfiavel(t, hoje));
       const resultado = parsearComprovantes(textos, hoje);
       if (resultado.valorTotal === undefined && resultado.data === undefined) {
         setErro('Não consegui ler esse comprovante. Tente outra foto, mais reta e com boa luz, ou lance a compra à mão.');

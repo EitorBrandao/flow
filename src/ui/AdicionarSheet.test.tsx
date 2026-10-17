@@ -10,7 +10,7 @@ import { useApp } from '../state/store';
 import AdicionarSheet from './AdicionarSheet';
 import { lerTextosDaImagem } from '../importar/ocr';
 
-vi.mock('../importar/ocr', () => ({ lerTextosDaImagem: vi.fn() }));
+vi.mock('../importar/ocr', () => ({ lerTextosDaImagem: vi.fn(), aquecerOcr: vi.fn(), liberarOcr: vi.fn() }));
 
 beforeEach(async () => {
   await limparDb();

@@ -2,8 +2,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EscanearComprovanteSheet from './EscanearComprovanteSheet';
 import { lerTextosDaImagem } from '../importar/ocr';
+import { useApp } from '../state/store';
 
-vi.mock('../importar/ocr', () => ({ lerTextosDaImagem: vi.fn() }));
+vi.mock('../importar/ocr', () => ({ lerTextosDaImagem: vi.fn(), aquecerOcr: vi.fn(), liberarOcr: vi.fn() }));
 
 const TEXTO = 'LOJA TESTE LTDA CNPJ:00.000.000/0001-00\nTOTAL: R$ 90,00\nPARCELAS: 03 X R$ 30,00\n05/03/27';
 
@@ -11,7 +12,11 @@ function imagem() {
   return new File(['x'], 'comprovante.jpg', { type: 'image/jpeg' });
 }
 
-beforeEach(() => { vi.mocked(lerTextosDaImagem).mockReset(); });
+// A data lida só vale perto de hoje; fixar o dia mantém o teste independente do relógio.
+beforeEach(() => {
+  vi.mocked(lerTextosDaImagem).mockReset();
+  useApp.setState({ hoje: '2027-03-06' });
+});
 
 it('imagem lida: entrega valor, parcelas, data e descrição por onConcluir', async () => {
   vi.mocked(lerTextosDaImagem).mockResolvedValue([TEXTO]);

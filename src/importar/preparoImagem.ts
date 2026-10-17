@@ -101,21 +101,25 @@ function fundoDe(cinza: Uint8ClampedArray, largura: number, altura: number, divi
   return fundo;
 }
 
-/** Duas variantes de um canvas, ambas em tons de cinza: contraste esticado, e normalizada pela
- *  luz de fundo (janela larga, para não criar halo ao redor das letras). Sem binarização: a
- *  imagem limpa lê melhor, e cada variante erra dígitos diferentes — o OCR roda nas duas e vota. */
-export async function variantesDe(origem: HTMLCanvasElement): Promise<Blob[]> {
+/** Variantes de um canvas, ambas em tons de cinza, calculadas só quando pedidas: o cinza sai uma
+ *  vez, e a normalizada (a mais cara) só existe se a leitura precisar de uma segunda opinião.
+ *  - `esticada`: contraste esticado.
+ *  - `normalizada`: dividida pela luz de fundo (janela larga, para não criar halo nas letras).
+ *  Sem binarização: a imagem limpa lê melhor, e cada variante erra dígitos diferentes. */
+export function variantesDe(origem: HTMLCanvasElement): {
+  esticada: () => Promise<Blob>; normalizada: () => Promise<Blob>;
+} {
   const { width: largura, height: altura } = origem;
-  const rgba = origem.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, largura, altura).data;
-  const cinza = new Uint8ClampedArray(largura * altura);
-  for (let i = 0; i < cinza.length; i++) {
-    cinza[i] = 0.299 * rgba[i * 4] + 0.587 * rgba[i * 4 + 1] + 0.114 * rgba[i * 4 + 2];
-  }
-  const normalizada = esticarContraste(normalizarPeloFundo(cinza, fundoDe(cinza, largura, altura, 48)));
-  return Promise.all([
-    paraBlob(canvasDeCinza(esticarContraste(cinza), largura, altura)),
-    paraBlob(canvasDeCinza(normalizada, largura, altura)),
-  ]);
+  let cinza: Uint8ClampedArray | undefined;
+  const cinzaDoCanvas = () => (cinza ??= cinzaDe(origem));
+  return {
+    esticada: () => paraBlob(canvasDeCinza(esticarContraste(cinzaDoCanvas()), largura, altura)),
+    normalizada: () => {
+      const c = cinzaDoCanvas();
+      const n = esticarContraste(normalizarPeloFundo(c, fundoDe(c, largura, altura, 48)));
+      return paraBlob(canvasDeCinza(n, largura, altura));
+    },
+  };
 }
 
 /** Tons de cinza de um canvas, para as medidas que não passam pelo OCR. */
@@ -134,4 +138,9 @@ export function tintaLocal(canvas: HTMLCanvasElement): Uint8ClampedArray {
   const cinza = cinzaDe(canvas);
   const fundo = fundoDe(cinza, canvas.width, canvas.height, 12);
   return cinza.map((v, i) => (fundo[i] - v > 25 ? 0 : 255));
+}
+
+/** Pixels RGBA de um canvas (para medidas por cor, como achar o papel). */
+export function rgbaDe(canvas: HTMLCanvasElement): Uint8ClampedArray {
+  return canvas.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, canvas.width, canvas.height).data;
 }
