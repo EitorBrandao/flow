@@ -1,3 +1,0 @@
-- Aviso de nova versão
-  - Depois de uma atualização, aparece por 2 segundos acima do + o aviso "Nova versão atualizada · Ver atualizações".
-  - Tocar no aviso abre a tela Versão, em Ajustes.

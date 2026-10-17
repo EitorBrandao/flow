@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.71.0] - 2026-10-17
+
+### Adicionado
+
+- Aviso de nova versão
+  - Depois de uma atualização, aparece por 2 segundos acima do + o aviso "Nova versão atualizada · Ver atualizações".
+  - Tocar no aviso abre a tela Versão, em Ajustes.
+
 ## [0.70.3] - 2026-10-17
 
 ### Alterado
