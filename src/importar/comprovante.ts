@@ -59,7 +59,7 @@ interface Leitura {
   bandeira?: string;
 }
 
-/** O "02" de "02 X R$ 400,00" chega como "UZ", "U2", "Q2", "VZ"…: letras de forma parecida com
+/** O "02" da linha "02 X R$ valor" chega como "UZ", "U2", "Q2", "VZ"…: letras de forma parecida com
  *  dígitos. Só vale no número de parcelas, que fica sempre antes do "X". */
 function parcelasDoToken(token: string): number | undefined {
   const digitos = token
