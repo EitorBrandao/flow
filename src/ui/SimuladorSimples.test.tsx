@@ -212,6 +212,8 @@ it('depois de Guardar, uma nova simulação não apaga a guardada', async () => 
   await simular();
   await userEvent.click(await screen.findByRole('button', { name: 'Guardar' }));
   await waitFor(async () => expect((await db.cenarios.toArray())[0].nome).toBe('Simulação de 15/09'));
+  // Guardar também recarrega o store e troca `hoje` pela data real: refixa, como em `simular`
+  useApp.setState({ hoje: '2026-09-15' });
   await userEvent.clear(screen.getByLabelText('Valor'));
   await userEvent.type(screen.getByLabelText('Valor'), '300,00');
   await simular();
