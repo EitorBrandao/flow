@@ -60,6 +60,8 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 
 - **Foto sintética limpa não representa a foto do celular.** Com a foto de teste o OCR acertava 9 de 9. Com 10 fotos reais do mesmo comprovante (mão, tecido, ângulos diferentes) acertava 3 de 10, e algumas leituras levavam 40 s porque o app lia a foto inteira, com a textura do tecido. O papel, branco e sem cor, se acha por brilho e saturação, e recortá-lo resolveu velocidade e boa parte dos erros. O zero lido como 6, 8 ou 9 aparece em qualquer posição, então o modelo de erro é por dígito, com prior de zeros. *Faça:* guarde o texto cru de cada passada em JSON e ajuste a votação offline, sem rodar o OCR de novo; confira o tempo por foto, não só a média.
 
+- **Cada modelo de maquininha tem o seu layout, e um leitor ajustado a um só quebra no próximo.** O segundo comprovante trazia o `R$` e o valor em linhas separadas, texto entre o `03X` e a parcela, e total que não é a soma exata das parcelas (a soma das parcelas difere do total por centavos). O leitor do primeiro não lia nada. Ao ajustar, um `%` colado a um valor virou "44 parcelas" e o CNPJ, cheio de vírgulas, virou total. *Faça:* teste cada layout novo contra os anteriores com os textos crus guardados, e prefira deixar o campo em branco a chutar quando duas leituras rivalizam.
+
 ## Dados, banco e backup
 
 - **Validador compartilhado que devolve `null` em silêncio vira "nada aconteceu".** Um parser de valor rejeitava zero, o que vale para lançamento mas não para saldo inicial. Digitar zero apagava o saldo sem erro. *Faça:* quando o relato é "não deu erro, mas não salvou", suspeite de validador reaproveitado fora do contexto. Rode grep por todos os pontos de chamada.

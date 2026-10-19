@@ -1,0 +1,3 @@
+- Leitura de comprovante entende mais modelos de maquininha
+  - Lê comprovantes em que o valor e as parcelas ficam em linhas separadas, como "03X SEM JUROS DE"
+  - Quando duas leituras do total divergem sem desempate, deixa o campo em branco em vez de chutar

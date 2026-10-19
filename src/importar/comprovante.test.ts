@@ -217,3 +217,65 @@ describe('leituraConfiavel', () => {
     expect(leituraConfiavel(['lorem', 'ipsum', 'dolor'])).toBe(false);
   });
 });
+
+describe('layout com valor em linhas separadas e texto entre o N X e a parcela', () => {
+  const LAYOUT = `
+VIA - CLIENTE
+LOJA EXEMPLO        CREDENC. EXEMPLO
+CNPJ:00.000.000/0001-00   EXEMPLO IP LTDA
+Sao Paulo/SP        05/03/27 - 10:20:30
+CREDITO           R$     300,00
+PARCELADO LOJ
+03X SEM JUROS DE:     R$     100,00
+MASTERCARD   XXXXXXXXXX1234 AUT:000000
+`;
+
+  it('lê total, parcelas, data, estabelecimento e final', () => {
+    expect(parsearComprovante(LAYOUT)).toEqual({
+      valorTotal: 30000, parcelas: 3, data: '2027-03-05', descricao: 'Loja Exemplo',
+      finalCartao: '1234', bandeira: 'Mastercard',
+    });
+  });
+
+  it('"R$" e o valor em linhas diferentes', () => {
+    const r = parsearComprovante('CREDITO\nR$\n300,00\n03X SEM JUROS DE\nR$\n100,00');
+    expect(r).toMatchObject({ valorTotal: 30000, parcelas: 3 });
+  });
+
+  it('o total não é a soma exata das parcelas (250,00 em 3 x 83,33)', () => {
+    const r = parsearComprovantes(['CREDITO R$ 250,00\n03X SEM JUROS DE: R$ 83,33', 'CREDITO R$ 250,00\n03X SEM JUROS DE: R$ 83,33']);
+    expect(r).toMatchObject({ valorTotal: 25000, parcelas: 3 });
+  });
+
+  it('"X" lido como K e "%" antes do texto: U3K, 03% SEM JUROS', () => {
+    expect(parsearComprovante('CREDITO R$ 300,00\nU3K SEM JUROS DE: R$ 100,00').parcelas).toBe(3);
+    expect(parsearComprovante('CREDITO R$ 300,00\n03% SEM JUROS DE: R$ 100,00').parcelas).toBe(3);
+  });
+
+  it('"44%" colado ao valor não vira 44 parcelas', () => {
+    const r = parsearComprovante('CREDITO RUE 44% 300,00\n03X SEM JUROS DE: R$ 100,00');
+    expect(r.parcelas).toBe(3);
+  });
+
+  it('o valor do CNPJ ou da data, cheios de pontos e vírgulas, não vira total', () => {
+    expect(parsearComprovante('CNPJ:00.254,17 5/0001-33\n05/03/27\n03X SEM JUROS DE: R$ 100,00').valorTotal).toBe(30000);
+  });
+
+  it('estabelecimento na linha de cima, com a credenciadora ao lado', () => {
+    expect(parsearComprovante('LOJA EXEMPLO     CREDENC. EXEMPLO\nCNPJ:00.000.000/0001-00').descricao).toBe('Loja Exemplo');
+  });
+
+  it('duas leituras rivais do total, sem desempate, deixam o total em branco', () => {
+    const r = parsearComprovantes(['TOTAL: R$ 570,00', 'TOTAL: R$ 530,00']);
+    expect(r.valorTotal).toBeUndefined();
+  });
+
+  it('leituras que concordam entre si não ficam em branco', () => {
+    expect(parsearComprovantes(['TOTAL: R$ 570,00', 'TOTAL: R$ 570,00']).valorTotal).toBe(57000);
+  });
+
+  it('leituraConfiavel aceita o arredondamento das parcelas', () => {
+    const t = 'CREDITO R$ 250,00\n03X SEM JUROS DE: R$ 83,33';
+    expect(leituraConfiavel([t, t, t])).toBe(true);
+  });
+});
