@@ -78,7 +78,7 @@ it('declara saldo real negativo (cheque especial) e persiste com o sinal', async
   await userEvent.click(toggleBtn);
   await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
-  expect(await screen.findByText(/sobra no app/)).toBeInTheDocument();
+  expect(await screen.findByText(/sobra no Flow/)).toBeInTheDocument();
   expect(screen.getByText(/^R\$\s*1\.050,00$/)).toHaveClass('valor-ganho');
   const salva = await db.boxes.get(box.id);
   expect(salva?.saldoDeclaradoCent).toBe(-5000);
@@ -1136,7 +1136,7 @@ describe('Hoje no modo Simples', () => {
     await abrirAba('Conferir');
     await userEvent.type(screen.getByLabelText('Saldo real no banco'), '900,00');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
-    await screen.findByText(/falta inserir|sobra no app|Bate/);
+    await screen.findByText(/falta inserir|sobra no Flow|Bate/);
     await act(async () => {
       await repo.salvarModo('hoje', 'avancado');
       await useApp.getState().recarregar();
@@ -1264,7 +1264,7 @@ describe('Conferir na casa, por box', () => {
     await userEvent.type(screen.getByLabelText('Nubank'), '40000');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
     await waitFor(async () => expect((await db.bancos.get(nubank.id))?.saldoDeclaradoCent).toBe(40000));
-    expect(await screen.findByText(/sobra no app/)).toBeInTheDocument();
+    expect(await screen.findByText(/sobra no Flow/)).toBeInTheDocument();
     expect(screen.getByText('Total informado')).toBeInTheDocument();
     expect(screen.getByText('Total calculado no Flow')).toBeInTheDocument();
   });

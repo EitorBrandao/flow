@@ -196,15 +196,15 @@ describe('diferença da conferência: mesmas frases, cores e sinal', () => {
   it('Hoje diz as mesmas frases nos dois modos, para falta e para sobra', async () => {
     const { box } = await montar();
     // banco 3.900,00 contra 3.800,00 no app: faltam 100,00 no app (vermelho)
-    const falta = await diferencaDeHoje('simples', box.id, '390000', /falta inserir no app/);
-    const faltaAv = await diferencaDeHoje('avancado', box.id, '390000', /falta inserir no app/);
-    expect(falta.texto).toMatch(/^Diferença: R\$\s*100,00 — falta inserir no app · conferido em 03\/07\/2026$/);
+    const falta = await diferencaDeHoje('simples', box.id, '390000', /falta inserir no Flow/);
+    const faltaAv = await diferencaDeHoje('avancado', box.id, '390000', /falta inserir no Flow/);
+    expect(falta.texto).toMatch(/^Diferença: R\$\s*100,00 — falta inserir no Flow · conferido em 03\/07\/2026$/);
     expect(falta.classe).toBe('valor-gasto');
     expect(faltaAv).toEqual(falta);
     // banco 3.700,00: sobram 100,00 no app (verde)
-    const sobra = await diferencaDeHoje('simples', box.id, '370000', /sobra no app/);
-    const sobraAv = await diferencaDeHoje('avancado', box.id, '370000', /sobra no app/);
-    expect(sobra.texto).toMatch(/^Diferença: R\$\s*100,00 — sobra no app \(confira duplicado/);
+    const sobra = await diferencaDeHoje('simples', box.id, '370000', /sobra no Flow/);
+    const sobraAv = await diferencaDeHoje('avancado', box.id, '370000', /sobra no Flow/);
+    expect(sobra.texto).toMatch(/^Diferença: R\$\s*100,00 — sobra no Flow \(confira duplicado/);
     expect(sobra.classe).toBe('valor-ganho');
     expect(sobraAv).toEqual(sobra);
   });
@@ -232,23 +232,23 @@ describe('diferença da conferência: mesmas frases, cores e sinal', () => {
     await usarModo('avancado', box.id);
     useApp.setState({ hoje: HOJE });
     // fatura de julho: 150,00 nos itens. Banco 180,00: faltam 30,00 no Flow (vermelho)
-    let p = await diferencaDoCartao('18000', /falta inserir no cartão/);
-    expect(p.textContent).toMatch(/^Diferença: R\$\s*30,00 — falta inserir no cartão$/);
+    let p = await diferencaDoCartao('18000', /falta inserir no Flow/);
+    expect(p.textContent).toMatch(/^Diferença: R\$\s*30,00 — falta inserir no Flow$/);
     expect(p.querySelector('strong')).toHaveClass('valor-gasto');
     cleanup();
     // Hoje, no mesmo cenário (falta lançar): mesma cor, mesmo valor sem sinal, mesma estrutura
-    const hojeFalta = await diferencaDeHoje('avancado', box.id, '383000', /falta inserir no app/);
+    const hojeFalta = await diferencaDeHoje('avancado', box.id, '383000', /falta inserir no Flow/);
     expect(hojeFalta.classe).toBe('valor-gasto');
-    expect(hojeFalta.texto).toMatch(/^Diferença: R\$\s*30,00 — falta inserir no app/);
+    expect(hojeFalta.texto).toMatch(/^Diferença: R\$\s*30,00 — falta inserir no Flow/);
     // Banco 120,00: sobram 30,00 no Flow (verde)
     await usarModo('avancado', box.id);
-    p = await diferencaDoCartao('12000', /sobra no cartão/);
-    expect(p.textContent).toMatch(/^Diferença: R\$\s*30,00 — sobra no cartão \(confira duplicado/);
+    p = await diferencaDoCartao('12000', /sobra no Flow/);
+    expect(p.textContent).toMatch(/^Diferença: R\$\s*30,00 — sobra no Flow \(confira duplicado/);
     expect(p.querySelector('strong')).toHaveClass('valor-ganho');
     cleanup();
-    const hojeSobra = await diferencaDeHoje('avancado', box.id, '377000', /sobra no app/);
+    const hojeSobra = await diferencaDeHoje('avancado', box.id, '377000', /sobra no Flow/);
     expect(hojeSobra.classe).toBe('valor-ganho');
-    expect(hojeSobra.texto).toMatch(/^Diferença: R\$\s*30,00 — sobra no app \(confira duplicado/);
+    expect(hojeSobra.texto).toMatch(/^Diferença: R\$\s*30,00 — sobra no Flow \(confira duplicado/);
     // banco igual aos itens
     await usarModo('avancado', box.id);
     p = await diferencaDoCartao('15000', /Bate certinho/);
