@@ -1,4 +1,5 @@
 import type { ISODate } from '../domain/types';
+import { extrairCnpj } from '../domain/cnpj';
 import { addDias } from '../domain/dates';
 import { montarISODate, parsearValorExtrato } from './valores';
 
@@ -11,6 +12,7 @@ export interface ComprovanteExtraido {
   descricao?: string;  // nome do estabelecimento
   finalCartao?: string; // 4 últimos dígitos
   bandeira?: string;
+  cnpj?: string; // 14 dígitos, com dígitos verificadores conferidos
 }
 
 const VALOR = String.raw`(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2})`;
@@ -42,10 +44,24 @@ function datasDoTexto(texto: string): Array<[number, number, number]> {
   return trios;
 }
 
+/** Antes do CNPJ, algumas maquininhas imprimem a atividade da loja ("COM ALIMENTOS…") e não o nome. */
+const ATIVIDADE = /^(com|comercio|comércio|ind|serv|servicos|serviços)\b/i;
+/** Cabeçalhos e marcas de rodapé que aparecem no topo do papel e não são o estabelecimento. */
+const CABECALHO = /powered|\brede\b|\bvia\b|d[eé]bito|cr[eé]dito|ita[uú]|bradesco|santander|nubank|maquininha|comprovante|aprovad|mastercard|visa|\belo\b/i;
+
+/** Nome do estabelecimento: o texto antes do CNPJ. Quando esse texto é a atividade da loja, vale a
+ *  primeira linha do topo que parece um nome (só letras, sem cabeçalho de maquininha). */
 function descricaoDoTexto(linhas: string[]): string | undefined {
   const linha = linhas.find((l) => /CNP/i.test(l));
   if (!linha) return undefined;
   const nome = linha.slice(0, linha.search(/CNP/i)).replace(/\s+/g, ' ').trim();
+  if (ATIVIDADE.test(nome)) {
+    const doTopo = linhas.slice(0, 5).find((l) => {
+      const t = l.replace(/\s+/g, ' ').trim();
+      return /^[\p{L} .&'-]{3,40}$/u.test(t) && !CABECALHO.test(t) && !ATIVIDADE.test(t) && !/CNP/i.test(t);
+    });
+    if (doTopo) return doTopo.replace(/\s+/g, ' ').trim();
+  }
   return nome.length >= 2 ? nome : undefined;
 }
 
@@ -57,6 +73,7 @@ interface Leitura {
   descricao?: string;
   finalCartao?: string;
   bandeira?: string;
+  cnpj?: string;
 }
 
 /** O "02" da linha "02 X R$ valor" chega como "UZ", "U2", "Q2", "VZ"…: letras de forma parecida com
@@ -82,13 +99,17 @@ function lerUmTexto(textoBruto: string): Leitura {
   const soltoValor = solto ? new RegExp(VALOR).exec(solto) : null;
   // Sem a palavra TOTAL, o valor solto só vale se a linha das parcelas aparecer no mesmo texto:
   // sozinho, ele pode ser a parcela.
-  const total = comPalavra ?? (parc ? soltoValor : null);
+  // Débito e crédito à vista não têm "TOTAL" nem linha de parcelas: o valor é o único que vem
+  // colado ao "R$" (o OCR também entrega "RS" e "R5").
+  const comReais = new RegExp(String.raw`\bR[$S5]\s*${VALOR}`).exec(texto);
+  const total = comPalavra ?? (parc ? soltoValor : comReais);
   const totalCent = total ? parsearValorExtrato(total[1]) : undefined;
 
   const final = /\*{3,}\s*(\d{4})\b/.exec(texto)
     ?? /(?:MASTERCARD|VISA|ELO|AMEX|HIPERCARD)[^\n\d]*(\d{4})\s*$/im.exec(texto);
   const bandeira = BANDEIRAS.find((b) => new RegExp(`\\b${b}\\b`, 'i').test(texto));
   const descricao = descricaoDoTexto(linhas);
+  const cnpj = extrairCnpj(texto);
   return {
     ...(totalCent !== undefined && totalCent > 0 ? { total: totalCent } : {}),
     ...(n !== undefined && n >= 1 && n <= 99 ? { parcelas: n } : {}),
@@ -97,6 +118,7 @@ function lerUmTexto(textoBruto: string): Leitura {
     ...(descricao ? { descricao } : {}),
     ...(final ? { finalCartao: final[1] } : {}),
     ...(bandeira ? { bandeira } : {}),
+    ...(cnpj ? { cnpj } : {}),
   };
 }
 
@@ -282,6 +304,11 @@ export function parsearComprovantes(textos: string[], hoje?: ISODate): Comprovan
 
   const bandeira = maisVotado(leituras.flatMap((l) => (l.bandeira ? [l.bandeira] : [])));
   if (bandeira) r.bandeira = bandeira;
+
+  // CNPJ: já vem com os dígitos verificadores conferidos, então um valor lido é quase sempre
+  // certo; o mais votado resolve o resto.
+  const cnpj = maisVotado(leituras.flatMap((l) => (l.cnpj ? [l.cnpj] : [])));
+  if (cnpj) r.cnpj = cnpj;
 
   return r;
 }

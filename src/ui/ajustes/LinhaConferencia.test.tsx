@@ -10,7 +10,7 @@ function dadosVazios(): Dados {
   return {
     boxes: [], categorias: [], lancamentos: [], recorrencias: [], cenarios: [],
     cartoes: [], categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [],
-    conferenciasFatura: [], viagens: [], bancos: [], ajustesFechamento: [], notasFiscais: [],
+    conferenciasFatura: [], viagens: [], bancos: [], ajustesFechamento: [], notasFiscais: [], cnpjsCategoria: [],
     config: {
       id: 'config', boxPadraoId: null, ultimoBackupEm: null, mudancasDesdeBackup: false,
       horizonteProjecao: '2026-12-31',

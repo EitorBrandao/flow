@@ -56,6 +56,8 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 - Sem câmera disponível, ou se o QR não for lido, dá para digitar a chave de 44 dígitos à mão.
 - O botão "Comprovante" lê a foto de um comprovante de maquininha. A leitura roda no seu aparelho e a foto não é guardada. Na primeira leitura, o app baixa os arquivos de leitura (cerca de 6 MB); depois, funciona sem internet. O app procura o papel na foto, então o comprovante pode estar na mão ou sobre uma mesa; chegue perto e deixe o texto aparecer inteiro.
 - O Flow pré-preenche valor, data, parcelas e descrição da compra no cartão. O cartão continua por sua conta: o final lido no comprovante aparece só como dica. Se o app não tiver certeza da data, deixa a de hoje; confira o valor e a data antes de salvar.
+- O comprovante de débito e o de crédito à vista também são lidos, mesmo sem a linha "TOTAL". Se o texto antes do CNPJ for a atividade da loja, o Flow usa o nome do estabelecimento impresso no topo do papel como descrição.
+- Quando o comprovante traz o CNPJ, o Flow guarda a categoria que você escolhe ao salvar. Na próxima compra do mesmo estabelecimento, a categoria já vem marcada, com um aviso para você conferir. Filiais da mesma empresa valem como uma só. A tabela de CNPJ fica só no seu aparelho e entra no backup.
 
 **Obrigatórios:** valor, categoria. **Têm padrão:** data (hoje) e banco (o padrão da box, quando ela tem dois ou mais bancos). **Opcionais:** nota, marcar como previsto.
 

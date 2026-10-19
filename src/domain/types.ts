@@ -125,6 +125,17 @@ export interface NotaFiscalSalva extends Entidade {
   itens: ItemNota[];
 }
 
+/** Categoria de cartão aprendida de um CNPJ: na próxima compra do mesmo estabelecimento, o
+ *  formulário já sugere a categoria. Guarda a raiz do CNPJ (8 dígitos), para a filial valer
+ *  como a matriz. Uma raiz por registro — a unicidade é aplicada em `repo.salvarCnpjCategoria`,
+ *  não por índice único no Dexie (ver `src/db/database.ts`). `categoriaNome` permite achar a
+ *  categoria de mesmo nome em outro cartão. */
+export interface CnpjCategoria extends Entidade {
+  raiz: string;
+  categoriaCartaoId: ID;
+  categoriaNome: string;
+}
+
 export interface RecorrenciaCartao extends Entidade {
   cartaoId: ID;
   categoriaCartaoId: ID;
@@ -202,6 +213,7 @@ export interface Dados {
   bancos: Banco[];
   ajustesFechamento: AjusteFechamento[];
   notasFiscais: NotaFiscalSalva[];
+  cnpjsCategoria: CnpjCategoria[];
   config: Config;
 }
 

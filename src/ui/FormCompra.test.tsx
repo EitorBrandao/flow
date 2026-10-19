@@ -674,3 +674,49 @@ describe('compra repetida', () => {
     expect(await db.comprasCartao.count()).toBe(2);
   });
 });
+
+describe('categoria por CNPJ', () => {
+  const CNPJ = '11222333000181'; // CNPJ de exemplo, válido
+
+  it('aprende a categoria escolhida ao salvar e a sugere na compra seguinte', async () => {
+    const { box, cartao, catCartao } = await montarCartao();
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+
+    const primeira = render(<FormCompra cartao={cartao} inicial={{ valorTotal: 2147, cnpj: CNPJ }} onFechar={() => {}} />);
+    expect(screen.queryByText(/sugerida pelo CNPJ/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(async () => expect(await db.cnpjsCategoria.count()).toBe(1));
+    expect(await db.cnpjsCategoria.toArray()).toMatchObject([
+      { raiz: '11222333', categoriaCartaoId: catCartao.id, categoriaNome: 'mercado' },
+    ]);
+    primeira.unmount();
+
+    // outra filial do mesmo CNPJ: a categoria já vem marcada
+    await useApp.getState().iniciar();
+    render(<FormCompra cartao={cartao} inicial={{ valorTotal: 900, cnpj: '11222333000262' }} onFechar={() => {}} />);
+    expect(screen.getByText(/sugerida pelo CNPJ/)).toBeInTheDocument();
+  });
+
+  it('sem CNPJ não aprende nada', async () => {
+    const { box, cartao } = await montarCartao();
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    render(<FormCompra cartao={cartao} inicial={{ valorTotal: 2147 }} onFechar={() => {}} />);
+    await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await waitFor(async () => expect(await db.comprasCartao.count()).toBe(1));
+    expect(await db.cnpjsCategoria.count()).toBe(0);
+  });
+
+  it('categoria vinda de atalho tem precedência sobre a sugestão', async () => {
+    const { box, cartao, catCartao } = await montarCartao();
+    const outra = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'lazer', ordem: 1 });
+    await repo.salvarCnpjCategoria('11222333', catCartao);
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    render(<FormCompra cartao={cartao} inicial={{ cnpj: CNPJ, categoriaCartaoId: outra.id }} onFechar={() => {}} />);
+    expect(screen.queryByText(/sugerida pelo CNPJ/)).not.toBeInTheDocument();
+  });
+});

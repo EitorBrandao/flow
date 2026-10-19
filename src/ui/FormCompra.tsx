@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import * as repo from '../db/repo';
 import { addMesesData, formatarDataBR } from '../domain/dates';
+import { categoriaPorCnpj, raizCnpj } from '../domain/cnpj';
 import { categoriasCartaoReservadasIds } from '../domain/categorias';
 import { compraRepetida } from '../domain/lancamentoRepetido';
 import { formatarBRL, formatarPercentual as formatarPercentualDominio } from '../domain/money';
@@ -26,6 +27,8 @@ export interface InicialCompra {
   descricao?: string;
   nota?: NotaFiscalExtraida;
   parcelas?: number;
+  /** CNPJ lido do comprovante: sugere a categoria aprendida e, ao salvar, aprende a escolhida */
+  cnpj?: string;
   /** texto de apoio mostrado no topo (ex.: o final do cartão lido de um comprovante) */
   dica?: string;
 }
@@ -62,8 +65,12 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
   const { dados, hoje, recarregar } = useApp();
   const [valor, setValor] = useState(compra?.valorTotal ?? inicial?.valorTotal ?? 0);
   const [data, setData] = useState(compra?.data ?? inicial?.data ?? hoje);
+  // Só sugere em compra nova, sem categoria já escolhida (atalho de "Frequentes").
+  const [sugeridaPorCnpj] = useState(() => (!compra && !inicial?.categoriaCartaoId && dados
+    ? categoriaPorCnpj(dados.cnpjsCategoria, inicial?.cnpj, dados.categoriasCartao, cartao.id)
+    : undefined));
   const [categoriaId, setCategoriaId] = useState<string | null>(
-    compra?.categoriaCartaoId ?? inicial?.categoriaCartaoId ?? null,
+    compra?.categoriaCartaoId ?? inicial?.categoriaCartaoId ?? sugeridaPorCnpj ?? null,
   );
   const [parcelas, setParcelas] = useState(compra ? String(compra.parcelas) : String(inicial?.parcelas ?? 1));
   const [parcelasPagas, setParcelasPagas] = useState('');
@@ -179,6 +186,10 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
     } else {
       compraId = (await repo.salvarCompraCartao({ cartaoId: cartao.id, ...campos }, horizonte)).id;
     }
+    const categoria = cats.find((c) => c.id === categoriaId);
+    if (!compra && inicial?.cnpj && categoria) {
+      await repo.salvarCnpjCategoria(raizCnpj(inicial.cnpj), categoria);
+    }
     if (estadoNota.tipo === 'nova') {
       await repo.salvarNotaFiscal({
         compraCartaoId: compraId,
@@ -207,6 +218,9 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
       <h2 style={{ marginTop: 0 }}>{compra ? 'Editar compra' : 'Nova compra'}</h2>
       <p className="sub">{cartao.nome}</p>
       {!compra && inicial?.dica && <p className="aviso aviso-sucesso">{inicial.dica}</p>}
+      {sugeridaPorCnpj && categoriaId === sugeridaPorCnpj && (
+        <p className="aviso aviso-sucesso">Categoria sugerida pelo CNPJ da última compra aqui. Confira.</p>
+      )}
       <div className="linha">
         <div className="campo">
           <label htmlFor={`${uid}-valor`}>Valor</label>

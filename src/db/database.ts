@@ -1,7 +1,7 @@
 import Dexie, { type Table } from 'dexie';
 import type {
   AjusteFechamento, Banco, Box, Cartao, Categoria, CategoriaCartao, Cenario, CompraCartao, Config,
-  ConferenciaFatura, Lancamento, NotaFiscalSalva, Recorrencia, RecorrenciaCartao, Viagem,
+  ConferenciaFatura, CnpjCategoria, Lancamento, NotaFiscalSalva, Recorrencia, RecorrenciaCartao, Viagem,
 } from '../domain/types';
 
 export class FlowDB extends Dexie {
@@ -20,6 +20,7 @@ export class FlowDB extends Dexie {
   bancos!: Table<Banco, string>;
   ajustesFechamento!: Table<AjusteFechamento, string>;
   notasFiscais!: Table<NotaFiscalSalva, string>;
+  cnpjsCategoria!: Table<CnpjCategoria, string>;
 
   constructor(nome = 'flow') {
     super(nome);
@@ -109,6 +110,26 @@ export class FlowDB extends Dexie {
       bancos: 'id, boxId',
       ajustesFechamento: 'id, cartaoId, [cartaoId+mes]',
       notasFiscais: 'id, compraCartaoId',
+    });
+    // `raiz` é índice NÃO-único pelo mesmo motivo de `compraCartaoId`: o merge de dois backups
+    // pode trazer duas categorias para a mesma raiz, e a importação não pode estourar por isso.
+    this.version(7).stores({
+      boxes: 'id',
+      categorias: 'id, boxId',
+      lancamentos: 'id, boxId, data, recorrenciaId, cenarioId, origem, cartaoId, viagemId',
+      recorrencias: 'id, boxId, origem',
+      cenarios: 'id',
+      config: 'id',
+      cartoes: 'id, boxId',
+      categoriasCartao: 'id, cartaoId',
+      comprasCartao: 'id, cartaoId, recorrenciaCartaoId, viagemId',
+      recorrenciasCartao: 'id, cartaoId',
+      conferenciasFatura: 'id, cartaoId, [cartaoId+mes]',
+      viagens: 'id, dataInicio, dataFim',
+      bancos: 'id, boxId',
+      ajustesFechamento: 'id, cartaoId, [cartaoId+mes]',
+      notasFiscais: 'id, compraCartaoId',
+      cnpjsCategoria: 'id, raiz',
     });
   }
 }

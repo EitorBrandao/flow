@@ -39,7 +39,7 @@ function dadosCom(parcial: Partial<Dados>): Dados {
   return {
     boxes: [], categorias: CATEGORIAS, lancamentos: [], recorrencias: [], cenarios: [], cartoes: [],
     categoriasCartao: [], comprasCartao: [], recorrenciasCartao: [], conferenciasFatura: [],
-    viagens: [], bancos: [], ajustesFechamento: [], notasFiscais: [],
+    viagens: [], bancos: [], ajustesFechamento: [], notasFiscais: [], cnpjsCategoria: [],
     config: {
       id: 'config', boxPadraoId: null, ultimoBackupEm: null, mudancasDesdeBackup: false,
       horizonteProjecao: '2027-12-31',

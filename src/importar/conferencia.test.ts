@@ -26,7 +26,7 @@ function dadosCom(lancamentos: Lancamento[], comprasCartao: CompraCartao[] = [])
   return {
     boxes: [], categorias: [], lancamentos, recorrencias: [], cenarios: [],
     cartoes: [], categoriasCartao: [], comprasCartao, recorrenciasCartao: [],
-    conferenciasFatura: [], viagens: [], bancos: [], ajustesFechamento: [], notasFiscais: [],
+    conferenciasFatura: [], viagens: [], bancos: [], ajustesFechamento: [], notasFiscais: [], cnpjsCategoria: [],
     config: {
       id: 'config', boxPadraoId: BOX, ultimoBackupEm: null,
       mudancasDesdeBackup: false, horizonteProjecao: '2027-12-31',

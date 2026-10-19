@@ -120,6 +120,7 @@ export default function AdicionarSheet({ aberto, onFechar }: { aberto: boolean; 
       ...(r.data ? { data: r.data } : {}),
       ...(r.descricao ? { descricao: r.descricao } : {}),
       ...(r.parcelas ? { parcelas: r.parcelas } : {}),
+      ...(r.cnpj ? { cnpj: r.cnpj } : {}),
       dica: cartao
         ? `Lido do comprovante: ${cartao}. Confira o cartão, a data e o valor.`
         : 'Lido do comprovante. Confira o cartão, a data e o valor.',

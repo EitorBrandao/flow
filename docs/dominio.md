@@ -433,12 +433,12 @@ sinal `+/−` também conta como edição. Há testes para os três caminhos.
 
 **O que `validarBackup` garante:** `app === 'flow'`; `schema` é `1`, `2`, `3`, `4` ou `5`;
 para cada schema, as tabelas correspondentes existem e são arrays (`TABELAS_V1` sempre;
-`TABELAS_CARTAO` a partir do schema 2; `TABELAS_VIAGEM` a partir do schema 3;
-**O que `validarBackup` garante:** `app === 'flow'`; `schema` é `1`, `2`, `3`, `4`, `5` ou `6`;
+**O que `validarBackup` garante:** `app === 'flow'`; `schema` é `1`, `2`, `3`, `4`, `5`, `6` ou `7`;
 para cada schema, as tabelas correspondentes existem e são arrays (`TABELAS_V1` sempre;
 `TABELAS_CARTAO` a partir do schema 2; `TABELAS_VIAGEM` a partir do schema 3;
 `TABELAS_BANCO` a partir do schema 4; `TABELAS_AJUSTE_FECHAMENTO` — `ajustesFechamento` — a
-partir do schema 5; `TABELAS_NOTA` — `notasFiscais` — a partir do schema 6); backups de
+partir do schema 5; `TABELAS_NOTA` — `notasFiscais` — a partir do schema 6; `TABELAS_CNPJ` —
+`cnpjsCategoria` — a partir do schema 7); backups de
 schema antigo recebem as tabelas novas como array vazio; `dados.config` é um objeto de
 verdade — `null`, array e primitivo são rejeitados com mensagem própria — e sai de
 `validarBackup` sempre com `id: 'config'`, a chave primária do registro único. `mesclar`
