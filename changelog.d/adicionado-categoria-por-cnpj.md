@@ -4,3 +4,4 @@
   - O CNPJ lido é conferido pelos dígitos verificadores, para não aprender um número errado.
   - A tabela fica só no seu aparelho e entra no backup.
 - Comprovante de débito e de crédito à vista passam a ser lidos, mesmo sem a linha "TOTAL".
+- Comprovante: quando o texto antes do CNPJ é a atividade da loja (por exemplo, "COM ALIMENTOS"), o nome do estabelecimento vem da primeira linha do topo do papel.

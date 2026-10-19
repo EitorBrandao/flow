@@ -224,7 +224,7 @@ LOJA TESTE
 DEBITO                       R$21,47
 VIA ESTABELECIMENTO (L)  17/10/26 19H10
 MASTERCARD DEBITO ***2417
-COM GENEROS    CNPJ: 11.222.333/0001-81
+COM ALIMENTOS    CNPJ: 11.222.333/0001-81
 SAO PAULO/SP
 APROVADO PELO EMISSOR
 `;
@@ -249,5 +249,28 @@ describe('comprovante de débito', () => {
   it('vota o CNPJ entre passadas: uma leitura ruim perde', () => {
     const ruim = DEBITO.replace('0001-81', '0001-31');
     expect(parsearComprovantes([ruim, DEBITO, DEBITO]).cnpj).toBe('11222333000181');
+  });
+});
+
+describe('nome do estabelecimento quando o texto antes do CNPJ é a atividade', () => {
+  const DEBITO_NOME = `
+PADARIA EXEMPLO
+Powered by Rede
+DEBITO                       R$21,47
+17/10/26 19H10
+COM ALIMENTOS    CNPJ: 11.222.333/0001-81
+`;
+  it('usa a primeira linha de nome do topo, e não "COM ALIMENTOS"', () => {
+    expect(parsearComprovante(DEBITO_NOME, '2026-10-17').descricao).toBe('Padaria Exemplo');
+  });
+  it('ignora cabeçalhos de maquininha no topo', () => {
+    const t = 'Powered by Rede\nVIA ESTABELECIMENTO\nPADARIA EXEMPLO\nCOM ALIMENTOS CNPJ: 11.222.333/0001-81';
+    expect(parsearComprovante(t).descricao).toBe('Padaria Exemplo');
+  });
+  it('sem nome plausível no topo, mantém o texto antes do CNPJ', () => {
+    expect(parsearComprovante('DEBITO R$ 10,00\nCOM ALIMENTOS CNPJ: 11.222.333/0001-81').descricao).toBe('Com Alimentos');
+  });
+  it('texto antes do CNPJ que não é atividade continua valendo', () => {
+    expect(parsearComprovante('PADARIA EXEMPLO\nLOJA TESTE LTDA CNPJ: 11.222.333/0001-81').descricao).toBe('Loja Teste Ltda');
   });
 });

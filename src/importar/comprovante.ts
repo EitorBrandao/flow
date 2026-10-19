@@ -44,10 +44,24 @@ function datasDoTexto(texto: string): Array<[number, number, number]> {
   return trios;
 }
 
+/** Antes do CNPJ, algumas maquininhas imprimem a atividade da loja ("COM ALIMENTOS…") e não o nome. */
+const ATIVIDADE = /^(com|comercio|comércio|ind|serv|servicos|serviços)\b/i;
+/** Cabeçalhos e marcas de rodapé que aparecem no topo do papel e não são o estabelecimento. */
+const CABECALHO = /powered|\brede\b|\bvia\b|d[eé]bito|cr[eé]dito|ita[uú]|bradesco|santander|nubank|maquininha|comprovante|aprovad|mastercard|visa|\belo\b/i;
+
+/** Nome do estabelecimento: o texto antes do CNPJ. Quando esse texto é a atividade da loja, vale a
+ *  primeira linha do topo que parece um nome (só letras, sem cabeçalho de maquininha). */
 function descricaoDoTexto(linhas: string[]): string | undefined {
   const linha = linhas.find((l) => /CNP/i.test(l));
   if (!linha) return undefined;
   const nome = linha.slice(0, linha.search(/CNP/i)).replace(/\s+/g, ' ').trim();
+  if (ATIVIDADE.test(nome)) {
+    const doTopo = linhas.slice(0, 5).find((l) => {
+      const t = l.replace(/\s+/g, ' ').trim();
+      return /^[\p{L} .&'-]{3,40}$/u.test(t) && !CABECALHO.test(t) && !ATIVIDADE.test(t) && !/CNP/i.test(t);
+    });
+    if (doTopo) return doTopo.replace(/\s+/g, ' ').trim();
+  }
   return nome.length >= 2 ? nome : undefined;
 }
 
