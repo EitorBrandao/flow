@@ -1,0 +1,1 @@
+- As conferências de saldo e de fatura dizem "falta inserir no Flow" e "sobra no Flow", para deixar claro que o ajuste é dentro do app.

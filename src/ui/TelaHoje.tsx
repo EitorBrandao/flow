@@ -103,9 +103,9 @@ function Diferenca({ diff }: { diff: number }) {
   if (diff === 0) return <>Bate certinho.</>;
   const doApp = -diff;
   return doApp < 0 ? (
-    <>Diferença: <strong className="valor-gasto">{formatarBRL(doApp)}</strong> — falta inserir no app</>
+    <>Diferença: <strong className="valor-gasto">{formatarBRL(doApp)}</strong> — falta inserir no Flow</>
   ) : (
-    <>Diferença: <strong className="valor-ganho">{formatarBRL(doApp)}</strong> — sobra no app (confira duplicado ou algo não confirmado no banco)</>
+    <>Diferença: <strong className="valor-ganho">{formatarBRL(doApp)}</strong> — sobra no Flow (confira duplicado ou algo não confirmado no banco)</>
   );
 }
 

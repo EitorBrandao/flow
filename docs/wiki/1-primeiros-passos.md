@@ -70,7 +70,7 @@ O botão **+** no meio da barra de baixo → **Compra no cartão**.
 
 O app não fala com o seu banco: quem garante que os dois batem é você. A [[conferência]] existe para isso doer pouco.
 
-- **Na tela Hoje:** digite o saldo que o app do banco mostra. O Flow responde "bate certinho", "falta inserir no app" (esqueceu um gasto) ou "sobra no app" (lançou duas vezes).
+- **Na tela Hoje:** digite o saldo que o app do banco mostra. O Flow responde "bate certinho", "falta inserir no Flow" (esqueceu um gasto) ou "sobra no Flow" (lançou duas vezes).
 - **Na aba Cartão:** digite o valor da fatura que o banco mostra. Se não quiser caçar item por item, marque "usar este valor no Flow" e o total do banco passa a valer na projeção.
 
 Fazer isso uma vez por semana é o que mantém a projeção confiável.
