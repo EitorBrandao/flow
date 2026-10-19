@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.72.1] - 2026-10-19
+
+### Alterado
+
+- Leitura de comprovante entende mais modelos de maquininha
+  - Lê comprovantes em que o valor e as parcelas ficam em linhas separadas, como "03X SEM JUROS DE"
+  - Quando duas leituras do total divergem sem desempate, deixa o campo em branco em vez de chutar
+
 ## [0.72.0] - 2026-10-19
 
 ### Adicionado
