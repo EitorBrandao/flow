@@ -49,20 +49,33 @@ const ATIVIDADE = /^(com|comercio|comércio|ind|serv|servicos|serviços)\b/i;
 /** Cabeçalhos e marcas de rodapé que aparecem no topo do papel e não são o estabelecimento. */
 const CABECALHO = /powered|\brede\b|\bvia\b|d[eé]bito|cr[eé]dito|ita[uú]|bradesco|santander|nubank|maquininha|comprovante|aprovad|mastercard|visa|\belo\b/i;
 
+/** Só o nome: sem pontuação solta do OCR nem a credenciadora que divide a linha com ele. */
+function limparNome(t: string): string {
+  return t.replace(/\s*[—–-]?\s*\S*REDENC.*$/i, '').replace(/[^\p{L}\p{N} .&]/gu, ' ').replace(/\s+/g, ' ').trim();
+}
+
 /** Nome do estabelecimento: o texto antes do CNPJ. Quando esse texto é a atividade da loja, vale a
- *  primeira linha do topo que parece um nome (só letras, sem cabeçalho de maquininha). */
+ *  primeira linha do topo que parece um nome (só letras, sem cabeçalho de maquininha). Em outro
+ *  layout, o nome vem antes de "CREDENC." (a credenciadora, na mesma linha dele) ou na linha logo
+ *  acima do CNPJ. */
 function descricaoDoTexto(linhas: string[]): string | undefined {
-  const linha = linhas.find((l) => /CNP/i.test(l));
-  if (!linha) return undefined;
-  const nome = linha.slice(0, linha.search(/CNP/i)).replace(/\s+/g, ' ').trim();
-  if (ATIVIDADE.test(nome)) {
+  const i = linhas.findIndex((l) => /CNP/i.test(l));
+  if (i < 0) return undefined;
+  const antesDoCnpj = linhas[i].slice(0, linhas[i].search(/CNP/i)).replace(/\s+/g, ' ').trim();
+  if (ATIVIDADE.test(antesDoCnpj)) {
     const doTopo = linhas.slice(0, 5).find((l) => {
       const t = l.replace(/\s+/g, ' ').trim();
       return /^[\p{L} .&'-]{3,40}$/u.test(t) && !CABECALHO.test(t) && !ATIVIDADE.test(t) && !/CNP/i.test(t);
     });
     if (doTopo) return doTopo.replace(/\s+/g, ' ').trim();
   }
-  return nome.length >= 2 ? nome : undefined;
+  const mesma = limparNome(antesDoCnpj);
+  if (mesma.replace(/[^\p{L}]/gu, '').length >= 4) return mesma;
+  const credenc = linhas.find((l) => /REDENC/i.test(l));
+  const antes = credenc ? limparNome(credenc.slice(0, credenc.search(/\S*REDENC/i))) : '';
+  if (antes.replace(/[^\p{L}]/gu, '').length >= 4) return antes;
+  const acima = i > 0 ? limparNome(linhas[i - 1]) : '';
+  return acima.replace(/[^\p{L}]/gu, '').length >= 3 ? acima : undefined;
 }
 
 interface Leitura {
@@ -85,27 +98,38 @@ function parcelasDoToken(token: string): number | undefined {
 }
 
 function lerUmTexto(textoBruto: string): Leitura {
-  const texto = corrigirDigitos(textoBruto);
+  // "R$" e o valor às vezes saem em linhas separadas.
+  const texto = corrigirDigitos(textoBruto).replace(/R\$[ \t]*\n+[ \t]*(?=\d)/g, 'R$ ');
   const linhas = texto.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 
-  // Linha de parcelas: "N X R$ valor". O "R$" também chega estragado ("Rá", "R3", "RS").
-  const parc = new RegExp(String.raw`\b([\dOoUuQqVvDdIl|]{1,2}|[OoUuQqVvDd][Zz2])\s*[xX]\s*(?:R\S{0,2}\s*)?${VALOR}`).exec(texto);
+  // Linha de parcelas: "N X R$ valor", com ou sem texto no meio ("03X SEM JUROS DE: R$ valor"). O
+  // "X" e o "R$" também chegam estragados ("K", "%" antes de texto, "Rá", "R3").
+  const parc = new RegExp(
+    String.raw`\b([\dOoUuQqVvDdIl|]{1,2}|[OoUuQqVvDd][Zz2])\s*(?:[xXkK]|%(?=\s*[A-Za-z]))\s*[^\d]{0,40}?(?:R\S{0,2}\s*)?${VALOR}`,
+  ).exec(texto);
   const n = parc ? parcelasDoToken(parc[1]) : undefined;
 
   // Total: depois da palavra "TOTAL" (que também chega como "JuIAL", "TA;"), ou, sem ela, o
   // primeiro valor com centavos de uma linha sem "X" (a das parcelas tem).
   const comPalavra = new RegExp(String.raw`TOTAL\s*:?\s*(?:R\$)?\s*${VALOR}`, 'i').exec(texto);
-  const solto = linhas.find((l) => !/[xX]/.test(l) && new RegExp(VALOR).test(l));
+  // O valor solto não pode ser o da linha de parcelas, nem vir do CNPJ ou da data (que o OCR
+  // enche de vírgulas e pontos).
+  const semParcela = parc ? texto.replace(parc[0], ' ') : texto;
+  const solto = semParcela.split(/\r?\n/).map((l) => l.trim())
+    .find((l) => !/CNP|\//i.test(l) && new RegExp(VALOR).test(l));
   const soltoValor = solto ? new RegExp(VALOR).exec(solto) : null;
   // Sem a palavra TOTAL, o valor solto só vale se a linha das parcelas aparecer no mesmo texto:
   // sozinho, ele pode ser a parcela.
   // Débito e crédito à vista não têm "TOTAL" nem linha de parcelas: o valor é o único que vem
   // colado ao "R$" (o OCR também entrega "RS" e "R5").
   const comReais = new RegExp(String.raw`\bR[$S5]\s*${VALOR}`).exec(texto);
-  const total = comPalavra ?? (parc ? soltoValor : comReais);
+  // Mas num comprovante parcelado em que a linha do "N X" não foi lida, o único "R$ valor" visível
+  // é o da parcela, não o do total: com "PARCELA" ou "JUROS" no texto, esse atalho não vale.
+  const emParcelas = /PARCEL|JUROS/i.test(texto);
+  const total = comPalavra ?? (parc ? soltoValor : (emParcelas ? null : comReais));
   const totalCent = total ? parsearValorExtrato(total[1]) : undefined;
 
-  const final = /\*{3,}\s*(\d{4})\b/.exec(texto)
+  const final = /[*xX]{4,}\s*(\d{4})\b/.exec(texto)
     ?? /(?:MASTERCARD|VISA|ELO|AMEX|HIPERCARD)[^\n\d]*(\d{4})\s*$/im.exec(texto);
   const bandeira = BANDEIRAS.find((b) => new RegExp(`\\b${b}\\b`, 'i').test(texto));
   const descricao = descricaoDoTexto(linhas);
@@ -132,6 +156,8 @@ const CONFUSOES: Record<string, string> = { 0: '6894', 1: '74', 3: '8', 5: '6', 
 const P_DIGITO_IGUAL = 0.7;
 const P_DIGITO_CONFUSAO = 0.08;
 const P_DIGITO_OUTRO = 0.002;
+/** Probabilidade mínima da melhor hipótese para o total ser preenchido. */
+const PROBABILIDADE_MINIMA = 0.6;
 const P_TAMANHO_DIFERENTE = 1e-4; // por dígito de diferença no tamanho
 /** Valores em reais têm muito mais zeros que o acaso (500, 1.000, ,00): a priori, o dígito
  *  verdadeiro é zero com probabilidade bem acima dos outros. */
@@ -178,21 +204,29 @@ function hipoteses(lidos: number[]): number[] {
  * (`porParcela`, valor de uma parcela). Cada passada de OCR é uma observação ruidosa do mesmo
  * valor: escolhe-se a hipótese que melhor explica todas, onde ler o dígito certo é provável, ler
  * um 6 no lugar de um 0 é plausível, e o resto é raro. A parcela esperada de uma hipótese é
- * total ÷ parcelas, arredondado. Empate: a hipótese que apareceu primeiro.
+ * total ÷ parcelas, para baixo ou para cima. Empate: a hipótese que apareceu primeiro.
  */
 function escolherTotal(diretos: number[], porParcela: number[], parcelas: number): number | undefined {
   const lidos = [...diretos, ...porParcela.map((p) => p * parcelas)].filter((t) => Number.isSafeInteger(t) && t > 0);
-  let melhor: number | undefined;
-  let melhorPontos = -Infinity;
+  const pontuadas: Array<{ valor: number; pontos: number }> = [];
   for (const h of hipoteses(lidos)) {
     let pontos = 0;
     for (const dig of String(h)) pontos += Math.log(dig === '0' ? PRIORI_ZERO : PRIORI_OUTRO);
     for (const d of diretos) pontos += Math.log(verossimilhanca(h, d));
-    const esperada = Math.round(h / parcelas);
-    for (const p of porParcela) pontos += Math.log(verossimilhanca(esperada, p));
-    if (pontos > melhorPontos) { melhorPontos = pontos; melhor = h; }
+    // Total ÷ parcelas não é exato (a parcela de um total dividido em 3x pode sobrar um centavo): vale a esperada que melhor casa.
+    const esperadas = [Math.floor(h / parcelas), Math.ceil(h / parcelas)];
+    for (const p of porParcela) pontos += Math.log(Math.max(...esperadas.map((e) => verossimilhanca(e, p))));
+    pontuadas.push({ valor: h, pontos });
   }
-  return melhor;
+  if (pontuadas.length === 0) return undefined;
+  // Probabilidade da melhor hipótese entre todas. Se duas rivalizam (o OCR leu dois valores diferentes em
+  // passadas diferentes, sem desempate), melhor deixar o campo em branco que chutar um valor.
+  const maior = Math.max(...pontuadas.map((h) => h.pontos));
+  const soma = pontuadas.reduce((acc, h) => acc + Math.exp(h.pontos - maior), 0);
+  const melhor = pontuadas.find((h) => h.pontos === maior)!;
+  // Leituras que concordam entre si não têm rival a desempatar: confia-se nelas.
+  if (new Set(lidos).size < 2) return melhor.valor;
+  return 1 / soma >= PROBABILIDADE_MINIMA ? melhor.valor : undefined;
 }
 
 /** O valor mais votado; no empate, o que apareceu primeiro. `undefined` sem nenhum voto. */
@@ -336,7 +370,8 @@ export function leituraConfiavel(textos: string[], hoje?: ISODate): boolean {
   const n = r.parcelas ?? 1;
   const diretos = leituras.filter((l) => l.total === r.valorTotal).length;
   if (r.parcelas === undefined) return diretos >= APOIOS_PARA_PARAR;
-  const derivados = leituras.filter((l) => l.parcelaCent !== undefined && l.parcelaCent * n === r.valorTotal).length;
+  const derivados = leituras.filter((l) => l.parcelaCent !== undefined
+    && Math.abs(l.parcelaCent * n - r.valorTotal!) < Math.max(n, 1)).length;
   const parcelasIguais = leituras.filter((l) => l.parcelas === r.parcelas).length;
   return diretos >= 1 && derivados >= 1 && diretos + derivados >= APOIOS_PARA_PARAR && parcelasIguais >= 2;
 }
