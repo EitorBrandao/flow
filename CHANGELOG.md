@@ -3,6 +3,18 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.72.0] - 2026-10-19
+
+### Adicionado
+
+- Comprovante: o Flow aprende a categoria de cada estabelecimento pelo CNPJ.
+  - Na próxima compra no mesmo CNPJ, a categoria já vem marcada, para você conferir.
+  - Filiais da mesma empresa valem como uma só.
+  - O CNPJ lido é conferido pelos dígitos verificadores, para não aprender um número errado.
+  - A tabela fica só no seu aparelho e entra no backup.
+- Comprovante de débito e de crédito à vista passam a ser lidos, mesmo sem a linha "TOTAL".
+- Comprovante: quando o texto antes do CNPJ é a atividade da loja (por exemplo, "COM ALIMENTOS"), o nome do estabelecimento vem da primeira linha do topo do papel.
+
 ## [0.71.0] - 2026-10-17
 
 ### Adicionado
