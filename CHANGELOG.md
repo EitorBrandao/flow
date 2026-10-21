@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.72.2] - 2026-10-21
+
+### Alterado
+
+- As conferências de saldo e de fatura dizem "falta inserir no Flow" e "sobra no Flow", para deixar claro que o ajuste é dentro do app.
+
 ## [0.72.1] - 2026-10-19
 
 ### Alterado
