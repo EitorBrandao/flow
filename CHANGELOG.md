@@ -3,6 +3,13 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.72.3] - 2026-10-22
+
+### Alterado
+
+- Nova compra do cartão avisa o que falta ao tocar em Salvar.
+  - Mostra "Digite um valor para salvar." ou "Escolha uma categoria para salvar.", uma frase por vez.
+
 ## [0.72.2] - 2026-10-21
 
 ### Alterado

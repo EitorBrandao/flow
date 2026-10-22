@@ -1,2 +1,0 @@
-- Nova compra do cartão avisa o que falta ao tocar em Salvar.
-  - Mostra "Digite um valor para salvar." ou "Escolha uma categoria para salvar.", uma frase por vez.
