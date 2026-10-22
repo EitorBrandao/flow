@@ -8,7 +8,7 @@ Antes de lançar compras, cadastre o cartão e pelo menos uma categoria dele —
 
 Uma box pode ter vários cartões **ativos** ao mesmo tempo. "Ativo" controla a sincronização da fatura com o Flow (ver [Sincronização com o Flow](#cartao/sincronizacao-com-o-flow), abaixo). Um segundo controle bloqueia só as compras avulsas novas — a fatura e as assinaturas continuam funcionando (ver [Cartões](#ajustes/cartoes), no capítulo Ajustes).
 
-Sem categoria do cartão, o formulário da compra diz onde criá-la (Ajustes → Categorias do cartão), e "Cadastrar cartão" leva direto a Ajustes → Cartões. Cada compra pode ter uma nota fiscal anexada. No formulário da compra, "Anexar nota fiscal" aceita o XML da NFC-e — por arquivo ou colando o texto — e guarda a lista de itens.
+Sem categoria do cartão, o formulário da compra diz onde criá-la (Ajustes → Categorias do cartão), e "Cadastrar cartão" leva direto a Ajustes → Cartões. Ao tocar em Salvar sem valor ou sem categoria, o formulário avisa o que falta, uma frase por vez: "Digite um valor para salvar." ou "Escolha uma categoria para salvar." Cada compra pode ter uma nota fiscal anexada. No formulário da compra, "Anexar nota fiscal" aceita o XML da NFC-e — por arquivo ou colando o texto — e guarda a lista de itens.
 
 - A lista mostra item, valor e percentual do total da compra, do maior para o menor.
 - A compra manda: o valor dela não muda ao anexar a nota. Quando a soma dos itens não fecha com o valor da compra, uma linha final mostra a diferença (desconto, frete ou acréscimo).

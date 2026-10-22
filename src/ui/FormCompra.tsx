@@ -82,6 +82,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
   const [anexando, setAnexando] = useState(false);
   const [xmlTexto, setXmlTexto] = useState('');
   const [erroNota, setErroNota] = useState<string | null>(null);
+  const [avisoSalvar, setAvisoSalvar] = useState('');
   const [verItens, setVerItens] = useState(false);
   const montouRef = useRef(true);
   // Compra igual achada ao tocar em Salvar: a confirmação abre antes de gravar.
@@ -157,7 +158,11 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
   }
 
   async function salvar(confirmado = false) {
-    if (valor <= 0 || !categoriaId || salvandoRef.current) return;
+    if (salvandoRef.current) return;
+    // Uma frase por vez, na ordem dos campos — mesmo critério da tela Lançar.
+    if (valor <= 0) { setAvisoSalvar('Digite um valor para salvar.'); return; }
+    if (!categoriaId) { setAvisoSalvar('Escolha uma categoria para salvar.'); return; }
+    setAvisoSalvar('');
     if (!compra && !confirmado) {
       const igual = compraRepetida(dados!.comprasCartao, {
         cartaoId: cartao.id, data, valorTotal: valor, parcelas: parcelasNum, categoriaCartaoId: categoriaId,
@@ -248,7 +253,8 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
       <div className="campo">
         <label>Categoria</label>
         <SeletorCategoria
-          categorias={cats} selecionadaId={categoriaId} onSelecionar={setCategoriaId}
+          categorias={cats} selecionadaId={categoriaId}
+          onSelecionar={(id) => { setCategoriaId(id); setAvisoSalvar(''); }}
           vazio="Nenhuma categoria do cartão — crie em Ajustes → Categorias do cartão. Elas são separadas das categorias da box."
         />
       </div>
@@ -351,6 +357,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
             </div>
           );
         })()}
+        {avisoSalvar && <p className="aviso" style={{ flexBasis: '100%' }}>{avisoSalvar}</p>}
         <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={() => salvar()}>Salvar</button>
         <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={onFechar}>Cancelar</button>
         {compra && <button className="botao botao-perigo" style={{ alignSelf: 'flex-end' }} onClick={excluir}>Excluir</button>}
