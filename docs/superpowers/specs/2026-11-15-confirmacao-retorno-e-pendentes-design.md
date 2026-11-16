@@ -114,7 +114,10 @@ Exigência do `CLAUDE.md` para plano que muda fluxo de dados.
 - Trocar os avisos de validação de lugar.
 - Os outros achados da varredura (V1, V3 a V14).
 
-## Duas decisões a confirmar antes de executar
+## Decisões do usuário depois do mockup (2026-11-16)
 
-1. **Cancelar do sheet de confirmação.** O mockup aprovado mostrava Cancelar cinza. Depois dele, o usuário pediu Fechar com contorno, e a proposta feita no chat foi usar o mesmo contorno em todo Fechar e Cancelar que divide a linha com a ação principal. Os planos seguem a proposta: Cancelar com contorno. Se o usuário preferir o cinza do mockup no sheet de confirmação, muda uma classe no `ConfirmarSheet`.
-2. **Título do card de pendentes.** O mockup aprovado diz "Para confirmar · N". A pílula da mesma tela diz "Pendentes · N". A regra de consistência do projeto pede o mesmo texto para o mesmo conceito. O plano E segue o mockup aprovado e deixa o texto numa constante. A recomendação é trocar para "Pendentes · N".
+Estes três pontos divergem do mockup aprovado. O usuário aprovou cada um no chat.
+
+1. **Cancelar do sheet de confirmação: com contorno.** O mockup mostrava Cancelar cinza. Todo Fechar e Cancelar que divide a linha com a ação principal usa o mesmo contorno (`.botao-discreto`).
+2. **Título do card de pendentes: "Pendentes · N".** É o mesmo texto da pílula da mesma tela. A regra de consistência do projeto pede o mesmo texto para o mesmo conceito.
+3. **Texto do aviso ao confirmar: "Confirmado: <categoria>".** A forma do mockup ficava errada com categoria no feminino.

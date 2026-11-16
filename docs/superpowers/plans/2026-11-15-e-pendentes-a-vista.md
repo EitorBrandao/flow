@@ -23,10 +23,10 @@
 - Não aperte timeouts de teste.
 - Mudança visível: fragmento, wiki, varredura, release e deploy pela skill `ciclo-de-entrega`.
 
-## Decisões a confirmar antes de executar
+## Decisões do usuário (2026-11-16)
 
-1. **Título do card.** O mockup aprovado diz "Para confirmar · N". A pílula da mesma tela diz "Pendentes · N". A regra de consistência pede um texto só. Este plano segue o mockup e deixa o texto na constante `TITULO`. Recomendação: trocar para "Pendentes".
-2. **Texto do aviso.** O mockup mostrava "salário confirmado". Com categoria no feminino ("moradia confirmado") a frase fica errada. Este plano usa "Confirmado: salário", que serve para qualquer nome.
+1. **Título do card: "Pendentes · N".** É o mesmo texto da pílula da mesma tela, pela regra de consistência. Este ponto diverge do mockup, que dizia outro título, e foi aprovado no chat. Como o card e a pílula têm o mesmo texto, os testes da `TelaHoje` acham o card pelo seletor `.rotulo`.
+2. **Texto do aviso: "Confirmado: <categoria>".** O mockup punha a categoria antes do verbo, e a frase ficava errada com categoria no feminino. O texto novo serve para qualquer nome.
 
 ## Modelo por tarefa
 
@@ -228,7 +228,7 @@ it('fila vazia não mostra nada', () => {
 
 it('mostra a contagem total e só os dois primeiros da fila', () => {
   montar(tres);
-  expect(screen.getByText('Para confirmar · 3')).toBeInTheDocument();
+  expect(screen.getByText('Pendentes · 3')).toBeInTheDocument();
   expect(screen.getByText('salário')).toBeInTheDocument();
   expect(screen.getByText('moradia')).toBeInTheDocument();
   expect(screen.queryByText('jardinagem')).not.toBeInTheDocument();
@@ -241,7 +241,7 @@ it('mostra data em formato brasileiro e a nota', () => {
 
 it('com um ou dois pendentes não mostra "Ver os N"', () => {
   montar(tres.slice(0, 2));
-  expect(screen.getByText('Para confirmar · 2')).toBeInTheDocument();
+  expect(screen.getByText('Pendentes · 2')).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /^Ver os/ })).not.toBeInTheDocument();
 });
 
@@ -288,7 +288,7 @@ import SeloBox from './SeloBox';
 
 /** Quantos pendentes o card mostra; o resto fica a um toque, na pílula Pendentes. */
 const MAXIMO = 2;
-const TITULO = 'Para confirmar';
+const TITULO = 'Pendentes';
 
 interface Props {
   /** A fila de `pendentes()`, já ordenada do mais antigo para o mais novo. */
@@ -406,7 +406,7 @@ git commit -m "feat(ui): card de pendentes para a Visão do Hoje"
     useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
     render(<TelaHoje />);
 
-    const titulo = await screen.findByText('Para confirmar · 1');
+    const titulo = await screen.findByText('Pendentes · 1', { selector: '.rotulo' });
     const saldo = screen.getByText(/Saldo hoje/);
     // o card vem antes do saldo no documento
     expect(titulo.compareDocumentPosition(saldo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -424,7 +424,7 @@ git commit -m "feat(ui): card de pendentes para a Visão do Hoje"
 
     await userEvent.click(await screen.findByRole('button', { name: 'Confirmar moradia' }));
 
-    await waitFor(() => expect(screen.queryByText(/Para confirmar/)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText(/^Pendentes ·/, { selector: '.rotulo' })).not.toBeInTheDocument());
     expect(screen.getByRole('tab', { name: 'Pendentes · 0' })).toBeInTheDocument();
     expect((await db.lancamentos.get(previsto.id))!.status).toBe('efetivo');
     expect(useApp.getState().retorno!.texto).toBe('Confirmado: moradia');
@@ -440,7 +440,7 @@ git commit -m "feat(ui): card de pendentes para a Visão do Hoje"
     render(<TelaHoje />);
 
     await screen.findByText(/Saldo hoje/);
-    expect(screen.queryByText(/Para confirmar/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Pendentes ·/, { selector: '.rotulo' })).not.toBeInTheDocument();
   });
 
   it('"Ver os N" troca para a pílula Pendentes', async () => {
@@ -472,7 +472,7 @@ git commit -m "feat(ui): card de pendentes para a Visão do Hoje"
     render(<TelaHoje />);
 
     await screen.findByText(/Saldo hoje/);
-    expect(screen.queryByText(/Para confirmar/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Pendentes ·/, { selector: '.rotulo' })).not.toBeInTheDocument();
   });
 ```
 
