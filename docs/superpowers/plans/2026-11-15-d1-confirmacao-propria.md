@@ -23,9 +23,9 @@
 - Mudança visível: fragmento em `changelog.d/`, wiki, varredura com o roteiro de `scripts/varredura/` (plano C), release e deploy pela skill `ciclo-de-entrega`.
 - Siga o mockup aprovado. Desvio precisa de nova aprovação do usuário.
 
-## Decisão a confirmar antes de executar
+## Decisão do usuário (2026-11-16)
 
-O botão Cancelar do sheet de confirmação sai **com contorno** (`.botao-discreto`), pela proposta feita no chat depois do mockup. Se o usuário preferir o cinza do mockup, troque `botao botao-discreto` por `botao` na Tarefa 3 e deixe o `ConfirmarRepetidoSheet` como está.
+O botão Cancelar do sheet de confirmação sai **com contorno** (`.botao-discreto`), como o Fechar do editor. Este ponto diverge do mockup, que mostrava Cancelar cinza, e foi aprovado no chat.
 
 ## Modelo por tarefa
 
