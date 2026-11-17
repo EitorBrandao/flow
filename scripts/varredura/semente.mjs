@@ -17,7 +17,12 @@ export async function semear() {
   const banco = await repo.salvarBanco({ boxId: 'box-carteira', nome: 'banco azul', ordem: 0 });
 
   const categorias = {};
-  const lista = [['salário', 'ganho'], ['mercado', 'gasto'], ['moradia', 'gasto'], ['jardinagem', 'gasto'], ['lazer', 'gasto']];
+  await repo.salvarBanco({ boxId: 'box-carteira', nome: 'banco verde', ordem: 1 });
+  // Uso real: viagem ativa cobrindo hoje, que acrescenta campos ao formulário de lançamento.
+  await repo.salvarViagem({ nome: 'viagem de teste', dataInicio: dia(-3), dataFim: dia(4), orcamentoCent: 300_000 });
+
+  const lista = [['salário', 'ganho'], ['mercado', 'gasto'], ['moradia', 'gasto'], ['jardinagem', 'gasto'], ['lazer', 'gasto'],
+    ['papelaria', 'gasto'], ['oficina', 'gasto'], ['aquário', 'gasto']];
   for (const [ordem, [nome, tipo]] of lista.entries()) {
     categorias[nome] = await repo.salvarCategoria({ boxId: 'box-carteira', nome, tipo, ordem });
   }

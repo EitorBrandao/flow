@@ -97,9 +97,12 @@ for (const passo of passos) {
     await passo.ir(page, ajuda(page));
     await page.waitForTimeout(450); // espera as animações de entrada
     const arquivo = path.join(SAIDA, `${passo.nome}.png`);
+    // Quem abre a tela a vê no topo: a rolagem herdada do passo anterior escondia o botão Lançar.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    // Mede antes de fotografar: a captura rola a tela e deslocava o botão Lançar para fora da barra.
+    for (const m of await page.evaluate(medir)) achados.push({ passo: passo.nome, ...m });
     await page.screenshot({ path: arquivo });
     capturas.push(arquivo);
-    for (const m of await page.evaluate(medir)) achados.push({ passo: passo.nome, ...m });
     if (passo.sair) { await passo.sair(page); await page.waitForTimeout(300); }
   } catch (e) {
     falhas.push({ passo: passo.nome, erro: String(e).split('\n')[0].slice(0, 200) });
