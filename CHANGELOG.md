@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.72.5] - 2026-11-17
+
+### Alterado
+
+- O mês aparece abreviado em todas as telas: "nov/2026" no Cartão, nas Análises e nos títulos de fatura, como já era no Simular.
+
 ## [0.72.4] - 2026-11-17
 
 ### Alterado

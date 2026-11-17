@@ -1,1 +1,0 @@
-- O mês aparece abreviado em todas as telas: "nov/2026" no Cartão, nas Análises e nos títulos de fatura, como já era no Simular.
