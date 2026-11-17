@@ -150,7 +150,7 @@ function validarDadosReais() {
   if (r.stderr) console.error(r.stderr.trimEnd());
   if (r.status === 2) {
     abortar(
-      'lista privada de dados reais ausente nesta máquina (~/.claude/flow-dados-reais.txt). ' +
+      'lista privada de dados reais ausente ou sem termo ativo nesta máquina (~/.claude/flow-dados-reais.txt). ' +
       'Sem ela o release não enxerga nomes nem termos reais. Rode o release na máquina que ' +
       'tem a lista. RELEASE_SEM_LISTA_PRIVADA=1 libera, só a pedido explícito do usuário.'
     );
