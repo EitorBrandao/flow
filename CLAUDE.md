@@ -152,9 +152,14 @@ Estas regras vêm de atritos que se repetiram entre sessões. Valem também para
 - Um plano que muda uma função de domínio ou um fluxo de dados lista **todos** os pontos de chamada, achados por grep. Inclua os caminhos de exclusão, importação, backup e pagamento. Um ponto de chamada esquecido já causou perda silenciosa de dados.
 - Antes de estimar o impacto de uma dependência no bundle, meça o tamanho real: `npm view <pacote> dist.unpackedSize`.
 - Recalcule à mão todo valor esperado num teste planejado: datas, meses, totais.
+- Todo plano traz uma tabela "Modelo por tarefa", com a complexidade de cada tarefa e quem implementa e quem revisa, pela regra de "Subagentes de implementação".
+- Uma sessão sem `TODO.md` (na nuvem, ou num clone limpo) não consegue fechar item do backlog. Ela escreve, no corpo do commit de merge, a linha `Backlog: não conferido`. A próxima sessão local procura essa linha com `git log --grep="Backlog: não conferido"`, confere o `TODO.md` contra esses merges e registra a conferência no cabeçalho do arquivo.
 
 ### Subagentes de implementação
 
+- A escolha do modelo é fixa. Tarefa complexa: Sonnet implementa. Todo o resto: Haiku implementa. Opus revisa tudo, inclusive a revisão final do branch. Sonnet revisa também as tarefas de complexidade intermediária, antes do Opus.
+- O plano marca a complexidade de cada tarefa (simples, intermediária ou complexa). Quem executa não reavalia a complexidade na hora.
+- Uma tarefa é complexa quando muda `src/db/`, `src/backup/`, uma função de `src/domain/`, ou um componente usado por três telas ou mais. É intermediária quando muda mais de um arquivo de `src/ui/` ou um guard de `scripts/`. O resto é simples.
 - O subagente roda a suíte completa (`npm test`) antes de dizer que terminou. Rodar só o arquivo que ele mexeu não basta.
 - O subagente escreve testes de caso-limite, não só do caminho feliz.
 - O subagente segue o mockup aprovado à risca. Um desvio precisa de nova aprovação do usuário.

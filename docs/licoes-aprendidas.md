@@ -38,6 +38,7 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 - **O implementador Haiku transforma `\uXXXX` em caractere literal.** Isso esvaziou um teste de mojibake. *Faça:* avise no prompt e confira com `grep -nP '[^\x00-\x7F]'`.
 - **Rodar suíte e build logo depois de várias rodadas de subagentes pode estourar a memória.** O processo em segundo plano foi encerrado. *Faça:* não reinicie sem o usuário liberar.
 - **O trailer de commit do subagente sai com o nome do modelo dele.** *Faça:* fixe o trailer exato no prompt.
+- **Duas regras de modelo valiam ao mesmo tempo.** Uma dizia que o modelo menor só lê e resume. A outra dizia que ele implementa. Cada sessão seguia a que lia primeiro. *Faça:* uma regra de processo tem um endereço só, no arquivo versionado do projeto. Uma preferência guardada fora do repositório não chega a uma sessão na nuvem.
 
 ## Testes
 
@@ -116,6 +117,7 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 - **Plano e código de exemplo que se contradizem: a prosa é o requisito.** Uma regex de exemplo deixava passar a sintaxe que a prosa mandava recusar.
 - **Quando você pode ler o diff gerado, leia.** O dossiê mostrou um estado que nenhum usuário consegue produzir. Só a leitura do diff revelou.
 - **Cobertura tem limite.** O dossiê não cobre sheet de botão nem subtela de Ajustes. Um diff vazio não prova que nada mudou.
+- **O passo que fecha o backlog não roda onde o backlog não existe.** O ciclo de entrega manda conferir o `TODO.md` antes do merge. O arquivo é local. Dez versões, da v0.69.0 à v0.72.3, saíram de sessões que não tinham o arquivo, e o backlog ficou 19 versões atrasado. *Faça:* quando um passo depende de um arquivo local, a sessão que não o tem deixa uma marca que a próxima sessão local encontra. Aqui a marca é a linha `Backlog: não conferido` no commit de merge.
 
 ## Comandos e ambiente (Windows)
 
