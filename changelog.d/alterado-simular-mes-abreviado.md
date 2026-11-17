@@ -1,0 +1,1 @@
+- No Simular, o período mostra o mês abreviado ("jan", "fev"), e o seletor do ano fica mais estreito.

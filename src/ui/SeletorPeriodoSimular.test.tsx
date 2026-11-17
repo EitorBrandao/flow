@@ -51,3 +51,12 @@ it('sem passar do horizonte, não aparece o aviso das faturas', async () => {
   render(<SeletorPeriodoSimular periodo={periodo} mesHoje={mesHoje} horizonte={horizonte} onMudar={onMudar} />);
   expect(screen.queryByText(/Depois de dez\/2027, a tabela não inclui faturas de cartão/)).not.toBeInTheDocument();
 });
+
+it('selects de mês mostram o nome abreviado em três letras', async () => {
+  render(<SeletorPeriodoSimular periodo={periodo} mesHoje={mesHoje} horizonte={horizonte} onMudar={onMudar} />);
+  const esperado = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  for (const label of ['Mês inicial', 'Mês final']) {
+    const options = Array.from(screen.getByLabelText(label).querySelectorAll('option')).map((o) => o.textContent);
+    expect(options).toEqual(esperado);
+  }
+});

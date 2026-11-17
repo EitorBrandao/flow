@@ -62,11 +62,11 @@ export default function SeletorPeriodoSimular({ periodo, mesHoje, horizonte, onM
               onChange={(e) => atualizarDe(`${anoInicial}-${String(Number(e.target.value)).padStart(2, '0')}`)}
             >
               {NOMES_MES.map((nome, i) => (
-                <option key={nome} value={i + 1}>{nome}</option>
+                <option key={nome} value={i + 1}>{nome.slice(0, 3)}</option>
               ))}
             </select>
           </span>
-          <span className="campo" style={{ flex: 1, minWidth: 0 }}>
+          <span className="campo" style={{ flex: 0.65, minWidth: 0 }}>
             <select
               aria-label="Ano inicial"
               value={anoInicial}
@@ -104,11 +104,11 @@ export default function SeletorPeriodoSimular({ periodo, mesHoje, horizonte, onM
               onChange={(e) => atualizarAte(`${anoFinal}-${String(Number(e.target.value)).padStart(2, '0')}`)}
             >
               {NOMES_MES.map((nome, i) => (
-                <option key={nome} value={i + 1}>{nome}</option>
+                <option key={nome} value={i + 1}>{nome.slice(0, 3)}</option>
               ))}
             </select>
           </span>
-          <span className="campo" style={{ flex: 1, minWidth: 0 }}>
+          <span className="campo" style={{ flex: 0.65, minWidth: 0 }}>
             <select
               aria-label="Ano final"
               value={anoFinal}
