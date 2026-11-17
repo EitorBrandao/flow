@@ -4,7 +4,6 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
-import { nomeDoMes } from '../domain/dates';
 import { agoraISO, novoId, type Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
 import FaturaResumo from './FaturaResumo';
@@ -56,7 +55,7 @@ describe('aba Cartão aberta por um pedido', () => {
     const { alfa } = await semear();
     render(<TelaCartao />);
     expect(screen.getByLabelText('Cartão')).toHaveValue(alfa.id);
-    expect(screen.getByText(nomeDoMes('2026-08'))).toBeInTheDocument();
+    expect(screen.getByText('ago/2026')).toBeInTheDocument();
   });
 
   it('abre no cartão e no mês pedidos, e consome o pedido', async () => {
@@ -67,7 +66,7 @@ describe('aba Cartão aberta por um pedido', () => {
 
     expect(screen.getByLabelText('Cartão')).toHaveValue(zeta.id);
     expect(screen.getByRole('heading', { name: 'Zeta' })).toBeInTheDocument();
-    expect(screen.getByText(nomeDoMes(MES_PEDIDO))).toBeInTheDocument();
+    expect(screen.getByText('dez/2026')).toBeInTheDocument();
     // sem busca no pedido, a aba continua em Resumo
     expect(screen.getByRole('tab', { name: 'Resumo' })).toHaveAttribute('aria-selected', 'true');
     await waitFor(() => expect(useApp.getState().cartaoPedido).toBeNull());
@@ -93,8 +92,8 @@ describe('aba Cartão aberta por um pedido', () => {
     expect(screen.getByRole('heading', { name: 'Alfa' })).toBeInTheDocument();
     await userEvent.selectOptions(screen.getByLabelText('Cartão'), zeta.id);
     expect(screen.getByRole('heading', { name: 'Zeta' })).toBeInTheDocument();
-    expect(screen.getByText(nomeDoMes('2026-08'))).toBeInTheDocument();
-    expect(screen.queryByText(nomeDoMes(MES_PEDIDO))).not.toBeInTheDocument();
+    expect(screen.getByText('ago/2026')).toBeInTheDocument();
+    expect(screen.queryByText('dez/2026')).not.toBeInTheDocument();
   });
 
   it('cartão inativo, sem pedido, não aparece na aba', async () => {
@@ -111,7 +110,7 @@ describe('aba Cartão aberta por um pedido', () => {
     render(<TelaCartao />);
     expect(screen.getByLabelText('Cartão')).toHaveValue(zeta.id);
     expect(screen.getByRole('heading', { name: 'Zeta' })).toBeInTheDocument();
-    expect(screen.getByText(nomeDoMes(MES_PEDIDO))).toBeInTheDocument();
+    expect(screen.getByText('dez/2026')).toBeInTheDocument();
   });
 
   it('no modo Simples, o pedido define o cartão e o mês', async () => {
@@ -121,7 +120,7 @@ describe('aba Cartão aberta por um pedido', () => {
 
     expect(screen.getByLabelText('Cartão')).toHaveValue(zeta.id);
     expect(screen.getByRole('heading', { name: 'Zeta' })).toBeInTheDocument();
-    expect(screen.getByText(nomeDoMes(MES_PEDIDO))).toBeInTheDocument();
+    expect(screen.getByText('dez/2026')).toBeInTheDocument();
     expect(screen.getByLabelText('Valor da fatura')).toBeInTheDocument();
   });
 });
@@ -153,7 +152,7 @@ describe('folha da fatura (Fluxo) → aba Cartão', () => {
 
     render(<TelaCartao />);
     expect(screen.getByRole('heading', { name: 'Zeta' })).toBeInTheDocument();
-    expect(screen.getByText(nomeDoMes(MES_PEDIDO))).toBeInTheDocument();
+    expect(screen.getByText('dez/2026')).toBeInTheDocument();
   });
 
   it('com busca, as compras que casam sobem para "Encontrado na busca" e a aba Cartão chega filtrada', async () => {

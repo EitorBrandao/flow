@@ -1,4 +1,4 @@
-import { formatarDataBR, nomeDoMes } from '../domain/dates';
+import { formatarDataBR, mesAbreviado } from '../domain/dates';
 import { ajustesDoCartao, faturaDoMes, resumoPorCategoria } from '../domain/fatura';
 import { classeEfeito, formatarBRL } from '../domain/money';
 import type { AjusteFechamento, Cartao, CategoriaCartao, CompraCartao, ISODate } from '../domain/types';
@@ -31,11 +31,11 @@ export default function FaturaCategoriaSheet({
 
   return (
     <Sheet
-      aberto={aberto} onFechar={onFechar} rotulo={`${cartao.nome} · fatura de ${nomeDoMes(mes)}`}
+      aberto={aberto} onFechar={onFechar} rotulo={`${cartao.nome} · fatura de ${mesAbreviado(mes)}`}
       cabecalho={(
         <>
           {onVoltar && <button className="botao-ver-mais" onClick={onVoltar}>‹ voltar ao período</button>}
-          <h2 style={{ marginTop: 0 }}>{cartao.nome} · fatura de {nomeDoMes(mes)}</h2>
+          <h2 style={{ marginTop: 0 }}>{cartao.nome} · fatura de {mesAbreviado(mes)}</h2>
           <p className="sub" style={{ margin: 0 }}>
             <strong className={classeEfeito(-total)}>{formatarBRL(total)}</strong>
             {' · '}fecha {formatarDataBR(fatura.dataFechamento)} · vence {formatarDataBR(fatura.dataVencimento)}

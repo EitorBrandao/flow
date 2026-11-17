@@ -1,5 +1,5 @@
 import { lancamentosDaCategoria } from '../domain/aggregations';
-import { mesAbreviado, nomeDoMes } from '../domain/dates';
+import { mesAbreviado } from '../domain/dates';
 import { classeEfeito, efeitoNoSaldo, formatarBRL } from '../domain/money';
 import type { Box, ID, Lancamento, TipoCategoria } from '../domain/types';
 import SeloBox from './SeloBox';
@@ -74,7 +74,7 @@ export default function LancamentosSheet({
       </div>
       {verFatura && (
         <button className="botao-ver-mais" style={{ marginTop: 10 }} onClick={verFatura.onAbrir}>
-          Ver a fatura de {nomeDoMes(mes)} ({formatarBRL(verFatura.totalCent)}) →
+          Ver a fatura de {mesAbreviado(mes)} ({formatarBRL(verFatura.totalCent)}) →
         </button>
       )}
     </Sheet>

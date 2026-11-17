@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import * as repo from '../db/repo';
-import { formatarDataBR, nomeDoMes } from '../domain/dates';
+import { formatarDataBR, mesAbreviado } from '../domain/dates';
 import { ajustesDoCartao, datasFaturaDoMes, jaLancadoDaFatura, resumoParcelamento } from '../domain/fatura';
 import { formatarBRL } from '../domain/money';
 import type { Dados, Lancamento } from '../domain/types';
@@ -108,7 +108,7 @@ export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, valo
   return (
     <>
       <p className="sub" style={{ margin: 0 }}>
-        Fatura de {lancamento.faturaMes ? nomeDoMes(lancamento.faturaMes) : ''} · total{' '}
+        Fatura de {lancamento.faturaMes ? mesAbreviado(lancamento.faturaMes) : ''} · total{' '}
         <strong>{formatarBRL(totalFaturaCent)}</strong>
       </p>
 

@@ -317,7 +317,7 @@ option: casa
 Cartão
 heading: sigma
 button: ‹
-fevereiro de 2026
+fev/2026
 button: ›
 Fatura
 R$ 330,00
@@ -351,7 +351,7 @@ radio: 12 meses
 radio: Ano
 radio: Período
 button: ‹
-janeiro de 2026
+jan/2026
 button: ›
 label: incluir previstos
 Ganhos
@@ -823,7 +823,7 @@ option: casa
 Cartão
 heading: sigma
 button: ‹
-março de 2026
+mar/2026
 button: ›
 Fatura
 R$ 150,00
@@ -855,7 +855,7 @@ radio: 12 meses
 radio: Ano
 radio: Período
 button: ‹
-janeiro de 2026
+jan/2026
 button: ›
 label: incluir previstos
 label: Banco
@@ -1393,7 +1393,7 @@ option: casa
 Cartão
 heading: sigma
 button: ‹
-março de 2026
+mar/2026
 button: ›
 Fatura
 R$ 189,90
@@ -1425,7 +1425,7 @@ radio: 12 meses
 radio: Ano
 radio: Período
 button: ‹
-fevereiro de 2026
+fev/2026
 button: ›
 label: incluir previstos
 label: Banco
@@ -1926,7 +1926,7 @@ option: casa
 Cartão
 heading: sigma
 button: ‹
-julho de 2026
+jul/2026
 button: ›
 Fatura
 R$ 213,20
@@ -1960,7 +1960,7 @@ radio: 12 meses
 radio: Ano
 radio: Período
 button: ‹
-junho de 2026
+jun/2026
 button: ›
 label: incluir previstos
 label: Banco
@@ -2454,7 +2454,7 @@ option: casa
 Cartão
 heading: sigma
 button: ‹
-agosto de 2026
+ago/2026
 button: ›
 Fatura
 R$ 123,20
@@ -2490,7 +2490,7 @@ radio: 12 meses
 radio: Ano
 radio: Período
 button: ‹
-julho de 2026
+jul/2026
 button: ›
 label: incluir previstos
 label: Banco
@@ -2964,7 +2964,7 @@ option: casa
 Cartão
 heading: sigma
 button: ‹
-outubro de 2026
+out/2026
 button: ›
 Fatura
 R$ 39,90
@@ -2996,7 +2996,7 @@ radio: 12 meses
 radio: Ano
 radio: Período
 button: ‹
-setembro de 2026
+set/2026
 button: ›
 label: incluir previstos
 label: Banco
@@ -3448,7 +3448,7 @@ option: casa
 Cartão
 heading: sigma
 button: ‹
-novembro de 2026
+nov/2026
 button: ›
 Fatura
 R$ 39,90
@@ -3480,7 +3480,7 @@ radio: 12 meses
 radio: Ano
 radio: Período
 button: ‹
-outubro de 2026
+out/2026
 button: ›
 label: incluir previstos
 label: Banco
@@ -3895,7 +3895,7 @@ option: casa
 Cartão
 heading: sigma
 button: ‹
-janeiro de 2027
+jan/2027
 button: ›
 Fatura
 R$ 39,90
@@ -3927,7 +3927,7 @@ radio: 12 meses
 radio: Ano
 radio: Período
 button: ‹
-novembro de 2026
+nov/2026
 button: ›
 label: incluir previstos
 label: Banco

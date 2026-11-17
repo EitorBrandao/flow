@@ -178,7 +178,7 @@ describe('LancamentosSheet', () => {
         incluirPrevistos={false} onFechar={() => {}} verFatura={{ totalCent: 106581, onAbrir: abrir }}
       />,
     );
-    const link = screen.getByRole('button', { name: /Ver a fatura de julho de 2026/ });
+    const link = screen.getByRole('button', { name: /Ver a fatura de jul\/2026/ });
     expect(link).toHaveTextContent('R$');
     expect(link.textContent).toContain(formatarBRL(106581));
     await userEvent.click(link);

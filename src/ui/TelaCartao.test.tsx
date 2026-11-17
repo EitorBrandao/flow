@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
 import { ajustesDoCartao, datasFaturaDoMes } from '../domain/fatura';
-import { formatarDataBR, nomeDoMes } from '../domain/dates';
+import { formatarDataBR } from '../domain/dates';
 import { formatarBRL } from '../domain/money';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
@@ -222,7 +222,7 @@ it('bloco de fechamento: salvar reclassifica a fatura, remover volta ao padrão'
     // `hoje`) é a de agosto — a compra de 29/07 cai na fatura de setembro (fecha depois do
     // padrão dia 28), mas isso não muda qual fatura abre por padrão.
     // o mês da fatura mostrada sai do seletor (fora do card), com o mês por nome.
-    expect(screen.getByText(nomeDoMes('2026-08'))).toBeInTheDocument();
+    expect(screen.getByText('ago/2026')).toBeInTheDocument();
     await abrirAba(/Conferência/);
 
     await userEvent.clear(screen.getByLabelText('Fechou dia'));
@@ -416,7 +416,7 @@ describe('card da fatura no padrão da Hoje (Consistência entre telas, parte 2)
       useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
       render(<TelaCartao />);
 
-      expect(screen.getByText(nomeDoMes('2026-08'))).toBeInTheDocument();
+      expect(screen.getByText('ago/2026')).toBeInTheDocument();
     } finally { vi.useRealTimers(); }
   });
 

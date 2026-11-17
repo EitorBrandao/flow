@@ -1,7 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { nomeDoMes } from '../domain/dates';
 import { formatarBRL } from '../domain/money';
 import type { Cartao, CategoriaCartao, CompraCartao } from '../domain/types';
 import FaturaCategoriaSheet from './FaturaCategoriaSheet';
@@ -35,8 +34,8 @@ describe('FaturaCategoriaSheet', () => {
       />,
     );
 
-    expect(screen.getByRole('dialog', { name: `Nubank · fatura de ${nomeDoMes('2026-08')}` })).toBeInTheDocument();
-    expect(screen.getByText(`Nubank · fatura de ${nomeDoMes('2026-08')}`)).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Nubank · fatura de ago/2026' })).toBeInTheDocument();
+    expect(screen.getByText('Nubank · fatura de ago/2026')).toBeInTheDocument();
     const totalEsperado = formatarBRL(66590).replace(/\s/g, ' ');
     expect(screen.getByText(totalEsperado, { selector: 'strong.valor-gasto' })).toBeInTheDocument();
     // Compras em julho/2026 fecham a fatura de agosto (fechamento dia 28/07, vencimento dia 05/08).

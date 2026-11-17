@@ -21,9 +21,9 @@ describe('SeletorPeriodo', () => {
 
   it('modo Mês: o seletor de mês fica na barra fixa e anda de mês em mês', async () => {
     render(<Harness />);
-    expect(within(barra()).getByText('setembro de 2026')).toBeInTheDocument();
+    expect(within(barra()).getByText('set/2026')).toBeInTheDocument();
     await userEvent.click(within(barra()).getByRole('button', { name: 'Mês anterior' }));
-    expect(within(barra()).getByText('agosto de 2026')).toBeInTheDocument();
+    expect(within(barra()).getByText('ago/2026')).toBeInTheDocument();
   });
 
   it('modo 12 meses: janela até o mês de hoje, deslizando de mês em mês', async () => {
@@ -76,6 +76,6 @@ describe('SeletorPeriodo', () => {
     await userEvent.click(within(barra()).getByRole('button', { name: 'Mês anterior' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Ano' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Mês' }));
-    expect(within(barra()).getByText('agosto de 2026')).toBeInTheDocument();
+    expect(within(barra()).getByText('ago/2026')).toBeInTheDocument();
   });
 });
