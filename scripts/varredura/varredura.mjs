@@ -32,7 +32,9 @@ if (!['localhost', '127.0.0.1'].includes(new URL(url).hostname)) sair('só é pe
 let chromium;
 try {
   const exigir = createRequire(path.join(process.cwd(), 'varredura.cjs'));
-  ({ chromium } = await import(pathToFileURL(exigir.resolve('playwright')).href));
+  // O playwright é CommonJS: o import dinâmico entrega as exportações em "default".
+  const modulo = await import(pathToFileURL(exigir.resolve('playwright')).href);
+  chromium = modulo.chromium ?? modulo.default.chromium;
 } catch {
   sair('playwright não encontrado nesta pasta. Na pasta de rascunho: npm i playwright && npx playwright install chromium');
 }

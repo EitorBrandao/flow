@@ -13,7 +13,7 @@ export function medir() {
     const s = getComputedStyle(el);
     return s.visibility !== 'hidden' && s.display !== 'none' && Number(s.opacity) > 0.05;
   };
-  const texto = (el) => (el.getAttribute('aria-label') ?? el.innerText ?? el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 30);
+  const texto = (el) => (el.getAttribute('aria-label') || el.innerText || el.closest('label')?.innerText || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 30);
   const nome = (el) => {
     const classes = typeof el.className === 'string' ? el.className.trim().split(/\s+/).filter(Boolean).slice(0, 2).join('.') : '';
     return `${el.tagName.toLowerCase()}${classes ? `.${classes}` : ''} "${texto(el)}"`;
@@ -30,7 +30,9 @@ export function medir() {
   // 2. Alvo de toque menor que o mínimo.
   for (const el of raiz.querySelectorAll('button, a[href], select, input:not([type=hidden]), [role=tab]')) {
     if (!visivel(el)) continue;
-    const r = el.getBoundingClientRect();
+    // caixa de seleção e botão de opção: o alvo de toque é o rótulo que a envolve, não os 13px do controle
+    const rotulo = ['checkbox', 'radio'].includes(el.type) ? el.closest('label') : null;
+    const r = (rotulo ?? el).getBoundingClientRect();
     // input invisível por cima de um botão (.campo-data-input, .selecionar-arquivo): o alvo é o botão
     if (Number(getComputedStyle(el).opacity) === 0) continue;
     if (r.height < ALVO_MINIMO) achados.push({ tipo: 'alvo', alvo: nome(el), detalhe: `${Math.round(r.height)}px de altura` });
