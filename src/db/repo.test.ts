@@ -525,19 +525,24 @@ describe('cartão de crédito', () => {
   });
 
   it('salva compras em lote e sincroniza os cartões uma vez só', async () => {
-    const { cartao, catCartao } = await montarCartao();
+    // Relógio fixo: a sincronização só cria fatura com vencimento depois de hoje.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-08-01T12:00:00'));
+      const { cartao, catCartao } = await montarCartao();
 
-    await repo.salvarComprasCartaoEmLote([
-      { cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-10',
-        valorTotal: 4500, parcelas: 1, descricao: 'MERCADO ALFA' },
-      { cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-11',
-        valorTotal: 5190, parcelas: 3, descricao: 'POSTO BETA' },
-    ], '2027-12-31');
+      await repo.salvarComprasCartaoEmLote([
+        { cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-10',
+          valorTotal: 4500, parcelas: 1, descricao: 'MERCADO ALFA' },
+        { cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-08-11',
+          valorTotal: 5190, parcelas: 3, descricao: 'POSTO BETA' },
+      ], '2027-12-31');
 
-    const dados = await repo.carregarTudo();
-    expect(dados.comprasCartao).toHaveLength(2);
-    // A fatura projetada existe: prova de que sincronizarCartoes rodou depois do lote.
-    expect(dados.lancamentos.some((l) => l.origem === 'cartao')).toBe(true);
+      const dados = await repo.carregarTudo();
+      expect(dados.comprasCartao).toHaveLength(2);
+      // A fatura projetada existe: prova de que sincronizarCartoes rodou depois do lote.
+      expect(dados.lancamentos.some((l) => l.origem === 'cartao')).toBe(true);
+    } finally { vi.useRealTimers(); }
   });
 
   // `sincronizarCartoes` sempre gira num único `db.transaction`, mesmo com vários cartões
