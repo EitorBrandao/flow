@@ -4,7 +4,6 @@ import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import * as repo from '../db/repo';
-import { nomeDoMes } from '../domain/dates';
 import { formatarBRL } from '../domain/money';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
@@ -84,7 +83,7 @@ it('clicar na categoria do cartão mostra o detalhamento por categoria de cartã
     render(<TelaAnalises />);
     await userEvent.click(screen.getByRole('button', { name: /Nubank/ }));
 
-    const dialog = await screen.findByRole('dialog', { name: `Nubank · fatura de ${nomeDoMes('2026-08')}` });
+    const dialog = await screen.findByRole('dialog', { name: 'Nubank · fatura de ago/2026' });
     expect(within(dialog).getByText('R$ 670,00')).toBeInTheDocument(); // total da fatura
     expect(within(dialog).getByText('Mercado')).toBeInTheDocument();
     expect(within(dialog).getByText('R$ 620,00')).toBeInTheDocument(); // subtotal Mercado
@@ -419,7 +418,7 @@ it('modo Mês: o seletor de mês fica na barra fixa', async () => {
   render(<TelaAnalises />);
   const barra = document.querySelector('.barra-fixa') as HTMLElement;
   expect(within(barra).getByRole('button', { name: 'Mês anterior' })).toBeInTheDocument();
-  expect(within(barra).getByText('setembro de 2026')).toBeInTheDocument();
+  expect(within(barra).getByText('set/2026')).toBeInTheDocument();
 });
 
 it('categoria de fatura com pagamento lançado à mão no mês abre os lançamentos, não a fatura', async () => {
@@ -446,8 +445,8 @@ it('categoria de fatura com pagamento lançado à mão no mês abre os lançamen
     expect(screen.queryByRole('dialog', { name: /fatura de/ })).not.toBeInTheDocument();
 
     // o link leva à fatura do mês, que ainda existe (vazia aqui, sem compras)
-    await userEvent.click(within(dialog).getByRole('button', { name: /Ver a fatura de maio de 2026/ }));
-    expect(await screen.findByRole('dialog', { name: `Nubank · fatura de ${nomeDoMes('2026-05')}` })).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: /Ver a fatura de mai\/2026/ }));
+    expect(await screen.findByRole('dialog', { name: 'Nubank · fatura de mai/2026' })).toBeInTheDocument();
   } finally { vi.useRealTimers(); }
 });
 
@@ -676,7 +675,7 @@ describe('Análises na casa: categorias de mesmo nome', () => {
       expect(linhaFatura).toBeDefined();
       await userEvent.click(linhaFatura!);
 
-      const dialog = await screen.findByRole('dialog', { name: `Nubank · fatura de ${nomeDoMes('2026-08')}` });
+      const dialog = await screen.findByRole('dialog', { name: 'Nubank · fatura de ago/2026' });
       expect(within(dialog).getByText('Mercado')).toBeInTheDocument();
       expect(within(dialog).queryByText('taxa avulsa')).not.toBeInTheDocument();
     } finally { vi.useRealTimers(); }

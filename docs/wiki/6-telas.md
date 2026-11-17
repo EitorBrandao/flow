@@ -92,7 +92,7 @@ Terceira opção do Fluxo, ao lado de Lista e Gráfico. [Cenários](#glossario/c
 Aba dedicada à fatura do cartão da box selecionada (ou de um cartão por vez, quando a seleção tem 2 ou mais). Cada fatura tem três abas: Resumo, Lançamentos e Conferência.
 
 - Com 2 ou mais cartões na seleção, o seletor **Cartão** escolhe qual fatura aparece, uma por vez. Na visão casa, cada opção traz o nome da box do cartão. O nome do cartão abre o bloco, acima da navegação de mês.
-- Mostra a fatura do mês atual por padrão, com navegação ‹ mês anterior / mês seguinte › — o mês aparece por nome (janeiro, fevereiro etc.).
+- Mostra a fatura do mês atual por padrão, com navegação ‹ mês anterior / mês seguinte › — o mês aparece abreviado (jan/2026, fev/2026 etc.).
 - O nome do cartão e o seletor de mês ficam presos logo abaixo da barra do topo ao rolar.
 - Cabeçalho da fatura, sempre visível fora das abas: total da fatura, dia de fechamento e de vencimento.
 - **Resumo:** valor pago ou a pagar, com atalho para corrigir; o resumo por categoria do cartão aparece sempre que há ao menos uma. Tocar numa categoria filtra os lançamentos para ela, pula para a aba Lançamentos e deixa a categoria destacada no Resumo; tocar de novo tira o filtro. Com o filtro ligado, a aba Lançamentos mostra "Só a categoria ..." e o botão Limpar.
@@ -109,7 +109,7 @@ Aba dedicada à fatura do cartão da box selecionada (ou de um cartão por vez, 
 
 Resumo e comparativos de um período. No topo, quatro opções:
 
-- **Mês:** um mês, navegando com as setas ‹ › — o mês aparece por nome (janeiro, fevereiro etc.).
+- **Mês:** um mês, navegando com as setas ‹ › — o mês aparece abreviado (jan/2026, fev/2026 etc.).
 - **12 meses:** os 12 meses que terminam no mês atual; as setas deslizam a janela um mês por vez.
 - **Ano:** de janeiro a dezembro. Abre no último ano fechado; o ano atual aparece marcado "até agora".
 - **Período:** um intervalo livre, de um mês a outro (no máximo 24 meses), escolhido nas linhas "de" e "até". As setas da linha de baixo deslizam o intervalo inteiro.

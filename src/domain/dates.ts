@@ -48,11 +48,6 @@ export function formatarDataBR(d: ISODate): string {
   return `${dia}/${mes}/${ano}`;
 }
 
-/** "AAAA-MM" → "outubro de 2026", para títulos e seletores de mês. */
-export function nomeDoMes(mes: string): string {
-  return new Date(`${mes}-15T12:00:00`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-}
-
 /** "AAAA-MM" → "out/2026", para cabeçalhos estreitos (colunas de tabela). */
 export function mesAbreviado(mes: string): string {
   const abrev = new Date(`${mes}-15T12:00:00`)
