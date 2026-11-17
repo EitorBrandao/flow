@@ -117,7 +117,7 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 - **Plano e código de exemplo que se contradizem: a prosa é o requisito.** Uma regex de exemplo deixava passar a sintaxe que a prosa mandava recusar.
 - **Quando você pode ler o diff gerado, leia.** O dossiê mostrou um estado que nenhum usuário consegue produzir. Só a leitura do diff revelou.
 - **Cobertura tem limite.** O dossiê não cobre sheet de botão nem subtela de Ajustes. Um diff vazio não prova que nada mudou.
-- **O passo que fecha o backlog não roda onde o backlog não existe.** O ciclo de entrega manda conferir o `TODO.md` antes do merge. O arquivo é local. Nove versões saíram de sessões que não tinham o arquivo, e o backlog ficou várias versões atrasado. *Faça:* quando um passo depende de um arquivo local, a sessão que não o tem deixa uma marca que a próxima sessão local encontra. Aqui a marca é a linha `Backlog: não conferido` no commit de merge.
+- **O passo que fecha o backlog não roda onde o backlog não existe.** O ciclo de entrega manda conferir o `TODO.md` antes do merge. O arquivo é local. Dez versões, da v0.69.0 à v0.72.3, saíram de sessões que não tinham o arquivo, e o backlog ficou 19 versões atrasado. *Faça:* quando um passo depende de um arquivo local, a sessão que não o tem deixa uma marca que a próxima sessão local encontra. Aqui a marca é a linha `Backlog: não conferido` no commit de merge.
 
 ## Comandos e ambiente (Windows)
 
