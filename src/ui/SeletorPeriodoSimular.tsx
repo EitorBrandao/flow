@@ -4,6 +4,9 @@ import { ajustarAteSim, ajustarDeSim, type PeriodoSimulacao } from '../domain/si
 const NOMES_MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
   'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
+// "de" e "até" com a mesma largura: senão os campos da linha de baixo ficam deslocados.
+const ROTULO_LINHA = { width: '1.8em', textAlign: 'right' as const, flexShrink: 0 };
+
 interface Props {
   periodo: PeriodoSimulacao;
   /** mês de hoje ('AAAA-MM'): marca o piso do período inicial */
@@ -54,7 +57,7 @@ export default function SeletorPeriodoSimular({ periodo, mesHoje, horizonte, onM
           ‹
         </button>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
-          <span className="sub">de</span>
+          <span className="sub" style={ROTULO_LINHA}>de</span>
           <span className="campo" style={{ flex: 1, minWidth: 0 }}>
             <select
               aria-label="Mês inicial"
@@ -96,7 +99,7 @@ export default function SeletorPeriodoSimular({ periodo, mesHoje, horizonte, onM
           ‹
         </button>
         <span style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
-          <span className="sub">até</span>
+          <span className="sub" style={ROTULO_LINHA}>até</span>
           <span className="campo" style={{ flex: 1, minWidth: 0 }}>
             <select
               aria-label="Mês final"
