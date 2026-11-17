@@ -63,6 +63,9 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 
 - **Cada modelo de maquininha tem o seu layout, e um leitor ajustado a um só quebra no próximo.** O segundo comprovante trazia o `R$` e o valor em linhas separadas, texto entre o `03X` e a parcela, e total que não é a soma exata das parcelas (a soma das parcelas difere do total por centavos). O leitor do primeiro não lia nada. Ao ajustar, um `%` colado a um valor virou "44 parcelas" e o CNPJ, cheio de vírgulas, virou total. *Faça:* teste cada layout novo contra os anteriores com os textos crus guardados, e prefira deixar o campo em branco a chutar quando duas leituras rivalizam.
 
+- **Teste com data fixa venceu sozinho.** Um teste esperava a fatura de compras de agosto de 2026. A sincronização só cria fatura com vencimento depois de hoje, e o teste passou a falhar quando a última fatura venceu. O código estava certo. *Faça:* todo teste com data fixa que passa por "hoje" fixa o relógio (`vi.useFakeTimers({ toFake: ['Date'] })` e `vi.setSystemTime`).
+- **Um commit encadeado no `grep` escondeu uma corrida vermelha.** O comando rodava os testes, filtrava a saída com `grep` e commitava com `&&`. O `grep` achou a linha do resumo e saiu 0, mesmo com quatro arquivos vermelhos. *Faça:* encadeie o commit no código de saída do próprio teste, nunca no do filtro da saída.
+
 ## Dados, banco e backup
 
 - **Validador compartilhado que devolve `null` em silêncio vira "nada aconteceu".** Um parser de valor rejeitava zero, o que vale para lançamento mas não para saldo inicial. Digitar zero apagava o saldo sem erro. *Faça:* quando o relato é "não deu erro, mas não salvou", suspeite de validador reaproveitado fora do contexto. Rode grep por todos os pontos de chamada.
@@ -118,6 +121,8 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 - **Quando você pode ler o diff gerado, leia.** O dossiê mostrou um estado que nenhum usuário consegue produzir. Só a leitura do diff revelou.
 - **Cobertura tem limite.** O dossiê não cobre sheet de botão nem subtela de Ajustes. Um diff vazio não prova que nada mudou.
 - **O passo que fecha o backlog não roda onde o backlog não existe.** O ciclo de entrega manda conferir o `TODO.md` antes do merge. O arquivo é local. Dez versões, da v0.69.0 à v0.72.3, saíram de sessões que não tinham o arquivo, e o backlog ficou 19 versões atrasado. *Faça:* quando um passo depende de um arquivo local, a sessão que não o tem deixa uma marca que a próxima sessão local encontra. Aqui a marca é a linha `Backlog: não conferido` no commit de merge.
+
+- **Uma edição sem commit ficou parada um mês e meio.** Um ajuste pedido pelo usuário ficou num worktree, sem commit, e não aparecia no `CHANGELOG.md` nem no `TODO.md`. A revisão do backlog só achou o ajuste porque olhou `git worktree list`. *Faça:* a revisão do backlog confere também os worktrees abertos e o que eles têm sem commit.
 
 ## Comandos e ambiente (Windows)
 
