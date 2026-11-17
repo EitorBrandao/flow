@@ -3,6 +3,12 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.72.4] - 2026-11-17
+
+### Alterado
+
+- No Simular, o período mostra o mês abreviado ("jan", "fev"), o seletor do ano fica mais estreito e os campos de "de" e "até" ficam alinhados.
+
 ## [0.72.3] - 2026-10-22
 
 ### Alterado
