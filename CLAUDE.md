@@ -167,6 +167,8 @@ Estas regras vêm de atritos que se repetiram entre sessões. Valem também para
 ### Teste como usuário (Playwright)
 
 - Toda feature visível ao usuário passa por uma varredura com Playwright antes do merge. A varredura soma ao `npm test`, não o substitui.
+- O roteiro fixo está em `scripts/varredura/` (ver o `README.md` de lá). Rode-o em toda entrega visível, com os passos da entrega em `--extra`. Ele mede alinhamento, estouro lateral e alvo de toque, e falha com achado novo. Não escreva um roteiro novo do zero.
+- Uma varredura sem capturas enviadas ao usuário não conta como feita.
 - A varredura usa a tela do celular do usuário, um Galaxy S25+: viewport 411 × 744, screen 412 × 892, `deviceScaleFactor` 2,63, `isMobile` e `hasTouch` ligados, `locale` `pt-BR`. Outros tamanhos só com pedido do usuário.
 - O Playwright roda fora do projeto, na pasta de rascunho da sessão. Nunca entra no `package.json`.
 - O app roda com `npx vite`, a partir do worktree, numa porta própria, só em `localhost`. Nunca teste no site publicado: ali estão os dados reais do usuário.
