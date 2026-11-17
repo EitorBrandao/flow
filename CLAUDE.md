@@ -63,14 +63,15 @@ Algumas regras deste arquivo já são bloqueios automáticos, não só disciplin
 | Release | `scripts/release.mjs` | branch ≠ `main`, working tree suja fora de `CHANGELOG.md`/`package.json`/`changelog.d/`, tag da versão já existente, fragmento vazio ou com bullet fora do formato, nenhum item resultante |
 | Catálogo | `scripts/verificar-catalogo.mjs --strict`, chamado pelo release | classe de `src/styles.css` ou componente de `src/ui/` fora de `docs/estilo/catalogo.md` (e o inverso), e o próprio `catalogo.md` ausente havendo `src/styles.css`. Rode sozinho quando quiser: `node scripts/verificar-catalogo.mjs` — sem `--strict` ele só avisa (exit 0) |
 | Deploy | `scripts/predeploy.mjs` | branch ≠ `main`, working tree suja, commit `chore(release)` de outro branch fora da ancestralidade do HEAD, HEAD ≠ `origin/main` (este último é pulado com aviso se o `git fetch` falhar; a checagem de ancestralidade só enxerga refs já presentes localmente) |
-| Dados reais | `scripts/verificar-dados-reais.mjs --strict`, chamado pelo release | valor em real fora das exceções sintéticas, ou termo de `~/.claude/flow-dados-reais.txt`, em **qualquer** arquivo versionado. Arquivo de teste e dossiê gerado pulam só o padrão genérico de moeda — os termos privados valem neles também. Rode sozinho quando quiser: `node scripts/verificar-dados-reais.mjs` — sem `--strict` ele só avisa (exit 0) |
+| Dados reais | `scripts/verificar-dados-reais.mjs --strict --exigir-lista`, chamado pelo release | valor em real fora das exceções sintéticas, ou termo de `~/.claude/flow-dados-reais.txt`, em **qualquer** arquivo versionado. Aborta também quando a lista privada não existe na máquina. Arquivo de teste e dossiê gerado pulam só o padrão genérico de moeda — os termos privados valem neles também. `public/tesseract/` (código de terceiros) pula só os termos privados. Rode sozinho quando quiser: `node scripts/verificar-dados-reais.mjs` — sem `--strict` ele só avisa (exit 0) |
 | Dossiê | `src/dossie/dossie.test.ts`, rodado por `npm test` | dossiê em `docs/dossie/` desatualizado, ou invariante **garantido** violado. Regenere com `npm run dossie` |
 | Lembretes | `.claude/hooks/` (ver `.claude/hooks/README.md`) | **nada** — só avisam, ao editar UI, ao editar com HEAD na `main`, ao instalar dependência e ao commitar |
 
-Duas consequências valem por escrito:
+Três consequências valem por escrito:
 
 - **`DEPLOY_FORCE=1` pula todos os guards do deploy.** Essa opção existe para o caso de o repositório estar num estado que os checks não sabem julgar. Use-a só com pedido explícito do usuário — nunca como atalho para um check que incomodou.
 - **O texto `chore(release)` é reservado às mensagens de commit geradas por `npm run release`.** O guard do deploy procura essa string com `git log --grep`. Essa busca casa em **qualquer posição** da mensagem, não só no começo. Por isso, um commit comum que contenha esse texto, num branch lateral, causa um aborto falso do deploy. Esse é o **único** guard que ainda depende de casar texto: o do catálogo bloqueia pelo código de saída (`--strict`), porque reescrever o relatório desligava o guard em silêncio.
+- **`RELEASE_SEM_LISTA_PRIVADA=1` libera o release numa máquina sem a lista privada.** Uma sessão na nuvem não tem a lista: nela o release aborta, e isso é o comportamento certo. O caminho normal é integrar e rodar o release no PC do usuário. Use a variável só com pedido explícito do usuário.
 
 ## Arquitetura
 

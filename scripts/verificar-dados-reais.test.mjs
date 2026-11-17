@@ -36,6 +36,80 @@ describe('verificar-dados-reais', () => {
     return { saida: r.stdout || '', exitCode: r.status };
   }
 
+  /** Roda o verificador com uma lista privada de teste (ou sem lista, com caminho inexistente). */
+  function rodarComLista(termos, ...args) {
+    const lista = path.join(tmpDir, '..', `lista-${path.basename(tmpDir)}.txt`);
+    if (termos !== null) fs.writeFileSync(lista, termos.join('\n'));
+    const r = spawnSync('node', [SCRIPT, tmpDir, ...args], {
+      encoding: 'utf8',
+      env: { ...process.env, FLOW_DADOS_REAIS_LISTA: termos === null ? `${lista}.nao-existe` : lista },
+    });
+    if (termos !== null) fs.rmSync(lista, { force: true });
+    return { saida: r.stdout || '', exitCode: r.status };
+  }
+
+  it('termo da lista privada vale em arquivo de teste e no dossiê gerado', () => {
+    versionar({
+      'src/ui/Algo.test.tsx': "expect(tela).toHaveTextContent('padaria-inventada-xyz');\n",
+      'docs/dossie/02-motor.md': '- compra em padaria-inventada-xyz\n',
+    });
+
+    const { saida, exitCode } = rodarComLista(['padaria-inventada-xyz'], '--strict');
+
+    expect(exitCode).toBe(1);
+    expect(saida).toContain('src/ui/Algo.test.tsx:1');
+    expect(saida).toContain('docs/dossie/02-motor.md:1');
+    expect(saida).not.toContain('padaria-inventada-xyz');
+  });
+
+  it('código de terceiros em public/tesseract/ não é comparado com os termos privados', () => {
+    versionar({
+      'public/tesseract/nucleo.wasm.js': 'var a="padaria-inventada-xyz";\n',
+      'public/outro.js': 'var b="padaria-inventada-xyz";\n',
+    });
+
+    const { saida } = rodarComLista(['padaria-inventada-xyz']);
+
+    expect(saida).not.toContain('public/tesseract/nucleo.wasm.js');
+    expect(saida).toContain('public/outro.js:1');
+  });
+
+  it('código de terceiros continua sob o padrão genérico de moeda', () => {
+    // Montado em partes: escrito por extenso, o valor casaria com o padrão de moeda quando o
+    // verificador varresse o plano em docs/ de onde este teste foi copiado.
+    const valor = ['R$ 7', '777,77'].join('.');
+    versionar({ 'public/tesseract/nucleo.wasm.js': `var c="${valor}";\n` });
+
+    expect(rodarComLista(['padaria-inventada-xyz']).saida).toContain('public/tesseract/nucleo.wasm.js:1');
+  });
+
+  it('--exigir-lista sai 2 quando a lista não existe', () => {
+    versionar({ 'docs/nota.md': 'nenhum valor aqui\n' });
+
+    const { saida, exitCode } = rodarComLista(null, '--strict', '--exigir-lista');
+
+    expect(exitCode).toBe(2);
+    expect(saida).toContain('Lista privada ausente');
+  });
+
+  it('--exigir-lista sai 2 quando a lista só tem comentário e linha vazia', () => {
+    versionar({ 'docs/nota.md': 'nenhum valor aqui\n' });
+
+    expect(rodarComLista(['# só comentário', ''], '--exigir-lista').exitCode).toBe(2);
+  });
+
+  it('--exigir-lista com lista válida e repositório limpo sai 0', () => {
+    versionar({ 'docs/nota.md': 'nenhum valor aqui\n' });
+
+    expect(rodarComLista(['padaria-inventada-xyz'], '--strict', '--exigir-lista').exitCode).toBe(0);
+  });
+
+  it('sem --exigir-lista a falta da lista não muda o código de saída', () => {
+    versionar({ 'docs/nota.md': 'nenhum valor aqui\n' });
+
+    expect(rodarComLista(null, '--strict').exitCode).toBe(0);
+  });
+
   it('acha moeda em arquivo versionado e sai 0 sem --strict', () => {
     versionar({ 'docs/nota.md': 'o saldo era de R$ 7.777,77 naquele dia\n' });
 
@@ -118,10 +192,6 @@ describe('verificar-dados-reais', () => {
   // O README da pasta é escrito à mão e continua sob o padrão genérico: é isso que separa
   // "arquivo gerado pelo roteiro sintético" de "qualquer markdown em docs/dossie/". Sem a
   // segunda asserção, alargar a regex para a pasta inteira não quebraria nada.
-  //
-  // Só cobre a metade do padrão genérico. A outra metade — os termos da lista privada
-  // CONTINUAM valendo nos arquivos gerados — não é testável aqui: `termosPrivados()` lê de
-  // `os.homedir()`, sem injeção.
   it('padrão genérico não vale no dossiê gerado, mas vale no README da mesma pasta', () => {
     versionar({
       'docs/dossie/02-motor.md': '- Fim de mês 2026-01: R$ 7.777,77\n',

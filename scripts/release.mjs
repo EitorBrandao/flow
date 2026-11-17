@@ -34,6 +34,9 @@
 //
 // Variáveis de ambiente:
 //   RELEASE_DRY_RUN=1  → faz tudo menos os passos de git (para testes).
+//   RELEASE_SEM_LISTA_PRIVADA=1 → libera o release numa máquina sem ~/.claude/flow-dados-reais.txt.
+//                        Só a pedido explícito do usuário: sem a lista, o guard de dados reais
+//                        não enxerga nomes nem termos, só valores em real.
 
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -129,12 +132,29 @@ function validarCatalogo() {
 // Promovido de relatório a guard em 2026-07-25, depois de calibrado contra o repositório
 // inteiro (as exceções sintéticas vivem em EXCECOES_VALOR, dentro do verificador).
 // O verificador varre `git ls-files` — fora de um repositório git ele não acha nada e sai 0.
+// Desde 2026-11 o release exige a lista privada (--exigir-lista, exit 2): sessões na nuvem
+// não têm a lista, e o guard passava nelas sem olhar termo nenhum.
 function validarDadosReais() {
   const verificadorPath = fileURLToPath(new URL('./verificar-dados-reais.mjs', import.meta.url));
-  const r = spawnSync('node', [verificadorPath, '--strict', raiz], { cwd: raiz, encoding: 'utf8' });
+  const semLista = process.env.RELEASE_SEM_LISTA_PRIVADA === '1';
+  if (semLista) {
+    console.warn(
+      '  release: RELEASE_SEM_LISTA_PRIVADA=1 — a lista privada não é exigida; ' +
+      'nomes e termos reais NÃO estão sendo checados neste release.'
+    );
+  }
+  const args = [verificadorPath, '--strict', ...(semLista ? [] : ['--exigir-lista']), raiz];
+  const r = spawnSync('node', args, { cwd: raiz, encoding: 'utf8' });
   if (r.error) abortar(`erro ao rodar o verificador de dados reais: ${r.error.message}`);
   if (r.stdout) console.log(r.stdout.trimEnd());
   if (r.stderr) console.error(r.stderr.trimEnd());
+  if (r.status === 2) {
+    abortar(
+      'lista privada de dados reais ausente ou sem termo ativo nesta máquina (~/.claude/flow-dados-reais.txt). ' +
+      'Sem ela o release não enxerga nomes nem termos reais. Rode o release na máquina que ' +
+      'tem a lista. RELEASE_SEM_LISTA_PRIVADA=1 libera, só a pedido explícito do usuário.'
+    );
+  }
   if (r.status !== 0) {
     abortar(
       'possíveis dados financeiros reais em arquivo versionado — confira cada arquivo:linha ' +

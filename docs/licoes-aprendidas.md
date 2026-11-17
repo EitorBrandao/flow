@@ -88,6 +88,7 @@ O backlog (`TODO.md`) e o histórico dele (`TODO-CONCLUIDOS.md`) são locais, fo
 - **Uma isenção larga desliga mais do que se pediu.** O dossiê foi isentado dos dois scans, quando só o padrão genérico de moeda precisava de isenção. *Faça:* estreite a isenção ao padrão necessário.
 - **O método para obter o formato de um arquivo real sem expor o conteúdo.** O usuário roda o arquivo numa conversa à parte. A conversa devolve só a forma, com o conteúdo trocado. Os dados reais nunca entram na sessão. Isso revelou armadilhas que a imaginação não achou.
 - **Auditoria com backup real: use um oráculo independente.** Reescreva o cálculo em Node a partir do JSON, sem reaproveitar funções do app. Rode também `checarTudo` do dossiê sobre o backup real. Os valores batiam. As divergências estavam em texto e regra entre telas.
+- **O guard de dados reais passava sem olhar nada.** Sem a lista privada, o verificador devolvia "nenhum termo" e o release seguia. Várias versões saíram de sessões na nuvem assim. Ninguém notou, porque um guard que passa não chama atenção. *Faça:* um guard que depende de um arquivo local falha quando o arquivo falta. Ao criar um guard, teste o caso "a entrada dele não existe" e decida, por escrito, se ele aborta ou segue.
 
 ## Interface e consistência
 

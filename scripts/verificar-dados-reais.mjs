@@ -31,6 +31,14 @@
 //               tem vírgula decimal, e separar por vírgula quebraria "R$ 1.234,56" em dois.
 //   --strict  - exit 1 havendo achado (posição livre entre os argumentos)
 //   --valores - imprime também os valores distintos, para montar as exceções
+//   --exigir-lista - exit 2 se a lista privada não existir ou não tiver termo ativo. O release
+//               passa esta flag: sem a lista, o verificador não enxerga nome nem termo real,
+//               e "nenhum achado" seria uma resposta vazia (releases de sessões na nuvem
+//               passaram assim até 2026-11).
+//
+// AMBIENTE:
+//   FLOW_DADOS_REAIS_LISTA - caminho alternativo da lista privada. Existe para os testes;
+//               no uso normal a lista é ~/.claude/flow-dados-reais.txt.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -88,10 +96,16 @@ const RE_ARQUIVO_TESTE = /\.test\.tsx?$/;
 // para um repositório público, e são justamente os que mais precisam dela.
 const RE_ARQUIVO_GERADO = /^docs\/dossie\/\d{2}-[a-z]+\.md$/;
 
+// Código de terceiros, minificado, publicado como veio: comparar com os termos privados gera
+// coincidência em sequência de letras sem sentido (visto em 2026-11). O padrão genérico de
+// moeda CONTINUA valendo aqui — só os termos privados são pulados.
+const PASTAS_DE_TERCEIROS = ['public/tesseract/'];
+
 // --- argumentos -------------------------------------------------------------
 
 const argumentos = process.argv.slice(2);
 const strict = argumentos.includes('--strict');
+const exigirLista = argumentos.includes('--exigir-lista');
 const posicionais = argumentos.filter((a) => !a.startsWith('--'));
 
 const raiz = posicionais[0] || process.cwd();
@@ -117,9 +131,14 @@ function arquivosVersionados(raizProjeto) {
   }
 }
 
+function caminhoListaPrivada() {
+  return process.env.FLOW_DADOS_REAIS_LISTA
+    || path.join(os.homedir(), '.claude', 'flow-dados-reais.txt');
+}
+
 /** Termos privados, se existirem. A lista nunca entra no repositório. */
 function termosPrivados() {
-  const caminho = path.join(os.homedir(), '.claude', 'flow-dados-reais.txt');
+  const caminho = caminhoListaPrivada();
   try {
     if (!fs.existsSync(caminho)) return [];
     return fs.readFileSync(caminho, 'utf8')
@@ -182,7 +201,8 @@ function varrer(raizProjeto) {
     if (EXTENSOES_IGNORADAS.has(path.extname(arquivo).toLowerCase())) continue;
 
     const soPrivados = RE_ARQUIVO_TESTE.test(arquivo) || RE_ARQUIVO_GERADO.test(arquivo);
-    const padroes = soPrivados ? privados : [...PADROES, ...privados];
+    const deTerceiros = PASTAS_DE_TERCEIROS.some((pasta) => arquivo.startsWith(pasta));
+    const padroes = deTerceiros ? PADROES : soPrivados ? privados : [...PADROES, ...privados];
     if (padroes.length === 0) continue;
 
     let conteudo;
@@ -208,6 +228,15 @@ function varrer(raizProjeto) {
 }
 
 // --- saída ------------------------------------------------------------------
+
+if (exigirLista && termosPrivados().length === 0) {
+  console.log(
+    '✗ Lista privada ausente ou sem termo ativo (~/.claude/flow-dados-reais.txt).'
+    + '\n  Sem ela a varredura só enxerga valores em real, não nomes nem termos.'
+    + '\n  Rode nesta máquina só depois de criar a lista, ou rode na máquina que a tem.'
+  );
+  process.exit(2);
+}
 
 const achados = varrer(raiz);
 

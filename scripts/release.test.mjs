@@ -7,13 +7,19 @@ import process from 'node:process';
 
 const SCRIPT = path.resolve('scripts/release.mjs');
 
+// Todo release de fixture roda com uma lista privada de teste: o release exige a lista
+// (--exigir-lista), e nem o CI nem um clone limpo têm a lista real. De quebra, os testes
+// deixam de depender da lista real da máquina de quem roda.
+const LISTA_DE_TESTE = path.join(os.tmpdir(), 'flow-lista-de-teste-release.txt');
+fs.writeFileSync(LISTA_DE_TESTE, 'termo-inventado-para-teste-de-release\n');
+
 function criarFixture() {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'release-test-'));
   return tmpDir;
 }
 
 function executarRelease(tmpDir, tipo, env = {}) {
-  const nodeEnv = { ...process.env, ...env, RELEASE_DRY_RUN: '1' };
+  const nodeEnv = { ...process.env, FLOW_DADOS_REAIS_LISTA: LISTA_DE_TESTE, ...env, RELEASE_DRY_RUN: '1' };
   const result = spawnSync('node', [SCRIPT, tipo], {
     cwd: tmpDir,
     env: nodeEnv,
@@ -28,7 +34,7 @@ function executarRelease(tmpDir, tipo, env = {}) {
 }
 
 function executarReleaseGit(tmpDir, tipo, env = {}) {
-  const nodeEnv = { ...process.env, ...env };
+  const nodeEnv = { ...process.env, FLOW_DADOS_REAIS_LISTA: LISTA_DE_TESTE, ...env };
   const result = spawnSync('node', [SCRIPT, tipo], {
     cwd: tmpDir,
     env: nodeEnv,
@@ -792,6 +798,64 @@ describe('release.mjs', () => {
         const result = executarRelease(tmp, 'patch');
 
         expect(result.exitCode).toBe(0);
+      } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      }
+    });
+
+    it('deve abortar quando a lista privada não existe na máquina', () => {
+      const tmp = criarFixture();
+      try {
+        fixtureGit(tmp);
+        execFileSync('git', ['add', '.'], { cwd: tmp });
+
+        const result = executarRelease(tmp, 'patch', {
+          FLOW_DADOS_REAIS_LISTA: path.join(tmp, 'lista-que-nao-existe.txt'),
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain('lista privada');
+        const pkg = JSON.parse(fs.readFileSync(path.join(tmp, 'package.json'), 'utf8'));
+        expect(pkg.version).toBe('1.0.0');
+        expect(fs.existsSync(path.join(tmp, 'changelog.d', 'adicionado-x.md'))).toBe(true);
+      } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      }
+    });
+
+    it('RELEASE_SEM_LISTA_PRIVADA=1 libera o release sem a lista, com aviso', () => {
+      const tmp = criarFixture();
+      try {
+        fixtureGit(tmp);
+        execFileSync('git', ['add', '.'], { cwd: tmp });
+
+        const result = executarRelease(tmp, 'patch', {
+          FLOW_DADOS_REAIS_LISTA: path.join(tmp, 'lista-que-nao-existe.txt'),
+          RELEASE_SEM_LISTA_PRIVADA: '1',
+        });
+
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout + result.stderr).toContain('RELEASE_SEM_LISTA_PRIVADA=1');
+        expect(result.stdout).toContain('1.0.0 → 1.0.1');
+      } finally {
+        fs.rmSync(tmp, { recursive: true, force: true });
+      }
+    });
+
+    it('a liberação não desliga o padrão de moeda', () => {
+      const tmp = criarFixture();
+      try {
+        fixtureGit(tmp);
+        fs.writeFileSync(path.join(tmp, 'nota.md'), `Conta de luz: ${VALOR_FORA_DAS_EXCECOES} no mês.\n`);
+        execFileSync('git', ['add', '.'], { cwd: tmp });
+
+        const result = executarRelease(tmp, 'patch', {
+          FLOW_DADOS_REAIS_LISTA: path.join(tmp, 'lista-que-nao-existe.txt'),
+          RELEASE_SEM_LISTA_PRIVADA: '1',
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.stderr).toContain('dados financeiros reais');
       } finally {
         fs.rmSync(tmp, { recursive: true, force: true });
       }
