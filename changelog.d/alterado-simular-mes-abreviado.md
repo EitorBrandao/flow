@@ -1,1 +1,1 @@
-- No Simular, o período mostra o mês abreviado ("jan", "fev"), e o seletor do ano fica mais estreito.
+- No Simular, o período mostra o mês abreviado ("jan", "fev"), o seletor do ano fica mais estreito e os campos de "de" e "até" ficam alinhados.
