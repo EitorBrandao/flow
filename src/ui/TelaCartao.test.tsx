@@ -221,7 +221,7 @@ it('bloco de fechamento: salvar reclassifica a fatura, remover volta ao padrão'
     // sem ajuste, a fatura mostrada por padrão (a próxima a vencer, calculada só a partir de
     // `hoje`) é a de agosto — a compra de 29/07 cai na fatura de setembro (fecha depois do
     // padrão dia 28), mas isso não muda qual fatura abre por padrão.
-    // o mês da fatura mostrada sai do seletor (fora do card), com o mês por nome.
+    // o mês da fatura mostrada sai do seletor (fora do card), com o mês abreviado.
     expect(screen.getByText('ago/2026')).toBeInTheDocument();
     await abrirAba(/Conferência/);
 
@@ -403,7 +403,7 @@ describe('card da fatura no padrão da Hoje (Consistência entre telas, parte 2)
     } finally { vi.useRealTimers(); }
   });
 
-  it('o seletor de mês, fora do card, mostra o mês por nome', async () => {
+  it('o seletor de mês, fora do card, mostra o mês abreviado', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     try {
       vi.setSystemTime(new Date('2026-07-01T12:00:00'));
