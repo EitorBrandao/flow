@@ -36,7 +36,7 @@ Caixa de seleção e botão de opção são medidos pelo rótulo que os envolve.
 
 ## Como ler o resultado
 
-A saída fica em `varredura/`, na pasta de onde você chamou: uma captura por passo, `relatorio.md` e `relatorio.json`.
+A saída fica em `varredura/`, na pasta de onde você chamou: uma captura por passo, `relatorio.md` e `relatorio.json`. Um achado é identificado pelo tipo e pelo elemento, não pelo passo: o mesmo botão visto em duas telas é um achado só.
 
 - **Código de saída 0:** nenhum achado novo. Envie as capturas ao usuário.
 - **Código de saída 1:** há achado novo, passo que falhou ou captura faltando. Corrija a tela. Não acrescente o achado aos conhecidos para passar.
