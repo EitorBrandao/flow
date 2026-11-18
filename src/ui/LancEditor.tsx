@@ -15,7 +15,7 @@ import SeletorBanco from './SeletorBanco';
 import Sheet from './Sheet';
 
 export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFechar: () => void }) {
-  const { dados, recarregar } = useApp();
+  const { dados, recarregar, avisar } = useApp();
   const [valorCentavos, setValorCentavos] = useState(Math.abs(lanc.valor));
   const [negativo] = useState(lanc.valor < 0);
   const [data, setData] = useState(lanc.data);
@@ -46,11 +46,15 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
     onFechar();
   }
 
+  // Sem confirmação: apaga um registro só, e o "Desfazer" o devolve idêntico (com o que
+  // estava gravado, não com o que foi digitado e não salvo). Ver docs/estilo/interacao.md.
   async function excluir() {
-    const msg = lanc.status === 'previsto' ? 'Excluir este previsto?' : 'Excluir este lançamento?';
-    if (!window.confirm(msg)) return;
     await repo.excluirLancamento(lanc.id);
     await recarregar();
+    avisar(
+      lanc.status === 'previsto' ? 'Previsto excluído' : 'Lançamento excluído',
+      () => repo.restaurarLancamento(lanc),
+    );
     onFechar();
   }
 
@@ -64,6 +68,9 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
   // editor: é o cartão, a transferência, a regra e o cenário (que fica sem banco).
   const podeEscolherBanco = !doCenario && !previstoDeRecorrencia
     && lanc.origem !== 'cartao' && lanc.origem !== 'transferencia';
+  // Um azul por linha de botões: Confirmar quando existe; senão, Salvar.
+  const podeConfirmar = lanc.status === 'previsto' && !doCenario;
+  const podeSalvar = !previstoDeRecorrencia;
 
   return (
     <Sheet aberto onFechar={onFechar} rotulo={lanc.status === 'previsto' ? 'Previsto' : 'Lançamento'}>
@@ -132,17 +139,17 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
             Previsto de uma recorrência: para mudar valor ou data, edite a regra em Ajustes — ou confirme já com o valor ajustado.
           </p>
         )}
-        <div className="linha" style={{ marginTop: 12 }}>
-          {lanc.status === 'previsto' && !doCenario && (
-            <button className="botao botao-primario" onClick={() => aplicar(true)}>✓ Confirmar</button>
-          )}
-          {!previstoDeRecorrencia && (
-            <button className="botao" onClick={() => aplicar(false)}>Salvar</button>
-          )}
+        <div className="sheet-botoes">
           {!parcelaDeRecorrenciaCenario && (
             <button className="botao botao-perigo" onClick={excluir}>Excluir</button>
           )}
-          <button className="botao" style={{ marginLeft: 'auto' }} onClick={onFechar}>Fechar</button>
+          <button className="botao botao-discreto empurra" onClick={onFechar}>Fechar</button>
+          {podeSalvar && (
+            <button className={`botao${podeConfirmar ? '' : ' botao-primario'}`} onClick={() => aplicar(false)}>Salvar</button>
+          )}
+          {podeConfirmar && (
+            <button className="botao botao-primario" onClick={() => aplicar(true)}>✓ Confirmar</button>
+          )}
         </div>
         {erro && <p className="aviso">{erro}</p>}
     </Sheet>
