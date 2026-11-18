@@ -12,7 +12,7 @@ import TabelaSimulacao from './TabelaSimulacao';
 
 /** Fluxo › Simular: cenários de gastos e ganhos futuros e o efeito deles no saldo, mês a mês. */
 export default function SimuladorFluxo() {
-  const { dados, boxSel, hoje, recarregar } = useApp();
+  const { dados, boxSel, hoje, recarregar, avisar } = useApp();
   const [nomeNovo, setNomeNovo] = useState('');
   const [criando, setCriando] = useState(false);
   const [aberto, setAberto] = useState<ID | null>(null);
@@ -74,6 +74,7 @@ export default function SimuladorFluxo() {
     const id = novoId();
     await repo.salvarCenario({ id, nome, ligado: true, escopo: boxSel, criadoEm: agora, alteradoEm: agora });
     await recarregar();
+    avisar('Cenário criado');
     setNomeNovo('');
     setCriando(false);
     setAberto(id);

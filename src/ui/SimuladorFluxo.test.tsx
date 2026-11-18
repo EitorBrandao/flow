@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -9,7 +9,7 @@ import * as projection from '../domain/projection';
 import { boxIdsSelecionadas, cenariosLigados, useApp } from '../state/store';
 import SimuladorFluxo from './SimuladorFluxo';
 
-beforeEach(async () => { await limparDb(); });
+beforeEach(async () => { await limparDb(); useApp.setState({ retorno: null }); });
 
 /** Box com 1.000,00 desde 01/09/2026, hoje 15/09/2026, sem outros lançamentos: o saldo "sem"
  *  é 100000 centavos em todo mês. */
@@ -549,6 +549,68 @@ describe('cenário aberto: item novo atrás de um botão', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Casa' }));
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar ao cenário' }));
     expect(await screen.findByRole('region', { name: 'Impacto só deste cenário' })).toBeInTheDocument();
+  });
+});
+
+describe('retorno ao gravar', () => {
+  it('criar cenário avisa "Cenário criado"', async () => {
+    await preparar();
+    render(<SimuladorFluxo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
+    await userEvent.type(screen.getByLabelText('Novo cenário'), 'Mudança');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+    await screen.findByRole('checkbox', { name: 'Ligar Mudança' });
+    expect(useApp.getState().retorno?.texto).toBe('Cenário criado');
+  });
+
+  it('ligar e desligar um cenário não avisa', async () => {
+    const { box, casa } = await preparar();
+    await cenarioCom('Geladeira', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 30000 });
+    render(<SimuladorFluxo />);
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Ligar Geladeira' }));
+    await waitFor(async () => expect((await db.cenarios.toArray())[0].ligado).toBe(false));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Ligar Geladeira' }));
+    await waitFor(async () => expect((await db.cenarios.toArray())[0].ligado).toBe(true));
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('adicionar item ao cenário avisa "Item adicionado"', async () => {
+    await preparar();
+    render(<SimuladorFluxo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
+    await userEvent.type(screen.getByLabelText('Novo cenário'), 'Mudança');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Adicionar item' }));
+    await userEvent.type(screen.getByLabelText('Valor'), '300,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Casa' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar ao cenário' }));
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Item adicionado'));
+  });
+
+  it('item com valor zerado não grava e não avisa', async () => {
+    await preparar();
+    render(<SimuladorFluxo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
+    await userEvent.type(screen.getByLabelText('Novo cenário'), 'Mudança');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Adicionar item' }));
+    // O aviso de "Cenário criado" do passo anterior não conta: zera antes do teste do item.
+    useApp.setState({ retorno: null });
+    await userEvent.click(screen.getByRole('button', { name: 'Casa' }));
+    expect(screen.getByRole('button', { name: 'Adicionar ao cenário' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Adicionar ao cenário' }));
+    expect(useApp.getState().retorno).toBe(null);
+    expect((await db.lancamentos.toArray()).filter((l) => l.cenarioId)).toHaveLength(0);
+  });
+
+  it('criar com o nome só de espaços não cria e não avisa', async () => {
+    await preparar();
+    render(<SimuladorFluxo />);
+    await userEvent.click(screen.getByRole('button', { name: 'Novo cenário' }));
+    await userEvent.type(screen.getByLabelText('Novo cenário'), '   ');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+    expect(useApp.getState().retorno).toBeNull();
+    expect(await db.cenarios.count()).toBe(0);
   });
 });
 
