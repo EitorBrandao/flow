@@ -3,6 +3,15 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.74.0] - 2026-11-17
+
+### Alterado
+
+- Toda gravação agora confirma que deu certo, com um aviso curto acima da barra.
+  - Vale para lançamentos, conferência de saldo, cartão, cenários e todas as telas de Ajustes.
+  - Com uma janela aberta, o aviso sobe para logo acima dela, sem cobrir o conteúdo.
+- Botões Cancelar e Fechar com contorno, para a ação principal se destacar.
+
 ## [0.73.0] - 2026-11-17
 
 ### Alterado

@@ -1,4 +1,0 @@
-- Toda gravação agora confirma que deu certo, com um aviso curto acima da barra.
-  - Vale para lançamentos, conferência de saldo, cartão, cenários e todas as telas de Ajustes.
-  - Com uma janela aberta, o aviso sobe para logo acima dela, sem cobrir o conteúdo.
-- Botões Cancelar e Fechar com contorno, para a ação principal se destacar.
