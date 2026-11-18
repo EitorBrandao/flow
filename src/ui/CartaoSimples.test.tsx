@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -8,6 +8,11 @@ import { formatarBRL } from '../domain/money';
 import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import TelaCartao from './TelaCartao';
+
+async function responderNoSheet(titulo: string | RegExp, botao: string) {
+  const dialogo = await screen.findByRole('dialog', { name: titulo });
+  await userEvent.click(within(dialogo).getByRole('button', { name: botao }));
+}
 
 beforeEach(async () => { await limparDb(); });
 afterEach(() => { vi.useRealTimers(); });
@@ -252,7 +257,6 @@ it('Salvar fatura fica desabilitado sem edição e não sobrescreve conferência
 });
 
 it('Remover valor só aparece com conferência marcada; sem compras, a fatura some do Fluxo', async () => {
-  vi.spyOn(window, 'confirm').mockReturnValue(true);
   await montar();
   render(<TelaCartao />);
   expect(screen.queryByRole('button', { name: 'Remover valor' })).not.toBeInTheDocument();
@@ -260,6 +264,7 @@ it('Remover valor só aparece com conferência marcada; sem compras, a fatura so
   await userEvent.click(screen.getByRole('button', { name: 'Salvar fatura' }));
   await waitFor(async () => expect(await faturas()).toHaveLength(1));
   await userEvent.click(await screen.findByRole('button', { name: 'Remover valor' }));
+  await responderNoSheet('Remover o valor informado desta fatura?', 'Remover');
   await waitFor(async () => expect(await db.conferenciasFatura.count()).toBe(0));
   await waitFor(async () => expect(await faturas()).toHaveLength(0));
   await waitFor(() => expect(screen.queryByRole('button', { name: 'Remover valor' })).not.toBeInTheDocument());
@@ -267,7 +272,6 @@ it('Remover valor só aparece com conferência marcada; sem compras, a fatura so
 });
 
 it('Remover valor com compras: a fatura volta à soma e as compras continuam', async () => {
-  vi.spyOn(window, 'confirm').mockReturnValue(true);
   const { cartao } = await montar();
   const cat = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
   await repo.salvarCompraCartao({
@@ -280,6 +284,7 @@ it('Remover valor com compras: a fatura volta à soma e as compras continuam', a
   await userEvent.click(screen.getByRole('button', { name: 'Salvar fatura' }));
   await waitFor(async () => expect((await faturas())[0]?.valor).toBe(10000));
   await userEvent.click(await screen.findByRole('button', { name: 'Remover valor' }));
+  await responderNoSheet('Remover o valor informado desta fatura?', 'Remover');
   await waitFor(async () => expect((await faturas())[0]?.valor).toBe(8000));
   expect(await db.conferenciasFatura.count()).toBe(0);
   expect(await db.comprasCartao.count()).toBe(1);
@@ -298,23 +303,25 @@ describe('Remover valor pede confirmação', () => {
   }
 
   it('Cancelar na confirmação mantém o valor informado', async () => {
-    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false);
     await userEvent.click(await comValorSalvo());
-    expect(confirmar).toHaveBeenCalledOnce();
+    await responderNoSheet('Remover o valor informado desta fatura?', 'Cancelar');
     expect(await db.conferenciasFatura.count()).toBe(1);
     expect(screen.getByRole('button', { name: 'Remover valor' })).toBeInTheDocument();
   });
 
   it('a pergunta diz o que acontece com a fatura sem compras', async () => {
-    const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false);
     await userEvent.click(await comValorSalvo());
-    expect(confirmar.mock.calls[0][0]).toMatch(/sem compras.*sai do Fluxo/i);
+    const dialogo = await screen.findByRole('dialog', { name: 'Remover o valor informado desta fatura?' });
+    expect(within(dialogo).getByText(/sem compras.*sai do Fluxo/i)).toBeInTheDocument();
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Cancelar' }));
   });
 
-  it('toque duplo em Remover valor remove uma vez só', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+  it('toque duplo em Remover valor abre um diálogo só e remove uma vez só', async () => {
     const remover = vi.spyOn(repo, 'removerConferenciaFatura');
     await userEvent.dblClick(await comValorSalvo());
+    await screen.findByRole('dialog', { name: 'Remover o valor informado desta fatura?' });
+    expect(screen.getAllByRole('dialog', { name: 'Remover o valor informado desta fatura?' })).toHaveLength(1);
+    await responderNoSheet('Remover o valor informado desta fatura?', 'Remover');
     await waitFor(async () => expect(await db.conferenciasFatura.count()).toBe(0));
     expect(remover).toHaveBeenCalledOnce();
   });

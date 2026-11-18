@@ -10,6 +10,7 @@ import type { Cartao, ConferenciaFatura } from '../domain/types';
 import { useApp } from '../state/store';
 import AvisoFaturaForaDoFluxo from './AvisoFaturaForaDoFluxo';
 import CampoValor from './CampoValor';
+import ConfirmarSheet from './ConfirmarSheet';
 import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
 import SeletorMes from './SeletorMes';
 
@@ -34,9 +35,10 @@ export default function CartaoSimples({ cartao, mesInicial }: { cartao: Cartao; 
 }
 
 function FaturaDoMes({ cartao, mes }: { cartao: Cartao; mes: string }) {
-  const { dados, hoje, recarregar } = useApp();
+  const { dados, hoje, recarregar, avisar } = useApp();
   const uid = useId();
   const conf = dados?.conferenciasFatura.find((c) => c.cartaoId === cartao.id && c.mes === mes);
+  const [confirmandoRemocao, setConfirmandoRemocao] = useState(false);
   const [pagando, setPagando] = useState(false);
   const [valorInicialPagamento, setValorInicialPagamento] = useState<number | null>(null);
   const [cents, setCents] = useState<number | null>(null);
@@ -47,6 +49,7 @@ function FaturaDoMes({ cartao, mes }: { cartao: Cartao; mes: string }) {
   const horizonte = dados.config.horizonteProjecao;
   const ajustes = ajustesDoCartao(dados.ajustesFechamento, cartao.id);
   const compras = dados.comprasCartao.filter((c) => c.cartaoId === cartao.id);
+  const efeitoDaRemocao = compras.length > 0 ? 'A fatura volta à soma das compras.' : 'Sem compras, a fatura sai do Fluxo.';
   const { dataFechamento, dataVencimento } = datasFaturaDoMes(cartao, mes, ajustes);
   const ate = dataVencimento > horizonte ? dataVencimento : horizonte;
   const fatura: Fatura = calcularFaturas(cartao, compras, ate, ajustes).find((f) => f.mes === mes)
@@ -77,16 +80,16 @@ function FaturaDoMes({ cartao, mes }: { cartao: Cartao; mes: string }) {
     }
   }
 
+  // Apagar o valor pode perder um valor do banco vindo do Avançado: pede confirmação, como as outras ações destrutivas.
   async function removerValor() {
     if (ocupadoRef.current) return;
-    // Apagar o valor pode perder um valor do banco vindo do Avançado: pede confirmação, como as outras ações destrutivas.
-    const efeito = compras.length > 0 ? 'A fatura volta à soma das compras.' : 'Sem compras, a fatura sai do Fluxo.';
-    if (!window.confirm(`Remover o valor informado desta fatura? ${efeito}`)) return;
+    setConfirmandoRemocao(false);
     ocupadoRef.current = true;
     try {
       await repo.removerConferenciaFatura(cartao.id, mes, horizonte);
       setCents(null);
       await recarregar();
+      avisar('Valor da fatura removido');
     } finally {
       ocupadoRef.current = false;
     }
@@ -112,7 +115,7 @@ function FaturaDoMes({ cartao, mes }: { cartao: Cartao; mes: string }) {
           Salvar fatura
         </button>
         {conf?.usarValorApp && (
-          <button className="botao botao-perigo" onClick={removerValor}>Remover valor</button>
+          <button className="botao botao-perigo" onClick={() => setConfirmandoRemocao(true)}>Remover valor</button>
         )}
         <p className="sub" style={{ margin: 0 }}>
           Entra no Fluxo como um gasto único no vencimento. Quer detalhar compra a compra? Troque para Avançado.
@@ -155,6 +158,12 @@ function FaturaDoMes({ cartao, mes }: { cartao: Cartao; mes: string }) {
         totalFaturaCent={fatura.totalCent}
         valorInicialCent={valorInicialPagamento ?? undefined}
         onFechar={() => setPagando(false)}
+      />
+      <ConfirmarSheet
+        aberto={confirmandoRemocao} titulo="Remover o valor informado desta fatura?"
+        apoio={efeitoDaRemocao}
+        rotuloConfirmar="Remover" perigo
+        onCancelar={() => setConfirmandoRemocao(false)} onConfirmar={removerValor}
       />
     </>
   );

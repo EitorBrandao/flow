@@ -1,12 +1,17 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
 import { agoraISO, novoId, type Lancamento } from '../domain/types';
 import { useApp } from '../state/store';
 import TransferenciaSheet from './TransferenciaSheet';
+
+async function responderNoSheet(titulo: string | RegExp, botao: string) {
+  const dialogo = await screen.findByRole('dialog', { name: titulo });
+  await userEvent.click(within(dialogo).getByRole('button', { name: botao }));
+}
 
 beforeEach(async () => {
   await limparDb();
@@ -29,7 +34,6 @@ async function seedTransferencia() {
 it('mostra os bancos, a data e o valor, e exclui as duas pernas ao confirmar', async () => {
   const { saida } = await seedTransferencia();
   const onFechar = vi.fn();
-  window.confirm = vi.fn(() => true);
   render(<TransferenciaSheet lanc={saida} onFechar={onFechar} />);
 
   expect(await screen.findByRole('dialog', { name: 'Transferência' })).toBeInTheDocument();
@@ -37,6 +41,7 @@ it('mostra os bancos, a data e o valor, e exclui as duas pernas ao confirmar', a
   expect(screen.getByText('R$ 500,00')).toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'Excluir transferência' }));
+  await responderNoSheet('Excluir esta transferência?', 'Excluir');
 
   await waitFor(() => {
     expect(onFechar).toHaveBeenCalledOnce();
@@ -46,12 +51,24 @@ it('mostra os bancos, a data e o valor, e exclui as duas pernas ao confirmar', a
 
 it('cancelar a confirmação de exclusão não apaga nada', async () => {
   const { saida } = await seedTransferencia();
-  window.confirm = vi.fn(() => false);
-  render(<TransferenciaSheet lanc={saida} onFechar={vi.fn()} />);
+  const onFechar = vi.fn();
+  render(<TransferenciaSheet lanc={saida} onFechar={onFechar} />);
 
   await userEvent.click(screen.getByRole('button', { name: 'Excluir transferência' }));
+  await responderNoSheet('Excluir esta transferência?', 'Cancelar');
 
+  expect(onFechar).not.toHaveBeenCalled();
   expect((await db.lancamentos.toArray()).filter((l) => l.origem === 'transferencia')).toHaveLength(2);
+});
+
+it('tocar duas vezes em Excluir transferência abre um diálogo só', async () => {
+  const { saida } = await seedTransferencia();
+  render(<TransferenciaSheet lanc={saida} onFechar={vi.fn()} />);
+
+  await userEvent.dblClick(await screen.findByRole('button', { name: 'Excluir transferência' }));
+
+  await screen.findByRole('dialog', { name: 'Excluir esta transferência?' });
+  expect(screen.getAllByRole('dialog', { name: 'Excluir esta transferência?' })).toHaveLength(1);
 });
 
 it('entre boxes: mostra de onde saiu e onde entrou, e exclui as duas pernas', async () => {
@@ -65,7 +82,6 @@ it('entre boxes: mostra de onde saiu e onde entrou, e exclui as duas pernas', as
   await useApp.getState().iniciar();
   useApp.setState({ boxSel: ana.id, hoje: '2026-07-05' });
   const saida = (await db.lancamentos.toArray()).find((l) => l.boxId === ana.id) as Lancamento;
-  window.confirm = vi.fn(() => true);
   const onFechar = vi.fn();
   render(<TransferenciaSheet lanc={saida} onFechar={onFechar} />);
 
@@ -75,6 +91,7 @@ it('entre boxes: mostra de onde saiu e onde entrou, e exclui as duas pernas', as
   expect(screen.getByText('Excluir apaga os dois lançamentos, um em cada box.')).toBeInTheDocument();
 
   await userEvent.click(screen.getByRole('button', { name: 'Excluir transferência' }));
+  await responderNoSheet('Excluir esta transferência?', 'Excluir');
   await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
   expect(await db.lancamentos.count()).toBe(0);
 });
