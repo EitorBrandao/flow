@@ -3,6 +3,15 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.73.0] - 2026-11-17
+
+### Alterado
+
+- Confirmações com o visual do app, no lugar da janela do navegador.
+  - A janela mostra o que vai ser apagado e o efeito, antes de você confirmar.
+- Excluir um lançamento ou descartar um pendente agora é imediato, com Desfazer por alguns segundos.
+- Editor de lançamento com a ação principal em azul e Excluir separado, à esquerda.
+
 ## [0.72.5] - 2026-11-17
 
 ### Alterado
