@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -154,15 +154,44 @@ it('editar um parcelado de cenário para começar hoje mantém as N parcelas, ho
   }
 });
 
-it('excluir: com confirmação, remove o item do banco e fecha a sheet', async () => {
+it('excluir item "uma vez" apaga na hora e oferece Desfazer', async () => {
   const { itemUnica } = await prepararComItens();
-  vi.spyOn(window, 'confirm').mockReturnValue(true);
   const onFechar = vi.fn();
   render(<ItemCenarioSheet item={itemUnica} onFechar={onFechar} />);
 
   await userEvent.click(screen.getByRole('button', { name: 'Excluir item' }));
 
-  await waitFor(() => expect(onFechar).toHaveBeenCalled());
-  const restante = await db.lancamentos.get(itemUnica.id);
-  expect(restante).toBeUndefined();
+  await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
+  expect(await db.lancamentos.get(itemUnica.id)).toBeUndefined();
+  expect(useApp.getState().retorno!.texto).toBe('Item excluído');
+
+  await useApp.getState().retorno!.desfazer!();
+  expect(await db.lancamentos.get(itemUnica.id)).toBeDefined();
+});
+
+it('excluir item com repetição pede confirmação no sheet; Cancelar mantém', async () => {
+  const { itemParcelado } = await prepararComItens();
+  const onFechar = vi.fn();
+  render(<ItemCenarioSheet item={itemParcelado} onFechar={onFechar} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir item' }));
+
+  const dialogo = await screen.findByRole('dialog', { name: 'Excluir este item do cenário?' });
+  await userEvent.click(within(dialogo).getByRole('button', { name: 'Cancelar' }));
+
+  expect(onFechar).not.toHaveBeenCalled();
+  expect(await db.recorrencias.get(itemParcelado.id)).toBeDefined();
+});
+
+it('excluir item com repetição: confirmar apaga a regra', async () => {
+  const { itemParcelado } = await prepararComItens();
+  const onFechar = vi.fn();
+  render(<ItemCenarioSheet item={itemParcelado} onFechar={onFechar} />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir item' }));
+  const dialogo = await screen.findByRole('dialog', { name: 'Excluir este item do cenário?' });
+  await userEvent.click(within(dialogo).getByRole('button', { name: 'Excluir' }));
+
+  await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
+  expect(await db.recorrencias.get(itemParcelado.id)).toBeUndefined();
 });
