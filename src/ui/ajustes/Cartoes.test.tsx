@@ -366,6 +366,7 @@ describe('retorno ao salvar', () => {
     expect(await screen.findByRole('button', { name: 'Permitir' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Permitir' }));
     await waitFor(async () => expect((await db.cartoes.toArray())[0].permiteCompra).toBe(true));
+    await screen.findByRole('button', { name: 'Bloquear' });
     expect(useApp.getState().retorno).toBeNull();
   });
 });

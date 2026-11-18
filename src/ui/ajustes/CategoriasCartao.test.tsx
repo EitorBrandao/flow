@@ -8,6 +8,22 @@ import { agoraISO, novoId } from '../../domain/types';
 import { useApp } from '../../state/store';
 import CategoriasCartao from './CategoriasCartao';
 
+// O arrasto do framer-motion não roda no jsdom. Este mock deixa o `onReorder` de cada
+// `Reorder.Group` ao alcance do teste, indexado pelos ids dos itens na ordem renderizada.
+const captura = vi.hoisted(() => ({
+  porIds: new Map<string, (novaOrdem: unknown[]) => unknown>(),
+}));
+
+vi.mock('framer-motion', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('framer-motion')>();
+  const React = await import('react');
+  const Group = (props: { values: { id: string }[]; onReorder: (novaOrdem: unknown[]) => unknown }) => {
+    captura.porIds.set(props.values.map((v) => v.id).join(','), props.onReorder);
+    return React.createElement(actual.Reorder.Group, props as never);
+  };
+  return { ...actual, Reorder: { ...actual.Reorder, Group } };
+});
+
 beforeEach(async () => {
   await limparDb();
   useApp.setState({ retorno: null });
@@ -261,5 +277,25 @@ describe('retorno ao salvar', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Restaurar' }));
     await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Categoria restaurada'));
+  });
+});
+
+describe('reordenar não avisa', () => {
+  it('reordenar categorias de cartão grava a nova ordem e não avisa', async () => {
+    const cartao = await prepararCartao();
+    const a = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+    const b = await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'lazer', ordem: 1 });
+    await useApp.getState().iniciar();
+    render(<CategoriasCartao />);
+
+    const reordenar = captura.porIds.get(`${a.id},${b.id}`);
+    expect(reordenar).toBeDefined();
+    await act(async () => {
+      await reordenar!([b, a]);
+    });
+
+    await waitFor(async () => expect((await db.categoriasCartao.get(b.id))?.ordem).toBe(0));
+    expect((await db.categoriasCartao.get(a.id))?.ordem).toBe(1);
+    expect(useApp.getState().retorno).toBeNull();
   });
 });
