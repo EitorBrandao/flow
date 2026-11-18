@@ -10,6 +10,7 @@ import Cartoes from './Cartoes';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ retorno: null });
 });
 
 async function montarBox() {
@@ -290,4 +291,81 @@ it('avisa em qual box o cartão será criado', async () => {
   render(<Cartoes />);
 
   expect(await screen.findByText(`Será criado na box ${box.nome}.`)).toBeInTheDocument();
+});
+
+describe('retorno ao salvar', () => {
+  it('criar um cartão avisa "Cartão criado"', async () => {
+    await montarBox();
+    await useApp.getState().iniciar();
+    useApp.setState({ hoje: '2026-07-01' });
+    render(<Cartoes />);
+    await userEvent.type(screen.getByLabelText('Nome do cartão'), 'Nubank');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Cartão criado'));
+  });
+
+  it('criar sem nome não avisa', async () => {
+    await montarBox();
+    await useApp.getState().iniciar();
+    useApp.setState({ hoje: '2026-07-01' });
+    render(<Cartoes />);
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    expect(await screen.findByText(/Dê um nome ao cartão/)).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('editar um cartão avisa "Cartão salvo"', async () => {
+    const box = await montarBox();
+    await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ hoje: '2026-07-01' });
+    render(<Cartoes />);
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    await userEvent.clear(screen.getByLabelText('Nome do cartão'));
+    await userEvent.type(screen.getByLabelText('Nome do cartão'), 'Nubank Novo');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Cartão salvo'));
+  });
+
+  it('salvar a edição com o nome apagado não avisa', async () => {
+    const box = await montarBox();
+    await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+    await useApp.getState().iniciar();
+    render(<Cartoes />);
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    await userEvent.clear(screen.getByLabelText('Nome do cartão'));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    expect(await screen.findByText('Dê um nome ao cartão para salvar.')).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('Desativar avisa "Cartão arquivado" e Ativar avisa "Cartão reativado"', async () => {
+    const box = await montarBox();
+    await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+    await useApp.getState().iniciar();
+    render(<Cartoes />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Desativar' }));
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Cartão arquivado'));
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Ativar' }));
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Cartão reativado'));
+  });
+
+  it('bloquear e permitir compras não avisa: o próprio botão já mostra o estado', async () => {
+    const box = await montarBox();
+    await repo.salvarCartao({ boxId: box.id, nome: 'Nubank', diaFechamento: 28, diaVencimento: 5 }, '2027-12-31');
+    await useApp.getState().iniciar();
+    render(<Cartoes />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Bloquear' }));
+    expect(await screen.findByRole('button', { name: 'Permitir' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Permitir' }));
+    await waitFor(async () => expect((await db.cartoes.toArray())[0].permiteCompra).toBe(true));
+    expect(useApp.getState().retorno).toBeNull();
+  });
 });

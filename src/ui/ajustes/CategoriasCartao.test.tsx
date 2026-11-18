@@ -10,6 +10,7 @@ import CategoriasCartao from './CategoriasCartao';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ retorno: null });
 });
 
 async function prepararCartao() {
@@ -200,4 +201,65 @@ it('sem cartão, o aviso leva a Ajustes → Cartões', async () => {
   expect(screen.getByText('Cadastre um cartão primeiro.')).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Cadastrar cartão' }));
   expect(useApp.getState().ajustesSecao).toBe('cartoes');
+});
+
+describe('retorno ao salvar', () => {
+  it('criar uma categoria de cartão avisa "Categoria criada"', async () => {
+    await prepararCartao();
+    await useApp.getState().iniciar();
+    render(<CategoriasCartao />);
+    await userEvent.type(await screen.findByLabelText('Nome'), 'lazer');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Categoria criada'));
+  });
+
+  it('criar sem nome não avisa', async () => {
+    await prepararCartao();
+    await useApp.getState().iniciar();
+    render(<CategoriasCartao />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Criar' }));
+
+    expect(await screen.findByText('Dê um nome à categoria para criar.')).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('editar uma categoria de cartão avisa "Categoria salva"', async () => {
+    const cartao = await prepararCartao();
+    await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+    await useApp.getState().iniciar();
+    render(<CategoriasCartao />);
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    await userEvent.clear(screen.getByLabelText('Editar nome'));
+    await userEvent.type(screen.getByLabelText('Editar nome'), 'supermercado');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Categoria salva'));
+  });
+
+  it('salvar a edição com o nome apagado não avisa', async () => {
+    const cartao = await prepararCartao();
+    await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+    await useApp.getState().iniciar();
+    render(<CategoriasCartao />);
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    await userEvent.clear(screen.getByLabelText('Editar nome'));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    expect(await screen.findByText('Dê um nome à categoria para salvar.')).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('arquivar avisa "Categoria arquivada" e restaurar avisa "Categoria restaurada"', async () => {
+    const cartao = await prepararCartao();
+    await repo.salvarCategoriaCartao({ cartaoId: cartao.id, nome: 'mercado', ordem: 0 });
+    await useApp.getState().iniciar();
+    render(<CategoriasCartao />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Arquivar' }));
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Categoria arquivada'));
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Restaurar' }));
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Categoria restaurada'));
+  });
 });

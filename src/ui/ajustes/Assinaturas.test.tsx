@@ -11,6 +11,7 @@ import Assinaturas from './Assinaturas';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ retorno: null });
 });
 
 async function prepararCartao(nome = 'Nubank') {
@@ -269,4 +270,62 @@ it('confirmar apaga a assinatura e avisa', async () => {
 
   await waitFor(async () => expect(await db.recorrenciasCartao.count()).toBe(0));
   await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Assinatura excluída'));
+});
+
+describe('retorno ao salvar', () => {
+  async function comAssinatura() {
+    const cartao = await prepararCartao();
+    await repo.salvarAssinatura({
+      cartaoId: cartao.id, categoriaCartaoId: await repo.categoriaAssinaturasDe(cartao.id),
+      valor: 3990, dataInicio: '2026-07-01', diaDoMes: 8, parcelas: null, descricao: 'Netflix',
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ hoje: '2026-07-01' });
+    return cartao;
+  }
+
+  it('criar uma assinatura avisa "Assinatura criada"', async () => {
+    await prepararCartao();
+    await useApp.getState().iniciar();
+    useApp.setState({ hoje: '2026-07-01' });
+    render(<Assinaturas />);
+    await userEvent.type(screen.getByLabelText('Valor'), '39,90');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Assinatura criada'));
+  });
+
+  it('criar sem valor não avisa', async () => {
+    await prepararCartao();
+    await useApp.getState().iniciar();
+    render(<Assinaturas />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Criar' }));
+
+    expect(await screen.findByText('Digite um valor para criar.')).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('editar uma assinatura avisa "Assinatura salva"', async () => {
+    await comAssinatura();
+    render(<Assinaturas />);
+    const item = screen.getByText('Netflix').closest('.item') as HTMLElement;
+    await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+    const valorInput = within(item).getByLabelText('Valor');
+    await userEvent.clear(valorInput);
+    await userEvent.type(valorInput, '49,90');
+    await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Assinatura salva'));
+  });
+
+  it('pausar avisa "Assinatura pausada" e retomar avisa "Assinatura retomada"', async () => {
+    await comAssinatura();
+    render(<Assinaturas />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Desativar' }));
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Assinatura pausada'));
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Ativar' }));
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Assinatura retomada'));
+  });
 });

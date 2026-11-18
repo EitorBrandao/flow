@@ -13,6 +13,7 @@ import Categorias from './Categorias';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ retorno: null });
 });
 
 it('renomeia uma categoria existente via edição inline', async () => {
@@ -416,4 +417,77 @@ it('depois de criar as sugeridas, oferece o primeiro lançamento', async () => {
   await userEvent.click(await screen.findByRole('button', { name: 'Fazer meu primeiro lançamento' }));
 
   expect(useApp.getState().aba).toBe('lancar');
+});
+
+describe('retorno ao salvar', () => {
+  async function comBoxSelecionada(categorias: string[] = []) {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    for (const [ordem, nome] of categorias.entries()) {
+      await repo.salvarCategoria({ boxId: box.id, nome, tipo: 'gasto', ordem });
+    }
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id });
+    return box;
+  }
+
+  it('criar uma categoria avisa "Categoria criada"', async () => {
+    await comBoxSelecionada(['mercado']);
+    render(<Categorias />);
+    await userEvent.type(screen.getByLabelText('Nome'), 'lazer');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Categoria criada'));
+  });
+
+  it('criar sem nome não avisa', async () => {
+    await comBoxSelecionada(['mercado']);
+    render(<Categorias />);
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    expect(await screen.findByText('Dê um nome à categoria para criar.')).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('criar as sugestões marcadas avisa "Categorias criadas"', async () => {
+    await comBoxSelecionada();
+    render(<Categorias />);
+    await userEvent.click(screen.getByRole('button', { name: /Criar as \d+ marcadas/ }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Categorias criadas'));
+  });
+
+  it('editar uma categoria avisa "Categoria salva"', async () => {
+    await comBoxSelecionada(['mercado']);
+    render(<Categorias />);
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    await userEvent.clear(screen.getByLabelText('Editar nome'));
+    await userEvent.type(screen.getByLabelText('Editar nome'), 'supermercado');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Categoria salva'));
+  });
+
+  it('salvar a edição com o nome apagado não avisa', async () => {
+    await comBoxSelecionada(['mercado']);
+    render(<Categorias />);
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    await userEvent.clear(screen.getByLabelText('Editar nome'));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    expect(await screen.findByText('Dê um nome à categoria para salvar.')).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('arquivar avisa "Categoria arquivada" e restaurar avisa "Categoria restaurada"', async () => {
+    await comBoxSelecionada(['mercado']);
+    render(<Categorias />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Arquivar' }));
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Categoria arquivada'));
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Restaurar' }));
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Categoria restaurada'));
+  });
 });
