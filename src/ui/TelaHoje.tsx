@@ -210,7 +210,7 @@ function FormTransferencia({ bancos, origemInicialId, hoje, dados, onFeito, onCa
       </div>
       <div className="acoes">
         <button className="botao botao-primario" disabled={!podeConfirmar} onClick={confirmar}>Confirmar transferência</button>
-        <button className="botao" onClick={onCancelar}>Cancelar</button>
+        <button className="botao botao-discreto" onClick={onCancelar}>Cancelar</button>
       </div>
       {ehMesmoBanco && (
         <p className="aviso">Escolha dois bancos diferentes.</p>
@@ -724,7 +724,7 @@ export default function TelaHoje() {
                   {corrigindo === l.id ? (
                     <>
                       <button className="botao botao-primario" aria-label={`Confirmar ${nomeCat(l.categoriaId)}`} onClick={() => confirmarCorrigido(l)}>✓ Confirmar</button>
-                      <button className="botao" onClick={() => setCorrigindo(null)}>Cancelar</button>
+                      <button className="botao botao-discreto" onClick={() => setCorrigindo(null)}>Cancelar</button>
                     </>
                   ) : (
                     <>

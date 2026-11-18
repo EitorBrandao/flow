@@ -204,7 +204,7 @@ export default function Bancos() {
                     </div>
                   )}
                   <div className="form-botoes">
-                    <button className="botao" onClick={cancelarEdicao}>Cancelar</button>
+                    <button className="botao botao-discreto" onClick={cancelarEdicao}>Cancelar</button>
                     <button className="botao botao-primario" onClick={salvarEdicao}>Salvar</button>
                   </div>
                   {avisoEdicao && <p className="aviso">{avisoEdicao}</p>}

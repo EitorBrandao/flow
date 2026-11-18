@@ -281,7 +281,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
           </div>
           <div className="linha">
             <button className="botao botao-primario" onClick={anexarNota}>Anexar</button>
-            <button className="botao" onClick={() => { setAnexando(false); setXmlTexto(''); setErroNota(null); }}>Cancelar</button>
+            <button className="botao botao-discreto" onClick={() => { setAnexando(false); setXmlTexto(''); setErroNota(null); }}>Cancelar</button>
           </div>
           {erroNota && <p className="aviso">{erroNota}</p>}
         </div>
@@ -363,7 +363,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
         })()}
         {avisoSalvar && <p className="aviso" style={{ flexBasis: '100%' }}>{avisoSalvar}</p>}
         <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={() => salvar()}>Salvar</button>
-        <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={onFechar}>Cancelar</button>
+        <button className="botao botao-discreto" style={{ alignSelf: 'flex-end' }} onClick={onFechar}>Cancelar</button>
         {compra && <button className="botao botao-perigo" style={{ alignSelf: 'flex-end' }} onClick={() => setConfirmandoExclusao(true)}>Excluir</button>}
         {compra && (
           <ConfirmarSheet

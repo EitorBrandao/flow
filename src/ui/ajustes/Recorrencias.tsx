@@ -127,7 +127,7 @@ function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar, usarPadra
         </div>
       </div>
       <div className="form-botoes">
-        {onCancelar && <button className="botao" onClick={onCancelar}>Cancelar</button>}
+        {onCancelar && <button className="botao botao-discreto" onClick={onCancelar}>Cancelar</button>}
         <button className="botao botao-primario" onClick={salvar}>{rotuloSalvar}</button>
       </div>
       {aviso && <p className="aviso">{aviso}</p>}

@@ -38,7 +38,7 @@ function ItemCategoriaCartao({
               <label htmlFor={uidEditar}>Editar nome</label>
               <input id={uidEditar} autoFocus value={nomeEdit} onChange={(e) => onEditarNome(e.target.value)} />
             </div>
-            <button className="botao" onClick={onCancelarEdicao}>Cancelar</button>
+            <button className="botao botao-discreto" onClick={onCancelarEdicao}>Cancelar</button>
             <button className="botao botao-primario" onClick={onSalvarEdicao}>Salvar</button>
           </div>
           {avisoEdicao && <p className="aviso">{avisoEdicao}</p>}

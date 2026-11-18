@@ -87,7 +87,7 @@ function FormAssinatura({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
       </div>
       <p className="sub">Categoria Assinaturas — automática, não precisa escolher.</p>
       <div className="form-botoes">
-        {onCancelar && <button className="botao" onClick={onCancelar}>Cancelar</button>}
+        {onCancelar && <button className="botao botao-discreto" onClick={onCancelar}>Cancelar</button>}
         <button className="botao botao-primario" onClick={salvar}>{rotuloSalvar}</button>
       </div>
       {aviso && <p className="aviso">{aviso}</p>}

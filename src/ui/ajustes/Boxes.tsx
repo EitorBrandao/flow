@@ -73,7 +73,7 @@ function FormBox({ inicial, onSalvo, onCancelar }: {
         </>
       )}
       <div className="form-botoes">
-        <button className="botao" onClick={onCancelar}>Cancelar</button>
+        <button className="botao botao-discreto" onClick={onCancelar}>Cancelar</button>
         <button className="botao botao-primario" onClick={salvar}>Salvar</button>
       </div>
       {aviso && <p className="aviso">{aviso}</p>}

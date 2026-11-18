@@ -95,7 +95,7 @@ export default function SimuladorFluxo() {
           </div>
           <div style={{ display: 'flex', gap: 8, margin: '8px 0 12px' }}>
             <button className="botao botao-primario" style={{ flex: 1 }} disabled={!nomeNovo.trim()} onClick={criar}>Criar</button>
-            <button className="botao" style={{ flex: 1 }} onClick={cancelarNovo}>Cancelar</button>
+            <button className="botao botao-discreto" style={{ flex: 1 }} onClick={cancelarNovo}>Cancelar</button>
           </div>
         </>
       ) : (
