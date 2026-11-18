@@ -28,7 +28,7 @@ it('todo botão Fechar ou Cancelar usa .botao-discreto, salvo as exceções decl
   for (const arquivo of fontes(RAIZ)) {
     const linhas = fs.readFileSync(arquivo, 'utf8').split(/\r?\n/);
     linhas.forEach((linha, i) => {
-      const m = linha.match(/className="([^"]*)"[^>]*>(?:Fechar|Cancelar)<\/button>/);
+      const m = linha.match(/className="([^"]*)".*?[^=]>(?:Fechar|Cancelar)<\/button>/);
       if (!m || m[1].includes('botao-discreto')) return;
       if (EXCECOES.has(`${path.basename(arquivo)}:${m[1]}`)) return;
       fora.push(`${path.relative(RAIZ, arquivo)}:${i + 1}`);
