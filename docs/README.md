@@ -26,7 +26,7 @@ cada coisa — não repete o que ela diz.
   capítulo certo conforme o nível da sua mudança.
 - **[`estilo/`](estilo/)** — os capítulos do guia: `fundamentos.md` (princípios e tokens),
   `catalogo.md` (classes e componentes existentes), `transversais.md` (movimento e
-  acessibilidade), e os seis níveis de edição (`nivel-1-editar-tela.md` até
+  acessibilidade), `interacao.md` (confirmar, avisar e ordenar botões), e os seis níveis de edição (`nivel-1-editar-tela.md` até
   `nivel-6-mudanca-de-linguagem.md`).
 
 ## Para planejar e entregar

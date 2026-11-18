@@ -4,6 +4,7 @@ import { Settings } from 'lucide-react';
 import { useApp, type Aba } from '../state/store';
 import AdicionarSheet from './AdicionarSheet';
 import AvisoAtualizacao from './AvisoAtualizacao';
+import Retorno from './Retorno';
 import TelaAjustes from './TelaAjustes';
 import TelaAnalises from './TelaAnalises';
 import TelaCartao from './TelaCartao';
@@ -89,6 +90,7 @@ export default function Shell() {
         </main>
       </div>
       <AvisoAtualizacao />
+      <Retorno />
       <AdicionarSheet aberto={menuAberto} onFechar={() => setMenuAberto(false)} />
     </div>
   );

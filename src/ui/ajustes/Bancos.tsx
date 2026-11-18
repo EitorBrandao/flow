@@ -8,6 +8,7 @@ import { classeSaldo, formatarSaldo } from '../../domain/money';
 import type { ISODate } from '../../domain/types';
 import { boxIdConcreta, useApp } from '../../state/store';
 import CampoData from '../CampoData';
+import ConfirmarSheet from '../ConfirmarSheet';
 import CampoValor from '../CampoValor';
 import AvisoEscolhaBox from './AvisoEscolhaBox';
 
@@ -18,7 +19,7 @@ function textoContagemCartoes(n: number): string {
 }
 
 export default function Bancos() {
-  const { dados, boxSel, recarregar, hoje } = useApp();
+  const { dados, boxSel, recarregar, hoje, avisar } = useApp();
   const [nomeNovo, setNomeNovo] = useState('');
   const [avisoCriacao, setAvisoCriacao] = useState('');
   const [avisoEdicao, setAvisoEdicao] = useState('');
@@ -28,6 +29,7 @@ export default function Bancos() {
   const [magnitude, setMagnitude] = useState(0);
   const [negativo, setNegativo] = useState(false);
   const [dataEdicao, setDataEdicao] = useState<ISODate>(hoje);
+  const [excluindoId, setExcluindoId] = useState<string | null>(null);
   const uid = useId();
 
   // Trocar de box com um banco aberto não pode deixar o item sumido da lista (filtrada pela
@@ -103,11 +105,14 @@ export default function Bancos() {
     await recarregar();
   }
 
-  async function excluir(id: string) {
-    if (!window.confirm('Excluir este banco? Os cartões, os lançamentos e as recorrências dele ficam sem banco. Nada é apagado.')) return;
+  async function excluir() {
+    const id = excluindoId;
+    if (!id) return;
+    setExcluindoId(null);
     await repo.excluirBanco(id);
     await repo.sincronizarCartoes(dados!.config.horizonteProjecao);
     await recarregar();
+    avisar('Banco excluído');
   }
 
   async function tornarPadrao(id: string) {
@@ -223,7 +228,7 @@ export default function Bancos() {
                     {temPadrao && !ehPadrao && (
                       <button className="botao" onClick={() => tornarPadrao(b.id)}>Tornar padrão</button>
                     )}
-                    <button className="botao botao-perigo" onClick={() => excluir(b.id)}>Excluir</button>
+                    <button className="botao botao-perigo" onClick={() => setExcluindoId(b.id)}>Excluir</button>
                   </div>
                 </>
               )}
@@ -238,6 +243,13 @@ export default function Bancos() {
           </p>
         )}
       </div>
+      <ConfirmarSheet
+        aberto={excluindoId != null} titulo="Excluir este banco?"
+        resumo={<span className="cresce">{bancos.find((b) => b.id === excluindoId)?.nome}</span>}
+        apoio="Os cartões, os lançamentos e as recorrências dele ficam sem banco. Nada é apagado."
+        rotuloConfirmar="Excluir" perigo
+        onCancelar={() => setExcluindoId(null)} onConfirmar={excluir}
+      />
       {bancos.length > 0 && (
         <p className="sub">
           O saldo mostrado é o último saldo informado mais os lançamentos do banco depois dessa data.

@@ -8,6 +8,7 @@ import { viagensSobrepoem } from '../../domain/viagem';
 import { useApp } from '../../state/store';
 import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
+import ConfirmarSheet from '../ConfirmarSheet';
 import LinhaOrcamentoViagem from '../LinhaOrcamentoViagem';
 
 interface CamposViagem { nome: string; dataInicio: string; dataFim: string; orcamentoCent: number }
@@ -79,8 +80,9 @@ function FormViagem({ inicial, idExcluido, rotuloSalvar, onSalvo, onCancelar }: 
 }
 
 export default function Viagens() {
-  const { dados, recarregar, hoje } = useApp();
+  const { dados, recarregar, hoje, avisar } = useApp();
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [excluindoId, setExcluindoId] = useState<string | null>(null);
   // Muda a cada criação para o formulário do topo voltar vazio (remonta com `key`).
   const [versaoNova, setVersaoNova] = useState(0);
   if (!dados) return null;
@@ -99,10 +101,13 @@ export default function Viagens() {
     await recarregar();
   }
 
-  async function excluir(id: string) {
-    if (!window.confirm('Excluir esta viagem? Os lançamentos e compras marcados continuam existindo, só perdem a marcação de viagem.')) return;
+  async function excluir() {
+    const id = excluindoId;
+    if (!id) return;
+    setExcluindoId(null);
     await repo.excluirViagem(id);
     await recarregar();
+    avisar('Viagem excluída');
   }
 
   return (
@@ -136,12 +141,19 @@ export default function Viagens() {
                 )}
               </div>
               <button className="botao" aria-label="Editar" onClick={() => setEditandoId(v.id)}><Pencil size={16} /></button>
-              <button className="botao botao-perigo" onClick={() => excluir(v.id)}>Excluir</button>
+              <button className="botao botao-perigo" onClick={() => setExcluindoId(v.id)}>Excluir</button>
             </div>
           )
         ))}
         {viagensOrdenadas.length === 0 && <p className="sub">Nenhuma viagem cadastrada.</p>}
       </div>
+      <ConfirmarSheet
+        aberto={excluindoId != null} titulo="Excluir esta viagem?"
+        resumo={<span className="cresce">{dados.viagens.find((v) => v.id === excluindoId)?.nome}</span>}
+        apoio="Os lançamentos e as compras marcados continuam existindo; só perdem a marcação de viagem."
+        rotuloConfirmar="Excluir" perigo
+        onCancelar={() => setExcluindoId(null)} onConfirmar={excluir}
+      />
     </div>
   );
 }

@@ -129,6 +129,18 @@ export async function excluirLancamento(id: ID): Promise<void> {
   });
 }
 
+/**
+ * Devolve um lançamento apagado, com o mesmo id. Uso único: o "Desfazer" da UI, logo depois
+ * de um `excluirLancamento`. `put`, e não `add`: restaurar duas vezes não duplica.
+ */
+export async function restaurarLancamento(l: Lancamento): Promise<void> {
+  recusarEfetivoDeCenario(l.cenarioId, l.status);
+  await db.transaction('rw', db.lancamentos, db.cenarios, db.config, async () => {
+    await db.lancamentos.put(l);
+    if (!(await ehRascunho(l.cenarioId))) await marcarMudanca();
+  });
+}
+
 export async function confirmarPendente(id: ID, valorReal?: number, dataReal?: ISODate): Promise<void> {
   await atualizarLancamento(id, {
     status: 'efetivo',

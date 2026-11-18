@@ -12,6 +12,7 @@ import { boxIdConcreta, useApp } from '../../state/store';
 import AvisoEscolhaBox from './AvisoEscolhaBox';
 import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
+import ConfirmarSheet from '../ConfirmarSheet';
 import SeletorCategoria from '../SeletorCategoria';
 import SeletorBanco from '../SeletorBanco';
 import SeletorPills, { OPCOES_TIPO } from '../SeletorPills';
@@ -135,8 +136,9 @@ function FormRecorrencia({ inicial, rotuloSalvar, onSalvo, onCancelar, usarPadra
 }
 
 export default function Recorrencias() {
-  const { dados, boxSel, hoje, recarregar } = useApp();
+  const { dados, boxSel, hoje, recarregar, avisar } = useApp();
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [excluindoId, setExcluindoId] = useState<string | null>(null);
   // Muda a cada criação para o formulário do topo voltar vazio (remonta com `key`).
   const [versaoNova, setVersaoNova] = useState(0);
   // O formulário antigo não zerava tipo, categoria, início e dia depois de criar — só valor
@@ -191,10 +193,13 @@ export default function Recorrencias() {
     await recarregar();
   }
 
-  async function excluir(id: string) {
-    if (!window.confirm('Excluir a recorrência e seus previstos? (confirmados são mantidos)')) return;
+  async function excluir() {
+    const id = excluindoId;
+    if (!id) return;
+    setExcluindoId(null);
     await repo.excluirRecorrencia(id);
     await recarregar();
+    avisar('Recorrência excluída');
   }
 
   return (
@@ -254,13 +259,20 @@ export default function Recorrencias() {
               <div className="acoes">
                 <button className="botao" aria-label="Editar" onClick={() => setEditandoId(r.id)}><Pencil size={16} /></button>
                 <button className="botao" onClick={() => alternarAtiva(r.id)}>{r.ativa ? 'Desativar' : 'Ativar'}</button>
-                <button className="botao botao-perigo" onClick={() => excluir(r.id)}>Excluir</button>
+                <button className="botao botao-perigo" onClick={() => setExcluindoId(r.id)}>Excluir</button>
               </div>
             </div>
           )
         ))}
         {recs.length === 0 && <p className="sub">Nenhuma recorrência nesta box.</p>}
       </div>
+      <ConfirmarSheet
+        aberto={excluindoId != null} titulo="Excluir esta recorrência?"
+        resumo={<span className="cresce">{nomeCat(recs.find((r) => r.id === excluindoId)?.categoriaId ?? '')}</span>}
+        apoio="Os previstos dela são apagados. Os lançamentos já confirmados são mantidos."
+        rotuloConfirmar="Excluir" perigo
+        onCancelar={() => setExcluindoId(null)} onConfirmar={excluir}
+      />
     </div>
   );
 }

@@ -29,7 +29,7 @@ export default function ConfirmarRepetidoSheet({
         <p className="aviso">{frase}</p>
         <p className="sub" style={{ margin: 0 }}>{apoio}</p>
         <div className="acoes">
-          <button className="botao" style={{ flex: 1 }} onClick={onCancelar}>Cancelar</button>
+          <button className="botao botao-discreto" style={{ flex: 1 }} onClick={onCancelar}>Cancelar</button>
           <button className="botao botao-primario" style={{ flex: 1 }} onClick={onConfirmar}>
             {rotuloConfirmar}
           </button>

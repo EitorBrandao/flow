@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import * as repo from '../db/repo';
 import type { ItemCenario } from '../domain/simulacao';
 import { useApp } from '../state/store';
+import ConfirmarSheet from './ConfirmarSheet';
 import FormItemCenario, { type ValoresItem } from './FormItemCenario';
 import Sheet from './Sheet';
 
@@ -8,7 +10,8 @@ interface Props { item: ItemCenario; onFechar: () => void }
 
 /** Editar ou excluir um item de cenário. A repetição fica fixa. */
 export default function ItemCenarioSheet({ item, onFechar }: Props) {
-  const { dados, recarregar } = useApp();
+  const { dados, recarregar, avisar } = useApp();
+  const [confirmando, setConfirmando] = useState(false);
   if (!dados) return null;
   const horizonte = dados.config.horizonteProjecao;
   const tipoDe = (categoriaId: string) => dados.categorias.find((c) => c.id === categoriaId)?.tipo ?? 'gasto';
@@ -44,11 +47,22 @@ export default function ItemCenarioSheet({ item, onFechar }: Props) {
     onFechar();
   }
 
+  // "Uma vez" é um lançamento só: apaga na hora, com Desfazer. Com repetição, o item é uma
+  // regra e leva os previstos junto: pede confirmação.
   async function excluir() {
-    if (!window.confirm('Excluir este item do cenário?')) return;
-    if (item.repeticao === 'unica') await repo.excluirLancamento(item.id);
-    else await repo.excluirRecorrencia(item.id);
+    if (item.repeticao !== 'unica') { setConfirmando(true); return; }
+    const original = item.lancamento;
+    await repo.excluirLancamento(item.id);
     await recarregar();
+    avisar('Item excluído', () => repo.restaurarLancamento(original));
+    onFechar();
+  }
+
+  async function excluirRegra() {
+    setConfirmando(false);
+    await repo.excluirRecorrencia(item.id);
+    await recarregar();
+    avisar('Item excluído');
     onFechar();
   }
 
@@ -58,8 +72,14 @@ export default function ItemCenarioSheet({ item, onFechar }: Props) {
       <FormItemCenario boxId={boxId} inicial={inicial} repeticaoFixa rotuloBotao="Salvar" onSalvar={salvar} />
       <div className="acoes" style={{ marginTop: 12 }}>
         <button className="botao botao-perigo" onClick={excluir}>Excluir item</button>
-        <button className="botao" onClick={onFechar}>Fechar</button>
+        <button className="botao botao-discreto" onClick={onFechar}>Fechar</button>
       </div>
+      <ConfirmarSheet
+        aberto={confirmando} titulo="Excluir este item do cenário?"
+        apoio="O item se repete: as parcelas dele saem da simulação."
+        rotuloConfirmar="Excluir" perigo
+        onCancelar={() => setConfirmando(false)} onConfirmar={excluirRegra}
+      />
     </Sheet>
   );
 }

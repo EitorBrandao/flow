@@ -17,7 +17,8 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.lista` / `.item` / `.item-coluna` / `.item-elevado` / `.linha-topo` / `.linha-topo-2-1` | lista vertical de itens-card; `.item-coluna` quando o item precisa de uma segunda linha (ex.: ações abaixo); `.linha-topo` para a linha principal dentro de um item-coluna; `.linha-topo-2-1` (junto com `.linha-topo`) quando a linha principal precisa de proporção fixa 2:1 entre descrição e valor (evita word-wrap com valor/botões espremendo o texto); `.item-elevado` (junto com `.item`) troca o fundo para `--surface2`, para o item sobre uma superfície já `--surface` (ex.: blocos de Modo de uso em Ajustes); `.ativo` em `.item` marca o item selecionado com `--ac-dim`/`--ac`, mesmo padrão de `.botao.ativo` (ex.: categoria que filtra os lançamentos na aba Cartão) |
 | `.cresce` | filho flex que ocupa o espaço restante (`flex: 1; min-width: 0`) |
 | `.acoes` | linha de botões de ação dentro de um item (ex.: Confirmar/Descartar) |
-| `.botao`, `.botao-primario`, `.botao-perigo` | botão padrão / ação principal (azul) / ação destrutiva (texto vermelho). `.botao:disabled` fica a 45% de opacidade, em toda tela |
+| `.botao`, `.botao-primario`, `.botao-perigo`, `.botao-discreto`, `.botao-perigo-cheio` | botão padrão / ação principal (azul, no máximo um por linha de botões) / ação destrutiva (texto vermelho) / ação que só sai da tela, como Fechar e Cancelar (contorno `--muted`, sem fundo) / botão que apaga dentro do `ConfirmarSheet` (fundo `--neg`). `.botao:disabled` fica a 45% de opacidade, em toda tela |
+| `.sheet-botoes` | rodapé de botões de um sheet: a ação destrutiva fica à esquerda, e o primeiro botão com a classe `empurra` (só vale dentro de `.sheet-botoes`) joga os demais para a direita, com a ação principal por último |
 | `.botao-sinal` | modificador de `.botao` para o botão de alternar sinal (`+`/`−`) ao lado de um `CampoValor` — padding menor e largura mínima de alvo de toque. Usado nas duas conferências da `TelaHoje`, em Ajustes → Boxes e em Ajustes → Bancos |
 | `.botao-com-icone` | modificador de `.botao` pra ícone + texto lado a lado (`display: inline-flex; gap: 8px`) |
 | `.alca-arrastar` | modificador de `.botao` para o puxador de arrastar e reordenar; `touch-action: none` para o toque não virar rolagem no celular |
@@ -86,6 +87,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.conferencia-bancos` / `.conferencia-bancos-*` | conferência de saldo por banco na `TelaHoje.tsx`, no lugar do campo único quando a box (ou a "casa" inteira) tem bancos cadastrados. `.conferencia-bancos` é a classe raiz (coluna, gap 8px); dentro dela, `.linha-banco` (aninhada, sem existência própria) é o nome do banco à esquerda (`span` em `--muted` 14px) e o `CampoValor` à direita; `.total` (aninhada) é a linha "Total informado" e a linha "Total calculado no Flow", com borda superior em `--line`, `tabular-nums` |
 | `.conferencia-saldo` | conferência de saldo único na `TelaHoje.tsx`, quando não há bancos cadastrados. Mesmo layout da `.conferencia-bancos` (coluna, gap 8px); a `.total` aninhada é a linha "Total calculado no Flow", idêntica à da conferência por banco |
 | `.aviso-atualizacao-pista` / `.aviso-atualizacao` | aviso de nova versão (`AvisoAtualizacao.tsx`). `-pista` é a faixa fixa acima da barra de navegação, que não captura toque; `.aviso-atualizacao` é a pílula tocável (`--surface2`, 13px, altura mínima de 38px). No desktop, a faixa sobe ao canto inferior, ao lado da barra lateral |
+| `.retorno-pista` / `.retorno` / `.retorno-acao` | aviso de retorno (`Retorno.tsx`). `-pista` é a faixa fixa acima da barra de navegação, acima dos sheets, que não captura toque; `.retorno` é a pílula (`--surface2`, 14px, altura mínima de 44px); `.retorno-acao` é o "Desfazer", em `--ac`. No desktop, a faixa sobe ao canto inferior, ao lado da barra lateral |
 | `.backup-rodape` / `.backup-rodape-neutro` | rodapé de backup da Visão (`TelaHoje.tsx`). `.backup-rodape` é só a forma (botão de bloco, sem borda, alinhado à esquerda, altura mínima de 42px); `.backup-rodape-neutro` é o estado sem mudanças pendentes (sem fundo, `--muted`, 13px). Nos estados âmbar e vermelho, o botão leva `.aviso` / `.aviso .aviso-urgente` no lugar da `-neutro` |
 | `.frequentes` | faixa de atalhos no topo da sheet Adicionar (`AdicionarSheet.tsx`) |
 | `.frequentes-chip` | pílula de atalho (categoria + valor) dentro de `.frequentes` — `--surface2`, porque a sheet já é `--surface` |
@@ -137,6 +139,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   na primeira abertura depois de uma atualização. Toca e abre Ajustes › Versão. Guarda a última
   versão vista em `localStorage` (`flow:versao-vista`); a primeira instalação não avisa. Classes
   `.aviso-atualizacao-pista` e `.aviso-atualizacao`.
+- **`Retorno.tsx`** — aviso curto depois de uma ação, com "Desfazer" quando a ação tem volta. Montado uma vez no `Shell`; as telas chamam `useApp.getState().avisar(texto, desfazer?)`. Some em 3 s, ou em 6 s quando tem "Desfazer". Regras em `docs/estilo/interacao.md`.
 - **`AvisoFaturaForaDoFluxo.tsx`** — o `.aviso` de fatura que não bate com o Fluxo
   (`faturaForaDoFluxo`, `domain/fatura.ts`): fatura vencida que ficou de fora, ou paga a menor
   com o link "Corrigir o valor pago". Usado na `TelaCartao` e no `FaturaResumo`, para as duas
@@ -177,6 +180,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   Consumido pela fila de pendentes da `TelaHoje`, pela fatura da `TelaCartao` e pelo `FaturaResumo`; recebe o
   lançamento da fatura e o total dela, porque nem sempre um é o outro (fatura já paga em
   parte tem valor menor que o total calculado).
+- **`ConfirmarSheet.tsx`** — sheet de confirmação do próprio app, no lugar do `window.confirm`. Título em pergunta, resumo do item, uma frase de efeito, Cancelar e a ação. `perigo` deixa o botão vermelho. Só para o que apaga em cascata ou não tem volta; exclusão simples usa o "Desfazer" do `Retorno`.
 - **`ConfirmarRepetidoSheet.tsx`** — sheet de confirmação aberto quando o item novo é igual a um que já
   existe: lançamento na `TelaLancar` (mesma box, data, valor e tipo) ou compra no `FormCompra` (mesmo
   cartão, data, valor total e parcelas). Mostra um `.aviso` com a frase do item existente, um texto de

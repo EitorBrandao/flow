@@ -433,7 +433,7 @@ function ConferenciaCasa({ conferencia, boxes, hoje, onSalvar }: {
 }
 
 export default function TelaHoje() {
-  const { dados, boxSel, hoje, recarregar, abrirAjustes, abrirFluxo } = useApp();
+  const { dados, boxSel, hoje, recarregar, abrirAjustes, abrirFluxo, avisar } = useApp();
   const simples = useModo('hoje') === 'simples';
   const [pagando, setPagando] = useState<Lancamento | null>(null);
   const [avisoSalvarBancos, setAvisoSalvarBancos] = useState<string | null>(null);
@@ -541,10 +541,10 @@ export default function TelaHoje() {
     await repo.confirmarPendente(id);
     await recarregar();
   }
-  async function descartar(id: string) {
-    if (!window.confirm('Descartar este previsto?')) return;
-    await repo.excluirLancamento(id);
+  async function descartar(l: Lancamento) {
+    await repo.excluirLancamento(l.id);
     await recarregar();
+    avisar('Previsto descartado', () => repo.restaurarLancamento(l));
   }
 
   const totalDaFaturaPendente = pagando?.valor ?? 0;
@@ -715,7 +715,7 @@ export default function TelaHoje() {
                       {ehFatura(l) ? (
                         <button className="botao" aria-label={`Paguei outro valor de ${nomeCat(l.categoriaId)}`} onClick={() => setPagando(l)}>Paguei outro valor</button>
                       ) : (
-                        <button className="botao" aria-label="Descartar" onClick={() => descartar(l.id)}>Descartar</button>
+                        <button className="botao" aria-label="Descartar" onClick={() => descartar(l)}>Descartar</button>
                       )}
                     </>
                   )}

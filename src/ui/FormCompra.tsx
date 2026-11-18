@@ -12,6 +12,7 @@ import { useApp } from '../state/store';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import ConfirmarRepetidoSheet from './ConfirmarRepetidoSheet';
+import ConfirmarSheet from './ConfirmarSheet';
 import EscolherArquivo from './EscolherArquivo';
 import LinhaOrcamentoViagem from './LinhaOrcamentoViagem';
 import SeletorCategoria from './SeletorCategoria';
@@ -62,7 +63,8 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
   inicial?: InicialCompra;
   onFechar: () => void;
 }) {
-  const { dados, hoje, recarregar } = useApp();
+  const { dados, hoje, recarregar, avisar } = useApp();
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [valor, setValor] = useState(compra?.valorTotal ?? inicial?.valorTotal ?? 0);
   const [data, setData] = useState(compra?.data ?? inicial?.data ?? hoje);
   // Só sugere em compra nova, sem categoria já escolhida (atalho de "Frequentes").
@@ -212,9 +214,10 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
 
   async function excluir() {
     if (!compra) return;
-    if (!window.confirm('Excluir a compra e todas as suas parcelas?')) return;
+    setConfirmandoExclusao(false);
     await repo.excluirCompraCartao(compra.id, horizonte);
     await recarregar();
+    avisar('Compra excluída');
     onFechar();
   }
 
@@ -360,7 +363,15 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
         {avisoSalvar && <p className="aviso" style={{ flexBasis: '100%' }}>{avisoSalvar}</p>}
         <button className="botao botao-primario" style={{ alignSelf: 'flex-end' }} onClick={() => salvar()}>Salvar</button>
         <button className="botao" style={{ alignSelf: 'flex-end' }} onClick={onFechar}>Cancelar</button>
-        {compra && <button className="botao botao-perigo" style={{ alignSelf: 'flex-end' }} onClick={excluir}>Excluir</button>}
+        {compra && <button className="botao botao-perigo" style={{ alignSelf: 'flex-end' }} onClick={() => setConfirmandoExclusao(true)}>Excluir</button>}
+        {compra && (
+          <ConfirmarSheet
+            aberto={confirmandoExclusao} titulo="Excluir esta compra?"
+            apoio="Todas as parcelas dela saem das faturas."
+            rotuloConfirmar="Excluir" perigo
+            onCancelar={() => setConfirmandoExclusao(false)} onConfirmar={excluir}
+          />
+        )}
       </div>
       <ConfirmarRepetidoSheet
         aberto={repetida != null}

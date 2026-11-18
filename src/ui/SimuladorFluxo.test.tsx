@@ -249,40 +249,57 @@ it('parcelado 3x a partir de hoje gera 3 lançamentos', async () => {
   }
 });
 
-it('Tornar real e Excluir cenário pedem confirmação', async () => {
+it('Excluir cenário pede confirmação; Cancelar mantém o cenário', async () => {
   const { box, casa } = await preparar();
   const c = await cenarioCom('X', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });
-  const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false);
   render(<SimuladorFluxo />);
   await userEvent.click(screen.getByRole('button', { name: /^X/ }));
   await userEvent.click(screen.getByRole('button', { name: 'Excluir cenário' }));
-  expect(confirmar).toHaveBeenCalled();
+  const dialogo = await screen.findByRole('dialog', { name: /^Excluir o cenário ".+"\?$/ });
+  await userEvent.click(within(dialogo).getByRole('button', { name: 'Cancelar' }));
   expect(await db.cenarios.get(c.id)).toBeDefined();
-  confirmar.mockRestore();
+});
+
+it('tocar duas vezes em Excluir cenário abre um diálogo só', async () => {
+  const { box, casa } = await preparar();
+  await cenarioCom('W', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });
+  render(<SimuladorFluxo />);
+  await userEvent.click(screen.getByRole('button', { name: /^W/ }));
+  await userEvent.dblClick(screen.getByRole('button', { name: 'Excluir cenário' }));
+  await screen.findByRole('dialog', { name: /^Excluir o cenário ".+"\?$/ });
+  expect(screen.getAllByRole('dialog', { name: /^Excluir o cenário ".+"\?$/ })).toHaveLength(1);
 });
 
 it('Tornar real avisa sobre Pendentes quando há item de cenário com data já passada (hoje inclusive)', async () => {
   const { box, casa } = await preparar(); // hoje = '2026-09-15'
   await cenarioCom('Y', true, { boxId: box.id, categoriaId: casa.id, data: '2026-09-15', valor: 100 });
-  const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false);
   render(<SimuladorFluxo />);
   await userEvent.click(screen.getByRole('button', { name: /^Y/ }));
   await userEvent.click(screen.getByRole('button', { name: 'Tornar real' }));
-  expect(confirmar).toHaveBeenCalledWith(
-    'Converter "Y" em lançamentos reais? Itens com data já passada vão para os Pendentes, em Hoje.',
-  );
-  confirmar.mockRestore();
+  const dialogo = await screen.findByRole('dialog', { name: /^Converter ".+" em lançamentos reais\?$/ });
+  expect(within(dialogo).getByText('Itens com data já passada vão para os Pendentes, em Hoje.')).toBeInTheDocument();
+  await userEvent.click(within(dialogo).getByRole('button', { name: 'Cancelar' }));
 });
 
 it('Tornar real não avisa sobre Pendentes quando todos os itens do cenário são futuros', async () => {
   const { box, casa } = await preparar(); // hoje = '2026-09-15'
   await cenarioCom('Z', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });
-  const confirmar = vi.spyOn(window, 'confirm').mockReturnValue(false);
   render(<SimuladorFluxo />);
   await userEvent.click(screen.getByRole('button', { name: /^Z/ }));
   await userEvent.click(screen.getByRole('button', { name: 'Tornar real' }));
-  expect(confirmar).toHaveBeenCalledWith('Converter "Z" em lançamentos reais?');
-  confirmar.mockRestore();
+  const dialogo = await screen.findByRole('dialog', { name: /^Converter ".+" em lançamentos reais\?$/ });
+  expect(within(dialogo).queryByText(/Pendentes/)).not.toBeInTheDocument();
+  await userEvent.click(within(dialogo).getByRole('button', { name: 'Cancelar' }));
+});
+
+it('tocar duas vezes em Tornar real abre um diálogo só', async () => {
+  const { box, casa } = await preparar();
+  await cenarioCom('V', true, { boxId: box.id, categoriaId: casa.id, data: '2026-10-10', valor: 100 });
+  render(<SimuladorFluxo />);
+  await userEvent.click(screen.getByRole('button', { name: /^V/ }));
+  await userEvent.dblClick(screen.getByRole('button', { name: 'Tornar real' }));
+  await screen.findByRole('dialog', { name: /^Converter ".+" em lançamentos reais\?$/ });
+  expect(screen.getAllByRole('dialog', { name: /^Converter ".+" em lançamentos reais\?$/ })).toHaveLength(1);
 });
 
 it('minimizar a tabela combinada esconde a tabela mas mantém visível a frase de resumo', async () => {

@@ -230,3 +230,43 @@ it('sem cartão, o aviso leva a Ajustes → Cartões', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Cadastrar cartão' }));
   expect(useApp.getState().ajustesSecao).toBe('cartoes');
 });
+
+/** Responde ao sheet de confirmação da tela, pelo título do diálogo. */
+async function responderNoSheet(titulo: string | RegExp, botao: string) {
+  const dialogo = await screen.findByRole('dialog', { name: titulo });
+  await userEvent.click(within(dialogo).getByRole('button', { name: botao }));
+}
+
+async function prepararAssinatura() {
+  const cartao = await prepararCartao();
+  return repo.salvarAssinatura({
+    cartaoId: cartao.id, categoriaCartaoId: await repo.categoriaAssinaturasDe(cartao.id),
+    valor: 3990, dataInicio: '2026-07-01', diaDoMes: 8, parcelas: null, descricao: 'Netflix',
+  }, '2027-12-31');
+}
+
+it('Cancelar não apaga a assinatura', async () => {
+  const assinatura = await prepararAssinatura();
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Assinaturas />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  expect(within(screen.getByRole('dialog', { name: 'Excluir esta assinatura?' })).getByText('Netflix')).toBeInTheDocument();
+  await responderNoSheet('Excluir esta assinatura?', 'Cancelar');
+
+  expect(await db.recorrenciasCartao.get(assinatura.id)).toBeDefined();
+});
+
+it('confirmar apaga a assinatura e avisa', async () => {
+  await prepararAssinatura();
+  await useApp.getState().iniciar();
+  useApp.setState({ hoje: '2026-07-01' });
+  render(<Assinaturas />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  await responderNoSheet('Excluir esta assinatura?', 'Excluir');
+
+  await waitFor(async () => expect(await db.recorrenciasCartao.count()).toBe(0));
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Assinatura excluída'));
+});

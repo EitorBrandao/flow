@@ -1,0 +1,4 @@
+- Confirmações com o visual do app, no lugar da janela do navegador.
+  - A janela mostra o que vai ser apagado e o efeito, antes de você confirmar.
+- Excluir um lançamento ou descartar um pendente agora é imediato, com Desfazer por alguns segundos.
+- Editor de lançamento com a ação principal em azul e Excluir separado, à esquerda.

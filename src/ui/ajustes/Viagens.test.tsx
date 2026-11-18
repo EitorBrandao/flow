@@ -11,6 +11,12 @@ beforeEach(async () => {
   await limparDb();
 });
 
+/** Responde ao sheet de confirmação da tela, pelo título do diálogo. */
+async function responderNoSheet(titulo: string | RegExp, botao: string) {
+  const dialogo = await screen.findByRole('dialog', { name: titulo });
+  await userEvent.click(within(dialogo).getByRole('button', { name: botao }));
+}
+
 it('cadastra uma viagem', async () => {
   await useApp.getState().iniciar();
   render(<Viagens />);
@@ -128,15 +134,28 @@ it('edita uma viagem existente', async () => {
   expect(atualizada?.nome).toBe('Praia em família');
 });
 
-it('exclui uma viagem, desvinculando sem apagar lançamentos', async () => {
+it('exclui uma viagem após confirmar no sheet, e avisa', async () => {
   await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-10', dataFim: '2026-01-15' });
   await useApp.getState().iniciar();
-  vi.spyOn(window, 'confirm').mockReturnValue(true);
   render(<Viagens />);
 
   await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  await responderNoSheet('Excluir esta viagem?', 'Excluir');
 
   await waitFor(async () => expect(await db.viagens.count()).toBe(0));
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Viagem excluída'));
+});
+
+it('Cancelar não apaga a viagem', async () => {
+  await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-10', dataFim: '2026-01-15' });
+  await useApp.getState().iniciar();
+  render(<Viagens />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  expect(within(screen.getByRole('dialog', { name: 'Excluir esta viagem?' })).getByText('Praia')).toBeInTheDocument();
+  await responderNoSheet('Excluir esta viagem?', 'Cancelar');
+
+  expect(await db.viagens.count()).toBe(1);
 });
 
 it('a lista tem o título de grupo "Cadastradas"', async () => {
