@@ -1,9 +1,14 @@
 // scripts/varredura/comparar.mjs
 // Separa achado novo de achado conhecido. Função pura, para poder ser testada sem navegador.
 
-/** Chave estável de um achado. Dígitos viram "#": datas e contagens mudam de um dia para o outro. */
-export function chaveDoAchado({ passo, tipo, alvo }) {
-  return `${passo} | ${tipo} | ${String(alvo).replace(/\d+/g, '#')}`;
+/**
+ * Chave estável de um achado: `tipo | alvo`. Dígitos viram "#": datas e contagens mudam de um dia para o outro.
+ * O passo fica de fora de propósito: o mesmo elemento visto em duas telas (ex.: a barra de navegação)
+ * é um achado só. Um passo novo que visita uma tela já conhecida não acusa de novo os mesmos elementos.
+ */
+export function chaveDoAchado({ tipo, alvo }) {
+  // `.ativo` é estado, não elemento: a aba ativa e a mesma aba inativa são um achado só.
+  return `${tipo} | ${String(alvo).replace(/\.ativo\b/g, '').replace(/\d+/g, '#')}`;
 }
 
 /** `novos`: achados fora da lista de conhecidos. `resolvidos`: conhecidos que não apareceram. */
