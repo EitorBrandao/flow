@@ -178,6 +178,7 @@ export default function Recorrencias() {
     });
     setVersaoNova((v) => v + 1);
     await recarregar();
+    avisar('Recorrência criada');
   }
 
   async function atualizar(id: string, campos: CamposRecorrenciaSalvos) {
@@ -185,12 +186,14 @@ export default function Recorrencias() {
     await repo.salvarRecorrencia({ ...original, ...campos }, dados!.config.horizonteProjecao);
     setEditandoId(null);
     await recarregar();
+    avisar('Recorrência salva');
   }
 
   async function alternarAtiva(id: string) {
     const rec = recs.find((r) => r.id === id)!;
     await repo.salvarRecorrencia({ ...rec, ativa: !rec.ativa }, dados!.config.horizonteProjecao);
     await recarregar();
+    avisar(rec.ativa ? 'Recorrência pausada' : 'Recorrência retomada');
   }
 
   async function excluir() {

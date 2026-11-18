@@ -9,6 +9,7 @@ import Viagens from './Viagens';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ retorno: null });
 });
 
 /** Responde ao sheet de confirmação da tela, pelo título do diálogo. */
@@ -243,4 +244,47 @@ it('orçamento 0 gravado direto (ex.: backup importado) não vira um "0" solto n
 
   const item = (await screen.findByText('Serra')).closest('.cresce')!;
   expect(item.textContent).toBe('Serra10/07/2026 – 14/07/2026');
+});
+
+describe('retorno ao salvar', () => {
+  it('criar uma viagem avisa "Viagem criada"', async () => {
+    await useApp.getState().iniciar();
+    render(<Viagens />);
+    await userEvent.type(screen.getByLabelText('Nome'), 'Praia');
+    await userEvent.clear(screen.getByLabelText('Data inicial'));
+    await userEvent.type(screen.getByLabelText('Data inicial'), '2026-01-31');
+    await userEvent.clear(screen.getByLabelText('Data final'));
+    await userEvent.type(screen.getByLabelText('Data final'), '2026-02-05');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Viagem criada'));
+  });
+
+  it('data final anterior à inicial não avisa', async () => {
+    await useApp.getState().iniciar();
+    render(<Viagens />);
+    await userEvent.type(screen.getByLabelText('Nome'), 'Praia');
+    await userEvent.clear(screen.getByLabelText('Data inicial'));
+    await userEvent.type(screen.getByLabelText('Data inicial'), '2026-02-05');
+    await userEvent.clear(screen.getByLabelText('Data final'));
+    await userEvent.type(screen.getByLabelText('Data final'), '2026-01-31');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    expect(await screen.findByText(/data final não pode ser anterior/)).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('editar uma viagem avisa "Viagem salva"', async () => {
+    await repo.salvarViagem({ nome: 'Praia', dataInicio: '2026-01-10', dataFim: '2026-01-15' });
+    await useApp.getState().iniciar();
+    render(<Viagens />);
+    const item = screen.getByText('Praia').closest('.item') as HTMLElement;
+    await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+    const nome = within(item).getByLabelText('Nome');
+    await userEvent.clear(nome);
+    await userEvent.type(nome, 'Praia Nova');
+    await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Viagem salva'));
+  });
 });

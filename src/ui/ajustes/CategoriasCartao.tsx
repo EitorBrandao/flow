@@ -60,7 +60,7 @@ function ItemCategoriaCartao({
 }
 
 export default function CategoriasCartao() {
-  const { dados, boxSel, recarregar, abrirAjustes } = useApp();
+  const { dados, boxSel, recarregar, abrirAjustes, avisar } = useApp();
   const [cartaoId, setCartaoId] = useState('');
   const [nome, setNome] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -113,6 +113,7 @@ export default function CategoriasCartao() {
     }
     await repo.salvarCategoriaCartao({ cartaoId, nome: nome.trim(), ordem: proximaOrdem(ativas) });
     await recarregar();
+    avisar('Categoria criada');
     setNome('');
     setAvisoCriacao('');
   }
@@ -126,6 +127,7 @@ export default function CategoriasCartao() {
     const destino = cat.arquivada ? ativas : arquivadas;
     await repo.atualizarCategoriaCartao(cat.id, { arquivada: !cat.arquivada, ordem: proximaOrdem(destino) });
     await recarregar();
+    avisar(cat.arquivada ? 'Categoria restaurada' : 'Categoria arquivada');
   }
 
   function iniciarEdicao(id: string, nomeAtual: string) {
@@ -160,6 +162,7 @@ export default function CategoriasCartao() {
     setEditandoId(null);
     setNomeEdit('');
     await recarregar();
+    avisar('Categoria salva');
   }
 
   function props(c: CategoriaCartao): ItemProps {

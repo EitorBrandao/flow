@@ -93,12 +93,14 @@ export default function Viagens() {
     await repo.salvarViagem(campos);
     setVersaoNova((v) => v + 1);
     await recarregar();
+    avisar('Viagem criada');
   }
 
   async function atualizar(id: string, campos: CamposViagem) {
     await repo.atualizarViagem(id, campos);
     setEditandoId(null);
     await recarregar();
+    avisar('Viagem salva');
   }
 
   async function excluir() {

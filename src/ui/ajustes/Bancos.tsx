@@ -69,6 +69,7 @@ export default function Bancos() {
     await repo.salvarBanco({ boxId: boxId!, nome: nomeNovo.trim(), ordem });
     await repo.sincronizarCartoes(dados!.config.horizonteProjecao);
     await recarregar();
+    avisar('Banco criado');
     setNomeNovo('');
     setAvisoCriacao('');
   }
@@ -103,6 +104,7 @@ export default function Bancos() {
     setEditandoId(null);
     setAvisoEdicao('');
     await recarregar();
+    avisar('Banco salvo');
   }
 
   async function excluir() {
@@ -119,6 +121,7 @@ export default function Bancos() {
     await repo.definirBancoPadrao(id);
     await repo.sincronizarCartoes(dados!.config.horizonteProjecao);
     await recarregar();
+    avisar('Banco padrão definido');
   }
 
   return (

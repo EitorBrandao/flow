@@ -11,6 +11,7 @@ import Recorrencias from './Recorrencias';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ retorno: null });
 });
 
 // Relógio fixo: a recorrência ocorre em 2026-07-05, 08-05 e 09-05, e o teste exige que ao
@@ -424,4 +425,69 @@ it('confirmar apaga a recorrência e avisa', async () => {
 
   await waitFor(async () => expect(await db.recorrencias.count()).toBe(0));
   await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Recorrência excluída'));
+});
+
+describe('retorno ao salvar', () => {
+  async function comRecorrencia() {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
+    await repo.salvarRecorrencia({
+      boxId: box.id, categoriaId: cat.id, valor: 5000, dataInicio: '2026-07-01',
+      diaDoMes: 5, parcelas: null,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+  }
+
+  it('criar uma recorrência avisa "Recorrência criada"', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    await repo.salvarCategoria({ boxId: box.id, nome: 'aluguel', tipo: 'gasto', ordem: 0 });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    render(<Recorrencias />);
+    await userEvent.type(screen.getByLabelText('Valor'), '100,00');
+    await userEvent.click(screen.getByText('aluguel'));
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Recorrência criada'));
+  });
+
+  it('criar sem valor e sem categoria não avisa', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    await useApp.getState().iniciar();
+    render(<Recorrencias />);
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    expect(await screen.findByText('Digite um valor para criar.')).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('editar uma recorrência avisa "Recorrência salva"', async () => {
+    await comRecorrencia();
+    render(<Recorrencias />);
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    const valorInput = screen.getByLabelText('Valor');
+    await userEvent.clear(valorInput);
+    await userEvent.type(valorInput, '75,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Recorrência salva'));
+  });
+
+  it('pausar avisa "Recorrência pausada" e retomar avisa "Recorrência retomada"', async () => {
+    await comRecorrencia();
+    render(<Recorrencias />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Desativar' }));
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Recorrência pausada'));
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Ativar' }));
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Recorrência retomada'));
+  });
 });
