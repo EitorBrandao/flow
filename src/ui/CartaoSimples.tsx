@@ -75,6 +75,7 @@ function FaturaDoMes({ cartao, mes }: { cartao: Cartao; mes: string }) {
     try {
       await repo.salvarConferenciaFatura(cartao.id, mes, valor, true, horizonte);
       await recarregar();
+      avisar('Fatura salva');
     } finally {
       ocupadoRef.current = false;
     }
@@ -99,6 +100,7 @@ function FaturaDoMes({ cartao, mes }: { cartao: Cartao; mes: string }) {
     if (!lancFatura) return;
     await repo.confirmarPendente(lancFatura.id);
     await recarregar();
+    avisar('Fatura paga');
   }
 
   return (

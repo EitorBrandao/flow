@@ -391,6 +391,49 @@ describe('conferência por banco', () => {
     expect(await screen.findByText(/Diferença/)).toBeInTheDocument();
   });
 
+  it('informar o saldo de um banco avisa "Saldos conferidos"', async () => {
+    const box = await comBoxESaldo();
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+    await userEvent.click(screen.getByLabelText('Banco Um'));
+    await userEvent.keyboard('50000');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Saldos conferidos'));
+  });
+
+  it('salvar a conferência dos bancos sem mudar nada não avisa', async () => {
+    const box = await comBoxESaldo();
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: box.id });
+
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
+
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('na visão casa, informar o saldo de um banco avisa "Saldos conferidos"', async () => {
+    const box = await comBoxESaldo();
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await useApp.getState().recarregar();
+    useApp.setState({ boxSel: 'casa' });
+
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+    await userEvent.click(screen.getByLabelText('Banco Um'));
+    await userEvent.keyboard('50000');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Saldos conferidos'));
+  });
+
   it('tocar num banco sem digitar não sobrescreve o saldo dele ao salvar outro banco', async () => {
     // Reprodução do bug: CampoValor zera o buffer no primeiro foco (onChange(0)) mesmo sem o
     // usuário digitar nada (ver CampoValor.test.tsx). Um "tocados = qualquer onChange" gravaria
@@ -517,6 +560,7 @@ describe('conferência por banco', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência dos bancos' }));
 
     expect(await screen.findByText(/nem tudo foi salvo/i)).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
     erroSpy.mockRestore();
   });
 
@@ -1265,5 +1309,50 @@ describe('Conferir na casa, por box', () => {
     const { ana } = await montarCasa();
     await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
     expect((await db.boxes.get(ana.id))?.saldoDeclaradoCent).toBeUndefined();
+  });
+});
+
+describe('retorno ao salvar a conferência de saldo', () => {
+  it('salvar o saldo real avisa "Saldo conferido"', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+    render(<TelaHoje />);
+    await abrirAba('Conferir');
+    await userEvent.type(screen.getByLabelText('Saldo real no banco'), '1050,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Saldo conferido'));
+  });
+
+  it('salvar sem mudar o saldo real não grava nem avisa', async () => {
+    const agora = agoraISO();
+    const box = {
+      id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-07-01',
+      saldoDeclaradoCent: 105000, dataSaldoDeclarado: '2026-07-02', criadoEm: agora, alteradoEm: agora,
+    };
+    await repo.salvarBox(box);
+    await repo.salvarCategoria({ boxId: box.id, nome: 'salario', tipo: 'ganho', ordem: 0 });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    // Espiões: a gravação, se existisse, aconteceria dentro do clique, antes de qualquer await.
+    const gravaConfig = vi.spyOn(repo, 'salvarConfig');
+    const gravaBox = vi.spyOn(repo, 'salvarBox');
+    try {
+      render(<TelaHoje />);
+      await abrirAba('Conferir');
+      await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+      expect(gravaBox).not.toHaveBeenCalled();
+      expect(gravaConfig).not.toHaveBeenCalled();
+      expect(useApp.getState().retorno).toBeNull();
+    } finally {
+      gravaConfig.mockRestore();
+      gravaBox.mockRestore();
+    }
   });
 });

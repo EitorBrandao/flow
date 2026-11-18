@@ -25,7 +25,7 @@ import { useModo } from './useModo';
 type AbaCartao = 'resumo' | 'lancamentos' | 'conferencia';
 
 function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: string; totalCent: number }) {
-  const { dados, recarregar } = useApp();
+  const { dados, recarregar, avisar } = useApp();
   const conf = dados?.conferenciasFatura.find((c) => c.cartaoId === cartao.id && c.mes === mes);
   const [valor, setValor] = useState<number>(conf?.valorAppCent ?? 0);
   const uid = useId();
@@ -36,6 +36,7 @@ function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: str
     if (valor > 0) {
       await repo.salvarConferenciaFatura(cartao.id, mes, valor, conf?.usarValorApp ?? false, horizonte);
       await recarregar();
+      avisar('Valor da fatura salvo');
     }
   }
 
@@ -44,6 +45,7 @@ function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: str
       await repo.removerConferenciaFatura(cartao.id, mes, horizonte);
       await recarregar();
       setValor(0);
+      avisar('Valor da fatura removido');
     }
   }
 
@@ -51,6 +53,7 @@ function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: str
     if (!conf) return;
     await repo.salvarConferenciaFatura(cartao.id, mes, conf.valorAppCent, usar, horizonte);
     await recarregar();
+    avisar('Valor da fatura salvo');
   }
 
   const diff = conf != null ? conf.valorAppCent - totalCent : null;
@@ -97,7 +100,7 @@ function BlocoConferencia({ cartao, mes, totalCent }: { cartao: Cartao; mes: str
  *  vencimento: é essa a chave que `AjusteFechamento` usa (ver docs/superpowers/specs/
  *  2026-09-02-ajuste-fechamento-fatura-design.md). */
 function BlocoAjusteFechamento({ cartao, mesFechamento }: { cartao: Cartao; mesFechamento: string }) {
-  const { dados, recarregar } = useApp();
+  const { dados, recarregar, avisar } = useApp();
   const existente = dados?.ajustesFechamento.find((a) => a.cartaoId === cartao.id && a.mes === mesFechamento);
   const [dia, setDia] = useState<string>(String(existente?.diaFechamento ?? cartao.diaFechamento));
   const uid = useId();
@@ -111,6 +114,7 @@ function BlocoAjusteFechamento({ cartao, mesFechamento }: { cartao: Cartao; mesF
   async function salvar() {
     await repo.salvarAjusteFechamento(cartao.id, mesFechamento, clampDia(dia), horizonte);
     await recarregar();
+    avisar('Fechamento ajustado');
   }
 
   async function remover() {
@@ -118,6 +122,7 @@ function BlocoAjusteFechamento({ cartao, mesFechamento }: { cartao: Cartao; mesF
       await repo.removerAjusteFechamento(cartao.id, mesFechamento, horizonte);
       await recarregar();
       setDia(String(cartao.diaFechamento));
+      avisar('Ajuste de fechamento removido');
     }
   }
 
