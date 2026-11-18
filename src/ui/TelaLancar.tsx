@@ -22,7 +22,7 @@ import { useModo } from './useModo';
 
 export default function TelaLancar() {
   const modo = useModo('lancar');
-  const { dados, boxSel, hoje, recarregar, rascunhoLancar, setRascunhoLancar } = useApp();
+  const { dados, boxSel, hoje, recarregar, avisar, rascunhoLancar, setRascunhoLancar } = useApp();
   const [cents, setCents] = useState(0);
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
   const [categoriaId, setCategoriaId] = useState<string | null>(null);
@@ -30,7 +30,6 @@ export default function TelaLancar() {
   const [nota, setNota] = useState('');
   const [previsto, setPrevisto] = useState(false);
   const [viagemMarcada, setViagemMarcada] = useState(true);
-  const [salvo, setSalvo] = useState(false);
   // Lançamento igual achado ao tocar em Lançar: guarda o existente e o modo que tentou salvar.
   const [repetido, setRepetido] = useState<{ lanc: Lancamento; simples: boolean } | null>(null);
   // `null` = "o banco padrão da box"; só vira ID quando a pessoa escolhe outro.
@@ -41,7 +40,6 @@ export default function TelaLancar() {
   const [boxEscolhidaId, setBoxEscolhidaId] = useState<string | null>(null);
   // Trava o segundo toque até o fim do `await`: o estado só atualiza no próximo render.
   const salvandoRef = useRef(false);
-  const salvoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const viagemAtiva = viagemAtivaEm(dados?.viagens ?? [], data);
 
   useEffect(() => {
@@ -86,10 +84,6 @@ export default function TelaLancar() {
     }
     setRascunhoLancar(null);
   }, [rascunhoLancar, dados, hoje, setRascunhoLancar, boxId]);
-
-  useEffect(() => () => {
-    if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
-  }, []);
 
 
   // Trocar de box zera o banco; a categoria só fica se for da box nova.
@@ -178,9 +172,8 @@ export default function TelaLancar() {
       });
       await recarregar();
       // O atalho vale para um lançamento só: o seguinte volta à regra da descrição.
-      setCents(0); setNota(''); setCategoriaId(null); setSalvo(true);
-      if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
-      salvoTimeoutRef.current = setTimeout(() => setSalvo(false), 2500);
+      setCents(0); setNota(''); setCategoriaId(null);
+      avisar('Lançado');
     } finally {
       salvandoRef.current = false;
     }
@@ -195,18 +188,18 @@ export default function TelaLancar() {
     // Trava o segundo toque até o fim do `await`: sem ela, o toque duplo salva duas vezes.
     salvandoRef.current = true;
     try {
+      const status = previsto ? 'previsto' : (data > hoje ? 'previsto' : 'efetivo');
       await repo.salvarLancamento({
         boxId: boxId!, categoriaId: categoriaId!, data, valor: cents,
         ...(nota ? { nota } : {}),
-        status: previsto ? 'previsto' : (data > hoje ? 'previsto' : 'efetivo'),
+        status,
         ...(viagemAtiva && viagemMarcada ? { viagemId: viagemAtiva.id } : {}),
         ...(bancoId ? { bancoId } : {}),
       });
       await recarregar();
       setCents(0); setCategoriaId(null); setNota(''); setData(hoje);
-      setPrevisto(false); setViagemMarcada(true); setBancoEscolhido(null); setSalvo(true);
-      if (salvoTimeoutRef.current != null) clearTimeout(salvoTimeoutRef.current);
-      salvoTimeoutRef.current = setTimeout(() => setSalvo(false), 2500);
+      setPrevisto(false); setViagemMarcada(true); setBancoEscolhido(null);
+      avisar(status === 'previsto' ? 'Previsto criado' : 'Lançado');
     } finally {
       salvandoRef.current = false;
     }
@@ -245,7 +238,6 @@ export default function TelaLancar() {
           <button className="botao botao-primario" disabled={!valido} onClick={() => lancarSimples()} style={{ padding: 14 }}>
             Lançar
           </button>
-          {salvo && <p className="aviso aviso-sucesso">Lançado ✓</p>}
         </>
       ) : boxId != null && (
         <>
@@ -302,8 +294,7 @@ export default function TelaLancar() {
           </button>
           {/* Botão desabilitado sem explicação deixa a pessoa sem saber o que falta — e quem
               acabou de instalar cai justamente no caso "não há categoria nenhuma". */}
-          {!valido && !salvo && oQueFalta && <p className="sub">{oQueFalta}</p>}
-          {salvo && <p className="aviso aviso-sucesso">Lançado ✓</p>}
+          {!valido && oQueFalta && <p className="sub">{oQueFalta}</p>}
         </>
       )}
       <ConfirmarRepetidoSheet

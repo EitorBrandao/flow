@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -10,6 +10,7 @@ import TelaLancar from './TelaLancar';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ retorno: null });
 });
 
 async function prepararSimples(opcoes: { duasBoxes?: boolean; semPadrao?: boolean } = {}) {
@@ -58,7 +59,7 @@ describe('Lançar no modo Simples', () => {
     await userEvent.type(screen.getByLabelText('Valor'), '48,00');
     await userEvent.type(screen.getByLabelText('Do que foi? (opcional)'), 'mercado');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     const lancs = (await db.lancamentos.toArray()).filter((l) => l.valor === 4800);
     expect(lancs).toHaveLength(1);
     expect(lancs[0]).toMatchObject({
@@ -81,7 +82,7 @@ describe('Lançar no modo Simples', () => {
     await screen.findByDisplayValue('R$ 8,50');
     await userEvent.type(screen.getByLabelText('Do que foi? (opcional)'), 'pão');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     const novo = (await db.lancamentos.toArray()).find((l) => l.valor === 850)!;
     expect(novo.categoriaId).toBe(padaria.id);
   });
@@ -98,7 +99,7 @@ describe('Lançar no modo Simples', () => {
     act(() => useApp.setState({ rascunhoLancar: { categoriaId: padaria.id, valorCent: 850 } }));
     await screen.findByDisplayValue('R$ 8,50');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    await screen.findByText(/Lançado/);
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     await userEvent.type(screen.getByLabelText('Valor'), '9,00');
     await userEvent.type(screen.getByLabelText('Do que foi? (opcional)'), 'pão');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
@@ -114,7 +115,7 @@ describe('Lançar no modo Simples', () => {
     render(<TelaLancar />);
     await userEvent.type(screen.getByLabelText('Valor'), '10,00');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    await screen.findByText(/Lançado/);
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect((await db.lancamentos.toArray()).find((l) => l.valor === 1000)).toMatchObject({ boxId: box.id, viagemId: viagem.id });
     // fora do período da viagem
     useApp.setState({ hoje: '2026-08-02' });
@@ -130,7 +131,7 @@ describe('Lançar no modo Simples', () => {
     await userEvent.type(screen.getByLabelText('Valor'), '10,00');
     await userEvent.type(screen.getByLabelText('Do que foi? (opcional)'), 'coisa nova');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     await userEvent.type(screen.getByLabelText('Valor'), '20,00');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
     await vi.waitFor(async () => expect(await db.lancamentos.count()).toBe(2));
@@ -147,7 +148,7 @@ describe('Lançar no modo Simples', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'Ganho' }));
     await userEvent.type(screen.getByLabelText('Valor'), '30,00');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     const cat = (await db.categorias.toArray()).find((c) => c.boxId === box.id && c.nome === 'A classificar (entrada)');
     expect(cat!.tipo).toBe('ganho');
   });
@@ -158,7 +159,7 @@ describe('Lançar no modo Simples', () => {
     await userEvent.type(screen.getByLabelText('Valor'), '5,00');
     const botao = screen.getByRole('button', { name: 'Lançar' });
     await act(async () => { botao.click(); botao.click(); });
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect(await db.lancamentos.count()).toBe(1);
   });
 
@@ -169,7 +170,7 @@ describe('Lançar no modo Simples', () => {
     expect(screen.queryByLabelText('Box')).toBeNull();
     await userEvent.type(screen.getByLabelText('Valor'), '7,00');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect((await db.lancamentos.toArray())[0].boxId).toBe(box.id);
   });
 
@@ -180,7 +181,7 @@ describe('Lançar no modo Simples', () => {
     await userEvent.selectOptions(screen.getByLabelText('Box'), outra!.id);
     await userEvent.type(screen.getByLabelText('Valor'), '9,00');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect((await db.lancamentos.toArray())[0].boxId).toBe(outra!.id);
   });
 
@@ -192,7 +193,7 @@ describe('Lançar no modo Simples', () => {
     render(<TelaLancar />);
     await userEvent.type(screen.getByLabelText('Valor'), '4,00');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect((await db.lancamentos.toArray())[0].boxId).toBe(box.id);
   });
 
@@ -202,7 +203,7 @@ describe('Lançar no modo Simples', () => {
     render(<TelaLancar />);
     await userEvent.type(screen.getByLabelText('Valor'), '5,00');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect((await db.lancamentos.toArray())[0].boxId).toBe(box.id);
   });
 
@@ -216,7 +217,7 @@ describe('Lançar no modo Simples', () => {
     await userEvent.selectOptions(screen.getByLabelText('Box'), outra!.id);
     expect(screen.getByRole('button', { name: 'Lançar' })).toBeEnabled();
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect((await db.lancamentos.toArray())[0].boxId).toBe(outra!.id);
   });
 
@@ -226,7 +227,7 @@ describe('Lançar no modo Simples', () => {
     render(<TelaLancar />);
     await userEvent.type(screen.getByLabelText('Valor'), '8,00');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect((await db.lancamentos.toArray())[0].boxId).toBe(outra!.id);
   });
 
@@ -249,7 +250,7 @@ describe('Lançar no modo Simples', () => {
     await userEvent.selectOptions(screen.getByLabelText('Box'), outra!.id);
     await userEvent.type(screen.getByLabelText('Valor'), '3,00');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect((await db.lancamentos.toArray())[0].boxId).toBe(outra!.id);
   });
 
@@ -295,7 +296,7 @@ describe('lançamento repetido (Simples)', () => {
     expect(await screen.findByText('Lançamento repetido?')).toBeInTheDocument();
     expect(await db.lancamentos.count()).toBe(1);
     await userEvent.click(screen.getByRole('button', { name: 'Lançar mesmo assim' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect(await db.lancamentos.count()).toBe(2);
   });
 
@@ -316,7 +317,7 @@ describe('lançamento repetido (Simples)', () => {
     await userEvent.type(screen.getByLabelText('Valor'), '12,34');
     await userEvent.type(screen.getByLabelText(/Do que foi/), 'cinema');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect(screen.queryByText('Lançamento repetido?')).not.toBeInTheDocument();
     expect(await db.lancamentos.count()).toBe(3);
   });
@@ -347,7 +348,7 @@ describe('lançamento repetido (Simples)', () => {
     render(<TelaLancar />);
     await userEvent.type(screen.getByLabelText('Valor'), '12,35');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect(await db.lancamentos.count()).toBe(2);
   });
 });

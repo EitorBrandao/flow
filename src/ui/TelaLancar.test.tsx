@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../test-setup';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../db/database';
 import * as repo from '../db/repo';
@@ -11,6 +11,7 @@ import TelaLancar from './TelaLancar';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ retorno: null });
 });
 
 it('lança um gasto em 3 interações: valor, categoria, Lançar', async () => {
@@ -26,7 +27,7 @@ it('lança um gasto em 3 interações: valor, categoria, Lançar', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'cartão' }));
   await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
 
-  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
   const lancs = await db.lancamentos.toArray();
   expect(lancs).toHaveLength(1);
   expect(lancs[0]).toMatchObject({ valor: 1234, data: '2026-07-02', status: 'efetivo', origem: 'manual' });
@@ -87,7 +88,7 @@ describe('Lançar com "casa" no topo', () => {
     await userEvent.type(screen.getByLabelText('Valor'), '50,00');
     await userEvent.click(screen.getByRole('button', { name: 'aluguel' }));
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     const lancs = await db.lancamentos.toArray();
     expect(lancs).toHaveLength(1);
     expect(lancs[0]).toMatchObject({ boxId: bruno.id, valor: 5000 });
@@ -113,7 +114,7 @@ describe('Lançar com "casa" no topo', () => {
     await userEvent.type(screen.getByLabelText('Valor'), '12,00');
     await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect((screen.getByLabelText('Box') as HTMLSelectElement).value).toBe(ana.id);
   });
 
@@ -189,7 +190,7 @@ it('marca como previsto quando o toggle está ativo, mesmo com data de hoje', as
   await userEvent.click(screen.getByLabelText('Marcar como previsto'));
   await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
 
-  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Previsto criado'));
   const lancs = await db.lancamentos.toArray();
   expect(lancs).toHaveLength(1);
   expect(lancs[0]).toMatchObject({ data: '2026-07-02', status: 'previsto' });
@@ -212,7 +213,7 @@ it('checkbox de viagem aparece marcado quando a data cai no período de uma viag
   await userEvent.click(screen.getByRole('button', { name: 'cartão' }));
   await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
 
-  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
   const lancs = await db.lancamentos.toArray();
   expect(lancs[0].viagemId).toBe(viagem.id);
 });
@@ -233,7 +234,7 @@ it('checkbox de viagem some quando a data está fora do período e desmarcado n�
   await userEvent.type(screen.getByLabelText('Valor'), '12,34');
   await userEvent.click(screen.getByRole('button', { name: 'cartão' }));
   await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
   let lancs = await db.lancamentos.toArray();
   expect(lancs[0].viagemId).toBeUndefined();
 
@@ -528,7 +529,7 @@ it('com dois bancos, o banco padrão vem marcado e o lançamento sai nele', asyn
   await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
   await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
 
-  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
   expect((await db.lancamentos.toArray())[0].bancoId).toBe(um.id);
 });
 
@@ -541,7 +542,7 @@ it('troca o banco no lançamento e volta ao padrão depois de lançar', async ()
   await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
   await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
 
-  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
   expect((await db.lancamentos.toArray())[0].bancoId).toBe(dois.id);
   expect(screen.getByRole('radio', { name: 'Banco Um' })).toHaveAttribute('aria-checked', 'true');
 });
@@ -570,7 +571,7 @@ it('com um banco só, não mostra o campo e grava nele', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
   await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
 
-  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
   expect((await db.lancamentos.toArray())[0].bancoId).toBe(unico.id);
 });
 
@@ -587,11 +588,11 @@ it('sem bancos, o lançamento sai sem banco', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
   await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
 
-  expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
   expect((await db.lancamentos.toArray())[0].bancoId).toBeUndefined();
 });
 
-it('confirmação "Lançado ✓" tem a classe aviso-sucesso', async () => {
+it('lançar não mostra texto próprio na tela: o aviso de retorno é o único retorno', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
@@ -604,7 +605,42 @@ it('confirmação "Lançado ✓" tem a classe aviso-sucesso', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'cartão' }));
   await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
 
-  expect(await screen.findByText('Lançado ✓')).toHaveClass('aviso', 'aviso-sucesso');
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
+  expect(screen.queryByText('Lançado ✓')).not.toBeInTheDocument();
+});
+
+it('lançar com data futura avisa "Previsto criado"', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  await userEvent.type(screen.getByLabelText('Valor'), '12,34');
+  await userEvent.click(screen.getByRole('button', { name: 'cartão' }));
+  await userEvent.clear(screen.getByLabelText('Data'));
+  await userEvent.type(screen.getByLabelText('Data'), '2026-08-01');
+  await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Previsto criado'));
+});
+
+it('tocar em Lançar sem valor não avisa', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  await repo.salvarCategoria({ boxId: box.id, nome: 'cartão', tipo: 'gasto', ordem: 0 });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+
+  render(<TelaLancar />);
+  await userEvent.click(screen.getByRole('button', { name: 'cartão' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
+
+  expect(useApp.getState().retorno).toBeNull();
+  expect(await db.lancamentos.count()).toBe(0);
 });
 
 it('escolher banco e trocar de box volta ao banco padrão da nova box', async () => {
@@ -669,7 +705,7 @@ describe('lançamento repetido (Avançado)', () => {
     await prepararComExistente();
     render(<TelaLancar />);
     await preencher('45,01');
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect(screen.queryByText('Lançamento repetido?')).not.toBeInTheDocument();
     expect(await db.lancamentos.count()).toBe(2);
   });
@@ -684,7 +720,7 @@ describe('lançamento repetido (Avançado)', () => {
     await userEvent.type(screen.getByLabelText('Valor'), '45,00');
     await userEvent.click(screen.getByRole('button', { name: 'transporte' }));
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect(screen.queryByText('Lançamento repetido?')).not.toBeInTheDocument();
     expect(await db.lancamentos.count()).toBe(2);
   });
@@ -712,7 +748,7 @@ describe('lançamento repetido (Avançado)', () => {
     render(<TelaLancar />);
     await preencher('45,00');
     await userEvent.click(await screen.findByRole('button', { name: 'Lançar mesmo assim' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect(await db.lancamentos.count()).toBe(2);
   });
 
@@ -722,7 +758,7 @@ describe('lançamento repetido (Avançado)', () => {
     await userEvent.type(screen.getByLabelText('Valor'), '45,01');
     await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
     await userEvent.dblClick(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText(/Lançado/)).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     expect(await db.lancamentos.count()).toBe(2);
   });
 });
