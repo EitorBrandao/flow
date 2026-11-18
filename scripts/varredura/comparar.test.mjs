@@ -10,6 +10,11 @@ describe('varredura: comparar', () => {
       .toBe(chaveDoAchado(a('hoje', 'alvo', 'button.pill "Pendentes · 12"')));
   });
 
+  it('a chave ignora a classe de estado .ativo', () => {
+    expect(chaveDoAchado(a('hoje', 'alvo', 'button.ativo "Hoje"')))
+      .toBe(chaveDoAchado(a('fluxo', 'alvo', 'button "Hoje"')));
+  });
+
   it('a chave não separa passos: o mesmo elemento em hoje e em fluxo dá a mesma chave', () => {
     expect(chaveDoAchado(a('hoje', 'alvo', 'x'))).toBe(chaveDoAchado(a('fluxo', 'alvo', 'x')));
   });

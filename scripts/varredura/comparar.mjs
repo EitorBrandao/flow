@@ -7,7 +7,8 @@
  * é um achado só. Um passo novo que visita uma tela já conhecida não acusa de novo os mesmos elementos.
  */
 export function chaveDoAchado({ tipo, alvo }) {
-  return `${tipo} | ${String(alvo).replace(/\d+/g, '#')}`;
+  // `.ativo` é estado, não elemento: a aba ativa e a mesma aba inativa são um achado só.
+  return `${tipo} | ${String(alvo).replace(/\.ativo\b/g, '').replace(/\d+/g, '#')}`;
 }
 
 /** `novos`: achados fora da lista de conhecidos. `resolvidos`: conhecidos que não apareceram. */
