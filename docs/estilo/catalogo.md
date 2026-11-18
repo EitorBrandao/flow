@@ -17,7 +17,8 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.lista` / `.item` / `.item-coluna` / `.item-elevado` / `.linha-topo` / `.linha-topo-2-1` | lista vertical de itens-card; `.item-coluna` quando o item precisa de uma segunda linha (ex.: ações abaixo); `.linha-topo` para a linha principal dentro de um item-coluna; `.linha-topo-2-1` (junto com `.linha-topo`) quando a linha principal precisa de proporção fixa 2:1 entre descrição e valor (evita word-wrap com valor/botões espremendo o texto); `.item-elevado` (junto com `.item`) troca o fundo para `--surface2`, para o item sobre uma superfície já `--surface` (ex.: blocos de Modo de uso em Ajustes); `.ativo` em `.item` marca o item selecionado com `--ac-dim`/`--ac`, mesmo padrão de `.botao.ativo` (ex.: categoria que filtra os lançamentos na aba Cartão) |
 | `.cresce` | filho flex que ocupa o espaço restante (`flex: 1; min-width: 0`) |
 | `.acoes` | linha de botões de ação dentro de um item (ex.: Confirmar/Descartar) |
-| `.botao`, `.botao-primario`, `.botao-perigo` | botão padrão / ação principal (azul) / ação destrutiva (texto vermelho). `.botao:disabled` fica a 45% de opacidade, em toda tela |
+| `.botao`, `.botao-primario`, `.botao-perigo`, `.botao-discreto`, `.botao-perigo-cheio` | botão padrão / ação principal (azul, no máximo um por linha de botões) / ação destrutiva (texto vermelho) / ação que só sai da tela, como Fechar e Cancelar (contorno `--muted`, sem fundo) / botão que apaga dentro do `ConfirmarSheet` (fundo `--neg`). `.botao:disabled` fica a 45% de opacidade, em toda tela |
+| `.sheet-botoes` | rodapé de botões de um sheet: a ação destrutiva fica à esquerda, e o primeiro botão com a classe `empurra` (só vale dentro de `.sheet-botoes`) joga os demais para a direita, com a ação principal por último |
 | `.botao-sinal` | modificador de `.botao` para o botão de alternar sinal (`+`/`−`) ao lado de um `CampoValor` — padding menor e largura mínima de alvo de toque. Usado nas duas conferências da `TelaHoje`, em Ajustes → Boxes e em Ajustes → Bancos |
 | `.botao-com-icone` | modificador de `.botao` pra ícone + texto lado a lado (`display: inline-flex; gap: 8px`) |
 | `.alca-arrastar` | modificador de `.botao` para o puxador de arrastar e reordenar; `touch-action: none` para o toque não virar rolagem no celular |
@@ -177,6 +178,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   Consumido pela fila de pendentes da `TelaHoje`, pela fatura da `TelaCartao` e pelo `FaturaResumo`; recebe o
   lançamento da fatura e o total dela, porque nem sempre um é o outro (fatura já paga em
   parte tem valor menor que o total calculado).
+- **`ConfirmarSheet.tsx`** — sheet de confirmação do próprio app, no lugar do `window.confirm`. Título em pergunta, resumo do item, uma frase de efeito, Cancelar e a ação. `perigo` deixa o botão vermelho. Só para o que apaga em cascata ou não tem volta; exclusão simples usa o "Desfazer" do `Retorno`.
 - **`ConfirmarRepetidoSheet.tsx`** — sheet de confirmação aberto quando o item novo é igual a um que já
   existe: lançamento na `TelaLancar` (mesma box, data, valor e tipo) ou compra no `FormCompra` (mesmo
   cartão, data, valor total e parcelas). Mostra um `.aviso` com a frase do item existente, um texto de

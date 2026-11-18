@@ -106,6 +106,15 @@ button { cursor: pointer; }
 .botao:disabled { opacity: .45; cursor: default; }
 .botao-com-icone { display: inline-flex; align-items: center; gap: 8px; }
 .botao.ativo { background: var(--ac-dim); color: var(--ac); }
+/* Ação que só sai da tela (Fechar, Cancelar ao lado da ação principal): contorno, sem fundo.
+   box-shadow interno, e não border, para o botão manter o tamanho dos vizinhos. */
+.botao-discreto { background: none; color: var(--fg); box-shadow: inset 0 0 0 1.5px var(--muted); }
+/* Botão que apaga, só dentro do sheet de confirmação (ConfirmarSheet.tsx). */
+.botao-perigo-cheio { background: var(--neg); color: var(--bg); }
+/* Rodapé de botões de um sheet: a ação destrutiva à esquerda; `.empurra` joga o resto para a
+   direita, com a ação principal por último. */
+.sheet-botoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+.sheet-botoes .empurra { margin-left: auto; }
 /* Puxador de arrastar (Reorder + dragControls): sem touch-action: none o toque vira rolagem e o arrasto é cancelado no celular. */
 .alca-arrastar { touch-action: none; cursor: grab; }
 
