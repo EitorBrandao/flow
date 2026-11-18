@@ -86,6 +86,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.conferencia-bancos` / `.conferencia-bancos-*` | conferência de saldo por banco na `TelaHoje.tsx`, no lugar do campo único quando a box (ou a "casa" inteira) tem bancos cadastrados. `.conferencia-bancos` é a classe raiz (coluna, gap 8px); dentro dela, `.linha-banco` (aninhada, sem existência própria) é o nome do banco à esquerda (`span` em `--muted` 14px) e o `CampoValor` à direita; `.total` (aninhada) é a linha "Total informado" e a linha "Total calculado no Flow", com borda superior em `--line`, `tabular-nums` |
 | `.conferencia-saldo` | conferência de saldo único na `TelaHoje.tsx`, quando não há bancos cadastrados. Mesmo layout da `.conferencia-bancos` (coluna, gap 8px); a `.total` aninhada é a linha "Total calculado no Flow", idêntica à da conferência por banco |
 | `.aviso-atualizacao-pista` / `.aviso-atualizacao` | aviso de nova versão (`AvisoAtualizacao.tsx`). `-pista` é a faixa fixa acima da barra de navegação, que não captura toque; `.aviso-atualizacao` é a pílula tocável (`--surface2`, 13px, altura mínima de 38px). No desktop, a faixa sobe ao canto inferior, ao lado da barra lateral |
+| `.retorno-pista` / `.retorno` / `.retorno-acao` | aviso de retorno (`Retorno.tsx`). `-pista` é a faixa fixa acima da barra de navegação, acima dos sheets, que não captura toque; `.retorno` é a pílula (`--surface2`, 14px, altura mínima de 44px); `.retorno-acao` é o "Desfazer", em `--ac`. No desktop, a faixa sobe ao canto inferior, ao lado da barra lateral |
 | `.backup-rodape` / `.backup-rodape-neutro` | rodapé de backup da Visão (`TelaHoje.tsx`). `.backup-rodape` é só a forma (botão de bloco, sem borda, alinhado à esquerda, altura mínima de 42px); `.backup-rodape-neutro` é o estado sem mudanças pendentes (sem fundo, `--muted`, 13px). Nos estados âmbar e vermelho, o botão leva `.aviso` / `.aviso .aviso-urgente` no lugar da `-neutro` |
 | `.frequentes` | faixa de atalhos no topo da sheet Adicionar (`AdicionarSheet.tsx`) |
 | `.frequentes-chip` | pílula de atalho (categoria + valor) dentro de `.frequentes` — `--surface2`, porque a sheet já é `--surface` |
@@ -137,6 +138,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   na primeira abertura depois de uma atualização. Toca e abre Ajustes › Versão. Guarda a última
   versão vista em `localStorage` (`flow:versao-vista`); a primeira instalação não avisa. Classes
   `.aviso-atualizacao-pista` e `.aviso-atualizacao`.
+- **`Retorno.tsx`** — aviso curto depois de uma ação, com "Desfazer" quando a ação tem volta. Montado uma vez no `Shell`; as telas chamam `useApp.getState().avisar(texto, desfazer?)`. Some em 3 s, ou em 6 s quando tem "Desfazer". Regras em `docs/estilo/interacao.md`.
 - **`AvisoFaturaForaDoFluxo.tsx`** — o `.aviso` de fatura que não bate com o Fluxo
   (`faturaForaDoFluxo`, `domain/fatura.ts`): fatura vencida que ficou de fora, ou paga a menor
   com o link "Corrigir o valor pago". Usado na `TelaCartao` e no `FaturaResumo`, para as duas
