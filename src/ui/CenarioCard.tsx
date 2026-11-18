@@ -59,6 +59,7 @@ export default function CenarioCard({ cenario, linhas, negativoEm, larguraCh, ab
   async function adicionar(v: ValoresItem) {
     await gravarItemNovo(cenario.id, boxIdNovo!, v, dados!.config.horizonteProjecao);
     await recarregar();
+    avisar('Item adicionado');
     setFormKey((k) => k + 1); // formulário volta limpo
     setAdicionando(false);
   }
@@ -158,7 +159,7 @@ export default function CenarioCard({ cenario, linhas, negativoEm, larguraCh, ab
                 key={formKey} boxId={boxIdNovo} rotuloBotao="Adicionar ao cenário" onSalvar={adicionar}
                 inicial={{ valor: 0, descricao: '', tipo: 'gasto', categoriaId: null, repeticao: 'unica', data: hoje, parcelas: 2 }}
               />
-              <button type="button" className="botao" onClick={() => setAdicionando(false)}>Cancelar</button>
+              <button type="button" className="botao botao-discreto" onClick={() => setAdicionando(false)}>Cancelar</button>
             </>
           ) : (
             <button type="button" className="botao" onClick={() => setAdicionando(true)}>Adicionar item</button>

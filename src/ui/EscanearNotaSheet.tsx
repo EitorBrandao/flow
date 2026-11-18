@@ -167,7 +167,7 @@ export default function EscanearNotaSheet({ onConcluir, onFechar }: {
         {resultadoPendente && (
           <button className="botao" onClick={continuarMesmoAssim}>Continuar mesmo assim</button>
         )}
-        <button className="botao" onClick={onFechar}>Cancelar</button>
+        <button className="botao botao-discreto" onClick={onFechar}>Cancelar</button>
       </div>
       {erro && <p className="aviso">{erro}</p>}
     </>

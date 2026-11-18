@@ -71,7 +71,7 @@ function FormViagem({ inicial, idExcluido, rotuloSalvar, onSalvo, onCancelar }: 
         </div>
       </div>
       <div className="form-botoes">
-        {onCancelar && <button className="botao" onClick={onCancelar}>Cancelar</button>}
+        {onCancelar && <button className="botao botao-discreto" onClick={onCancelar}>Cancelar</button>}
         <button className="botao botao-primario" onClick={salvar}>{rotuloSalvar}</button>
       </div>
       {aviso && <p className="aviso">{aviso}</p>}
@@ -93,12 +93,14 @@ export default function Viagens() {
     await repo.salvarViagem(campos);
     setVersaoNova((v) => v + 1);
     await recarregar();
+    avisar('Viagem criada');
   }
 
   async function atualizar(id: string, campos: CamposViagem) {
     await repo.atualizarViagem(id, campos);
     setEditandoId(null);
     await recarregar();
+    avisar('Viagem salva');
   }
 
   async function excluir() {

@@ -12,7 +12,7 @@ import TabelaSimulacao from './TabelaSimulacao';
 
 /** Fluxo › Simular: cenários de gastos e ganhos futuros e o efeito deles no saldo, mês a mês. */
 export default function SimuladorFluxo() {
-  const { dados, boxSel, hoje, recarregar } = useApp();
+  const { dados, boxSel, hoje, recarregar, avisar } = useApp();
   const [nomeNovo, setNomeNovo] = useState('');
   const [criando, setCriando] = useState(false);
   const [aberto, setAberto] = useState<ID | null>(null);
@@ -74,6 +74,7 @@ export default function SimuladorFluxo() {
     const id = novoId();
     await repo.salvarCenario({ id, nome, ligado: true, escopo: boxSel, criadoEm: agora, alteradoEm: agora });
     await recarregar();
+    avisar('Cenário criado');
     setNomeNovo('');
     setCriando(false);
     setAberto(id);
@@ -94,7 +95,7 @@ export default function SimuladorFluxo() {
           </div>
           <div style={{ display: 'flex', gap: 8, margin: '8px 0 12px' }}>
             <button className="botao botao-primario" style={{ flex: 1 }} disabled={!nomeNovo.trim()} onClick={criar}>Criar</button>
-            <button className="botao" style={{ flex: 1 }} onClick={cancelarNovo}>Cancelar</button>
+            <button className="botao botao-discreto" style={{ flex: 1 }} onClick={cancelarNovo}>Cancelar</button>
           </div>
         </>
       ) : (

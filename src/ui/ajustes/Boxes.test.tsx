@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { limparDb } from '../../test-setup';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { db } from '../../db/database';
 import * as repo from '../../db/repo';
@@ -13,7 +13,7 @@ beforeEach(async () => {
   await limparDb();
   // O store sobrevive entre testes do mesmo arquivo: sem resetar a seleção, um teste que
   // troca de box faz o seguinte começar sujo — acoplamento à ordem, não a comportamento.
-  useApp.setState({ boxSel: 'casa' });
+  useApp.setState({ boxSel: 'casa', retorno: null });
 });
 
 it('salva saldo inicial "0,00" como zero, não como sem-saldo-próprio', async () => {
@@ -274,4 +274,56 @@ it('o campo de nome da box não sugere nome de banco', async () => {
   await useApp.getState().iniciar();
   render(<Boxes />);
   expect(screen.getByPlaceholderText('ex.: Pessoal')).toBeInTheDocument();
+});
+
+describe('retorno ao salvar', () => {
+  it('criar uma box avisa "Box criada"', async () => {
+    await useApp.getState().iniciar();
+    render(<Boxes />);
+    await userEvent.type(screen.getByLabelText('Nome'), 'pessoal');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Box criada'));
+  });
+
+  it('criar sem nome não avisa', async () => {
+    await useApp.getState().iniciar();
+    render(<Boxes />);
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    expect(await screen.findByText('Dê um nome à box para criar.')).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('editar uma box avisa "Box salva"', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    await useApp.getState().iniciar();
+    render(<Boxes />);
+    const item = screen.getByText('eitor').closest('.item') as HTMLElement;
+    await userEvent.click(within(item).getByRole('button', { name: 'Editar' }));
+    const nome = within(item).getByLabelText('Nome');
+    await userEvent.clear(nome);
+    await userEvent.type(nome, 'eitor novo');
+    await userEvent.click(within(item).getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Box salva'));
+  });
+
+  it('"Tornar padrão" avisa "Box padrão definida"', async () => {
+    const agora = agoraISO();
+    for (const nome of ['ana', 'bruno']) {
+      await repo.salvarBox({
+        id: novoId(), nome, saldoInicial: 100000, dataSaldoInicial: '2026-01-01',
+        criadoEm: agora, alteradoEm: agora,
+      });
+    }
+    await useApp.getState().iniciar();
+    render(<Boxes />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Tornar padrão' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Box padrão definida'));
+  });
 });

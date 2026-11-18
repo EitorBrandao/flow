@@ -43,6 +43,7 @@ export default function LancEditor({ lanc, onFechar }: { lanc: Lancamento; onFec
       ...(bancoId && bancoId !== lanc.bancoId ? { bancoId } : {}),
     });
     await recarregar();
+    avisar(confirmarTb ? 'Lançamento confirmado' : 'Alteração salva');
     onFechar();
   }
 

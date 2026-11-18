@@ -73,7 +73,7 @@ function FormBox({ inicial, onSalvo, onCancelar }: {
         </>
       )}
       <div className="form-botoes">
-        <button className="botao" onClick={onCancelar}>Cancelar</button>
+        <button className="botao botao-discreto" onClick={onCancelar}>Cancelar</button>
         <button className="botao botao-primario" onClick={salvar}>Salvar</button>
       </div>
       {aviso && <p className="aviso">{aviso}</p>}
@@ -82,7 +82,7 @@ function FormBox({ inicial, onSalvo, onCancelar }: {
 }
 
 export default function Boxes() {
-  const { dados, recarregar, setBoxSel } = useApp();
+  const { dados, recarregar, setBoxSel, avisar } = useApp();
   const { hoje } = useApp();
   const [nomeNova, setNomeNova] = useState('');
   const [saldoNova, setSaldoNova] = useState(0);
@@ -113,6 +113,7 @@ export default function Boxes() {
       criadoEm: agora, alteradoEm: agora,
     });
     await recarregar();
+    avisar('Box criada');
     // A box recém-criada passa a ser a selecionada: era o passo seguinte óbvio, e deixá-la
     // fora da seleção fazia a pessoa criar e não ver nada mudar no topo.
     setBoxSel(id);
@@ -127,11 +128,13 @@ export default function Boxes() {
     await repo.salvarBox({ ...box, ...campos });
     setEditandoId(null);
     await recarregar();
+    avisar('Box salva');
   }
 
   async function definirPadrao(id: string) {
     await repo.salvarConfig({ boxPadraoId: id });
     await recarregar();
+    avisar('Box padrão definida');
   }
 
   return (

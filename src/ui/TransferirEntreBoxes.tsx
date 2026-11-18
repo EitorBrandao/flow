@@ -176,7 +176,7 @@ export default function TransferirEntreBoxes({ dados, hoje }: { dados: Dados; ho
       )}
       <div className="acoes">
         <button className="botao botao-primario" disabled={!podeConfirmar} onClick={confirmar}>Confirmar transferência</button>
-        <button className="botao" onClick={() => setAberto(false)}>Cancelar</button>
+        <button className="botao botao-discreto" onClick={() => setAberto(false)}>Cancelar</button>
       </div>
       {mesmaBox && <p className="aviso">Escolha duas boxes diferentes.</p>}
       {erro && <p className="aviso aviso-urgente">{erro}</p>}

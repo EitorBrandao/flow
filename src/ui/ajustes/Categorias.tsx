@@ -42,7 +42,7 @@ function ItemCategoria({
               <label htmlFor={uidEditar}>Editar nome</label>
               <input id={uidEditar} autoFocus value={nomeEdit} onChange={(e) => onEditarNome(e.target.value)} />
             </div>
-            <button className="botao" onClick={onCancelarEdicao}>Cancelar</button>
+            <button className="botao botao-discreto" onClick={onCancelarEdicao}>Cancelar</button>
             <button className="botao botao-primario" onClick={onSalvarEdicao}>Salvar</button>
           </div>
           {avisoEdicao && <p className="aviso">{avisoEdicao}</p>}
@@ -66,7 +66,7 @@ function ItemCategoria({
 }
 
 export default function Categorias() {
-  const { dados, boxSel, recarregar, setAba } = useApp();
+  const { dados, boxSel, recarregar, setAba, avisar } = useApp();
   const [criouSugeridas, setCriouSugeridas] = useState(false);
   const [nome, setNome] = useState('');
   const [tipo, setTipo] = useState<TipoCategoria>('gasto');
@@ -112,12 +112,14 @@ export default function Categorias() {
     const irmas = cats.filter((c) => c.tipo === tipo && !c.arquivada);
     await repo.salvarCategoria({ boxId, nome: nome.trim(), tipo, ordem: proximaOrdem(irmas) });
     await recarregar();
+    avisar('Categoria criada');
     setNome('');
     setAvisoCriacao('');
   }
 
   async function criarSugeridas() {
     if (!boxId) return;
+    let criadas = 0;
     for (const tipo of ['ganho', 'gasto'] as const) {
       const irmas = cats.filter((c) => c.tipo === tipo && !c.arquivada);
       const sugeridos = CATEGORIAS_SUGERIDAS.filter((c) => c.tipo === tipo);
@@ -130,12 +132,14 @@ export default function Categorias() {
             tipo,
             ordem: proximaOrdem(irmas),
           });
+          criadas += 1;
           // Atualiza irmas para o próximo cálculo
           irmas.push({ id: '', nome: sugerido.nome, tipo, ordem: proximaOrdem(irmas), boxId, arquivada: false, criadoEm: '', alteradoEm: '' });
         }
       }
     }
     await recarregar();
+    if (criadas > 0) avisar('Categorias criadas');
     setCriouSugeridas(true);
     setSugestoesMarcadas(new Set(CATEGORIAS_SUGERIDAS.filter((c) => c.marcadaPorPadrao).map((c) => `${c.nome}:${c.tipo}`)));
   }
@@ -160,6 +164,7 @@ export default function Categorias() {
     const destino = cat.arquivada ? cats.filter((c) => c.tipo === cat.tipo && !c.arquivada) : arquivadas;
     await repo.atualizarCategoria(cat.id, { arquivada: !cat.arquivada, ordem: proximaOrdem(destino) });
     await recarregar();
+    avisar(cat.arquivada ? 'Categoria restaurada' : 'Categoria arquivada');
   }
 
   function iniciarEdicao(id: string, nomeAtual: string) {
@@ -184,6 +189,7 @@ export default function Categorias() {
     setEditandoId(null);
     setNomeEdit('');
     await recarregar();
+    avisar('Categoria salva');
   }
 
   function props(c: Categoria, mostrarBadgeTipo: boolean): ItemProps {

@@ -11,7 +11,7 @@ import { useApp } from '../state/store';
 import { gravarItemNovo } from './FormItemCenario';
 import ItemCenarioSheet from './ItemCenarioSheet';
 
-beforeEach(async () => { await limparDb(); });
+beforeEach(async () => { await limparDb(); useApp.setState({ retorno: null }); });
 
 async function preparar() {
   const agora = agoraISO();
@@ -152,6 +152,34 @@ it('editar um parcelado de cenário para começar hoje mantém as N parcelas, ho
   } finally {
     vi.useRealTimers();
   }
+});
+
+it('salvar a edição de um item avisa "Item salvo"', async () => {
+  const { itemUnica } = await prepararComItens();
+  const onFechar = vi.fn();
+  render(<ItemCenarioSheet item={itemUnica} onFechar={onFechar} />);
+
+  await userEvent.clear(screen.getByLabelText('Descrição'));
+  await userEvent.type(screen.getByLabelText('Descrição'), 'Fogão');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Item salvo'));
+  expect(onFechar).toHaveBeenCalled();
+});
+
+it('item com valor zerado não salva e não avisa', async () => {
+  const { itemUnica } = await prepararComItens();
+  const onFechar = vi.fn();
+  render(<ItemCenarioSheet item={itemUnica} onFechar={onFechar} />);
+
+  // Focar seleciona o valor inteiro; Backspace com ele selecionado zera o campo.
+  await userEvent.click(screen.getByLabelText('Valor'));
+  await userEvent.keyboard('{Backspace}');
+  expect(screen.getByRole('button', { name: 'Salvar' })).toBeDisabled();
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+  expect(onFechar).not.toHaveBeenCalled();
+  expect(useApp.getState().retorno).toBeNull();
 });
 
 it('excluir item "uma vez" apaga na hora e oferece Desfazer', async () => {

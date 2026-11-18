@@ -10,6 +10,7 @@ import LancEditor from './LancEditor';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ retorno: null });
 });
 
 it('confirma um pendente com valor editado: persiste o novo valor e status efetivo juntos', async () => {
@@ -333,4 +334,47 @@ it('com um banco só na box, o campo Banco não aparece', async () => {
   render(<LancEditor lanc={lanc} onFechar={() => {}} />);
 
   expect(screen.queryByRole('radio', { name: 'Banco Único' })).not.toBeInTheDocument();
+});
+
+it('Salvar avisa "Alteração salva"', async () => {
+  const { box, categoria } = await montarBoxECategoria();
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-07-05', valor: 5000, status: 'efetivo',
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+
+  render(<LancEditor lanc={lanc} onFechar={vi.fn()} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Alteração salva'));
+});
+
+it('Confirmar avisa "Lançamento confirmado"', async () => {
+  const { box, categoria } = await montarBoxECategoria();
+  const previsto = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-07-05', valor: 5000, status: 'previsto',
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+
+  render(<LancEditor lanc={previsto} onFechar={vi.fn()} />);
+  await userEvent.click(screen.getByRole('button', { name: '✓ Confirmar' }));
+
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançamento confirmado'));
+});
+
+it('valor zerado mostra "Valor inválido." e não avisa', async () => {
+  const { box, categoria } = await montarBoxECategoria();
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-07-05', valor: 0, status: 'efetivo',
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+
+  render(<LancEditor lanc={lanc} onFechar={vi.fn()} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+  expect(await screen.findByText('Valor inválido.')).toBeInTheDocument();
+  expect(useApp.getState().retorno).toBeNull();
 });

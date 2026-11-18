@@ -76,7 +76,7 @@ function FormCartao({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
         </div>
       </div>
       <div className="form-botoes">
-        {onCancelar && <button className="botao" onClick={onCancelar}>Cancelar</button>}
+        {onCancelar && <button className="botao botao-discreto" onClick={onCancelar}>Cancelar</button>}
         <button className="botao botao-primario" onClick={salvar}>{rotuloSalvar}</button>
       </div>
       {aviso && <p className="aviso">{aviso}</p>}
@@ -85,7 +85,7 @@ function FormCartao({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
 }
 
 export default function Cartoes() {
-  const { dados, boxSel, recarregar } = useApp();
+  const { dados, boxSel, recarregar, avisar } = useApp();
   const [editandoId, setEditandoId] = useState<string | null>(null);
   // Muda a cada criação para o formulário do topo voltar vazio (remonta com `key`).
   const [versaoNova, setVersaoNova] = useState(0);
@@ -116,6 +116,7 @@ export default function Cartoes() {
     setUltimosDias({ diaFechamento: String(campos.diaFechamento), diaVencimento: String(campos.diaVencimento) });
     setVersaoNova((v) => v + 1);
     await recarregar();
+    avisar('Cartão criado');
   }
 
   async function atualizar(id: string, campos: CamposCartaoSalvos) {
@@ -123,12 +124,14 @@ export default function Cartoes() {
     await repo.salvarCartao({ ...original, ...campos }, horizonte);
     setEditandoId(null);
     await recarregar();
+    avisar('Cartão salvo');
   }
 
   async function alternarAtivo(id: string) {
     const c = dados!.cartoes.find((x) => x.id === id)!;
     await repo.salvarCartao({ ...c, ativo: !c.ativo }, horizonte);
     await recarregar();
+    avisar(c.ativo ? 'Cartão arquivado' : 'Cartão reativado');
   }
 
   async function alternarPermiteCompra(id: string) {

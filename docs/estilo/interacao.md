@@ -12,7 +12,7 @@ Referência transversal, como `transversais.md`: vale em qualquer nível de edi�
 ## Avisar
 
 5. **Toda gravação dá retorno**, pelo `Retorno`: `avisar('Alteração salva')`. Frase curta, no passado, sem ponto final.
-6. O aviso some sozinho: 3 s, ou 6 s quando tem "Desfazer". Um aviso novo substitui o anterior, e o "Desfazer" do anterior deixa de existir.
+6. O aviso some sozinho: 3 s, ou 6 s quando tem "Desfazer". Um aviso novo substitui o anterior, e o "Desfazer" do anterior deixa de existir. Com um sheet aberto, o aviso sobe para logo acima da borda do sheet, para não cobrir o conteúdo dele.
 7. O retorno não substitui o aviso de validação. Erro de preenchimento continua abaixo do botão, em `.aviso`.
 
 ## Ordenar botões
@@ -23,4 +23,4 @@ Referência transversal, como `transversais.md`: vale em qualquer nível de edi�
 
 ## Onde está aplicado
 
-As regras 1 a 4 e 8 a 10 valem no editor de lançamento e em todas as confirmações desde a entrega da confirmação própria. A regra 5 e a regra 9 chegam às demais telas na entrega seguinte (`docs/superpowers/plans/2026-11-15-d2-retorno-ao-salvar.md`). Ao tocar numa tela que ainda não as segue, alinhe-a.
+Em todas as telas. Dois testes guardam as regras: `src/ui/retornoEmTodaGravacao.test.ts` (regra 5) e `src/ui/botoesDeSaida.test.ts` (regra 9). Uma exceção nova entra na lista do teste, com o motivo.

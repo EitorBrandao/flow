@@ -8,6 +8,8 @@ Todas respeitam o seletor de box no topo (no exemplo: `{{boxA}}` / `{{boxB}}` / 
 
 > **Janelas por cima da tela:** enquanto uma janela está aberta (a que sobe de baixo, o gráfico em tela cheia, o índice da wiki), o toque vale só para ela — a tela de trás não rola. Para fechar a que sobe de baixo, puxe para baixo pela barrinha do topo, pelo título ou pelo próprio conteúdo, quando ele já está no começo. Tocar no fundo escuro também fecha.
 
+Depois de salvar, criar ou excluir, um aviso curto aparece acima da barra de navegação e some sozinho. Quando a ação tem volta, o aviso traz Desfazer. Com uma janela aberta, o aviso sobe para logo acima dela.
+
 ## Hoje
 
 Tela inicial. Foco em "onde estou agora" e no que precisa de atenção. Três abas: Visão, Conferir e Pendentes.
@@ -44,7 +46,7 @@ O botão central (+) da barra. Fluxo mínimo: valor → categoria → Lançar.
 - Com dois ou mais bancos na box, aparece o campo **Banco**, já marcado no banco padrão. Toque em outro para trocar; depois de lançar, ele volta ao padrão.
 - Data futura vira previsto automaticamente mesmo sem marcar a caixa.
 - Se já existe um lançamento com o mesmo valor, no mesmo dia, na mesma box e na mesma categoria, o Flow pergunta antes de salvar: "Lançamento repetido?". Toque em **Cancelar** para voltar ao formulário, ou em **Lançar mesmo assim** para salvar. Vale nos modos Simples e Avançado. No Simples, a categoria é a que o Flow vai usar: a do atalho, a da descrição em "Do que foi?" ou a "A classificar" que já existe. Dois gastos de categorias diferentes, com o mesmo valor no mesmo dia, não perguntam nada. Fatura de cartão, transferência e cenário não entram na comparação.
-- Ao salvar, mostra "Lançado ✓", em verde, por alguns segundos e limpa o formulário (mantendo a box e o tipo selecionados).
+- Ao salvar, o aviso diz "Lançado" (ou "Previsto criado", para data futura ou marcado como previsto) e o formulário é limpo (mantendo a box e o tipo selecionados).
 - Tocar no (+) mostra antes uma faixa de atalhos para o que você mais lança; cada um já traz a categoria, o destino (box ou cartão) e o valor da última vez — você confere e confirma.
 - Atalho com ponto azul vai para cartão; sem ponto, é lançamento direto na box.
 - Só conta o que você digitou — lançamentos e compras no cartão — nos últimos dois meses; recorrência, fatura e assinatura não viram atalho porque já entram sozinhas.

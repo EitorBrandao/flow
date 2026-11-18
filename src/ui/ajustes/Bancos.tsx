@@ -69,6 +69,7 @@ export default function Bancos() {
     await repo.salvarBanco({ boxId: boxId!, nome: nomeNovo.trim(), ordem });
     await repo.sincronizarCartoes(dados!.config.horizonteProjecao);
     await recarregar();
+    avisar('Banco criado');
     setNomeNovo('');
     setAvisoCriacao('');
   }
@@ -103,6 +104,7 @@ export default function Bancos() {
     setEditandoId(null);
     setAvisoEdicao('');
     await recarregar();
+    avisar('Banco salvo');
   }
 
   async function excluir() {
@@ -119,6 +121,7 @@ export default function Bancos() {
     await repo.definirBancoPadrao(id);
     await repo.sincronizarCartoes(dados!.config.horizonteProjecao);
     await recarregar();
+    avisar('Banco padrão definido');
   }
 
   return (
@@ -201,7 +204,7 @@ export default function Bancos() {
                     </div>
                   )}
                   <div className="form-botoes">
-                    <button className="botao" onClick={cancelarEdicao}>Cancelar</button>
+                    <button className="botao botao-discreto" onClick={cancelarEdicao}>Cancelar</button>
                     <button className="botao botao-primario" onClick={salvarEdicao}>Salvar</button>
                   </div>
                   {avisoEdicao && <p className="aviso">{avisoEdicao}</p>}

@@ -11,6 +11,7 @@ import PagamentoFaturaSheet from './PagamentoFaturaSheet';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ retorno: null });
 });
 
 /** Cartão com uma fatura de R$ 900,00 já projetada como pendente no Flow. */
@@ -426,4 +427,20 @@ it('fatura com restante já lançado: abre em "Não volta", mostra o lançado e 
     });
     expect(await db.comprasCartao.count()).toBe(2); // a original + o restante, sem duplicar
   } finally { vi.useRealTimers(); }
+});
+
+describe('retorno ao registrar o pagamento', () => {
+  it('registrar o pagamento avisa "Pagamento registrado"', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      const { fatura } = await comFatura();
+      montar(fatura);
+      await digitarPago('85000');
+      await userEvent.click(screen.getByRole('radio', { name: 'Não volta' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Confirmar pagamento' }));
+
+      await vi.waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Pagamento registrado'));
+    } finally { vi.useRealTimers(); }
+  });
 });

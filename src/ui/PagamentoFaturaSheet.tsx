@@ -45,7 +45,7 @@ export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, valo
   valorInicialCent?: number;
   onFechar: () => void;
 }) {
-  const { dados, hoje, recarregar } = useApp();
+  const { dados, hoje, recarregar, avisar } = useApp();
   const [valorPago, setValorPago] = useState(valorInicialCent ?? lancamento.valor);
   // Pendente ⇒ o pagamento está acontecendo agora (inclusive adiantado, já que a fila mostra
   // a fatura antes de vencer). Já efetivo ⇒ manter a data registrada, para uma correção de
@@ -99,6 +99,7 @@ export default function PagamentoFaturaSheet({ lancamento, totalFaturaCent, valo
         horizonte: dados!.config.horizonteProjecao,
       });
       await recarregar();
+      avisar('Pagamento registrado');
       onFechar();
     } finally {
       setSalvando(false);

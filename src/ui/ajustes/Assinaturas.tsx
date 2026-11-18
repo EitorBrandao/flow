@@ -87,7 +87,7 @@ function FormAssinatura({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
       </div>
       <p className="sub">Categoria Assinaturas — automática, não precisa escolher.</p>
       <div className="form-botoes">
-        {onCancelar && <button className="botao" onClick={onCancelar}>Cancelar</button>}
+        {onCancelar && <button className="botao botao-discreto" onClick={onCancelar}>Cancelar</button>}
         <button className="botao botao-primario" onClick={salvar}>{rotuloSalvar}</button>
       </div>
       {aviso && <p className="aviso">{aviso}</p>}
@@ -144,6 +144,7 @@ export default function Assinaturas() {
     await repo.salvarAssinatura({ cartaoId, categoriaCartaoId, ...campos }, horizonte);
     setVersaoNova((v) => v + 1);
     await recarregar();
+    avisar('Assinatura criada');
   }
 
   async function atualizar(id: string, campos: CamposAssinaturaSalvos) {
@@ -154,12 +155,14 @@ export default function Assinaturas() {
     await repo.salvarAssinatura({ ...original, ...campos, cartaoId, categoriaCartaoId }, horizonte);
     setEditandoId(null);
     await recarregar();
+    avisar('Assinatura salva');
   }
 
   async function alternarAtiva(id: string) {
     const a = dados!.recorrenciasCartao.find((x) => x.id === id)!;
     await repo.salvarAssinatura({ ...a, ativa: !a.ativa }, horizonte);
     await recarregar();
+    avisar(a.ativa ? 'Assinatura pausada' : 'Assinatura retomada');
   }
 
   async function excluir() {

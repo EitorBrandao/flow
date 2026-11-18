@@ -11,7 +11,7 @@ import Bancos from './Bancos';
 
 beforeEach(async () => {
   await limparDb();
-  useApp.setState({ boxSel: 'casa' });
+  useApp.setState({ boxSel: 'casa', retorno: null });
 });
 
 async function comBox() {
@@ -487,5 +487,66 @@ describe('Bancos com a casa no topo', () => {
     expect(screen.getByLabelText('Nome do banco')).toBeInTheDocument();
     expect(screen.getByText('Banco da Ana')).toBeInTheDocument();
     expect(screen.queryByText('Banco do Bruno')).not.toBeInTheDocument();
+  });
+});
+
+describe('retorno ao salvar', () => {
+  it('criar um banco avisa "Banco criado"', async () => {
+    await comBox();
+    render(<Bancos />);
+    await userEvent.type(screen.getByLabelText('Nome do banco'), 'Banco Um');
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Banco criado'));
+  });
+
+  it('criar sem nome não avisa', async () => {
+    await comBox();
+    render(<Bancos />);
+    await userEvent.click(screen.getByRole('button', { name: 'Criar' }));
+
+    expect(await screen.findByText('Dê um nome ao banco para criar.')).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('editar um banco avisa "Banco salvo"', async () => {
+    const box = await comBox();
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Antigo', ordem: 0 });
+    await recarregarDados();
+    render(<Bancos />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    const nome = screen.getByLabelText('Nome') as HTMLInputElement;
+    await userEvent.clear(nome);
+    await userEvent.type(nome, 'Banco Novo');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Banco salvo'));
+  });
+
+  it('salvar a edição com o nome apagado não avisa', async () => {
+    const box = await comBox();
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Antigo', ordem: 0 });
+    await recarregarDados();
+    render(<Bancos />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    await userEvent.clear(screen.getByLabelText('Nome'));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    expect(await screen.findByText('Dê um nome ao banco para salvar.')).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('"Tornar padrão" avisa "Banco padrão definido"', async () => {
+    const box = await comBox();
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Um', ordem: 0 });
+    await repo.salvarBanco({ boxId: box.id, nome: 'Banco Dois', ordem: 1 });
+    await recarregarDados();
+    render(<Bancos />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Tornar padrão' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Banco padrão definido'));
   });
 });
