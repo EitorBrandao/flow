@@ -28,5 +28,6 @@ qualquer nível: [`transversais.md`](estilo/transversais.md).
 - [`fundamentos.md`](estilo/fundamentos.md) — princípios, tokens, escalas. Mudar isto = nível 6.
 - [`catalogo.md`](estilo/catalogo.md) — classes e componentes existentes. **Quem cria, cataloga.**
 - [`transversais.md`](estilo/transversais.md) — movimento (receitas framer-motion) e acessibilidade.
+- [`interacao.md`](estilo/interacao.md) — confirmar, avisar e ordenar botões. Leia antes de criar um botão que grava ou apaga.
 
 Decisões pontuais históricas: specs em `docs/superpowers/specs/`.
