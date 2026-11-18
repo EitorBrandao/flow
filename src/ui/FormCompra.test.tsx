@@ -12,6 +12,7 @@ import FormCompra from './FormCompra';
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ retorno: null });
 });
 
 async function montarCartao() {
@@ -740,4 +741,61 @@ it('avisa o que falta ao salvar sem valor ou sem categoria, uma frase por vez', 
   expect(screen.queryByText('Escolha uma categoria para salvar.')).not.toBeInTheDocument();
   expect(onFechar).not.toHaveBeenCalled();
   expect(await db.comprasCartao.toArray()).toHaveLength(0);
+});
+
+describe('retorno ao salvar a compra', () => {
+  it('lançar uma compra nova avisa "Compra lançada"', async () => {
+    const { box, cartao } = await montarCartao();
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    render(<FormCompra cartao={cartao} onFechar={() => {}} />);
+
+    await userEvent.type(screen.getByLabelText('Valor'), '100,00');
+    await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Compra lançada'));
+  });
+
+  it('salvar uma compra existente avisa "Compra salva"', async () => {
+    const { cartao, compra } = await compraSalva();
+    render(<FormCompra cartao={cartao} compra={compra} onFechar={() => {}} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Compra salva'));
+  });
+
+  it('salvar com o valor vazio não grava e não avisa', async () => {
+    const { box, cartao } = await montarCartao();
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    render(<FormCompra cartao={cartao} onFechar={() => {}} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    expect(screen.getByText('Digite um valor para salvar.')).toBeInTheDocument();
+    expect(useApp.getState().retorno).toBeNull();
+    expect(await db.comprasCartao.count()).toBe(0);
+  });
+
+  it('compra repetida pede confirmação sem avisar; "Salvar mesmo assim" avisa "Compra lançada"', async () => {
+    const { box, cartao, catCartao } = await montarCartao();
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-01',
+      valorTotal: 30000, parcelas: 1, descricao: 'geladeira',
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    render(<FormCompra cartao={cartao} onFechar={() => {}} />);
+
+    await userEvent.type(screen.getByLabelText('Valor'), '300,00');
+    await userEvent.click(screen.getByRole('button', { name: 'mercado' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    await screen.findByRole('button', { name: 'Salvar mesmo assim' });
+    expect(useApp.getState().retorno).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar mesmo assim' }));
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Compra lançada'));
+  });
 });

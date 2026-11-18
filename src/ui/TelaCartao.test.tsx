@@ -18,6 +18,7 @@ async function responderNoSheet(titulo: string | RegExp, botao: string) {
 
 beforeEach(async () => {
   await limparDb();
+  useApp.setState({ retorno: null });
 });
 
 async function montarCartao() {
@@ -733,5 +734,77 @@ describe('seletor de cartão', () => {
     expect(screen.getByRole('heading', { name: 'Cartão B' })).toBeInTheDocument();
     act(() => useApp.setState({ boxSel: ana.id }));
     expect(screen.getByRole('heading', { name: 'Cartão A' })).toBeInTheDocument();
+  });
+});
+
+describe('retorno ao salvar a conferência e o fechamento', () => {
+  afterEach(() => { vi.useRealTimers(); });
+
+  /** Cartão com uma compra em julho, aberto na aba Conferência da fatura. */
+  async function abrirConferencia() {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao, catCartao } = await montarCartao();
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-01',
+      valorTotal: 5000, parcelas: 1,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01', retorno: null });
+    render(<TelaCartao />);
+    await abrirAba(/Conferência/);
+  }
+
+  it('salvar a conferência avisa "Valor da fatura salvo"', async () => {
+    await abrirConferencia();
+    await userEvent.type(screen.getByLabelText('Valor no app do banco'), '100,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Valor da fatura salvo'));
+  });
+
+  it('salvar a conferência sem valor não grava nem avisa', async () => {
+    await abrirConferencia();
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
+
+    expect(useApp.getState().retorno).toBeNull();
+    expect(await db.conferenciasFatura.count()).toBe(0);
+  });
+
+  it('marcar "usar este valor no Flow" avisa "Valor da fatura salvo"', async () => {
+    await abrirConferencia();
+    await userEvent.type(screen.getByLabelText('Valor no app do banco'), '100,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
+    await screen.findByLabelText(/usar este valor no Flow/);
+    useApp.setState({ retorno: null });
+
+    await userEvent.click(screen.getByLabelText(/usar este valor no Flow/));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Valor da fatura salvo'));
+  });
+
+  it('remover a conferência avisa "Valor da fatura removido"', async () => {
+    await abrirConferencia();
+    await userEvent.type(screen.getByLabelText('Valor no app do banco'), '100,00');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar conferência' }));
+    await screen.findByRole('button', { name: 'Remover conferência' });
+    useApp.setState({ retorno: null });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remover conferência' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Valor da fatura removido'));
+  });
+
+  it('salvar e remover o fechamento avisam "Fechamento ajustado" e "Ajuste de fechamento removido"', async () => {
+    await abrirConferencia();
+    await userEvent.clear(screen.getByLabelText('Fechou dia'));
+    await userEvent.type(screen.getByLabelText('Fechou dia'), '30');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar fechamento' }));
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Fechamento ajustado'));
+
+    useApp.setState({ retorno: null });
+    await userEvent.click(await screen.findByRole('button', { name: 'Remover fechamento' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Ajuste de fechamento removido'));
   });
 });

@@ -14,7 +14,10 @@ async function responderNoSheet(titulo: string | RegExp, botao: string) {
   await userEvent.click(within(dialogo).getByRole('button', { name: botao }));
 }
 
-beforeEach(async () => { await limparDb(); });
+beforeEach(async () => {
+  await limparDb();
+  useApp.setState({ retorno: null });
+});
 afterEach(() => { vi.useRealTimers(); });
 
 const HORIZONTE = '2027-12-31';
@@ -370,5 +373,36 @@ it('Paguei outro valor: confirmar grava o lançamento efetivo com o valor pago',
     const f = (await faturas()).filter((l) => l.faturaMes === '2026-10' && l.status === 'efetivo');
     expect(f).toHaveLength(1);
     expect(f[0].valor).toBe(100000);
+  });
+});
+
+describe('retorno ao salvar a fatura', () => {
+  it('salvar o valor da fatura avisa "Fatura salva"', async () => {
+    await montar();
+    render(<TelaCartao />);
+    await userEvent.type(screen.getByLabelText('Valor da fatura'), '187000');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar fatura' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Fatura salva'));
+  });
+
+  it('valor zerado não salva e não avisa', async () => {
+    await montar();
+    render(<TelaCartao />);
+    const salvar = screen.getByRole('button', { name: 'Salvar fatura' });
+    expect(salvar).toBeDisabled();
+    await userEvent.click(salvar);
+
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('pagar a fatura inteira avisa "Fatura paga"', async () => {
+    await montar();
+    render(<TelaCartao />);
+    await userEvent.type(screen.getByLabelText('Valor da fatura'), '187000');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar fatura' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Paguei tudo' }));
+
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Fatura paga'));
   });
 });

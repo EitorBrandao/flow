@@ -209,6 +209,7 @@ export default function FormCompra({ cartao, compra, inicial, onFechar }: {
       await repo.excluirNotaFiscalDaCompra(compraId);
     }
     await recarregar();
+    avisar(compra ? 'Compra salva' : 'Compra lançada');
     onFechar();
   }
 
