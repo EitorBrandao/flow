@@ -30,6 +30,12 @@ async function recarregarDados() {
   useApp.setState({ dados: await repo.carregarTudo() });
 }
 
+/** Responde ao sheet de confirmação da tela, pelo título do diálogo. */
+async function responderNoSheet(titulo: string | RegExp, botao: string) {
+  const dialogo = await screen.findByRole('dialog', { name: titulo });
+  await userEvent.click(within(dialogo).getByRole('button', { name: botao }));
+}
+
 it('cria um banco pelo formulário do topo', async () => {
   const box = await comBox();
   render(<Bancos />);
@@ -121,27 +127,28 @@ it('cancelar a edição não persiste nenhuma mudança', async () => {
   expect(inalterado?.nome).toBe('Banco Original');
 });
 
-it('exclui um banco após confirmar', async () => {
+it('exclui um banco após confirmar no sheet, e avisa', async () => {
   const box = await comBox();
   await repo.salvarBanco({ boxId: box.id, nome: 'Banco a Excluir', ordem: 0 });
   await recarregarDados();
-  vi.spyOn(window, 'confirm').mockReturnValue(true);
   render(<Bancos />);
 
   await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  await responderNoSheet('Excluir este banco?', 'Excluir');
 
   await waitFor(async () => expect(await db.bancos.count()).toBe(0));
   await waitFor(() => expect(screen.queryByText('Banco a Excluir')).not.toBeInTheDocument());
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Banco excluído'));
 });
 
-it('não exclui quando a confirmação é cancelada', async () => {
+it('Cancelar não apaga o banco', async () => {
   const box = await comBox();
   await repo.salvarBanco({ boxId: box.id, nome: 'Banco Mantido', ordem: 0 });
   await recarregarDados();
-  vi.spyOn(window, 'confirm').mockReturnValue(false);
   render(<Bancos />);
 
   await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  await responderNoSheet('Excluir este banco?', 'Cancelar');
 
   expect(await db.bancos.count()).toBe(1);
   expect(screen.getByText('Banco Mantido')).toBeInTheDocument();

@@ -384,3 +384,43 @@ it('editar recorrência que tem banco preserva o banco e permite trocar', async 
     expect((await db.recorrencias.get(rec.id))?.bancoId).toBe(dois.id);
   });
 });
+
+/** Responde ao sheet de confirmação da tela, pelo título do diálogo. */
+async function responderNoSheet(titulo: string | RegExp, botao: string) {
+  const dialogo = await screen.findByRole('dialog', { name: titulo });
+  await userEvent.click(within(dialogo).getByRole('button', { name: botao }));
+}
+
+async function prepararRecorrencia() {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'assinatura', tipo: 'gasto', ordem: 0 });
+  return repo.salvarRecorrencia({
+    boxId: box.id, categoriaId: cat.id, valor: 5000, dataInicio: '2026-07-01',
+    diaDoMes: 5, parcelas: 3,
+  }, '2027-12-31');
+}
+
+it('Cancelar não apaga a recorrência', async () => {
+  const rec = await prepararRecorrencia();
+  await useApp.getState().iniciar();
+  render(<Recorrencias />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  await responderNoSheet('Excluir esta recorrência?', 'Cancelar');
+
+  expect(await db.recorrencias.get(rec.id)).toBeDefined();
+});
+
+it('confirmar apaga a recorrência e avisa', async () => {
+  await prepararRecorrencia();
+  await useApp.getState().iniciar();
+  render(<Recorrencias />);
+
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  await responderNoSheet('Excluir esta recorrência?', 'Excluir');
+
+  await waitFor(async () => expect(await db.recorrencias.count()).toBe(0));
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Recorrência excluída'));
+});

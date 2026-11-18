@@ -4,12 +4,14 @@ import * as repo from '../../db/repo';
 import { hojeISO } from '../../domain/dates';
 import { estadoBackup, SUFIXO_MUDANCAS_BACKUP } from '../../domain/estadoBackup';
 import { useApp } from '../../state/store';
+import ConfirmarSheet from '../ConfirmarSheet';
 import EscolherArquivo from '../EscolherArquivo';
 
 export default function Backup() {
   const { dados, hoje, recarregar } = useApp();
   const [modo, setModo] = useState<'substituir' | 'mesclar'>('substituir');
   const [msg, setMsg] = useState('');
+  const [arquivoPendente, setArquivoPendente] = useState<File | null>(null);
   const uid = useId();
   if (!dados) return null;
 
@@ -51,10 +53,7 @@ export default function Backup() {
   }
 
   async function restaurar(file: File) {
-    const aviso = modo === 'substituir'
-      ? 'Substituir TODOS os dados pelo backup?'
-      : 'Mesclar o backup com os dados atuais?';
-    if (!window.confirm(aviso)) return;
+    setArquivoPendente(null);
     try {
       const backup = validarBackup(JSON.parse(await file.text()));
       const finais = modo === 'substituir'
@@ -85,9 +84,21 @@ export default function Backup() {
       </div>
       <div className="campo">
         <label htmlFor={`${uid}-arquivo`}>Arquivo de backup (.json)</label>
-        <EscolherArquivo id={`${uid}-arquivo`} accept="application/json,.json" onEscolher={(f) => void restaurar(f)} />
+        <EscolherArquivo id={`${uid}-arquivo`} accept="application/json,.json" onEscolher={(f) => setArquivoPendente(f)} />
       </div>
       {msg && <p className="aviso">{msg}</p>}
+      <ConfirmarSheet
+        aberto={arquivoPendente != null}
+        titulo={modo === 'substituir' ? 'Substituir todos os dados pelo backup?' : 'Mesclar o backup com os dados atuais?'}
+        resumo={<span className="cresce">{arquivoPendente?.name}</span>}
+        apoio={modo === 'substituir'
+          ? 'Tudo o que está no app hoje é apagado e trocado pelo conteúdo do arquivo.'
+          : 'O que está no arquivo entra junto com o que já está no app.'}
+        rotuloConfirmar={modo === 'substituir' ? 'Substituir' : 'Mesclar'}
+        perigo={modo === 'substituir'}
+        onCancelar={() => setArquivoPendente(null)}
+        onConfirmar={() => { if (arquivoPendente) void restaurar(arquivoPendente); }}
+      />
     </div>
   );
 }
