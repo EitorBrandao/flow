@@ -12,7 +12,7 @@ Referência transversal, como `transversais.md`: vale em qualquer nível de edi�
 ## Avisar
 
 5. **Toda gravação dá retorno**, pelo `Retorno`: `avisar('Alteração salva')`. Frase curta, no passado, sem ponto final.
-6. O aviso some sozinho: 3 s, ou 6 s quando tem "Desfazer". Um aviso novo substitui o anterior, e o "Desfazer" do anterior deixa de existir.
+6. O aviso some sozinho: 3 s, ou 6 s quando tem "Desfazer". Um aviso novo substitui o anterior, e o "Desfazer" do anterior deixa de existir. Com um sheet aberto, o aviso sobe para logo acima da borda do sheet, para não cobrir o conteúdo dele.
 7. O retorno não substitui o aviso de validação. Erro de preenchimento continua abaixo do botão, em `.aviso`.
 
 ## Ordenar botões
