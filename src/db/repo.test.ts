@@ -2421,3 +2421,56 @@ describe('cnpjsCategoria', () => {
     await expect(db.cnpjsCategoria.count()).resolves.toBe(0);
   });
 });
+
+describe('restaurarLancamento', () => {
+  it('devolve o lançamento excluído, idêntico e com o mesmo id', async () => {
+    const { box, gasto } = await boxECategoria();
+    const original = await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2026-07-05', valor: 5000, nota: 'feira', status: 'efetivo',
+    });
+
+    await repo.excluirLancamento(original.id);
+    expect(await db.lancamentos.get(original.id)).toBeUndefined();
+
+    await repo.restaurarLancamento(original);
+
+    expect(await db.lancamentos.get(original.id)).toEqual(original);
+    expect(await db.lancamentos.count()).toBe(1);
+  });
+
+  it('restaurar duas vezes não duplica', async () => {
+    const { box, gasto } = await boxECategoria();
+    const original = await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2026-07-05', valor: 5000, status: 'previsto',
+    });
+    await repo.excluirLancamento(original.id);
+
+    await repo.restaurarLancamento(original);
+    await repo.restaurarLancamento(original);
+
+    expect(await db.lancamentos.count()).toBe(1);
+  });
+
+  it('restaurar um lançamento que ainda existe só regrava, sem duplicar', async () => {
+    const { box, gasto } = await boxECategoria();
+    const original = await repo.salvarLancamento({
+      boxId: box.id, categoriaId: gasto.id, data: '2026-07-05', valor: 5000, status: 'previsto',
+    });
+
+    await repo.restaurarLancamento(original);
+
+    expect(await db.lancamentos.count()).toBe(1);
+    expect(await db.lancamentos.get(original.id)).toEqual(original);
+  });
+
+  it('recusa lançamento efetivo de cenário', async () => {
+    const agora = agoraISO();
+    const falso = {
+      id: novoId(), boxId: novoId(), categoriaId: novoId(), data: '2026-07-05', valor: 5000,
+      status: 'efetivo' as const, origem: 'manual' as const, cenarioId: novoId(), criadoEm: agora, alteradoEm: agora,
+    };
+
+    await expect(repo.restaurarLancamento(falso)).rejects.toThrow();
+    expect(await db.lancamentos.count()).toBe(0);
+  });
+});
