@@ -149,6 +149,7 @@ export default function Viagens() {
       </div>
       <ConfirmarSheet
         aberto={excluindoId != null} titulo="Excluir esta viagem?"
+        resumo={<span className="cresce">{dados.viagens.find((v) => v.id === excluindoId)?.nome}</span>}
         apoio="Os lançamentos e as compras marcados continuam existindo; só perdem a marcação de viagem."
         rotuloConfirmar="Excluir" perigo
         onCancelar={() => setExcluindoId(null)} onConfirmar={excluir}

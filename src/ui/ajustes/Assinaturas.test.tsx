@@ -252,6 +252,7 @@ it('Cancelar não apaga a assinatura', async () => {
   render(<Assinaturas />);
 
   await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  expect(within(screen.getByRole('dialog', { name: 'Excluir esta assinatura?' })).getByText('Netflix')).toBeInTheDocument();
   await responderNoSheet('Excluir esta assinatura?', 'Cancelar');
 
   expect(await db.recorrenciasCartao.get(assinatura.id)).toBeDefined();

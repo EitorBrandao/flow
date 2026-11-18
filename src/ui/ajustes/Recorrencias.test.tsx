@@ -408,6 +408,7 @@ it('Cancelar não apaga a recorrência', async () => {
   render(<Recorrencias />);
 
   await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  expect(within(screen.getByRole('dialog', { name: 'Excluir esta recorrência?' })).getByText('assinatura')).toBeInTheDocument();
   await responderNoSheet('Excluir esta recorrência?', 'Cancelar');
 
   expect(await db.recorrencias.get(rec.id)).toBeDefined();

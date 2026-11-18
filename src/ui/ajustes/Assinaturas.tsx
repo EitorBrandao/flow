@@ -237,6 +237,7 @@ export default function Assinaturas() {
       )}
       <ConfirmarSheet
         aberto={excluindoId != null} titulo="Excluir esta assinatura?"
+        resumo={<span className="cresce">{dados.recorrenciasCartao.find((a) => a.id === excluindoId)?.descricao ?? 'Assinatura'}</span>}
         apoio="As compras futuras dela são apagadas. As passadas são mantidas."
         rotuloConfirmar="Excluir" perigo
         onCancelar={() => setExcluindoId(null)} onConfirmar={excluir}

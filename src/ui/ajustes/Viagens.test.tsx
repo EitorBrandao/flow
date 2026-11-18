@@ -152,6 +152,7 @@ it('Cancelar não apaga a viagem', async () => {
   render(<Viagens />);
 
   await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  expect(within(screen.getByRole('dialog', { name: 'Excluir esta viagem?' })).getByText('Praia')).toBeInTheDocument();
   await responderNoSheet('Excluir esta viagem?', 'Cancelar');
 
   expect(await db.viagens.count()).toBe(1);

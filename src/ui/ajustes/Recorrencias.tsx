@@ -268,6 +268,7 @@ export default function Recorrencias() {
       </div>
       <ConfirmarSheet
         aberto={excluindoId != null} titulo="Excluir esta recorrência?"
+        resumo={<span className="cresce">{nomeCat(recs.find((r) => r.id === excluindoId)?.categoriaId ?? '')}</span>}
         apoio="Os previstos dela são apagados. Os lançamentos já confirmados são mantidos."
         rotuloConfirmar="Excluir" perigo
         onCancelar={() => setExcluindoId(null)} onConfirmar={excluir}
