@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import Sheet from './Sheet';
 
@@ -22,6 +22,19 @@ interface Props {
 export default function ConfirmarSheet({
   aberto, titulo, resumo, apoio, rotuloConfirmar, perigo = false, onCancelar, onConfirmar,
 }: Props) {
+  // Um toque duplo não pode confirmar duas vezes: no Backup, a segunda chamada restauraria o
+  // arquivo de novo. A marca volta a falso quando o sheet abre outra vez.
+  const jaConfirmou = useRef(false);
+  useEffect(() => {
+    if (aberto) jaConfirmou.current = false;
+  }, [aberto]);
+
+  function confirmar() {
+    if (jaConfirmou.current) return;
+    jaConfirmou.current = true;
+    onConfirmar();
+  }
+
   // Portal no body, pelo mesmo motivo do ConfirmarRepetidoSheet: aninhado num sheet, este
   // receberia o arrasto do sheet de fora e fecharia os dois.
   return createPortal(
@@ -36,7 +49,7 @@ export default function ConfirmarSheet({
           <button type="button" className="botao botao-discreto" onClick={onCancelar}>Cancelar</button>
           <button
             type="button" className={`botao ${perigo ? 'botao-perigo-cheio' : 'botao-primario'}`}
-            onClick={onConfirmar}
+            onClick={confirmar}
           >
             {rotuloConfirmar}
           </button>

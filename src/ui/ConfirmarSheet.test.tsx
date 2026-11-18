@@ -66,3 +66,27 @@ it('Cancelar é o botão com contorno', () => {
   montar();
   expect(screen.getByRole('button', { name: 'Cancelar' })).toHaveClass('botao-discreto');
 });
+
+it('dois cliques seguidos em confirmar chamam onConfirmar uma vez só', async () => {
+  const { onConfirmar } = montar();
+  const confirmar = screen.getByRole('button', { name: 'Excluir' });
+  await userEvent.click(confirmar);
+  await userEvent.click(confirmar);
+  expect(onConfirmar).toHaveBeenCalledOnce();
+});
+
+it('fechando e reabrindo o sheet, um novo clique em confirmar volta a chamar', async () => {
+  const onConfirmar = vi.fn();
+  const props = {
+    titulo: 'Excluir esta viagem?', rotuloConfirmar: 'Excluir',
+    onCancelar: vi.fn(), onConfirmar,
+  };
+  const { rerender } = render(<ConfirmarSheet aberto {...props} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  expect(onConfirmar).toHaveBeenCalledOnce();
+
+  rerender(<ConfirmarSheet aberto={false} {...props} />);
+  rerender(<ConfirmarSheet aberto {...props} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  expect(onConfirmar).toHaveBeenCalledTimes(2);
+});
