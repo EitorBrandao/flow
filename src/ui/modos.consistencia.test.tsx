@@ -129,7 +129,7 @@ describe('lançamento criado no Lançar simples', () => {
     await userEvent.type(screen.getByLabelText('Valor'), '4500');
     await userEvent.type(screen.getByLabelText('Do que foi? (opcional)'), 'padaria');
     await userEvent.click(screen.getByRole('button', { name: 'Lançar' }));
-    expect(await screen.findByText('Lançado ✓')).toBeInTheDocument();
+    await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Lançado'));
     unmount();
   }
 
