@@ -16,7 +16,7 @@ import SeletorPills from './SeletorPills';
  *  Grava um cenário de rascunho (`rascunho: true`, nome `NOME_SIMULACAO_RAPIDA`) com um item e mostra o menor saldo
  *  da projeção com e sem a compra. Sem "Guardar", o rascunho é apagado ao sair. */
 export default function SimuladorSimples() {
-  const { dados, boxSel, hoje, recarregar, avisar } = useApp();
+  const { dados, boxSel, hoje, recarregar } = useApp();
   const uid = useId();
   const [valor, setValor] = useState(0);
   const [data, setData] = useState<ISODate | ''>('');
@@ -100,7 +100,6 @@ export default function SimuladorSimples() {
       if (desmontadoRef.current) return;
       await recarregar();
       if (desmontadoRef.current) return;
-      avisar('Cenário criado');
       const pronto = id;
       id = null;
       setGuardado(false); setErroGuardar(false);

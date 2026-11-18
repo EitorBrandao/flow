@@ -322,12 +322,13 @@ it('o rascunho nasce com o escopo da visão e "Guardar" o mantém', async () => 
 });
 
 describe('retorno ao gravar', () => {
-  it('Simular cria o rascunho e avisa "Cenário criado"', async () => {
+  it('Simular não avisa: a tabela de resultado já é o retorno', async () => {
     await preparar();
     render(<SimuladorSimples />);
     await preencher('1500,00', '2026-10-15');
     await simular();
-    expect(useApp.getState().retorno?.texto).toBe('Cenário criado');
+    expect(await rascunhos()).toHaveLength(1);
+    expect(useApp.getState().retorno).toBeNull();
   });
 
   it('Simular com data anterior a hoje não grava e não avisa', async () => {
