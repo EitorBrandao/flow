@@ -48,6 +48,12 @@ export const IMPORTACAO_VAZIA: ImportacaoPendente = {
   destinoBlocos: {}, trocas: {}, totaisCorrigidos: {}, datasCorrigidas: {}, filtro: null,
 };
 
+/** Aviso curto depois de uma ação: o que aconteceu e, quando dá, como voltar atrás. */
+export interface Retorno { id: number; texto: string; desfazer?: () => Promise<void> }
+
+/** Numera os avisos: dois avisos com o mesmo texto ainda são avisos diferentes. */
+let proximoRetorno = 0;
+
 interface AppState {
   carregado: boolean;
   dados: Dados | null;
@@ -59,6 +65,7 @@ interface AppState {
   cartaoPedido: PedidoCartao | null;
   rascunhoLancar: RascunhoLancar | null;
   importacao: ImportacaoPendente;
+  retorno: Retorno | null;
   iniciar(): Promise<void>;
   recarregar(): Promise<void>;
   setAba(aba: Aba): void;
@@ -73,6 +80,9 @@ interface AppState {
   /** Mescla o que `f` devolve na conferência pendente; `f` recebe o estado mais recente. */
   setImportacao(f: (atual: ImportacaoPendente) => Partial<ImportacaoPendente>): void;
   limparImportacao(): void;
+  /** Mostra o aviso de retorno. Um aviso novo substitui o anterior. */
+  avisar(texto: string, desfazer?: () => Promise<void>): void;
+  limparRetorno(): void;
 }
 
 export const useApp = create<AppState>((set) => ({
@@ -86,6 +96,7 @@ export const useApp = create<AppState>((set) => ({
   cartaoPedido: null,
   rascunhoLancar: null,
   importacao: IMPORTACAO_VAZIA,
+  retorno: null,
   async iniciar() {
     // Um Mesclar antigo pode ter deixado duas boxes casa: junta antes de qualquer outra coisa.
     await repo.unificarCasasDuplicadas();
@@ -117,6 +128,8 @@ export const useApp = create<AppState>((set) => ({
   setRascunhoLancar: (rascunhoLancar) => set({ rascunhoLancar }),
   setImportacao: (f) => set((st) => ({ importacao: { ...st.importacao, ...f(st.importacao) } })),
   limparImportacao: () => set({ importacao: IMPORTACAO_VAZIA }),
+  avisar: (texto, desfazer) => { proximoRetorno += 1; set({ retorno: { id: proximoRetorno, texto, desfazer } }); },
+  limparRetorno: () => set({ retorno: null }),
 }));
 
 /**
