@@ -6,6 +6,7 @@ import { itensDoCenario, type ItemCenario, type LinhaMes } from '../domain/simul
 import type { Cenario, ID, ISODate } from '../domain/types';
 import { useApp } from '../state/store';
 import FormItemCenario, { gravarItemNovo, type ValoresItem } from './FormItemCenario';
+import ConfirmarSheet from './ConfirmarSheet';
 import ItemCenarioSheet from './ItemCenarioSheet';
 import TabelaSimulacao from './TabelaSimulacao';
 
@@ -26,7 +27,8 @@ interface Props {
  *  cabeçalho), e, aberto, mostra os itens, o impacto isolado, o formulário de item novo
  *  e as ações Tornar real / Excluir. */
 export default function CenarioCard({ cenario, linhas, negativoEm, larguraCh, aberto, onAlternar, boxIdNovo }: Props) {
-  const { dados, hoje, recarregar } = useApp();
+  const { dados, hoje, recarregar, avisar } = useApp();
+  const [confirmando, setConfirmando] = useState<'real' | 'excluir' | null>(null);
   const [editando, setEditando] = useState<ItemCenario | null>(null);
   const [formKey, setFormKey] = useState(0);
   const [adicionando, setAdicionando] = useState(false);
@@ -41,17 +43,18 @@ export default function CenarioCard({ cenario, linhas, negativoEm, larguraCh, ab
     await repo.salvarCenario({ ...cenario, ligado: !cenario.ligado });
     await recarregar();
   }
+  const temPassado = dados.lancamentos.some((l) => l.cenarioId === cenario.id && l.data <= hoje);
   async function tornarReal() {
-    const temPassado = dados!.lancamentos.some((l) => l.cenarioId === cenario.id && l.data <= hoje);
-    const aviso = temPassado ? ' Itens com data já passada vão para os Pendentes, em Hoje.' : '';
-    if (!window.confirm(`Converter "${cenario.nome}" em lançamentos reais?${aviso}`)) return;
+    setConfirmando(null);
     await repo.converterCenarioEmReal(cenario.id);
     await recarregar();
+    avisar('Cenário convertido em lançamentos reais');
   }
   async function excluir() {
-    if (!window.confirm(`Excluir o cenário "${cenario.nome}" e seus itens?`)) return;
+    setConfirmando(null);
     await repo.excluirCenario(cenario.id);
     await recarregar();
+    avisar('Cenário excluído');
   }
   async function adicionar(v: ValoresItem) {
     await gravarItemNovo(cenario.id, boxIdNovo!, v, dados!.config.horizonteProjecao);
@@ -162,13 +165,25 @@ export default function CenarioCard({ cenario, linhas, negativoEm, larguraCh, ab
           )}
 
           <div className="acoes">
-            <button className="botao" onClick={tornarReal}>Tornar real</button>
-            <button className="botao botao-perigo" onClick={excluir}>Excluir cenário</button>
+            <button className="botao" onClick={() => setConfirmando('real')}>Tornar real</button>
+            <button className="botao botao-perigo" onClick={() => setConfirmando('excluir')}>Excluir cenário</button>
           </div>
         </div>
       )}
 
       {editando && <ItemCenarioSheet item={editando} onFechar={() => setEditando(null)} />}
+      <ConfirmarSheet
+        aberto={confirmando === 'real'} titulo={`Converter "${cenario.nome}" em lançamentos reais?`}
+        apoio={temPassado ? 'Itens com data já passada vão para os Pendentes, em Hoje.' : undefined}
+        rotuloConfirmar="Tornar real"
+        onCancelar={() => setConfirmando(null)} onConfirmar={tornarReal}
+      />
+      <ConfirmarSheet
+        aberto={confirmando === 'excluir'} titulo={`Excluir o cenário "${cenario.nome}"?`}
+        apoio="Os itens dele são apagados junto."
+        rotuloConfirmar="Excluir" perigo
+        onCancelar={() => setConfirmando(null)} onConfirmar={excluir}
+      />
     </div>
   );
 }

@@ -11,6 +11,11 @@ import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import TelaCartao from './TelaCartao';
 
+async function responderNoSheet(titulo: string | RegExp, botao: string) {
+  const dialogo = await screen.findByRole('dialog', { name: titulo });
+  await userEvent.click(within(dialogo).getByRole('button', { name: botao }));
+}
+
 beforeEach(async () => {
   await limparDb();
 });
@@ -58,7 +63,6 @@ it('com a casa no topo e sem cartão, pede para escolher uma box e não oferece 
 
 it('editar uma compra existente abre o formulário num Sheet', async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
-  let confirmSpy: any;
   try {
     vi.setSystemTime(new Date('2026-07-01T12:00:00'));
     const { box, cartao, catCartao } = await montarCartao();
@@ -75,13 +79,37 @@ it('editar uma compra existente abre o formulário num Sheet', async () => {
     expect(await screen.findByRole('dialog', { name: 'Editar compra' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Editar compra' })).toBeInTheDocument();
 
-    confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+    await responderNoSheet('Excluir esta compra?', 'Excluir');
     await waitFor(async () => {
       expect(await db.comprasCartao.get(compra.id)).toBeUndefined();
     });
   } finally {
-    confirmSpy?.mockRestore();
+    vi.useRealTimers();
+  }
+});
+
+it('tocar duas vezes em Excluir abre o diálogo de exclusão da compra uma vez só', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  try {
+    vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+    const { box, cartao, catCartao } = await montarCartao();
+    await repo.salvarCompraCartao({
+      cartaoId: cartao.id, categoriaCartaoId: catCartao.id, data: '2026-07-01',
+      valorTotal: 5000, parcelas: 1,
+    }, '2027-12-31');
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-01' });
+    render(<TelaCartao />);
+
+    await abrirAba('Lançamentos');
+    await userEvent.click(await screen.findByText('mercado'));
+    await screen.findByRole('dialog', { name: 'Editar compra' });
+
+    await userEvent.dblClick(screen.getByRole('button', { name: 'Excluir' }));
+    await screen.findByRole('dialog', { name: 'Excluir esta compra?' });
+    expect(screen.getAllByRole('dialog', { name: 'Excluir esta compra?' })).toHaveLength(1);
+  } finally {
     vi.useRealTimers();
   }
 });
