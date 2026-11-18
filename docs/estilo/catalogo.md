@@ -33,7 +33,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.badge` | pílula neutra pequena (contagem, status, rótulo "estorno" ao lado de um lançamento com valor negativo) |
 | `.aviso` | faixa âmbar de aviso; um `.botao-ver-mais` dentro dela herda a cor e o tamanho do texto e fica sublinhado (ação do próprio aviso, ex.: "Corrigir o valor pago" na aba Cartão) |
 | `.aviso-urgente` | variante vermelha da `.aviso`, usada junto dela (`aviso aviso-urgente`): `--neg-bg` e `--neg`. Classe solta, não modificador composto, para o verificador de catálogo enxergá-la |
-| `.aviso-sucesso` | variante verde da `.aviso`, usada junto dela (`aviso aviso-sucesso`): `--pos-bg` e `--pos`. Confirmação de ação concluída ("Lançado ✓", "Transferência feita ✓"). Classe solta, como `.aviso-urgente` |
+| `.aviso-sucesso` | variante verde da `.aviso`, usada junto dela (`aviso aviso-sucesso`): `--pos-bg` e `--pos`. Confirmação de ação concluída que mostra mais que uma frase ("Transferência feita ✓", com o saldo antes e depois); a frase curta de "gravou" é o `Retorno`. Classe solta, como `.aviso-urgente` |
 | `.rotulo` | rótulo maiúsculo pequeno acima de um valor/seção |
 | `.rotulo-grupo` | rótulo maiúsculo pequeno de subgrupo dentro de uma lista (ex.: "À vista"/"Parceladas" na fatura do cartão) |
 | `.cabecalho-dia` (+ `.dia-hoje`) | cabeçalho de dia na lista do Fluxo; `.dia-hoje` destaca o dia atual (fundo `--hoje-bg`) |
