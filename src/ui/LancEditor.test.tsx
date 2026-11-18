@@ -89,52 +89,98 @@ it('categoria da fatura de um cartão não aparece no select de categoria do edi
   expect(screen.queryByRole('button', { name: /Nubank/ })).not.toBeInTheDocument();
 });
 
-it('excluir pede confirmação: cancelar mantém o lançamento', async () => {
+async function montarBoxECategoria() {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
   const categoria = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+  return { box, categoria };
+}
+
+it('excluir apaga na hora, fecha o editor e oferece Desfazer', async () => {
+  const { box, categoria } = await montarBoxECategoria();
   const lanc = await repo.salvarLancamento({
     boxId: box.id, categoriaId: categoria.id, data: '2026-07-05', valor: 5000, status: 'efetivo',
   });
   await useApp.getState().iniciar();
-  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
 
-  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
   const onFechar = vi.fn();
   render(<LancEditor lanc={lanc} onFechar={onFechar} />);
 
   await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
 
-  expect(confirmSpy).toHaveBeenCalledWith('Excluir este lançamento?');
-  expect(onFechar).not.toHaveBeenCalled();
-  expect(await db.lancamentos.get(lanc.id)).toBeDefined();
-  confirmSpy.mockRestore();
+  await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
+  expect(await db.lancamentos.get(lanc.id)).toBeUndefined();
+  const retorno = useApp.getState().retorno!;
+  expect(retorno.texto).toBe('Lançamento excluído');
+
+  await retorno.desfazer!();
+  expect(await db.lancamentos.get(lanc.id)).toEqual(lanc);
 });
 
-it('excluir pede confirmação: confirmar apaga o lançamento', async () => {
-  const agora = agoraISO();
-  const box = { id: novoId(), nome: 'eitor', saldoInicial: 0, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
-  await repo.salvarBox(box);
-  const categoria = await repo.salvarCategoria({ boxId: box.id, nome: 'mercado', tipo: 'gasto', ordem: 0 });
+it('excluir um previsto diz "Previsto excluído"', async () => {
+  const { box, categoria } = await montarBoxECategoria();
   const previsto = await repo.salvarLancamento({
     boxId: box.id, categoriaId: categoria.id, data: '2026-07-05', valor: 5000, status: 'previsto',
   });
   await useApp.getState().iniciar();
-  useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
 
-  const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
   const onFechar = vi.fn();
   render(<LancEditor lanc={previsto} onFechar={onFechar} />);
 
   await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
 
-  expect(confirmSpy).toHaveBeenCalledWith('Excluir este previsto?');
-  await waitFor(() => {
-    expect(onFechar).toHaveBeenCalledOnce();
-  });
+  await waitFor(() => expect(onFechar).toHaveBeenCalledOnce());
+  expect(useApp.getState().retorno!.texto).toBe('Previsto excluído');
   expect(await db.lancamentos.get(previsto.id)).toBeUndefined();
-  confirmSpy.mockRestore();
+});
+
+it('o Desfazer devolve o lançamento como estava antes de qualquer edição não salva', async () => {
+  const { box, categoria } = await montarBoxECategoria();
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-07-05', valor: 5000, status: 'efetivo', nota: 'feira',
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+
+  render(<LancEditor lanc={lanc} onFechar={vi.fn()} />);
+  await userEvent.clear(screen.getByLabelText('Nota'));
+  await userEvent.type(screen.getByLabelText('Nota'), 'outra coisa');
+
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
+  await waitFor(() => expect(useApp.getState().retorno).not.toBeNull());
+  await useApp.getState().retorno!.desfazer!();
+
+  expect((await db.lancamentos.get(lanc.id))!.nota).toBe('feira');
+});
+
+it('lançamento: Salvar é a ação principal e Fechar tem contorno', async () => {
+  const { box, categoria } = await montarBoxECategoria();
+  const lanc = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-07-05', valor: 5000, status: 'efetivo',
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+
+  render(<LancEditor lanc={lanc} onFechar={vi.fn()} />);
+  expect(screen.getByRole('button', { name: 'Salvar' })).toHaveClass('botao-primario');
+  expect(screen.getByRole('button', { name: 'Fechar' })).toHaveClass('botao-discreto');
+  expect(screen.queryByRole('button', { name: /Confirmar/ })).not.toBeInTheDocument();
+});
+
+it('previsto: Confirmar é a ação principal e Salvar deixa de ser', async () => {
+  const { box, categoria } = await montarBoxECategoria();
+  const previsto = await repo.salvarLancamento({
+    boxId: box.id, categoriaId: categoria.id, data: '2026-07-05', valor: 5000, status: 'previsto',
+  });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+
+  render(<LancEditor lanc={previsto} onFechar={vi.fn()} />);
+  expect(screen.getByRole('button', { name: /Confirmar/ })).toHaveClass('botao-primario');
+  expect(screen.getByRole('button', { name: 'Salvar' })).not.toHaveClass('botao-primario');
 });
 
 it('lançamento de cenário "uma vez": sem botão Confirmar, com Salvar e Excluir, e dica diz que não pode ser confirmado', async () => {
