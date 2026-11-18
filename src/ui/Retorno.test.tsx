@@ -5,7 +5,7 @@ import { useApp } from '../state/store';
 import Retorno from './Retorno';
 
 beforeEach(() => { useApp.setState({ retorno: null }); });
-afterEach(() => { vi.useRealTimers(); });
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
 it('não mostra nada sem retorno', () => {
   render(<Retorno />);
@@ -85,4 +85,51 @@ it('um aviso novo que chega durante o Desfazer não é fechado quando ele termin
   await act(async () => { terminar(); });
 
   expect(useApp.getState().retorno?.texto).toBe('Outro aviso');
+});
+
+// O jsdom não faz layout: o topo do sheet é simulado.
+function abrirSheetFalso(topo: number) {
+  const el = document.createElement('div');
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-modal', 'true');
+  vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({ top: topo } as DOMRect);
+  document.body.appendChild(el);
+  return el;
+}
+
+it('sem sheet aberto, a pista fica no lugar do CSS', async () => {
+  render(<Retorno />);
+  act(() => useApp.getState().avisar('Alteração salva'));
+  await new Promise((r) => setTimeout(r, 60));
+  expect(screen.getByRole('status').style.bottom).toBe('');
+});
+
+it('com sheet aberto, a pista sobe para 8 px acima da borda de cima do sheet', async () => {
+  vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(744);
+  const sheet = abrirSheetFalso(400);
+  render(<Retorno />);
+  act(() => useApp.getState().avisar('Alteração salva'));
+  // 744 - 400 + 8 = 352
+  await waitFor(() => expect(screen.getByRole('status').style.bottom).toBe('352px'));
+  sheet.remove();
+});
+
+it('quando o sheet sai do DOM, a pista volta ao lugar do CSS', async () => {
+  vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(744);
+  const sheet = abrirSheetFalso(400);
+  render(<Retorno />);
+  act(() => useApp.getState().avisar('Alteração salva'));
+  await waitFor(() => expect(screen.getByRole('status').style.bottom).toBe('352px'));
+  sheet.remove();
+  await waitFor(() => expect(screen.getByRole('status').style.bottom).toBe(''));
+});
+
+it('sheet quase da altura da tela não empurra o aviso para fora da janela', async () => {
+  vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(744);
+  const sheet = abrirSheetFalso(20);
+  render(<Retorno />);
+  act(() => useApp.getState().avisar('Alteração salva'));
+  // 744 - 20 + 8 = 732, limitado a 744 - 60 = 684
+  await waitFor(() => expect(screen.getByRole('status').style.bottom).toBe('684px'));
+  sheet.remove();
 });
