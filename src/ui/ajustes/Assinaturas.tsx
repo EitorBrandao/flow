@@ -7,6 +7,7 @@ import { boxIdConcreta, useApp } from '../../state/store';
 import AvisoEscolhaBox from './AvisoEscolhaBox';
 import CampoData from '../CampoData';
 import CampoValor from '../CampoValor';
+import ConfirmarSheet from '../ConfirmarSheet';
 import SeletorPills from '../SeletorPills';
 
 interface CamposAssinaturaInicial {
@@ -95,9 +96,10 @@ function FormAssinatura({ inicial, rotuloSalvar, onSalvo, onCancelar }: {
 }
 
 export default function Assinaturas() {
-  const { dados, boxSel, hoje, recarregar, abrirAjustes } = useApp();
+  const { dados, boxSel, hoje, recarregar, abrirAjustes, avisar } = useApp();
   const [cartaoId, setCartaoId] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [excluindoId, setExcluindoId] = useState<string | null>(null);
   // Muda a cada criação para o formulário do topo voltar vazio (remonta com `key`).
   const [versaoNova, setVersaoNova] = useState(0);
   const boxId = boxIdConcreta(boxSel);
@@ -160,10 +162,13 @@ export default function Assinaturas() {
     await recarregar();
   }
 
-  async function excluir(id: string) {
-    if (!window.confirm('Excluir a assinatura e suas compras futuras? (passadas são mantidas)')) return;
+  async function excluir() {
+    const id = excluindoId;
+    if (!id) return;
+    setExcluindoId(null);
     await repo.excluirAssinatura(id, horizonte);
     await recarregar();
+    avisar('Assinatura excluída');
   }
 
   return (
@@ -221,7 +226,7 @@ export default function Assinaturas() {
                   <div className="acoes">
                     <button className="botao" aria-label="Editar" onClick={() => setEditandoId(a.id)}><Pencil size={16} /></button>
                     <button className="botao" onClick={() => alternarAtiva(a.id)}>{a.ativa ? 'Desativar' : 'Ativar'}</button>
-                    <button className="botao botao-perigo" onClick={() => excluir(a.id)}>Excluir</button>
+                    <button className="botao botao-perigo" onClick={() => setExcluindoId(a.id)}>Excluir</button>
                   </div>
                 </div>
               )
@@ -230,6 +235,12 @@ export default function Assinaturas() {
           </div>
         </>
       )}
+      <ConfirmarSheet
+        aberto={excluindoId != null} titulo="Excluir esta assinatura?"
+        apoio="As compras futuras dela são apagadas. As passadas são mantidas."
+        rotuloConfirmar="Excluir" perigo
+        onCancelar={() => setExcluindoId(null)} onConfirmar={excluir}
+      />
     </div>
   );
 }
