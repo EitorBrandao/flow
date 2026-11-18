@@ -9,7 +9,7 @@ import { agoraISO, novoId } from '../domain/types';
 import { useApp } from '../state/store';
 import SimuladorSimples from './SimuladorSimples';
 
-beforeEach(async () => { await limparDb(); });
+beforeEach(async () => { await limparDb(); useApp.setState({ retorno: null }); });
 
 /** Box com 1.000,00 (100000 centavos) desde 01/09/2026, hoje 15/09/2026, sem outros
  *  lançamentos: o menor saldo "sem" é 1.000,00 em qualquer período. */
@@ -319,6 +319,35 @@ it('o rascunho nasce com o escopo da visão e "Guardar" o mantém', async () => 
   const guardado = (await db.cenarios.toArray()).find((c) => c.nome.startsWith('Simulação de'));
   expect(guardado?.escopo).toBe(box.id);
   expect(guardado?.rascunho).toBeUndefined();
+});
+
+describe('retorno ao gravar', () => {
+  it('Simular cria o rascunho e avisa "Cenário criado"', async () => {
+    await preparar();
+    render(<SimuladorSimples />);
+    await preencher('1500,00', '2026-10-15');
+    await simular();
+    expect(useApp.getState().retorno?.texto).toBe('Cenário criado');
+  });
+
+  it('Simular com data anterior a hoje não grava e não avisa', async () => {
+    await preparar();
+    render(<SimuladorSimples />);
+    await preencher('1500,00', '2026-09-14');
+    expect(screen.getByRole('button', { name: 'Simular' })).toBeDisabled();
+    expect(useApp.getState().retorno).toBeNull();
+  });
+
+  it('Guardar renomeia o cenário e não avisa', async () => {
+    await preparar();
+    render(<SimuladorSimples />);
+    await preencher('1500,00', '2026-10-15');
+    await simular();
+    useApp.setState({ retorno: null });
+    await userEvent.click(await screen.findByRole('button', { name: 'Guardar' }));
+    await screen.findByText('Guardada. Ela aparece em Simular, no modo Avançado, desligada.');
+    expect(useApp.getState().retorno).toBeNull();
+  });
 });
 
 it('na casa o rascunho nasce com escopo "casa"', async () => {

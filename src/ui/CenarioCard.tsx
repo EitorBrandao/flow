@@ -59,6 +59,7 @@ export default function CenarioCard({ cenario, linhas, negativoEm, larguraCh, ab
   async function adicionar(v: ValoresItem) {
     await gravarItemNovo(cenario.id, boxIdNovo!, v, dados!.config.horizonteProjecao);
     await recarregar();
+    avisar('Item adicionado');
     setFormKey((k) => k + 1); // formulário volta limpo
     setAdicionando(false);
   }

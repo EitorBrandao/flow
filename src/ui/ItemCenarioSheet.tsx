@@ -44,6 +44,7 @@ export default function ItemCenarioSheet({ item, onFechar }: Props) {
       }, horizonte);
     }
     await recarregar();
+    avisar('Item salvo');
     onFechar();
   }
 
