@@ -16,6 +16,7 @@ import { useModo } from './useModo';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import PrimeiroUso from './PrimeiroUso';
+import PendentesResumo from './PendentesResumo';
 import TransferirEntreBoxes from './TransferirEntreBoxes';
 import SeloBox from './SeloBox';
 import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
@@ -592,6 +593,14 @@ export default function TelaHoje() {
         <button role="tab" aria-selected={abaHoje === 'pendentes'} className={abaHoje === 'pendentes' ? 'ativo' : ''} onClick={() => setAbaHoje('pendentes')}>Pendentes · {fila.length}</button>
       </div>
 
+      {/* Antes do saldo, e também no primeiro uso: um pendente (uma fatura, por exemplo) pode
+          existir antes de as categorias estarem cadastradas, e precisa ficar à vista. */}
+      {abaHoje === 'visao' && (
+        <PendentesResumo
+          fila={fila} categorias={dados.categorias} boxes={dados.boxes} mostrarBox={boxSel === 'casa'}
+          onConfirmar={confirmar} onVerTodos={() => setAbaHoje('pendentes')}
+        />
+      )}
       {abaHoje === 'visao' && (
         primeiroUso ? (
           <PrimeiroUso />
