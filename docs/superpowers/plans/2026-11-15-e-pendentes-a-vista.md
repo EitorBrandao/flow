@@ -178,7 +178,7 @@ git commit -m "feat(hoje): confirmar pendente avisa e oferece Desfazer"
 
 **Interfaces:**
 - Produz: componente padrão `PendentesResumo` com as propriedades `{ fila: Lancamento[]; categorias: Categoria[]; boxes: Box[]; mostrarBox: boolean; onConfirmar: (l: Lancamento) => void; onVerTodos: () => void }`.
-- Produz: classes `.pendente-linha`, `.botao-confirmar-curto`.
+- Produz: classes `.pendentes-resumo-linha`, `.botao-confirmar-curto`.
 
 - [ ] **Passo 1: escreva os testes que falham**
 
@@ -321,7 +321,7 @@ export default function PendentesResumo({ fila, categorias, boxes, mostrarBox, o
         const nome = cat?.nome ?? '?';
         const nota = notaExibivel(l.nota, nome);
         return (
-          <div className="pendente-linha" key={l.id}>
+          <div className="pendentes-resumo-linha" key={l.id}>
             <div className="cresce">
               <div>
                 {nome}
@@ -355,8 +355,8 @@ Confira três coisas contra o `TelaHoje.tsx` antes de rodar:
 
 ```css
 /* ---- Pendentes à vista (PendentesResumo.tsx) ---- */
-.pendente-linha { display: flex; align-items: center; gap: 10px; }
-.pendente-linha .cresce { flex: 1; min-width: 0; }
+.pendentes-resumo-linha { display: flex; align-items: center; gap: 10px; }
+.pendentes-resumo-linha .cresce { flex: 1; min-width: 0; }
 /* ✓ sozinho: largura e altura de alvo de toque, sem o padding do botão de texto */
 .botao-confirmar-curto { min-width: 44px; min-height: 44px; padding: 0; }
 ```
@@ -364,7 +364,7 @@ Confira três coisas contra o `TelaHoje.tsx` antes de rodar:
 - [ ] **Passo 5: catálogo.** Em `docs/estilo/catalogo.md`, na tabela de classes:
 
 ```markdown
-| `.pendente-linha` / `.botao-confirmar-curto` | linha de um pendente no card do Hoje (`PendentesResumo.tsx`): nome e data à esquerda, valor e o botão ✓ à direita. `.botao-confirmar-curto` (junto com `.botao.botao-primario`) é o ✓ sem texto, com 44px de largura e de altura |
+| `.pendentes-resumo-linha` / `.botao-confirmar-curto` | linha de um pendente no card do Hoje (`PendentesResumo.tsx`): nome e data à esquerda, valor e o botão ✓ à direita. `.botao-confirmar-curto` (junto com `.botao.botao-primario`) é o ✓ sem texto, com 44px de largura e de altura |
 ```
 
 Na lista de componentes:
@@ -545,7 +545,7 @@ git commit -m "feat(hoje): pendentes à vista na Visão, acima do saldo"
 // passos-e.mjs
 export const passos = [
   { nome: 'e-hoje-com-card', ir: async (p, a) => { await a.aba('Hoje'); await a.pilula('Visão'); } },
-  { nome: 'e-confirmado', ir: async (p, a) => { await a.aba('Hoje'); await a.pilula('Visão'); await p.locator('.pendente-linha button').first().click(); await p.getByText(/^Confirmado: /).waitFor(); } },
+  { nome: 'e-confirmado', ir: async (p, a) => { await a.aba('Hoje'); await a.pilula('Visão'); await p.locator('.pendentes-resumo-linha button').first().click(); await p.getByText(/^Confirmado: /).waitFor(); } },
   { nome: 'e-ver-todos', ir: async (p, a) => { await a.aba('Hoje'); await a.pilula('Visão'); await p.getByRole('button', { name: /^Ver os/ }).click(); } },
 ];
 ```

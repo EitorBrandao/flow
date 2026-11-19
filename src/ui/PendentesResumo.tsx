@@ -39,7 +39,7 @@ export default function PendentesResumo({ fila, categorias, boxes, mostrarBox, o
         const nome = cat?.nome ?? '?';
         const nota = notaExibivel(l.nota, nome);
         return (
-          <div className="pendente-linha" key={l.id}>
+          <div className="pendentes-resumo-linha" key={l.id}>
             <div className="cresce">
               <div>
                 {nome}
