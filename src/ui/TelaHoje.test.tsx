@@ -41,6 +41,52 @@ it('mostra saldo e confirma um pendente', async () => {
   expect(lanc.status).toBe('efetivo');
 });
 
+it('confirmar avisa e o Desfazer devolve o previsto como estava', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'carteira', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'moradia', tipo: 'gasto', ordem: 0 });
+  const previsto = await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-01', valor: 50000, status: 'previsto' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+  render(<TelaHoje />);
+  await userEvent.click(screen.getByRole('tab', { name: /Pendentes/ }));
+
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar moradia' }));
+
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Confirmado: moradia'));
+  expect((await db.lancamentos.get(previsto.id))!.status).toBe('efetivo');
+
+  await useApp.getState().retorno!.desfazer!();
+  const depois = (await db.lancamentos.get(previsto.id))!;
+  expect(depois.status).toBe('previsto');
+  expect(depois.valor).toBe(50000);
+  expect(depois.data).toBe('2026-07-01');
+});
+
+it('confirmar com valor e data corrigidos: o Desfazer devolve o valor e a data originais', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'carteira', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'jardinagem', tipo: 'gasto', ordem: 0 });
+  const previsto = await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-01', valor: 11990, status: 'previsto' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+  render(<TelaHoje />);
+  await userEvent.click(screen.getByRole('tab', { name: /Pendentes/ }));
+
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de jardinagem' }));
+  await userEvent.type(screen.getByLabelText('Valor pago'), '5');
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar jardinagem' }));
+
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Confirmado: jardinagem'));
+  expect((await db.lancamentos.get(previsto.id))!.valor).not.toBe(11990);
+
+  await useApp.getState().retorno!.desfazer!();
+  const depois = (await db.lancamentos.get(previsto.id))!;
+  expect(depois).toMatchObject({ status: 'previsto', valor: 11990, data: '2026-07-01' });
+});
+
 it('declara saldo real maior que o saldo do app e mostra que falta inserir', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
@@ -785,6 +831,21 @@ describe('fatura pendente na fila', () => {
     await abrirAba(/Pendentes/);
     expect(screen.getByRole('button', { name: 'Descartar' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Paguei outro valor/ })).not.toBeInTheDocument();
+  });
+
+  it('confirmar uma fatura avisa, mas não oferece Desfazer', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      await comFaturaVencida();
+
+      render(<TelaHoje />);
+      await abrirAba(/Pendentes/);
+      await userEvent.click(screen.getByRole('button', { name: /^Confirmar / }));
+
+      await waitFor(() => expect(useApp.getState().retorno).not.toBeNull());
+      expect(useApp.getState().retorno!.desfazer).toBeUndefined();
+    } finally { vi.useRealTimers(); }
   });
 
   it('descartar tira o pendente da fila na hora e oferece Desfazer', async () => {
