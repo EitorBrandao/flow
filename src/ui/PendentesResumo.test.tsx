@@ -82,3 +82,22 @@ it('na visão casa mostra o selo da box', () => {
   montar(tres, true);
   expect(screen.getAllByText('carteira').length).toBeGreaterThan(0);
 });
+
+it('valor negativo (estorno) mostra o selo "estorno"', () => {
+  montar([previsto('p4', 'c2', '2026-07-02', -30000)]);
+  expect(screen.getByText('estorno')).toBeInTheDocument();
+});
+
+it('nota igual ao nome da categoria some: a linha mostra só a data, sem " · "', () => {
+  montar([previsto('p5', 'c2', '2026-07-02', 185000, 'Moradia')]);
+  const sub = screen.getByText('02/07/2026');
+  expect(sub).toHaveClass('sub');
+  expect(sub.textContent).toBe('02/07/2026');
+});
+
+it('categoria inexistente mostra "?" e o ✓ diz "Confirmar ?"', async () => {
+  const { onConfirmar } = montar([previsto('p6', 'cX', '2026-07-02', 5000)]);
+  expect(screen.getByText('?')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar ?' }));
+  expect(onConfirmar).toHaveBeenCalledOnce();
+});
