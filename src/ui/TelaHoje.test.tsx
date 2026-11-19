@@ -77,10 +77,16 @@ it('confirmar com valor e data corrigidos: o Desfazer devolve o valor e a data o
 
   await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de jardinagem' }));
   await userEvent.type(screen.getByLabelText('Valor pago'), '5');
+  const data = await screen.findByLabelText('Data do pagamento');
+  await userEvent.clear(data);
+  await userEvent.type(data, '2026-07-02');
   await userEvent.click(screen.getByRole('button', { name: 'Confirmar jardinagem' }));
 
   await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Confirmado: jardinagem'));
-  expect((await db.lancamentos.get(previsto.id))!.valor).not.toBe(11990);
+  const confirmado = (await db.lancamentos.get(previsto.id))!;
+  expect(confirmado.valor).not.toBe(11990);
+  expect(confirmado.data).not.toBe('2026-07-01');
+  expect(confirmado.data).toBe('2026-07-02');
 
   await useApp.getState().retorno!.desfazer!();
   const depois = (await db.lancamentos.get(previsto.id))!;
@@ -844,6 +850,7 @@ describe('fatura pendente na fila', () => {
       await userEvent.click(screen.getByRole('button', { name: /^Confirmar / }));
 
       await waitFor(() => expect(useApp.getState().retorno).not.toBeNull());
+      expect(useApp.getState().retorno!.texto.startsWith('Confirmado: ')).toBe(true);
       expect(useApp.getState().retorno!.desfazer).toBeUndefined();
     } finally { vi.useRealTimers(); }
   });
