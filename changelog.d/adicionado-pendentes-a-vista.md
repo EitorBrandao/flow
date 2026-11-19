@@ -1,0 +1,3 @@
+- Pendentes à vista no Hoje: um card acima do saldo mostra os dois previstos mais antigos.
+  - O botão ✓ confirma num toque; "Ver os N" leva à aba Pendentes.
+- Confirmar um pendente agora tem Desfazer por alguns segundos.
