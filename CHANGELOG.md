@@ -3,6 +3,14 @@
 Histórico de versões do Flow. Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/),
 com uma seção por versão contendo apenas o que foi **Adicionado**, **Alterado** ou **Removido**.
 
+## [0.75.0] - 2026-11-19
+
+### Adicionado
+
+- Pendentes à vista no Hoje: um card acima do saldo mostra os dois pendentes mais antigos.
+  - O botão ✓ confirma num toque; "Ver os N" leva à aba Pendentes.
+- Confirmar um pendente agora tem Desfazer por alguns segundos, menos na fatura de cartão.
+
 ## [0.74.0] - 2026-11-17
 
 ### Alterado
