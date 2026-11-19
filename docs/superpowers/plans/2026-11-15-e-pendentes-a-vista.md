@@ -178,7 +178,7 @@ git commit -m "feat(hoje): confirmar pendente avisa e oferece Desfazer"
 
 **Interfaces:**
 - Produz: componente padrão `PendentesResumo` com as propriedades `{ fila: Lancamento[]; categorias: Categoria[]; boxes: Box[]; mostrarBox: boolean; onConfirmar: (l: Lancamento) => void; onVerTodos: () => void }`.
-- Produz: classes `.pendentes-resumo-linha`, `.botao-confirmar-curto`.
+- Produz: classes `.pendentes-resumo-linha`, `.pendentes-resumo-confirmar`.
 
 - [ ] **Passo 1: escreva os testes que falham**
 
@@ -332,7 +332,7 @@ export default function PendentesResumo({ fila, categorias, boxes, mostrarBox, o
             </div>
             <span className={classeEfeito(efeitoNoSaldo(l.valor, cat?.tipo ?? 'gasto'))}>{formatarBRL(l.valor)}</span>
             <button
-              type="button" className="botao botao-primario botao-confirmar-curto"
+              type="button" className="botao botao-primario pendentes-resumo-confirmar"
               aria-label={`Confirmar ${nome}`} onClick={() => onConfirmar(l)}
             >
               ✓
@@ -358,13 +358,13 @@ Confira três coisas contra o `TelaHoje.tsx` antes de rodar:
 .pendentes-resumo-linha { display: flex; align-items: center; gap: 10px; }
 .pendentes-resumo-linha .cresce { flex: 1; min-width: 0; }
 /* ✓ sozinho: largura e altura de alvo de toque, sem o padding do botão de texto */
-.botao-confirmar-curto { min-width: 44px; min-height: 44px; padding: 0; }
+.pendentes-resumo-confirmar { min-width: 44px; min-height: 44px; padding: 0; }
 ```
 
 - [ ] **Passo 5: catálogo.** Em `docs/estilo/catalogo.md`, na tabela de classes:
 
 ```markdown
-| `.pendentes-resumo-linha` / `.botao-confirmar-curto` | linha de um pendente no card do Hoje (`PendentesResumo.tsx`): nome e data à esquerda, valor e o botão ✓ à direita. `.botao-confirmar-curto` (junto com `.botao.botao-primario`) é o ✓ sem texto, com 44px de largura e de altura |
+| `.pendentes-resumo-linha` / `.pendentes-resumo-confirmar` | linha de um pendente no card do Hoje (`PendentesResumo.tsx`): nome e data à esquerda, valor e o botão ✓ à direita. `.pendentes-resumo-confirmar` (junto com `.botao.botao-primario`) é o ✓ sem texto, com 44px de largura e de altura |
 ```
 
 Na lista de componentes:

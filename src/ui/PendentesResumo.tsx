@@ -27,11 +27,11 @@ export default function PendentesResumo({ fila, categorias, boxes, mostrarBox, o
   const categoria = (id: string) => categorias.find((c) => c.id === id);
 
   return (
-    <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="card pendentes-resumo">
       <div className="secao">
         <span className="rotulo">{TITULO} · {fila.length}</span>
         {fila.length > MAXIMO && (
-          <button type="button" className="acao" onClick={onVerTodos}>Ver os {fila.length} →</button>
+          <button type="button" className="acao pendentes-resumo-ver" onClick={onVerTodos}>Ver os {fila.length} →</button>
         )}
       </div>
       {fila.slice(0, MAXIMO).map((l) => {
@@ -50,7 +50,7 @@ export default function PendentesResumo({ fila, categorias, boxes, mostrarBox, o
             </div>
             <span className={classeEfeito(efeitoNoSaldo(l.valor, cat?.tipo ?? 'gasto'))}>{formatarBRL(l.valor)}</span>
             <button
-              type="button" className="botao botao-primario botao-confirmar-curto"
+              type="button" className="botao botao-primario pendentes-resumo-confirmar"
               aria-label={`Confirmar ${nome}`} onClick={() => onConfirmar(l)}
             >
               ✓
