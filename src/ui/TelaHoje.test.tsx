@@ -1504,4 +1504,40 @@ describe('card de pendentes na Visão', () => {
     await screen.findByText(/Saldo hoje/);
     expect(screen.queryByText(/^Pendentes ·/, { selector: '.rotulo' })).not.toBeInTheDocument();
   });
+
+  it('no primeiro uso o card aparece mesmo sem o saldo', async () => {
+    const agora = agoraISO();
+    // box sem saldo próprio: dispara o primeiro uso, mas a categoria continua visível
+    const box = { id: novoId(), nome: 'carteira', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'moradia', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-01', valor: 50000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+    render(<TelaHoje />);
+
+    await screen.findByText('Pendentes · 1', { selector: '.rotulo' });
+    expect(screen.getByText(/Primeira vez por aqui/)).toBeInTheDocument();
+  });
+
+  it('na visão casa a linha do card mostra a box', async () => {
+    const agora = agoraISO();
+    const carteira = { id: novoId(), nome: 'carteira', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    const poupanca = { id: novoId(), nome: 'poupanca', saldoInicial: 200000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(carteira);
+    await repo.salvarBox(poupanca);
+    const catCarteira = await repo.salvarCategoria({ boxId: carteira.id, nome: 'moradia', tipo: 'gasto', ordem: 0 });
+    const catPoupanca = await repo.salvarCategoria({ boxId: poupanca.id, nome: 'seguro', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({ boxId: carteira.id, categoriaId: catCarteira.id, data: '2026-07-01', valor: 50000, status: 'previsto' });
+    await repo.salvarLancamento({ boxId: poupanca.id, categoriaId: catPoupanca.id, data: '2026-07-01', valor: 30000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-02', retorno: null });
+    render(<TelaHoje />);
+
+    await screen.findByText('Pendentes · 2', { selector: '.rotulo' });
+    const card = document.querySelector('.pendentes-resumo') as HTMLElement;
+    expect(card).not.toBeNull();
+    expect(card.textContent).toContain('carteira');
+    expect(card.textContent).toContain('poupanca');
+  });
 });
