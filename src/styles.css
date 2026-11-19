@@ -777,3 +777,9 @@ table.tabela th:first-child, table.tabela td:first-child {
   background: none; border: none; color: var(--ac); font-weight: 700; font-size: 14px;
   min-height: 44px; padding: 0 12px; margin-right: -10px;
 }
+
+/* ---- Pendentes à vista (PendentesResumo.tsx) ---- */
+.pendente-linha { display: flex; align-items: center; gap: 10px; }
+.pendente-linha .cresce { flex: 1; min-width: 0; }
+/* ✓ sozinho: largura e altura de alvo de toque, sem o padding do botão de texto */
+.botao-confirmar-curto { min-width: 44px; min-height: 44px; padding: 0; }
