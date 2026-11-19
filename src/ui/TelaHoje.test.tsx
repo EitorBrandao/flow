@@ -41,6 +41,58 @@ it('mostra saldo e confirma um pendente', async () => {
   expect(lanc.status).toBe('efetivo');
 });
 
+it('confirmar avisa e o Desfazer devolve o previsto como estava', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'carteira', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'moradia', tipo: 'gasto', ordem: 0 });
+  const previsto = await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-01', valor: 50000, status: 'previsto' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+  render(<TelaHoje />);
+  await userEvent.click(screen.getByRole('tab', { name: /Pendentes/ }));
+
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar moradia' }));
+
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Confirmado: moradia'));
+  expect((await db.lancamentos.get(previsto.id))!.status).toBe('efetivo');
+
+  await useApp.getState().retorno!.desfazer!();
+  const depois = (await db.lancamentos.get(previsto.id))!;
+  expect(depois.status).toBe('previsto');
+  expect(depois.valor).toBe(50000);
+  expect(depois.data).toBe('2026-07-01');
+});
+
+it('confirmar com valor e data corrigidos: o Desfazer devolve o valor e a data originais', async () => {
+  const agora = agoraISO();
+  const box = { id: novoId(), nome: 'carteira', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+  await repo.salvarBox(box);
+  const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'jardinagem', tipo: 'gasto', ordem: 0 });
+  const previsto = await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-01', valor: 11990, status: 'previsto' });
+  await useApp.getState().iniciar();
+  useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+  render(<TelaHoje />);
+  await userEvent.click(screen.getByRole('tab', { name: /Pendentes/ }));
+
+  await userEvent.click(screen.getByRole('button', { name: 'Corrigir valor de jardinagem' }));
+  await userEvent.type(screen.getByLabelText('Valor pago'), '5');
+  const data = await screen.findByLabelText('Data do pagamento');
+  await userEvent.clear(data);
+  await userEvent.type(data, '2026-07-02');
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar jardinagem' }));
+
+  await waitFor(() => expect(useApp.getState().retorno?.texto).toBe('Confirmado: jardinagem'));
+  const confirmado = (await db.lancamentos.get(previsto.id))!;
+  expect(confirmado.valor).not.toBe(11990);
+  expect(confirmado.data).not.toBe('2026-07-01');
+  expect(confirmado.data).toBe('2026-07-02');
+
+  await useApp.getState().retorno!.desfazer!();
+  const depois = (await db.lancamentos.get(previsto.id))!;
+  expect(depois).toMatchObject({ status: 'previsto', valor: 11990, data: '2026-07-01' });
+});
+
 it('declara saldo real maior que o saldo do app e mostra que falta inserir', async () => {
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-07-01', criadoEm: agora, alteradoEm: agora };
@@ -787,6 +839,22 @@ describe('fatura pendente na fila', () => {
     expect(screen.queryByRole('button', { name: /Paguei outro valor/ })).not.toBeInTheDocument();
   });
 
+  it('confirmar uma fatura avisa, mas não oferece Desfazer', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-07-01T12:00:00'));
+      await comFaturaVencida();
+
+      render(<TelaHoje />);
+      await abrirAba(/Pendentes/);
+      await userEvent.click(screen.getByRole('button', { name: /^Confirmar / }));
+
+      await waitFor(() => expect(useApp.getState().retorno).not.toBeNull());
+      expect(useApp.getState().retorno!.texto.startsWith('Confirmado: ')).toBe(true);
+      expect(useApp.getState().retorno!.desfazer).toBeUndefined();
+    } finally { vi.useRealTimers(); }
+  });
+
   it('descartar tira o pendente da fila na hora e oferece Desfazer', async () => {
     const agora = agoraISO();
     const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
@@ -1354,5 +1422,122 @@ describe('retorno ao salvar a conferência de saldo', () => {
       gravaConfig.mockRestore();
       gravaBox.mockRestore();
     }
+  });
+});
+
+describe('card de pendentes na Visão', () => {
+  it('a Visão mostra o card de pendentes acima do saldo', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'carteira', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'moradia', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-01', valor: 50000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+    render(<TelaHoje />);
+
+    const titulo = await screen.findByText('Pendentes · 1', { selector: '.rotulo' });
+    const saldo = screen.getByText(/Saldo hoje/);
+    // o card vem antes do saldo no documento
+    expect(titulo.compareDocumentPosition(saldo) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('confirmar pelo card tira o item, atualiza a pílula e some com o card', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'carteira', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'moradia', tipo: 'gasto', ordem: 0 });
+    const previsto = await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-01', valor: 50000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+    render(<TelaHoje />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirmar moradia' }));
+
+    await waitFor(() => expect(screen.queryByText(/^Pendentes ·/, { selector: '.rotulo' })).not.toBeInTheDocument());
+    expect(screen.getByRole('tab', { name: 'Pendentes · 0' })).toBeInTheDocument();
+    expect((await db.lancamentos.get(previsto.id))!.status).toBe('efetivo');
+    expect(useApp.getState().retorno!.texto).toBe('Confirmado: moradia');
+  });
+
+  it('sem pendentes a Visão não mostra o card', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'carteira', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    await repo.salvarCategoria({ boxId: box.id, nome: 'moradia', tipo: 'gasto', ordem: 0 });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    render(<TelaHoje />);
+
+    await screen.findByText(/Saldo hoje/);
+    expect(screen.queryByText(/^Pendentes ·/, { selector: '.rotulo' })).not.toBeInTheDocument();
+  });
+
+  it('"Ver os N" troca para a pílula Pendentes', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'carteira', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'moradia', tipo: 'gasto', ordem: 0 });
+    for (const data of ['2026-06-29', '2026-06-30', '2026-07-01']) {
+      await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data, valor: 50000, status: 'previsto' });
+    }
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    render(<TelaHoje />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Ver os 3 →' }));
+
+    expect(screen.getByRole('tab', { name: 'Pendentes · 3' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getAllByRole('button', { name: 'Descartar' })).toHaveLength(3);
+  });
+
+  it('previsto além de 3 dias não entra no card', async () => {
+    const agora = agoraISO();
+    const box = { id: novoId(), nome: 'carteira', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'moradia', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-06', valor: 50000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02' });
+    render(<TelaHoje />);
+
+    await screen.findByText(/Saldo hoje/);
+    expect(screen.queryByText(/^Pendentes ·/, { selector: '.rotulo' })).not.toBeInTheDocument();
+  });
+
+  it('no primeiro uso o card aparece mesmo sem o saldo', async () => {
+    const agora = agoraISO();
+    // box sem saldo próprio: dispara o primeiro uso, mas a categoria continua visível
+    const box = { id: novoId(), nome: 'carteira', saldoInicial: null, dataSaldoInicial: null, criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(box);
+    const cat = await repo.salvarCategoria({ boxId: box.id, nome: 'moradia', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({ boxId: box.id, categoriaId: cat.id, data: '2026-07-01', valor: 50000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: box.id, hoje: '2026-07-02', retorno: null });
+    render(<TelaHoje />);
+
+    await screen.findByText('Pendentes · 1', { selector: '.rotulo' });
+    expect(screen.getByText(/Primeira vez por aqui/)).toBeInTheDocument();
+  });
+
+  it('na visão casa a linha do card mostra a box', async () => {
+    const agora = agoraISO();
+    const carteira = { id: novoId(), nome: 'carteira', saldoInicial: 100000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    const poupanca = { id: novoId(), nome: 'poupanca', saldoInicial: 200000, dataSaldoInicial: '2026-01-01', criadoEm: agora, alteradoEm: agora };
+    await repo.salvarBox(carteira);
+    await repo.salvarBox(poupanca);
+    const catCarteira = await repo.salvarCategoria({ boxId: carteira.id, nome: 'moradia', tipo: 'gasto', ordem: 0 });
+    const catPoupanca = await repo.salvarCategoria({ boxId: poupanca.id, nome: 'seguro', tipo: 'gasto', ordem: 0 });
+    await repo.salvarLancamento({ boxId: carteira.id, categoriaId: catCarteira.id, data: '2026-07-01', valor: 50000, status: 'previsto' });
+    await repo.salvarLancamento({ boxId: poupanca.id, categoriaId: catPoupanca.id, data: '2026-07-01', valor: 30000, status: 'previsto' });
+    await useApp.getState().iniciar();
+    useApp.setState({ boxSel: 'casa', hoje: '2026-07-02', retorno: null });
+    render(<TelaHoje />);
+
+    await screen.findByText('Pendentes · 2', { selector: '.rotulo' });
+    const card = document.querySelector('.pendentes-resumo') as HTMLElement;
+    expect(card).not.toBeNull();
+    expect(card.textContent).toContain('carteira');
+    expect(card.textContent).toContain('poupanca');
   });
 });

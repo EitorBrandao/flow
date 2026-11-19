@@ -102,6 +102,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
 | `.importar-ponto` | ponto colorido de 8px que marca o estado de um item da conferência; usado sozinho no resumo (`.importar-contagem`) e junto de `.importar-estado` em cada linha (`LinhaConferencia.tsx`). Seis modificadores compostos, um por `EstadoItem` (confere/previsto/divergente/novo/sobra/interno), dão a cor de fundo — `--pos`/`--ac`/`--aviso-fg`/`--estado-novo`/`--neg`/`--muted`, nessa ordem |
 | `.importar-estado` | nome do estado de um item da conferência (`LinhaConferencia.tsx`), com os mesmos seis modificadores compostos do `.importar-ponto` acima dando a cor do texto |
 | `.importar-rodape` | rodapé fixo do passo 3 da conferência (`Importar.tsx`) — `position: sticky`, grudado no fim da área visível (`bottom: 0`), com `padding-bottom` de 96px no mobile e 24px no desktop para o botão ficar acima da barra de navegação; o fundo é opaco (`--bg`) do degradê de 20px para baixo, então o texto que rola não aparece atrás nem abaixo da mensagem; reúne o botão Confirmar, a contagem de itens sem mudança e o aviso de erro |
+| `.pendentes-resumo` / `.pendentes-resumo-ver` / `.pendentes-resumo-linha` / `.pendentes-resumo-confirmar` | card de pendentes do Hoje (`PendentesResumo.tsx`). `.pendentes-resumo` (junto com `.card`) empilha cabeçalho e linhas com 12px entre eles. `.pendentes-resumo-ver` (junto com `.secao .acao`) dá ao "Ver os N →" 44px de altura de toque. `.pendentes-resumo-linha`: nome e data à esquerda, valor e o botão ✓ à direita. `.pendentes-resumo-confirmar` (junto com `.botao.botao-primario`) é o ✓ sem texto, com 44px de largura e de altura |
 
 ## Componentes compartilhados (em `src/ui/`)
 
@@ -165,6 +166,7 @@ exclusão explícita no script, e `src/ui/ajustes/*.tsx` fica de fora porque a v
   vem marcado por quem usa (`bancoPadrao`, `domain/bancos.ts`). Usado em `TelaLancar.tsx`,
   `LancEditor.tsx` e `ajustes/Recorrencias.tsx`.
 - **`SeloBox.tsx`** — selo `.badge` com o nome da box de um lançamento. Aparece só na visão casa (`boxSel === 'casa'`), ao lado da categoria, em Hoje → Pendentes e Fluxo → Lista. Box inexistente mostra `?`.
+- **`PendentesResumo.tsx`** — card da Visão do Hoje com os dois pendentes mais antigos e confirmar num toque. Some com a fila vazia; "Ver os N" leva à pílula Pendentes. Mostra o pendente com os mesmos textos e cores da fila.
 - **`SeletorFiltroBanco.tsx`** — filtro por banco: pílulas (`SeletorPills`) "Todos", cada banco da
   box e "Sem banco". Props `bancos`, `valor` (`FiltroBanco`, de `domain/bancos.ts`) e `onMudar`.
   Devolve `null` com menos de dois bancos. Usado no `TelaFluxo.tsx` (só a lista; o saldo do dia

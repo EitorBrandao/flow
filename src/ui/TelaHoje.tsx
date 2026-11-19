@@ -16,6 +16,7 @@ import { useModo } from './useModo';
 import CampoData from './CampoData';
 import CampoValor from './CampoValor';
 import PrimeiroUso from './PrimeiroUso';
+import PendentesResumo from './PendentesResumo';
 import TransferirEntreBoxes from './TransferirEntreBoxes';
 import SeloBox from './SeloBox';
 import { PagamentoFaturaSheetModal } from './PagamentoFaturaSheet';
@@ -545,6 +546,17 @@ export default function TelaHoje() {
     setDataCorrigida(l.data);
   }
 
+  // Desfazer devolve o previsto como estava: status, valor e data de antes da confirmação.
+  // Fatura de cartão não oferece Desfazer: o pagamento dela mexe em mais de um registro.
+  function avisarConfirmado(l: Lancamento) {
+    avisar(
+      `Confirmado: ${nomeCat(l.categoriaId)}`,
+      ehFatura(l)
+        ? undefined
+        : () => repo.atualizarLancamento(l.id, { status: 'previsto', valor: l.valor, data: l.data }),
+    );
+  }
+
   // O campo edita a magnitude; o sinal vem do previsto original, para um estorno negativo não
   // virar positivo em silêncio. Trocar o sinal continua sendo trabalho do LancEditor.
   async function confirmarCorrigido(l: Lancamento) {
@@ -552,11 +564,13 @@ export default function TelaHoje() {
     setCorrigindo(null);
     await repo.confirmarPendente(l.id, valor, dataCorrigida);
     await recarregar();
+    avisarConfirmado(l);
   }
 
-  async function confirmar(id: string) {
-    await repo.confirmarPendente(id);
+  async function confirmar(l: Lancamento) {
+    await repo.confirmarPendente(l.id);
     await recarregar();
+    avisarConfirmado(l);
   }
   async function descartar(l: Lancamento) {
     await repo.excluirLancamento(l.id);
@@ -579,6 +593,14 @@ export default function TelaHoje() {
         <button role="tab" aria-selected={abaHoje === 'pendentes'} className={abaHoje === 'pendentes' ? 'ativo' : ''} onClick={() => setAbaHoje('pendentes')}>Pendentes · {fila.length}</button>
       </div>
 
+      {/* Antes do saldo, e também no primeiro uso: um pendente (uma fatura, por exemplo) pode
+          existir antes de as categorias estarem cadastradas, e precisa ficar à vista. */}
+      {abaHoje === 'visao' && (
+        <PendentesResumo
+          fila={fila} categorias={dados.categorias} boxes={dados.boxes} mostrarBox={boxSel === 'casa'}
+          onConfirmar={confirmar} onVerTodos={() => setAbaHoje('pendentes')}
+        />
+      )}
       {abaHoje === 'visao' && (
         primeiroUso ? (
           <PrimeiroUso />
@@ -728,7 +750,7 @@ export default function TelaHoje() {
                     </>
                   ) : (
                     <>
-                      <button className="botao botao-primario" aria-label={`Confirmar ${nomeCat(l.categoriaId)}`} onClick={() => confirmar(l.id)}>✓ Confirmar</button>
+                      <button className="botao botao-primario" aria-label={`Confirmar ${nomeCat(l.categoriaId)}`} onClick={() => confirmar(l)}>✓ Confirmar</button>
                       {ehFatura(l) ? (
                         <button className="botao" aria-label={`Paguei outro valor de ${nomeCat(l.categoriaId)}`} onClick={() => setPagando(l)}>Paguei outro valor</button>
                       ) : (

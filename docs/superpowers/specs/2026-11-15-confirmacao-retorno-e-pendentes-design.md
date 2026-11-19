@@ -66,7 +66,7 @@ Estas regras viram o capítulo `docs/estilo/interacao.md`, criado no plano D1 e 
 | `.botao-discreto` | modificador de `.botao`: contorno por dentro, sem fundo, para a ação que só sai da tela | D1 |
 | `.botao-perigo-cheio` | modificador de `.botao`: fundo vermelho, só dentro do sheet de confirmação | D1 |
 | `.sheet-botoes` (+ `.empurra`) | rodapé de botões de um sheet: destrutivo à esquerda, o resto à direita | D1 |
-| `.pendente-linha`, `.botao-confirmar-curto` | linha de pendente do card e o botão ✓ com alvo de 44 px | E |
+| `.pendentes-resumo`, `.pendentes-resumo-ver`, `.pendentes-resumo-linha`, `.pendentes-resumo-confirmar` | card de pendentes, o "Ver os N" e a linha de pendente com o botão ✓, com alvo de 44 px | E |
 
 Todas usam só tokens que já existem. O texto do botão vermelho cheio usa `var(--bg)`, porque o guia só admite cor escrita à mão no branco sobre azul. No mockup esse texto era um quase-preto; a diferença não se vê.
 

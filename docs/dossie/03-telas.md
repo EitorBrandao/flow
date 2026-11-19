@@ -972,6 +972,16 @@ Hoje
 tab: Visão
 tab: Conferir
 tab: Pendentes · 3
+Pendentes · 3
+button: Ver os 3 →
+sigma
+05/02/2026
+R$ 330,00
+button: ✓
+salário
+05/02/2026
+R$ 5.000,00
+button: ✓
 Saldo hoje · carteira
 R$ 4.300
 ,00
@@ -1577,6 +1587,16 @@ Hoje
 tab: Visão
 tab: Conferir
 tab: Pendentes · 12
+Pendentes · 12
+button: Ver os 12 →
+sigma
+05/02/2026
+R$ 330,00
+button: ✓
+sigma
+05/03/2026
+R$ 189,90
+button: ✓
 Saldo hoje · carteira
 R$ 7.880
 ,00
@@ -2105,6 +2125,16 @@ Hoje
 tab: Visão
 tab: Conferir
 tab: Pendentes · 15
+Pendentes · 15
+button: Ver os 15 →
+sigma
+05/02/2026
+R$ 330,00
+button: ✓
+sigma
+05/03/2026
+R$ 189,90
+button: ✓
 Saldo hoje · carteira
 R$ 7.800
 ,00
@@ -2653,6 +2683,16 @@ Hoje
 tab: Visão
 tab: Conferir
 tab: Pendentes · 20
+Pendentes · 20
+button: Ver os 20 →
+sigma
+05/02/2026
+R$ 330,00
+button: ✓
+sigma
+05/03/2026
+R$ 189,90
+button: ✓
 Saldo hoje · carteira
 R$ 7.676
 ,80
@@ -3153,6 +3193,16 @@ Hoje
 tab: Visão
 tab: Conferir
 tab: Pendentes · 23
+Pendentes · 23
+button: Ver os 23 →
+sigma
+05/02/2026
+R$ 330,00
+button: ✓
+sigma
+05/03/2026
+R$ 189,90
+button: ✓
 Saldo hoje · carteira
 R$ 7.676
 ,80
@@ -3632,6 +3682,16 @@ Hoje
 tab: Visão
 tab: Conferir
 tab: Pendentes · 26
+Pendentes · 26
+button: Ver os 26 →
+sigma
+05/02/2026
+R$ 330,00
+button: ✓
+sigma
+05/03/2026
+R$ 189,90
+button: ✓
 Saldo hoje · carteira
 R$ 7.676
 ,80

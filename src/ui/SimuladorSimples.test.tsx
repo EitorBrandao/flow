@@ -10,10 +10,15 @@ import { useApp } from '../state/store';
 import SimuladorSimples from './SimuladorSimples';
 
 beforeEach(async () => { await limparDb(); useApp.setState({ retorno: null }); });
+afterEach(() => { vi.useRealTimers(); });
 
 /** Box com 1.000,00 (100000 centavos) desde 01/09/2026, hoje 15/09/2026, sem outros
- *  lançamentos: o menor saldo "sem" é 1.000,00 em qualquer período. */
+ *  lançamentos: o menor saldo "sem" é 1.000,00 em qualquer período. O relógio fica em
+ *  15/09/2026: um `recarregar` assíncrono (o do Guardar, por exemplo) troca `hoje` pela data
+ *  do relógio, e com a data real o teste quebrava quando o calendário passava de 15/10/2026. */
 async function preparar() {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-09-15T12:00:00'));
   const agora = agoraISO();
   const box = { id: novoId(), nome: 'eitor', saldoInicial: 100000, dataSaldoInicial: '2026-09-01', criadoEm: agora, alteradoEm: agora };
   await repo.salvarBox(box);
